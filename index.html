@@ -1470,7 +1470,8 @@ async function handleAdminAction(action, id, value) {
     if (!confirm('Видалити цього користувача назавжди? Він зможе зареєструватися заново з тим самим номером. Цю дію не можна скасувати.')) return;
     const { data, error } = await sb.functions.invoke('admin-delete-user', { body: { user_id: id } });
     if (error || (data && data.error)) {
-      alert('Не вдалося видалити користувача. Спробуйте ще раз.');
+      const detail = (data && data.error) || (error && error.message) || 'невідома помилка';
+      alert('Не вдалося видалити користувача: ' + detail);
       return;
     }
     renderCabinetTab();
