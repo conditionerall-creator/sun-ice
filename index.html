@@ -342,6 +342,98 @@
     cursor: pointer;
     margin-top: 14px;
   }
+
+  /* Auth (login/register) */
+  .auth-toggle {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 4px;
+  }
+  .auth-toggle button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .auth-toggle button.active {
+    background: var(--card);
+    color: var(--accent);
+    box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  }
+  .logout-btn {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--danger);
+    cursor: pointer;
+    margin-top: 18px;
+    font-family: inherit;
+  }
+
+  /* Admin panel */
+  .admin-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--text-secondary);
+    padding: 16px 2px 8px;
+  }
+  .admin-section-title:first-child { padding-top: 0; }
+  .admin-search { margin-bottom: 10px; }
+  .user-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .user-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .user-card-name { font-size: 14px; font-weight: 600; margin: 0; }
+  .user-card-sub { font-size: 12px; color: var(--text-secondary); margin: 3px 0 0; line-height: 1.4; }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .badge-pending { background: #faeeda; color: #854f0b; }
+  .badge-approved { background: var(--accent-bg); color: var(--accent); }
+  .badge-rejected, .badge-blocked { background: #fcebeb; color: var(--danger); }
+  .user-card-row { display: flex; gap: 6px; margin-top: 8px; }
+  .user-card-row select { flex: 1; font-size: 12px; padding: 7px 6px; }
+  .user-card-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .user-card-actions button {
+    flex: 1;
+    min-width: 90px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+  }
+  .user-card-actions button.approve { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .user-card-actions button.reject { color: var(--danger); border-color: #f0cccc; }
 </style>
 </head>
 <body>
@@ -799,6 +891,27 @@ document.getElementById('sort').addEventListener('change', renderCatalogList);
 document.getElementById('refresh-icon').addEventListener('click', handleRefreshClick);
 document.getElementById('back-btn').addEventListener('click', function() { history.back(); });
 
+/* Делеговані обробники дій у адмін-панелі Кабінету (кнопки й селекти з data-action) */
+document.getElementById('main').addEventListener('click', function(e) {
+  const target = e.target.closest('[data-action]');
+  if (!target || target.tagName === 'SELECT') return;
+  const action = target.getAttribute('data-action');
+  const id = target.getAttribute('data-id');
+  if (action && id) handleAdminAction(action, id, null);
+});
+document.getElementById('main').addEventListener('change', function(e) {
+  const target = e.target.closest('select[data-action]');
+  if (!target) return;
+  const action = target.getAttribute('data-action');
+  const id = target.getAttribute('data-id');
+  if (action && id) handleAdminAction(action, id, target.value);
+});
+
+/* Перерендер Кабінету при зміні стану авторизації (напр., після виходу в іншій вкладці) */
+sb.auth.onAuthStateChange(function() {
+  if (currentTab === 'cabinet') renderCabinetTab();
+});
+
 window.addEventListener('popstate', function(event) {
   const state = event.state;
   if (state && state.tab) {
@@ -866,37 +979,126 @@ function renderInfoTab() {
 }
 
 /* ---------- Кабінет ---------- */
+let cabinetMode = 'login'; // 'login' | 'register' — тільки для неавторизованого стану
+let regionsCache = null;
+
+function normalizePhoneDigits(phone) { return String(phone || '').replace(/\D/g, ''); }
+function phoneToEmail(phone) { return 'p' + normalizePhoneDigits(phone) + '@sunice.local'; }
+
+async function getRegions() {
+  if (regionsCache) return regionsCache;
+  const { data } = await sb.from('regions').select('*').order('sort_order');
+  regionsCache = data || [];
+  return regionsCache;
+}
+
+function statusLabel(status) {
+  return {
+    pending: 'На розгляді',
+    approved: 'Підтверджено',
+    rejected: 'Відхилено',
+    blocked: 'Заблоковано'
+  }[status] || 'На розгляді';
+}
+function priceTypeLabel(pt) {
+  return { regular: 'Стандартна', client: 'Клієнтська', vip: 'VIP' }[pt] || (pt || '—');
+}
+function roleLabel(role) {
+  return { user: 'Користувач', regional_admin: 'Регіональний адмін', super_admin: 'Супер-адмін' }[role] || role;
+}
+
 async function renderCabinetTab() {
   document.getElementById('title').textContent = 'Кабінет';
   const main = document.getElementById('main');
-  const saved = getLocalRequest();
+  main.innerHTML = '<div class="empty">Завантаження...</div>';
 
-  if (saved) {
-    const statusText = {
-      pending: 'Заявка перебуває на розгляді',
-      approved: 'Підтверджено',
-      rejected: 'Відхилено',
-      blocked: 'Заблоковано'
-    }[saved.status] || 'Заявка перебуває на розгляді';
-    main.innerHTML = `
-      <div class="status-card">
-        <div class="status-card-title">${escapeHtml(statusText)}</div>
-        <div class="status-card-sub">${escapeHtml(saved.full_name)}<br>${escapeHtml(saved.phone)}<br>${escapeHtml(saved.region_name || '')}</div>
-      </div>
-      <button class="link-btn" id="reset-request-btn">Подати нову заявку</button>
-    `;
-    document.getElementById('reset-request-btn').addEventListener('click', () => {
-      localStorage.removeItem('sunice_user_request');
-      renderCabinetTab();
-    });
+  const { data: sessionData } = await sb.auth.getSession();
+  const session = sessionData ? sessionData.session : null;
+
+  if (!session) {
+    renderAuthForms();
     return;
   }
 
-  main.innerHTML = '<div class="empty">Завантаження...</div>';
-  const { data: regions } = await sb.from('regions').select('*').order('sort_order');
-  const options = (regions || []).map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+  const { data: profile, error } = await sb.from('profiles').select('*').eq('id', session.user.id).single();
+  if (error || !profile) {
+    main.innerHTML =
+      '<div class="error">Не вдалося завантажити профіль. Спробуйте вийти і зайти знову.</div>' +
+      '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
+    document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
+    return;
+  }
 
+  if (profile.role === 'regional_admin' || profile.role === 'super_admin') {
+    renderAdminPanel(profile);
+  } else {
+    renderUserStatus(profile);
+  }
+}
+
+/* ---- Неавторизований стан: вхід / реєстрація ---- */
+function renderAuthForms() {
+  const main = document.getElementById('main');
   main.innerHTML = `
+    <div class="auth-toggle">
+      <button type="button" id="auth-tab-login" class="${cabinetMode === 'login' ? 'active' : ''}">Вхід</button>
+      <button type="button" id="auth-tab-register" class="${cabinetMode === 'register' ? 'active' : ''}">Реєстрація</button>
+    </div>
+    <div id="auth-form-holder"></div>
+  `;
+  document.getElementById('auth-tab-login').addEventListener('click', () => { cabinetMode = 'login'; renderAuthForms(); });
+  document.getElementById('auth-tab-register').addEventListener('click', () => { cabinetMode = 'register'; renderAuthForms(); });
+  if (cabinetMode === 'login') renderLoginForm(); else renderRegisterForm();
+}
+
+function renderLoginForm() {
+  const holder = document.getElementById('auth-form-holder');
+  holder.innerHTML = `
+    <div class="field">
+      <label>Номер телефону</label>
+      <input type="tel" id="login-phone" placeholder="+38 0__ ___ __ __">
+    </div>
+    <div class="field">
+      <label>Пароль</label>
+      <input type="password" id="login-password" placeholder="Ваш пароль">
+    </div>
+    <button class="primary-btn" id="login-submit-btn">Увійти</button>
+    <div id="login-error"></div>
+  `;
+  document.getElementById('login-submit-btn').addEventListener('click', handleLogin);
+  holder.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+  });
+}
+
+async function handleLogin() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.innerHTML = '';
+  if (!phone || !password) {
+    errEl.innerHTML = '<div class="error">Введіть телефон і пароль.</div>';
+    return;
+  }
+  const btn = document.getElementById('login-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Вхід...';
+  const { error } = await sb.auth.signInWithPassword({ email: phoneToEmail(phone), password: password });
+  if (error) {
+    errEl.innerHTML = '<div class="error">Невірний телефон або пароль.</div>';
+    btn.disabled = false;
+    btn.textContent = 'Увійти';
+    return;
+  }
+  renderCabinetTab();
+}
+
+async function renderRegisterForm() {
+  const holder = document.getElementById('auth-form-holder');
+  holder.innerHTML = '<div class="empty">Завантаження...</div>';
+  const regions = await getRegions();
+  const options = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+  holder.innerHTML = `
     <div class="field">
       <label>Ім’я та прізвище</label>
       <input type="text" id="reg-name" placeholder="Введіть ім’я">
@@ -906,53 +1108,216 @@ async function renderCabinetTab() {
       <input type="tel" id="reg-phone" placeholder="+38 0__ ___ __ __">
     </div>
     <div class="field">
+      <label>Пароль</label>
+      <input type="password" id="reg-password" placeholder="Не менше 6 символів">
+    </div>
+    <div class="field">
+      <label>Повторіть пароль</label>
+      <input type="password" id="reg-password2" placeholder="Повторіть пароль">
+    </div>
+    <div class="field">
       <label>Регіон</label>
       <select id="reg-region">${options}</select>
     </div>
     <button class="primary-btn" id="reg-submit-btn">Зареєструватися</button>
     <div id="reg-error"></div>
   `;
+  document.getElementById('reg-submit-btn').addEventListener('click', handleRegister);
+}
 
-  document.getElementById('reg-submit-btn').addEventListener('click', async () => {
-    const name = document.getElementById('reg-name').value.trim();
-    const phone = document.getElementById('reg-phone').value.trim();
-    const regionSelect = document.getElementById('reg-region');
-    const regionId = regionSelect.value;
-    const regionName = regionSelect.options[regionSelect.selectedIndex]?.textContent || '';
-    const errEl = document.getElementById('reg-error');
-    errEl.innerHTML = '';
+async function handleRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const phone = document.getElementById('reg-phone').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const password2 = document.getElementById('reg-password2').value;
+  const regionSelect = document.getElementById('reg-region');
+  const regionId = regionSelect.value;
+  const errEl = document.getElementById('reg-error');
+  errEl.innerHTML = '';
 
-    if (!name || !phone || !regionId) {
-      errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
-      return;
+  if (!name || !phone || !password || !regionId) {
+    errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
+    return;
+  }
+  if (password.length < 6) {
+    errEl.innerHTML = '<div class="error">Пароль має містити щонайменше 6 символів.</div>';
+    return;
+  }
+  if (password !== password2) {
+    errEl.innerHTML = '<div class="error">Паролі не збігаються.</div>';
+    return;
+  }
+  if (normalizePhoneDigits(phone).length < 9) {
+    errEl.innerHTML = '<div class="error">Перевірте номер телефону.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('reg-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Реєстрація...';
+
+  const { data: signUpData, error: signUpError } = await sb.auth.signUp({
+    email: phoneToEmail(phone),
+    password: password
+  });
+
+  if (signUpError) {
+    const already = signUpError.message && /registered|exists/i.test(signUpError.message);
+    errEl.innerHTML = '<div class="error">' + (already ? 'Цей номер телефону вже зареєстровано. Спробуйте увійти.' : 'Не вдалося зареєструватися. Спробуйте ще раз.') + '</div>';
+    btn.disabled = false;
+    btn.textContent = 'Зареєструватися';
+    return;
+  }
+
+  const userId = signUpData && signUpData.user ? signUpData.user.id : null;
+  if (!userId) {
+    errEl.innerHTML = '<div class="error">Реєстрацію не завершено. Спробуйте увійти або зверніться до адміністратора.</div>';
+    btn.disabled = false;
+    btn.textContent = 'Зареєструватися';
+    return;
+  }
+
+  const { error: profileError } = await sb.from('profiles').upsert({
+    id: userId,
+    full_name: name,
+    phone: phone,
+    region_id: parseInt(regionId, 10),
+    status: 'pending',
+    price_type: 'regular',
+    role: 'user'
+  }, { onConflict: 'id' });
+
+  if (profileError) {
+    errEl.innerHTML = '<div class="error">Акаунт створено, але не вдалося зберегти дані профілю. Зверніться до адміністратора.</div>';
+    btn.disabled = false;
+    btn.textContent = 'Зареєструватися';
+    return;
+  }
+
+  renderCabinetTab();
+}
+
+/* ---- Авторизований звичайний користувач ---- */
+function renderUserStatus(profile) {
+  const main = document.getElementById('main');
+  const priceLine = profile.status === 'approved' ? '<br>Тип цін: ' + escapeHtml(priceTypeLabel(profile.price_type)) : '';
+  main.innerHTML = `
+    <div class="status-card">
+      <div class="status-card-title">${escapeHtml(statusLabel(profile.status))}</div>
+      <div class="status-card-sub">${escapeHtml(profile.full_name || '')}<br>${escapeHtml(profile.phone || '')}${priceLine}</div>
+    </div>
+    <button class="logout-btn" id="cab-logout-btn">Вийти</button>
+  `;
+  document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  cabinetMode = 'login';
+  renderCabinetTab();
+}
+
+/* ---- Адмін-панель (regional_admin / super_admin) ---- */
+let adminUsersCache = [];
+
+async function renderAdminPanel(profile) {
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="empty">Завантаження...</div>';
+
+  const regions = await getRegions();
+  const regionName = id => { const r = regions.find(x => x.id === id); return r ? r.name : ''; };
+
+  const { data: users, error } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
+  if (error) {
+    main.innerHTML = '<div class="empty">Не вдалося завантажити користувачів.</div><button class="logout-btn" id="cab-logout-btn">Вийти</button>';
+    document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
+    return;
+  }
+
+  adminUsersCache = users || [];
+  const isSuper = profile.role === 'super_admin';
+
+  function userCardHtml(u, isPending) {
+    const badgeClass = 'badge-' + u.status;
+    let actions;
+    if (isPending) {
+      actions = `
+        <div class="user-card-actions">
+          <button type="button" class="approve" data-action="approve" data-id="${u.id}">Підтвердити</button>
+          <button type="button" class="reject" data-action="reject" data-id="${u.id}">Відхилити</button>
+        </div>`;
+    } else {
+      const blockLabel = u.status === 'blocked' ? 'Розблокувати' : 'Заблокувати';
+      const blockAction = u.status === 'blocked' ? 'unblock' : 'block';
+      actions = `
+        <div class="user-card-row">
+          <select data-action="price_type" data-id="${u.id}">
+            <option value="regular" ${u.price_type === 'regular' ? 'selected' : ''}>Стандартна ціна</option>
+            <option value="client" ${u.price_type === 'client' ? 'selected' : ''}>Клієнтська ціна</option>
+            <option value="vip" ${u.price_type === 'vip' ? 'selected' : ''}>VIP ціна</option>
+          </select>
+          ${isSuper ? `<select data-action="role" data-id="${u.id}">
+            <option value="user" ${u.role === 'user' ? 'selected' : ''}>Користувач</option>
+            <option value="regional_admin" ${u.role === 'regional_admin' ? 'selected' : ''}>Регіон. адмін</option>
+            <option value="super_admin" ${u.role === 'super_admin' ? 'selected' : ''}>Супер-адмін</option>
+          </select>` : ''}
+        </div>
+        <div class="user-card-actions">
+          <button type="button" data-action="${blockAction}" data-id="${u.id}">${blockLabel}</button>
+        </div>`;
     }
+    return `
+      <div class="user-card">
+        <div class="user-card-top">
+          <div>
+            <p class="user-card-name">${escapeHtml(u.full_name || '(без імені)')}</p>
+            <p class="user-card-sub">${escapeHtml(u.phone || '')} · ${escapeHtml(regionName(u.region_id))}${!isPending ? ' · ' + escapeHtml(roleLabel(u.role)) : ''}</p>
+          </div>
+          <span class="badge ${badgeClass}">${escapeHtml(statusLabel(u.status))}</span>
+        </div>
+        ${actions}
+      </div>`;
+  }
 
-    const btn = document.getElementById('reg-submit-btn');
-    btn.disabled = true;
-    btn.textContent = 'Надсилання...';
+  const pending = adminUsersCache.filter(u => u.status === 'pending');
+  const others = adminUsersCache.filter(u => u.status !== 'pending');
 
-    const { error } = await sb.from('user_requests').insert({
-      full_name: name, phone: phone, region_id: parseInt(regionId, 10)
-    });
+  let html = '';
+  html += `<div class="admin-section-title">Заявки на розгляді (${pending.length})</div>`;
+  html += pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>';
+  html += `<div class="admin-section-title">Користувачі (${others.length})</div>`;
+  html += '<div class="admin-search"><input type="text" id="admin-search" placeholder="Пошук за іменем або телефоном"></div>';
+  html += '<div id="admin-users-list">' + (others.length ? others.map(u => userCardHtml(u, false)).join('') : '<div class="empty" style="padding:16px;">Користувачів немає</div>') + '</div>';
+  html += '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
 
-    if (error) {
-      errEl.innerHTML = '<div class="error">Не вдалося надіслати заявку. Спробуйте ще раз.</div>';
-      btn.disabled = false;
-      btn.textContent = 'Зареєструватися';
-      return;
-    }
+  main.innerHTML = html;
 
-    localStorage.setItem('sunice_user_request', JSON.stringify({
-      full_name: name, phone: phone, region_name: regionName, status: 'pending'
-    }));
-    renderCabinetTab();
+  document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
+  document.getElementById('admin-search').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase().trim();
+    const filtered = others.filter(u => !q || (u.full_name || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q));
+    document.getElementById('admin-users-list').innerHTML = filtered.length
+      ? filtered.map(u => userCardHtml(u, false)).join('')
+      : '<div class="empty" style="padding:16px;">Нічого не знайдено</div>';
   });
 }
-function getLocalRequest() {
-  try {
-    const raw = localStorage.getItem('sunice_user_request');
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) { return null; }
+
+async function handleAdminAction(action, id, value) {
+  let update = null;
+  if (action === 'approve') update = { status: 'approved' };
+  else if (action === 'reject') update = { status: 'rejected' };
+  else if (action === 'block') update = { status: 'blocked' };
+  else if (action === 'unblock') update = { status: 'approved' };
+  else if (action === 'price_type') update = { price_type: value };
+  else if (action === 'role') update = { role: value };
+  else return;
+
+  const { error } = await sb.from('profiles').update(update).eq('id', id);
+  if (error) {
+    alert('Не вдалося зберегти зміни. Спробуйте ще раз.');
+    return;
+  }
+  renderCabinetTab();
 }
 
 /* ---------- Перемикання вкладок нижнього меню ---------- */
