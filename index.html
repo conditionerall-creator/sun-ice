@@ -1389,12 +1389,15 @@ async function renderAdminPanel(profile) {
 
   function userCardHtml(u, isPending) {
     const badgeClass = 'badge-' + u.status;
+    const canDelete = u.id !== profile.id && (isSuper || (profile.role === 'regional_admin' && u.role !== 'super_admin'));
+    const deleteBtn = canDelete ? `<button type="button" class="reject" data-action="delete" data-id="${u.id}">Видалити</button>` : '';
     let actions;
     if (isPending) {
       actions = `
         <div class="user-card-actions">
           <button type="button" class="approve" data-action="approve" data-id="${u.id}">Підтвердити</button>
           <button type="button" class="reject" data-action="reject" data-id="${u.id}">Відхилити</button>
+          ${deleteBtn}
         </div>`;
     } else {
       const blockLabel = u.status === 'blocked' ? 'Розблокувати' : 'Заблокувати';
@@ -1414,6 +1417,7 @@ async function renderAdminPanel(profile) {
         </div>
         <div class="user-card-actions">
           <button type="button" data-action="${blockAction}" data-id="${u.id}">${blockLabel}</button>
+          ${deleteBtn}
         </div>`;
     }
     return `
@@ -1462,6 +1466,17 @@ async function renderAdminPanel(profile) {
 }
 
 async function handleAdminAction(action, id, value) {
+  if (action === 'delete') {
+    if (!confirm('Видалити цього користувача назавжди? Він зможе зареєструватися заново з тим самим номером. Цю дію не можна скасувати.')) return;
+    const { data, error } = await sb.functions.invoke('admin-delete-user', { body: { user_id: id } });
+    if (error || (data && data.error)) {
+      alert('Не вдалося видалити користувача. Спробуйте ще раз.');
+      return;
+    }
+    renderCabinetTab();
+    return;
+  }
+
   let update = null;
   if (action === 'approve') update = { status: 'approved' };
   else if (action === 'reject') update = { status: 'rejected' };
