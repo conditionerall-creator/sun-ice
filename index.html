@@ -366,6 +366,7 @@
     gap: 8px;
   }
   .promo-upload-title { font-size: 14px; font-weight: 600; margin: 0; }
+  .promo-upload-label { font-size: 12px; color: var(--text-secondary); margin: 2px 0 -4px; }
   .promo-upload-card input[type="text"],
   .promo-upload-card input[type="file"] {
     display: block;
@@ -1202,9 +1203,12 @@ async function renderPromotionsTab() {
 
   const uploadHtml = isSuper ? `
     <div class="promo-upload-card">
-      <p class="promo-upload-title">Додати акцію (PDF з умовами)</p>
+      <p class="promo-upload-title">Додати акцію (PDF з умовами та/або PNG-зображення)</p>
       <input type="text" id="promo-title-input" class="admin-search" placeholder="Назва акції">
+      <label class="promo-upload-label">PDF з умовами (необов'язково)</label>
       <input type="file" id="promo-pdf-input" accept="application/pdf">
+      <label class="promo-upload-label">Зображення PNG (необов'язково)</label>
+      <input type="file" id="promo-image-input" accept="image/png">
       <button type="button" id="promo-upload-btn" class="promo-upload-btn">Завантажити</button>
       <p id="promo-upload-status" class="promo-upload-status"></p>
     </div>` : '';
@@ -1231,41 +1235,48 @@ async function renderPromotionsTab() {
   }
 }
 
+async function uploadPromoFile(file, expectedType, label) {
+  if (file.type !== expectedType) throw new Error(label + ': непідтримуваний формат файлу.');
+  const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const { error: uploadError } = await sb.storage.from('promo-pdfs').upload(fileName, file, {
+    contentType: expectedType,
+    upsert: false
+  });
+  if (uploadError) throw uploadError;
+  const { data: publicUrlData } = sb.storage.from('promo-pdfs').getPublicUrl(fileName);
+  return publicUrlData ? publicUrlData.publicUrl : null;
+}
+
 async function handlePromoUpload() {
   const titleInput = document.getElementById('promo-title-input');
-  const fileInput = document.getElementById('promo-pdf-input');
+  const pdfInput = document.getElementById('promo-pdf-input');
+  const imageInput = document.getElementById('promo-image-input');
   const statusEl = document.getElementById('promo-upload-status');
   const title = (titleInput.value || '').trim();
-  const file = fileInput.files && fileInput.files[0];
+  const pdfFile = pdfInput.files && pdfInput.files[0];
+  const imageFile = imageInput.files && imageInput.files[0];
 
   if (!title) { statusEl.textContent = 'Введіть назву акції.'; return; }
-  if (!file) { statusEl.textContent = 'Виберіть PDF-файл.'; return; }
-  if (file.type !== 'application/pdf') { statusEl.textContent = 'Файл має бути у форматі PDF.'; return; }
+  if (!pdfFile && !imageFile) { statusEl.textContent = 'Виберіть PDF-файл і/або PNG-зображення.'; return; }
 
   statusEl.textContent = 'Завантаження...';
   const btn = document.getElementById('promo-upload-btn');
   btn.disabled = true;
 
   try {
-    const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const { error: uploadError } = await sb.storage.from('promo-pdfs').upload(fileName, file, {
-      contentType: 'application/pdf',
-      upsert: false
-    });
-    if (uploadError) throw uploadError;
-
-    const { data: publicUrlData } = sb.storage.from('promo-pdfs').getPublicUrl(fileName);
-    const pdfUrl = publicUrlData ? publicUrlData.publicUrl : null;
+    const [pdfUrl, imageUrl] = await Promise.all([
+      pdfFile ? uploadPromoFile(pdfFile, 'application/pdf', 'PDF') : Promise.resolve(null),
+      imageFile ? uploadPromoFile(imageFile, 'image/png', 'PNG') : Promise.resolve(null)
+    ]);
 
     const { data: maxRow } = await sb.from('promotions').select('sort_order').order('sort_order', { ascending: false }).limit(1).single();
     const nextSort = maxRow && typeof maxRow.sort_order === 'number' ? maxRow.sort_order + 1 : 1;
 
-    const { error: insertError } = await sb.from('promotions').insert({
-      title,
-      pdf_url: pdfUrl,
-      is_active: true,
-      sort_order: nextSort
-    });
+    const row = { title, is_active: true, sort_order: nextSort };
+    if (pdfUrl) row.pdf_url = pdfUrl;
+    if (imageUrl) row.image_url = imageUrl;
+
+    const { error: insertError } = await sb.from('promotions').insert(row);
     if (insertError) throw insertError;
 
     statusEl.textContent = 'Готово! Акцію додано.';
