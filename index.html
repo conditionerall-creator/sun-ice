@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>Sun-ice</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjogIlN1bi1pY2UiLCAic2hvcnRfbmFtZSI6ICJTdW4taWNlIiwgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsICJzdGFydF91cmwiOiAiLiIsICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNmZmZmZmYiLCAidGhlbWVfY29sb3IiOiAiIzFhMWExYSJ9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sun-ice">
+<meta name="theme-color" content="#0f6e56">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --card: #ffffff;
+    --border: #e5e5e2;
+    --text: #1a1a1a;
+    --text-secondary: #6b6b68;
+    --accent: #0f6e56;
+    --accent-bg: #e1f5ee;
+    --danger: #a32d2d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* Install banner */
+  .install-banner {
+    display: none;
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 14px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    font-size: 13px;
+    align-items: center;
+    gap: 10px;
+  }
+  .install-banner.show { display: flex; }
+  .install-banner-text { flex: 1; line-height: 1.4; }
+  .install-banner button {
+    background: #fff;
+    color: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .install-banner .close-x {
+    background: transparent;
+    color: #fff;
+    font-size: 16px;
+    padding: 4px 6px;
+    font-weight: 400;
+  }
+
+  /* Header */
+  header {
+    padding: calc(16px + env(safe-area-inset-top)) 16px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .install-banner.show ~ .app header { padding-top: 16px; }
+  .header-top { display: flex; align-items: center; gap: 10px; }
+  .back-btn {
+    display: none;
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    color: var(--text);
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0; flex: 1; }
+  .status-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .status-text { font-size: 12px; color: var(--text-secondary); flex: 1; }
+  .icon-btn {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  input[type=file] { display: none; }
+
+  .search-row { margin-top: 10px; display: flex; gap: 8px; }
+  input[type=text] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  select {
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  main { flex: 1; padding: 8px 12px 90px; }
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    max-width: 480px;
+    margin: 0 auto;
+    padding-bottom: env(safe-area-inset-bottom);
+    z-index: 20;
+  }
+  .nav-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 8px 2px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .nav-btn .nav-icon { font-size: 19px; line-height: 1; }
+  .nav-btn.active { color: var(--accent); font-weight: 600; }
+
+  /* Home menu (catalog categories) */
+  .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding-top: 8px;
+  }
+  .menu-tile {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 92px;
+    justify-content: space-between;
+  }
+  .menu-tile:active { background: var(--accent-bg); }
+  .menu-tile-title { font-size: 14px; font-weight: 500; line-height: 1.3; }
+  .menu-tile-icon {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  /* List rows */
+  .row {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .segment-header {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    padding: 14px 6px 6px;
+    border-bottom: 3px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .row-info { min-width: 0; flex: 1; }
+  .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; cursor: pointer; }
+  .row-name:active { opacity: 0.6; }
+  .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 1px; }
+  .row-price { font-size: 16px; font-weight: 600; white-space: nowrap; }
+  .calc-toggle {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .calc-toggle:active { background: var(--accent-bg); }
+  .calc-panel {
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .calc-panel.open { display: flex; }
+  .calc-panel input.calc-input {
+    width: 46px;
+    padding: 5px 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    text-align: center;
+    background: var(--card);
+    color: var(--text);
+  }
+  .calc-result { font-weight: 700; color: var(--accent); }
+  .count { font-size: 12px; color: var(--text-secondary); padding: 8px 2px 4px; }
+
+  .error {
+    background: #fcebeb;
+    color: var(--danger);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-top: 10px;
+  }
+  .warn {
+    background: #faeeda;
+    color: #854f0b;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+
+  /* Branches / contacts */
+  .branch-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .branch-name { font-size: 15px; font-weight: 600; margin: 0 0 8px; }
+  .branch-line { font-size: 13px; color: var(--text-secondary); margin: 4px 0; line-height: 1.4; }
+  .branch-line a { color: var(--accent); text-decoration: none; font-weight: 500; }
+
+  /* Promotions */
+  .promo-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .promo-image { width: 100%; display: block; max-height: 160px; object-fit: cover; }
+  .promo-body { padding: 14px 16px; }
+  .promo-title { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+  .promo-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 6px; }
+  .promo-meta { font-size: 12px; color: var(--accent); font-weight: 500; }
+
+  /* Cabinet */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .primary-btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .primary-btn:disabled { opacity: 0.6; }
+  .status-card {
+    background: var(--accent-bg);
+    border-radius: 14px;
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .status-card-title { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+  .status-card-sub { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+  .link-btn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+<div class="install-banner" id="install-banner">
+  <div class="install-banner-text" id="install-banner-text"></div>
+  <button id="install-action-btn" style="display:none;">Встановити</button>
+  <button class="close-x" id="install-close-btn">✕</button>
+</div>
+<div class="app">
+  <header>
+    <div class="header-top">
+      <div class="back-btn" id="back-btn">←</div>
+      <h1 id="title">Каталог</h1>
+      <div class="icon-btn" id="refresh-icon" title="Оновити прайс" style="display:none;">↻</div>
+    </div>
+    <div class="status-row" id="status-row" style="display:none;">
+      <div class="status-text" id="status-text"></div>
+    </div>
+    <div id="search-block" style="display:none;">
+      <div class="search-row">
+        <input type="text" id="search" placeholder="Пошук за назвою або кодом">
+        <select id="sort">
+          <option value="none">Без сортування</option>
+          <option value="price-asc">Ціна ↑</option>
+          <option value="price-desc">Ціна ↓</option>
+          <option value="name-asc">Назва А-Я</option>
+        </select>
+      </div>
+    </div>
+    <div id="error-block"></div>
+  </header>
+  <main id="main">
+    <div class="empty">Завантаження...</div>
+  </main>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" data-tab="catalog"><span class="nav-icon">🏠</span>Каталог</button>
+  <button class="nav-btn" data-tab="promotions"><span class="nav-icon">🔥</span>Акції</button>
+  <button class="nav-btn" data-tab="cabinet"><span class="nav-icon">👤</span>Кабінет</button>
+  <button class="nav-btn" data-tab="contacts"><span class="nav-icon">📞</span>Контакти</button>
+  <button class="nav-btn" data-tab="info"><span class="nav-icon">ℹ️</span>Інфо</button>
+</nav>
+
+<script>
+/* ==================== НАЛАШТУВАННЯ ==================== */
+const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
+const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
+
+const SHEET_CONFIG = [
+  { name: 'ПОБУТОВІ', label: 'Побутові', highlight: 'series' },
+  { name: 'МУЛЬТИСИСТЕМИ', label: 'Мультисистеми', highlight: 'series' },
+  { name: 'НАПІВПРОМ', label: 'Напівпром', highlight: 'category', baseAdjustPct: 20 },
+  { name: 'GALACTIC', label: 'Galactic', highlight: 'series' },
+  { name: 'Galactic LCAC', label: 'Galactic LCAC', highlight: 'category' }
+];
+/* ======================================================= */
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let currentTab = 'catalog';
+let sheetsData = {};
+let activeSheet = null; // null = меню категорій каталогу
+let priceVersion = null;
+let catalogInitDone = false;
+
+/* ---------- Допоміжні функції парсингу прайсу ---------- */
+const priceKeywordGroups = [
+  ['ціна дилер', 'цена дилер', 'dealer price'],
+  ['роздрібна ціна', 'розничная цена', 'retail price'],
+  ['ціна', 'цена', 'price', 'стоимость']
+];
+const modelKeywords = ['модель', 'маркировка', 'маркування', 'артикул', 'sku', 'model', 'найменування', 'наименование'];
+const internalKeywords = ['внутрішній', 'внутренний', 'indoor'];
+const externalKeywords = ['зовнішній', 'наружный', 'outdoor'];
+const totalSubKeywords = ['комплект', 'всього', 'разом', 'итого', 'total'];
+const categoryStems = ['настінн', 'стельов', 'касетн', 'канальн', 'колонн', 'підлогов', 'підвісн', 'шафов'];
+const PALETTE = ['#dbeafe', '#dcfce7', '#fef9c3', '#fce7f3', '#ede9fe', '#ffedd5', '#ccfbf1', '#fee2e2'];
+
+function norm(v) { return String(v == null ? '' : v).toLowerCase().trim(); }
+function cellContainsAny(v, keywords) {
+  const s = norm(v);
+  if (!s) return false;
+  return keywords.some(k => s.includes(k));
+}
+function parseNumber(val) {
+  if (typeof val === 'number') return isFinite(val) ? val : null;
+  if (!val) return null;
+  const s = String(val).trim();
+  if (!s) return null;
+  const cleaned = s.replace(/\s/g, '').replace(/[^\d.,-]/g, '').replace(',', '.');
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? null : num;
+}
+function detectCurrency(headerText) {
+  const s = norm(headerText);
+  if (s.includes('грн')) return 'грн';
+  if (s.includes('у.е') || s.includes('$')) return '$';
+  if (s.includes('₴')) return '₴';
+  return '';
+}
+function findPriceHeader(rows) {
+  for (const group of priceKeywordGroups) {
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r] || [];
+      for (let c = 0; c < row.length; c++) {
+        if (cellContainsAny(row[c], group)) return { row: r, col: c, text: row[c] };
+      }
+    }
+  }
+  return null;
+}
+function findColumnInRow(row, keywords) {
+  if (!row) return -1;
+  for (let c = 0; c < row.length; c++) {
+    if (cellContainsAny(row[c], keywords)) return c;
+  }
+  return -1;
+}
+function extractSeries(model) {
+  if (!model) return null;
+  const first = model.split(/[\s+]/)[0];
+  const m = first.match(/^[A-ZА-ЯІЇЄ]+-?(\d+)([A-ZА-ЯІЇЄ]+)/i);
+  return m ? m[2].toUpperCase() : null;
+}
+function isCategoryLabel(text) {
+  const s = norm(text);
+  if (!s) return false;
+  return categoryStems.some(stem => s.includes(stem));
+}
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+function parseSheet(rows, highlightMode) {
+  const priceHeader = findPriceHeader(rows);
+  if (!priceHeader) return { items: [], error: 'Не знайдено колонку з ціною' };
+
+  let priceCol = priceHeader.col;
+  let dataStart = priceHeader.row + 1;
+  const nextRow = rows[priceHeader.row + 1];
+  if (nextRow) {
+    for (let c = priceCol; c < nextRow.length; c++) {
+      if (cellContainsAny(nextRow[c], totalSubKeywords)) {
+        priceCol = c;
+        dataStart = priceHeader.row + 2;
+        break;
+      }
+    }
+  }
+
+  const headerRow = rows[priceHeader.row] || [];
+  const headerRowAbove = rows[priceHeader.row - 1] || [];
+  let modelCol = findColumnInRow(headerRow, modelKeywords);
+  if (modelCol === -1) modelCol = findColumnInRow(headerRowAbove, modelKeywords);
+
+  const internalCol = findColumnInRow(headerRow, internalKeywords);
+  const externalCol = findColumnInRow(headerRow, externalKeywords);
+  const currency = detectCurrency(priceHeader.text);
+  const items = [];
+  let currentCategory = null;
+
+  for (let r = dataStart; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const price = parseNumber(row[priceCol]);
+
+    if (price === null && highlightMode === 'category' && modelCol !== -1) {
+      const labelText = String(row[modelCol] || '').trim();
+      const hasInternal = internalCol !== -1 && row[internalCol];
+      const hasExternal = externalCol !== -1 && row[externalCol];
+      if (labelText && !hasInternal && !hasExternal && isCategoryLabel(labelText)) {
+        currentCategory = labelText;
+      }
+    }
+
+    if (price === null) continue;
+
+    let model = modelCol !== -1 ? String(row[modelCol] || '').trim() : '';
+    if (!model && internalCol !== -1) {
+      const parts = [row[internalCol], row[externalCol]].filter(v => v && String(v).trim());
+      model = parts.map(v => String(v).trim()).join(' + ');
+    }
+    if (!model) continue;
+
+    const item = { model, price, currency };
+    if (highlightMode === 'series') item.groupKey = extractSeries(model);
+    else if (highlightMode === 'category') item.groupKey = currentCategory;
+    items.push(item);
+  }
+
+  if (highlightMode) {
+    const colorMap = new Map();
+    items.forEach(it => {
+      if (!it.groupKey) return;
+      if (!colorMap.has(it.groupKey)) colorMap.set(it.groupKey, PALETTE[colorMap.size % PALETTE.length]);
+      it.color = colorMap.get(it.groupKey);
+    });
+  }
+
+  return { items, error: items.length === 0 ? 'Не знайдено рядків з маркуванням і ціною' : null };
+}
+
+function buildSheetsData(wb) {
+  const data = {};
+  const problems = [];
+  SHEET_CONFIG.forEach(cfg => {
+    if (!wb.SheetNames.includes(cfg.name)) {
+      problems.push(cfg.label + ' (вкладку не знайдено у файлі)');
+      return;
+    }
+    const sheet = wb.Sheets[cfg.name];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    const result = parseSheet(rows, cfg.highlight);
+    if (result.items.length > 0) {
+      if (cfg.baseAdjustPct) {
+        const factor = 1 - cfg.baseAdjustPct / 100;
+        result.items.forEach(it => { it.price = it.price * factor; });
+      }
+      data[cfg.name] = result.items;
+    } else {
+      problems.push(cfg.label + (result.error ? ' (' + result.error + ')' : ''));
+    }
+  });
+  return { data, problems };
+}
+
+/* ---------- Кеш прайсу (локально на пристрої) ---------- */
+function loadProcessedCache() {
+  try {
+    const raw = localStorage.getItem('sunice_price_cache');
+    if (!raw) return false;
+    const cached = JSON.parse(raw);
+    if (!cached || !cached.data) return false;
+    sheetsData = cached.data;
+    priceVersion = cached.version || null;
+    setCatalogStatus('Востаннє оновлено: ' + new Date(cached.savedAt).toLocaleString('uk-UA') + (priceVersion ? ' · версія ' + priceVersion : ''));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+function persistProcessedCache(version) {
+  try {
+    localStorage.setItem('sunice_price_cache', JSON.stringify({ data: sheetsData, version, savedAt: Date.now() }));
+  } catch (e) {}
+}
+
+async function checkPriceVersion() {
+  try {
+    const { data, error } = await sb.from('price_meta').select('version, updated_at').eq('id', 1).single();
+    if (error || !data) return null;
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function downloadAndParsePrice() {
+  const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const buf = await res.arrayBuffer();
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+  const { data, problems } = buildSheetsData(wb);
+  sheetsData = data;
+  const errBlock = document.getElementById('error-block');
+  errBlock.innerHTML = problems.length
+    ? '<div class="warn">Не вдалося розпізнати: ' + escapeHtml(problems.join(', ')) + '</div>'
+    : '';
+}
+
+function setCatalogStatus(text) {
+  const row = document.getElementById('status-row');
+  const el = document.getElementById('status-text');
+  if (!text) { row.style.display = 'none'; return; }
+  row.style.display = 'flex';
+  el.textContent = text;
+}
+
+async function initCatalog() {
+  document.getElementById('refresh-icon').style.display = 'flex';
+  const hadCache = loadProcessedCache();
+  if (hadCache) {
+    renderCatalogView();
+    return;
+  }
+  setCatalogStatus('Завантаження прайсу...');
+  renderCatalogView();
+  try {
+    const meta = await checkPriceVersion();
+    await downloadAndParsePrice();
+    priceVersion = meta ? meta.version : 1;
+    persistProcessedCache(priceVersion);
+    setCatalogStatus('Завантажено: ' + new Date().toLocaleString('uk-UA') + (meta ? ' · версія ' + priceVersion : ''));
+  } catch (e) {
+    setCatalogStatus('Немає підключення до інтернету. Прайс ще не завантажено.');
+  }
+  renderCatalogView();
+}
+
+async function handleRefreshClick() {
+  setCatalogStatus('Перевірка оновлень...');
+  const meta = await checkPriceVersion();
+  if (!meta) {
+    setCatalogStatus('Не вдалося перевірити оновлення. Перевірте інтернет-з’єднання.');
+    return;
+  }
+  if (priceVersion !== null && meta.version === priceVersion) {
+    setCatalogStatus('Прайс актуальний (версія ' + meta.version + ')');
+    return;
+  }
+  setCatalogStatus('Завантаження нового прайсу...');
+  try {
+    await downloadAndParsePrice();
+    priceVersion = meta.version;
+    persistProcessedCache(priceVersion);
+    setCatalogStatus('Оновлено: ' + new Date().toLocaleString('uk-UA') + ' · версія ' + priceVersion);
+    renderCatalogView();
+  } catch (e) {
+    setCatalogStatus('Немає підключення. Відображається остання завантажена версія прайсу.');
+  }
+}
+
+/* ---------- Відображення каталогу ---------- */
+function renderCatalogView() {
+  const backBtn = document.getElementById('back-btn');
+  const title = document.getElementById('title');
+  const searchBlock = document.getElementById('search-block');
+
+  if (activeSheet === null) {
+    backBtn.style.display = 'none';
+    title.textContent = 'Каталог';
+    searchBlock.style.display = 'none';
+    renderCatalogMenu();
+  } else {
+    backBtn.style.display = 'flex';
+    const cfg = SHEET_CONFIG.find(c => c.name === activeSheet);
+    title.textContent = cfg ? cfg.label : activeSheet;
+    searchBlock.style.display = 'block';
+    document.getElementById('search').value = '';
+    document.getElementById('sort').value = 'none';
+    renderCatalogList();
+  }
+}
+
+function renderCatalogMenu() {
+  const main = document.getElementById('main');
+  const hasData = Object.keys(sheetsData).length > 0;
+  if (!hasData) {
+    main.innerHTML = '<div class="empty">Прайс ще не завантажено.</div>';
+    return;
+  }
+  const tiles = SHEET_CONFIG.filter(cfg => sheetsData[cfg.name]).map(cfg => {
+    const initials = cfg.label.slice(0, 2).toUpperCase();
+    return `
+      <div class="menu-tile" data-sheet="${escapeHtml(cfg.name)}">
+        <div class="menu-tile-icon">${escapeHtml(initials)}</div>
+        <div class="menu-tile-title">${escapeHtml(cfg.label)}</div>
+      </div>`;
+  }).join('');
+  main.innerHTML = '<div class="menu-grid">' + tiles + '</div>';
+  main.querySelectorAll('.menu-tile').forEach(el => {
+    el.addEventListener('click', () => {
+      const sheetName = el.getAttribute('data-sheet');
+      history.pushState({ tab: 'catalog', sheet: sheetName }, '', '#' + encodeURIComponent(sheetName));
+      activeSheet = sheetName;
+      renderCatalogView();
+    });
+  });
+}
+
+function renderCatalogList() {
+  const search = document.getElementById('search').value.toLowerCase().trim();
+  const sort = document.getElementById('sort').value;
+  const main = document.getElementById('main');
+
+  const allItems = sheetsData[activeSheet] || [];
+  let filtered = allItems.filter(it => !search || it.model.toLowerCase().includes(search));
+
+  if (sort === 'price-asc') filtered.sort((a, b) => a.price - b.price);
+  else if (sort === 'price-desc') filtered.sort((a, b) => b.price - a.price);
+  else if (sort === 'name-asc') filtered.sort((a, b) => a.model.localeCompare(b.model, 'uk'));
+
+  const countHtml = '<div class="count">Знайдено: ' + filtered.length + '</div>';
+  const showSegments = sort === 'none';
+  let lastKey = null;
+
+  const rowsHtml = filtered.map(it => {
+    let header = '';
+    if (showSegments && it.groupKey && it.groupKey !== lastKey) {
+      lastKey = it.groupKey;
+      header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(it.groupKey)}</div>`;
+    } else if (showSegments && !it.groupKey) {
+      lastKey = null;
+    }
+    const priceStr = Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '');
+    return header + `
+      <div class="row" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
+        <div class="row-info">
+          <p class="row-name" data-model="${escapeHtml(it.model)}">${escapeHtml(it.model)}</p>
+          <div class="calc-panel" data-price="${it.price}">
+            <span>${priceStr} −</span>
+            <input type="number" class="calc-input" min="0" max="99" placeholder="0" inputmode="numeric">
+            <span>% =</span>
+            <span class="calc-result">${priceStr}</span>
+          </div>
+        </div>
+        <div class="row-right">
+          <div class="row-price">${priceStr}</div>
+          <button class="calc-toggle" type="button" aria-label="Розрахувати знижку">%</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  main.innerHTML = countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
+}
+
+document.getElementById('main').addEventListener('click', function(e) {
+  if (currentTab !== 'catalog') return;
+  const nameEl = e.target.closest('.row-name');
+  if (nameEl) {
+    const model = nameEl.getAttribute('data-model');
+    if (model) window.open('https://www.google.com/search?q=' + encodeURIComponent(model), '_blank');
+    return;
+  }
+  const toggleBtn = e.target.closest('.calc-toggle');
+  if (toggleBtn) {
+    const rowEl = toggleBtn.closest('.row');
+    const panel = rowEl.querySelector('.calc-panel');
+    if (panel) {
+      const showing = panel.classList.toggle('open');
+      if (showing) {
+        const input = panel.querySelector('.calc-input');
+        if (input) input.focus();
+      }
+    }
+    return;
+  }
+});
+document.getElementById('main').addEventListener('input', function(e) {
+  if (!e.target.classList.contains('calc-input')) return;
+  const panel = e.target.closest('.calc-panel');
+  const price = parseFloat(panel.getAttribute('data-price'));
+  let pct = parseFloat(e.target.value);
+  if (isNaN(pct) || pct < 0) pct = 0;
+  if (pct > 99) pct = 99;
+  const result = Math.round(price * (1 - pct / 100));
+  const resultEl = panel.querySelector('.calc-result');
+  if (resultEl) resultEl.textContent = result.toLocaleString('uk-UA');
+});
+document.getElementById('search').addEventListener('input', renderCatalogList);
+document.getElementById('sort').addEventListener('change', renderCatalogList);
+document.getElementById('refresh-icon').addEventListener('click', handleRefreshClick);
+document.getElementById('back-btn').addEventListener('click', function() { history.back(); });
+
+window.addEventListener('popstate', function(event) {
+  const state = event.state;
+  if (state && state.tab) {
+    switchTab(state.tab, false);
+    if (state.tab === 'catalog') activeSheet = state.sheet || null;
+    renderCurrentTab();
+  } else {
+    activeSheet = null;
+    if (currentTab === 'catalog') renderCatalogView();
+  }
+});
+
+/* ---------- Акції ---------- */
+async function renderPromotionsTab() {
+  document.getElementById('title').textContent = 'Акції';
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="empty">Завантаження...</div>';
+  const { data, error } = await sb.from('promotions').select('*').eq('is_active', true).order('sort_order');
+  if (error) {
+    main.innerHTML = '<div class="empty">Не вдалося завантажити акції. Перевірте з’єднання з інтернетом.</div>';
+    return;
+  }
+  if (!data || data.length === 0) {
+    main.innerHTML = '<div class="empty">Наразі активних акцій немає.<br>Заходьте пізніше!</div>';
+    return;
+  }
+  main.innerHTML = data.map(p => `
+    <div class="promo-card">
+      ${p.image_url ? `<img class="promo-image" src="${escapeHtml(p.image_url)}" alt="">` : ''}
+      <div class="promo-body">
+        <p class="promo-title">${escapeHtml(p.title)}</p>
+        ${p.description ? `<p class="promo-desc">${escapeHtml(p.description)}</p>` : ''}
+        ${p.conditions ? `<p class="promo-desc">${escapeHtml(p.conditions)}</p>` : ''}
+        ${p.valid_until ? `<p class="promo-meta">Діє до ${escapeHtml(p.valid_until)}</p>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---------- Контакти ---------- */
+async function renderContactsTab() {
+  document.getElementById('title').textContent = 'Контакти';
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="empty">Завантаження...</div>';
+  const { data, error } = await sb.from('branches').select('*').order('sort_order');
+  if (error || !data) {
+    main.innerHTML = '<div class="empty">Не вдалося завантажити контакти. Перевірте з’єднання з інтернетом.</div>';
+    return;
+  }
+  main.innerHTML = data.map(b => `
+    <div class="branch-card">
+      <p class="branch-name">${escapeHtml(b.name)}</p>
+      ${b.address ? `<p class="branch-line">📍 ${escapeHtml(b.address)}</p>` : ''}
+      ${(b.phones || []).map(p => `<p class="branch-line">📞 <a href="tel:${escapeHtml(p.replace(/[^\d+]/g, ''))}">${escapeHtml(p)}</a></p>`).join('')}
+      ${b.email ? `<p class="branch-line">✉️ <a href="mailto:${escapeHtml(b.email)}">${escapeHtml(b.email)}</a></p>` : ''}
+    </div>
+  `).join('');
+}
+
+/* ---------- Тех. інформація ---------- */
+function renderInfoTab() {
+  document.getElementById('title').textContent = 'Тех. інформація';
+  document.getElementById('main').innerHTML =
+    '<div class="empty">Розділ у розробці.<br>Найближчим часом тут з’являться інструкції, каталоги, технічні характеристики, сертифікати та інші документи.</div>';
+}
+
+/* ---------- Кабінет ---------- */
+async function renderCabinetTab() {
+  document.getElementById('title').textContent = 'Кабінет';
+  const main = document.getElementById('main');
+  const saved = getLocalRequest();
+
+  if (saved) {
+    const statusText = {
+      pending: 'Заявка перебуває на розгляді',
+      approved: 'Підтверджено',
+      rejected: 'Відхилено',
+      blocked: 'Заблоковано'
+    }[saved.status] || 'Заявка перебуває на розгляді';
+    main.innerHTML = `
+      <div class="status-card">
+        <div class="status-card-title">${escapeHtml(statusText)}</div>
+        <div class="status-card-sub">${escapeHtml(saved.full_name)}<br>${escapeHtml(saved.phone)}<br>${escapeHtml(saved.region_name || '')}</div>
+      </div>
+      <button class="link-btn" id="reset-request-btn">Подати нову заявку</button>
+    `;
+    document.getElementById('reset-request-btn').addEventListener('click', () => {
+      localStorage.removeItem('sunice_user_request');
+      renderCabinetTab();
+    });
+    return;
+  }
+
+  main.innerHTML = '<div class="empty">Завантаження...</div>';
+  const { data: regions } = await sb.from('regions').select('*').order('sort_order');
+  const options = (regions || []).map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+
+  main.innerHTML = `
+    <div class="field">
+      <label>Ім’я та прізвище</label>
+      <input type="text" id="reg-name" placeholder="Введіть ім’я">
+    </div>
+    <div class="field">
+      <label>Номер телефону</label>
+      <input type="tel" id="reg-phone" placeholder="+38 0__ ___ __ __">
+    </div>
+    <div class="field">
+      <label>Регіон</label>
+      <select id="reg-region">${options}</select>
+    </div>
+    <button class="primary-btn" id="reg-submit-btn">Зареєструватися</button>
+    <div id="reg-error"></div>
+  `;
+
+  document.getElementById('reg-submit-btn').addEventListener('click', async () => {
+    const name = document.getElementById('reg-name').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
+    const regionSelect = document.getElementById('reg-region');
+    const regionId = regionSelect.value;
+    const regionName = regionSelect.options[regionSelect.selectedIndex]?.textContent || '';
+    const errEl = document.getElementById('reg-error');
+    errEl.innerHTML = '';
+
+    if (!name || !phone || !regionId) {
+      errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
+      return;
+    }
+
+    const btn = document.getElementById('reg-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Надсилання...';
+
+    const { error } = await sb.from('user_requests').insert({
+      full_name: name, phone: phone, region_id: parseInt(regionId, 10)
+    });
+
+    if (error) {
+      errEl.innerHTML = '<div class="error">Не вдалося надіслати заявку. Спробуйте ще раз.</div>';
+      btn.disabled = false;
+      btn.textContent = 'Зареєструватися';
+      return;
+    }
+
+    localStorage.setItem('sunice_user_request', JSON.stringify({
+      full_name: name, phone: phone, region_name: regionName, status: 'pending'
+    }));
+    renderCabinetTab();
+  });
+}
+function getLocalRequest() {
+  try {
+    const raw = localStorage.getItem('sunice_user_request');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+/* ---------- Перемикання вкладок нижнього меню ---------- */
+function switchTab(tab, pushHistory) {
+  currentTab = tab;
+  activeSheet = null;
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+  });
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('search-block').style.display = 'none';
+  document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
+  document.getElementById('status-row').style.display = 'none';
+  document.getElementById('error-block').innerHTML = '';
+  if (pushHistory) {
+    history.pushState({ tab: tab }, '', '#' + tab);
+  }
+}
+
+function renderCurrentTab() {
+  if (currentTab === 'catalog') {
+    if (!catalogInitDone) { catalogInitDone = true; initCatalog(); }
+    else renderCatalogView();
+  } else if (currentTab === 'promotions') renderPromotionsTab();
+  else if (currentTab === 'cabinet') renderCabinetTab();
+  else if (currentTab === 'contacts') renderContactsTab();
+  else if (currentTab === 'info') renderInfoTab();
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tab = btn.getAttribute('data-tab');
+    if (tab === currentTab && activeSheet === null) return;
+    switchTab(tab, true);
+    renderCurrentTab();
+  });
+});
+
+/* ---------- Встановлення на головний екран ---------- */
+let deferredInstallPrompt = null;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const bannerDismissed = localStorage.getItem('sunice_install_dismissed') === '1';
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  if (!isStandalone && !bannerDismissed) showInstallBanner('android');
+});
+
+if (isIOS && !isStandalone && !bannerDismissed) {
+  showInstallBanner('ios');
+}
+
+function showInstallBanner(platform) {
+  const banner = document.getElementById('install-banner');
+  const textEl = document.getElementById('install-banner-text');
+  const actionBtn = document.getElementById('install-action-btn');
+  if (platform === 'android') {
+    textEl.textContent = 'Встановіть застосунок Sun-ice на головний екран';
+    actionBtn.style.display = 'inline-block';
+    actionBtn.onclick = async () => {
+      banner.classList.remove('show');
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+      }
+    };
+  } else {
+    textEl.textContent = 'Щоб встановити застосунок: натисніть «Поділитися» ⬆ внизу екрана → «На екран Домой»';
+    actionBtn.style.display = 'none';
+  }
+  banner.classList.add('show');
+}
+document.getElementById('install-close-btn').addEventListener('click', () => {
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('sunice_install_dismissed', '1');
+});
+
+/* ---------- Старт ---------- */
+history.replaceState({ tab: 'catalog' }, '', '#catalog');
+renderCurrentTab();
+</script>
+</body>
+</html>
