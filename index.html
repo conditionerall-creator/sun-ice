@@ -182,6 +182,41 @@
   }
   .menu-tile:active { background: var(--accent-bg); }
   .menu-tile-title { font-size: 14px; font-weight: 500; line-height: 1.3; }
+  .menu-tile-empty { cursor: default; opacity: 0.55; }
+  .menu-tile-empty:active { background: var(--card); }
+  .menu-tile-soon {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--text-secondary);
+    align-self: flex-start;
+    background: var(--bg);
+    border-radius: 6px;
+    padding: 2px 7px;
+  }
+  /* Перемикач бренду MHI / GAL у прайсі */
+  .brand-toggle {
+    display: flex;
+    gap: 6px;
+    padding: 4px 0 12px;
+  }
+  .brand-toggle-btn {
+    flex: 1;
+    padding: 9px 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .brand-toggle-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
   .menu-tile-icon {
     width: 32px; height: 32px;
     border-radius: 9px;
@@ -194,6 +229,7 @@
 
   /* List rows */
   .row {
+    position: relative;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -203,6 +239,15 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: 10px;
+  }
+  /* Клікабельна зона для пошуку в Google — тільки ліва чверть рядка (не весь рядок і не весь напис) */
+  .row-click-zone {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 25%;
+    min-width: 60px;
+    cursor: pointer;
+    z-index: 1;
   }
   .segment-header {
     text-align: center;
@@ -216,8 +261,8 @@
     margin-bottom: 8px;
   }
   .row-info { min-width: 0; flex: 1; }
-  .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; cursor: pointer; }
-  .row-name:active { opacity: 0.6; }
+  .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; position: relative; z-index: 0; }
+  .row-click-zone:active ~ .row-info .row-name { opacity: 0.6; }
   .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 1px; }
   .row-price { font-size: 16px; font-weight: 600; white-space: nowrap; }
   .calc-toggle {
@@ -300,6 +345,48 @@
   .promo-title { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
   .promo-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 6px; }
   .promo-meta { font-size: 12px; color: var(--accent); font-weight: 500; }
+  .promo-pdf-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .promo-upload-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .promo-upload-title { font-size: 14px; font-weight: 600; margin: 0; }
+  .promo-upload-card input[type="text"],
+  .promo-upload-card input[type="file"] {
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 13px;
+    color: var(--text);
+    font-family: inherit;
+  }
+  .promo-upload-btn {
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .promo-upload-btn:disabled { opacity: 0.6; cursor: default; }
+  .promo-upload-status { font-size: 12px; color: var(--text-secondary); margin: 0; min-height: 14px; }
 
   /* Cabinet */
   .field { margin-bottom: 14px; }
@@ -549,12 +636,32 @@ const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
 
-const SHEET_CONFIG = [
-  { name: 'ПОБУТОВІ', label: 'Побутові', highlight: 'series' },
-  { name: 'МУЛЬТИСИСТЕМИ', label: 'Мультисистеми', highlight: 'series' },
-  { name: 'НАПІВПРОМ', label: 'Напівпром', highlight: 'category', baseAdjustPct: 20 },
-  { name: 'GALACTIC', label: 'Galactic', highlight: 'series' },
-  { name: 'Galactic LCAC', label: 'Galactic LCAC', highlight: 'category' }
+/* Плитки головного екрану каталогу, у потрібному порядку.
+   Плитка з "mhi"/"gal" — активна (є перемикач брендів MHI/GAL).
+   Плитка без них — поки не наповнена, показується сірою "Скоро". */
+const CATALOG_TILES = [
+  {
+    id: 'split', label: 'Спліт-системи',
+    mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series' },
+    gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before' }
+  },
+  {
+    id: 'multisplit', label: 'Мульти спліт-системи',
+    mhi: { key: 'multisplit_mhi', sheet: 'МУЛЬТИСИСТЕМИ', highlight: 'series' },
+    gal: { key: 'multisplit_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'after' }
+  },
+  {
+    id: 'semi', label: 'Напівпромислові спліт-системи',
+    mhi: { key: 'semi_mhi', sheet: 'НАПІВПРОМ', highlight: 'category', baseAdjustPct: 20 },
+    gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category' }
+  },
+  { id: 'vrf', label: 'Мультизональні VRF' },
+  { id: 'ccb', label: 'Компресорно-конденсаторні блоки' },
+  { id: 'heatpumps', label: 'Теплові насоси' },
+  { id: 'chillers', label: 'Чиллери' },
+  { id: 'ventilation', label: 'Вентиляційне обладнання' },
+  { id: 'aircurtains', label: 'Повітряні завіси' },
+  { id: 'convectors', label: 'Конвектори та обігрівачі' }
 ];
 
 /* ЖАРТ-НАПИСИ (тимчасово) — щоб прибрати жарти, просто постав false */
@@ -569,7 +676,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let currentTab = 'catalog';
 let sheetsData = {};
-let activeSheet = null; // null = меню категорій каталогу
+let activeTile = null; // null = меню категорій каталогу
+let activeBrand = 'mhi'; // 'mhi' | 'gal' — активний бренд у плитці з перемикачем
 let priceVersion = null;
 let catalogInitDone = false;
 
@@ -710,27 +818,40 @@ function parseSheet(rows, highlightMode) {
   return { items, error: items.length === 0 ? 'Не знайдено рядків з маркуванням і ціною' : null };
 }
 
+function sliceBySplitMarker(rows, marker, side) {
+  const idx = rows.findIndex(row => (row || []).some(cell => norm(cell).includes(marker)));
+  if (idx === -1) return rows; // маркер не знайдено — повертаємо все як є
+  return side === 'after' ? rows.slice(idx) : rows.slice(0, idx);
+}
+
 function buildSheetsData(wb) {
   const data = {};
   const problems = [];
-  SHEET_CONFIG.forEach(cfg => {
-    if (!wb.SheetNames.includes(cfg.name)) {
-      problems.push(cfg.label + ' (вкладку не знайдено у файлі)');
-      return;
-    }
-    const sheet = wb.Sheets[cfg.name];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-    const result = parseSheet(rows, cfg.highlight);
-    if (result.items.length > 0) {
-      if (cfg.baseAdjustPct) {
-        const factor = 1 - cfg.baseAdjustPct / 100;
-        result.items.forEach(it => { it.price = it.price * factor; });
+
+  CATALOG_TILES.forEach(tile => {
+    ['mhi', 'gal'].forEach(brand => {
+      const cfg = tile[brand];
+      if (!cfg) return;
+      if (!wb.SheetNames.includes(cfg.sheet)) {
+        problems.push(tile.label + ' / ' + brand.toUpperCase() + ' (вкладку "' + cfg.sheet + '" не знайдено у файлі)');
+        return;
       }
-      data[cfg.name] = result.items;
-    } else {
-      problems.push(cfg.label + (result.error ? ' (' + result.error + ')' : ''));
-    }
+      const sheet = wb.Sheets[cfg.sheet];
+      let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      if (cfg.splitMarker) rows = sliceBySplitMarker(rows, cfg.splitMarker, cfg.splitSide);
+      const result = parseSheet(rows, cfg.highlight);
+      if (result.items.length > 0) {
+        if (cfg.baseAdjustPct) {
+          const factor = 1 - cfg.baseAdjustPct / 100;
+          result.items.forEach(it => { it.price = it.price * factor; });
+        }
+        data[cfg.key] = result.items;
+      } else {
+        problems.push(tile.label + ' / ' + brand.toUpperCase() + (result.error ? ' (' + result.error + ')' : ''));
+      }
+    });
   });
+
   return { data, problems };
 }
 
@@ -831,20 +952,27 @@ async function handleRefreshClick() {
 }
 
 /* ---------- Відображення каталогу ---------- */
+function tileHasAnyData(tile) {
+  return (tile.mhi && sheetsData[tile.mhi.key]) || (tile.gal && sheetsData[tile.gal.key]);
+}
+function tileActiveCfg(tile) {
+  return tile[activeBrand] || tile.mhi || tile.gal || null;
+}
+
 function renderCatalogView() {
   const backBtn = document.getElementById('back-btn');
   const title = document.getElementById('title');
   const searchBlock = document.getElementById('search-block');
 
-  if (activeSheet === null) {
+  if (activeTile === null) {
     backBtn.style.display = 'none';
     title.textContent = 'Каталог';
     searchBlock.style.display = 'none';
     renderCatalogMenu();
   } else {
     backBtn.style.display = 'flex';
-    const cfg = SHEET_CONFIG.find(c => c.name === activeSheet);
-    title.textContent = cfg ? cfg.label : activeSheet;
+    const tile = CATALOG_TILES.find(t => t.id === activeTile);
+    title.textContent = tile ? tile.label : activeTile;
     searchBlock.style.display = 'block';
     document.getElementById('search').value = '';
     document.getElementById('sort').value = 'none';
@@ -859,20 +987,30 @@ function renderCatalogMenu() {
     main.innerHTML = '<div class="empty">Прайс ще не завантажено.</div>';
     return;
   }
-  const tiles = SHEET_CONFIG.filter(cfg => sheetsData[cfg.name]).map(cfg => {
-    const initials = cfg.label.slice(0, 2).toUpperCase();
+  const tiles = CATALOG_TILES.map(tile => {
+    const initials = tile.label.slice(0, 2).toUpperCase();
+    const filled = tileHasAnyData(tile);
+    if (!filled) {
+      return `
+        <div class="menu-tile menu-tile-empty">
+          <div class="menu-tile-icon">${escapeHtml(initials)}</div>
+          <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
+          <div class="menu-tile-soon">Скоро</div>
+        </div>`;
+    }
     return `
-      <div class="menu-tile" data-sheet="${escapeHtml(cfg.name)}">
+      <div class="menu-tile" data-tile="${escapeHtml(tile.id)}">
         <div class="menu-tile-icon">${escapeHtml(initials)}</div>
-        <div class="menu-tile-title">${escapeHtml(cfg.label)}</div>
+        <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
       </div>`;
   }).join('');
   main.innerHTML = '<div class="menu-grid">' + tiles + '</div>';
-  main.querySelectorAll('.menu-tile').forEach(el => {
+  main.querySelectorAll('.menu-tile[data-tile]').forEach(el => {
     el.addEventListener('click', () => {
-      const sheetName = el.getAttribute('data-sheet');
-      history.pushState({ tab: 'catalog', sheet: sheetName }, '', '#' + encodeURIComponent(sheetName));
-      activeSheet = sheetName;
+      const tileId = el.getAttribute('data-tile');
+      history.pushState({ tab: 'catalog', tile: tileId }, '', '#' + encodeURIComponent(tileId));
+      activeTile = tileId;
+      activeBrand = 'mhi';
       renderCatalogView();
     });
   });
@@ -883,7 +1021,25 @@ function renderCatalogList() {
   const sort = document.getElementById('sort').value;
   const main = document.getElementById('main');
 
-  const allItems = sheetsData[activeSheet] || [];
+  const tile = CATALOG_TILES.find(t => t.id === activeTile);
+  if (!tile) { main.innerHTML = '<div class="empty">Нічого не знайдено</div>'; return; }
+
+  const hasBoth = !!(tile.mhi && tile.gal);
+  const cfg = tileActiveCfg(tile);
+  const toggleHtml = hasBoth ? `
+    <div class="brand-toggle">
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
+    </div>` : '';
+
+  const allItems = cfg ? (sheetsData[cfg.key] || []) : [];
+
+  if (!cfg || allItems.length === 0) {
+    main.innerHTML = toggleHtml + '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+    attachBrandToggleHandlers(main);
+    return;
+  }
+
   let filtered = allItems.filter(it => !search || it.model.toLowerCase().includes(search));
 
   if (sort === 'price-asc') filtered.sort((a, b) => a.price - b.price);
@@ -905,8 +1061,9 @@ function renderCatalogList() {
     const priceStr = Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '');
     return header + `
       <div class="row" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
+        <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
         <div class="row-info">
-          <p class="row-name" data-model="${escapeHtml(it.model)}">${escapeHtml(it.model)}</p>
+          <p class="row-name">${escapeHtml(it.model)}</p>
           <div class="calc-panel" data-price="${it.price}">
             <span>${priceStr} −</span>
             <input type="number" class="calc-input" min="0" max="99" placeholder="0" inputmode="numeric">
@@ -922,14 +1079,26 @@ function renderCatalogList() {
     `;
   }).join('');
 
-  main.innerHTML = countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
+  main.innerHTML = toggleHtml + countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
+  attachBrandToggleHandlers(main);
+}
+
+function attachBrandToggleHandlers(main) {
+  main.querySelectorAll('.brand-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const brand = btn.getAttribute('data-brand');
+      if (brand === activeBrand) return;
+      activeBrand = brand;
+      renderCatalogList();
+    });
+  });
 }
 
 document.getElementById('main').addEventListener('click', function(e) {
   if (currentTab !== 'catalog') return;
-  const nameEl = e.target.closest('.row-name');
-  if (nameEl) {
-    const model = nameEl.getAttribute('data-model');
+  const zoneEl = e.target.closest('.row-click-zone');
+  if (zoneEl) {
+    const model = zoneEl.getAttribute('data-model');
     if (model) window.open('https://www.google.com/search?q=' + encodeURIComponent(model), '_blank');
     return;
   }
@@ -988,29 +1157,56 @@ window.addEventListener('popstate', function(event) {
   const state = event.state;
   if (state && state.tab) {
     switchTab(state.tab, false);
-    if (state.tab === 'catalog') activeSheet = state.sheet || null;
+    if (state.tab === 'catalog') { activeTile = state.tile || null; activeBrand = 'mhi'; }
     renderCurrentTab();
   } else {
-    activeSheet = null;
+    activeTile = null;
     if (currentTab === 'catalog') renderCatalogView();
   }
 });
 
 /* ---------- Акції ---------- */
+async function getCurrentProfileRole() {
+  try {
+    const { data: sessionData } = await sb.auth.getSession();
+    const session = sessionData ? sessionData.session : null;
+    if (!session) return null;
+    const { data: profile } = await sb.from('profiles').select('role').eq('id', session.user.id).single();
+    return profile ? profile.role : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 async function renderPromotionsTab() {
   document.getElementById('title').textContent = 'Акції';
   const main = document.getElementById('main');
   main.innerHTML = '<div class="empty">Завантаження...</div>';
-  const { data, error } = await sb.from('promotions').select('*').eq('is_active', true).order('sort_order');
+
+  const [role, promoResult] = await Promise.all([
+    getCurrentProfileRole(),
+    sb.from('promotions').select('*').eq('is_active', true).order('sort_order')
+  ]);
+  const { data, error } = promoResult;
+  const isSuper = role === 'super_admin';
+
   if (error) {
     main.innerHTML = '<div class="empty">Не вдалося завантажити акції. Перевірте з’єднання з інтернетом.</div>';
     return;
   }
-  if (!data || data.length === 0) {
-    main.innerHTML = '<div class="empty">Наразі активних акцій немає.<br>Заходьте пізніше!</div>';
-    return;
-  }
-  main.innerHTML = data.map(p => `
+
+  const uploadHtml = isSuper ? `
+    <div class="promo-upload-card">
+      <p class="promo-upload-title">Додати акцію (PDF з умовами)</p>
+      <input type="text" id="promo-title-input" class="admin-search" placeholder="Назва акції">
+      <input type="file" id="promo-pdf-input" accept="application/pdf">
+      <button type="button" id="promo-upload-btn" class="promo-upload-btn">Завантажити</button>
+      <p id="promo-upload-status" class="promo-upload-status"></p>
+    </div>` : '';
+
+  const cardsHtml = (!data || data.length === 0)
+    ? '<div class="empty">Наразі активних акцій немає.<br>Заходьте пізніше!</div>'
+    : data.map(p => `
     <div class="promo-card">
       ${p.image_url ? `<img class="promo-image" src="${escapeHtml(p.image_url)}" alt="">` : ''}
       <div class="promo-body">
@@ -1018,9 +1214,61 @@ async function renderPromotionsTab() {
         ${p.description ? `<p class="promo-desc">${escapeHtml(p.description)}</p>` : ''}
         ${p.conditions ? `<p class="promo-desc">${escapeHtml(p.conditions)}</p>` : ''}
         ${p.valid_until ? `<p class="promo-meta">Діє до ${escapeHtml(p.valid_until)}</p>` : ''}
+        ${p.pdf_url ? `<a class="promo-pdf-link" href="${escapeHtml(p.pdf_url)}" target="_blank" rel="noopener">📄 Умови акції (PDF)</a>` : ''}
       </div>
     </div>
   `).join('');
+
+  main.innerHTML = uploadHtml + cardsHtml;
+
+  if (isSuper) {
+    document.getElementById('promo-upload-btn').addEventListener('click', handlePromoUpload);
+  }
+}
+
+async function handlePromoUpload() {
+  const titleInput = document.getElementById('promo-title-input');
+  const fileInput = document.getElementById('promo-pdf-input');
+  const statusEl = document.getElementById('promo-upload-status');
+  const title = (titleInput.value || '').trim();
+  const file = fileInput.files && fileInput.files[0];
+
+  if (!title) { statusEl.textContent = 'Введіть назву акції.'; return; }
+  if (!file) { statusEl.textContent = 'Виберіть PDF-файл.'; return; }
+  if (file.type !== 'application/pdf') { statusEl.textContent = 'Файл має бути у форматі PDF.'; return; }
+
+  statusEl.textContent = 'Завантаження...';
+  const btn = document.getElementById('promo-upload-btn');
+  btn.disabled = true;
+
+  try {
+    const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const { error: uploadError } = await sb.storage.from('promo-pdfs').upload(fileName, file, {
+      contentType: 'application/pdf',
+      upsert: false
+    });
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = sb.storage.from('promo-pdfs').getPublicUrl(fileName);
+    const pdfUrl = publicUrlData ? publicUrlData.publicUrl : null;
+
+    const { data: maxRow } = await sb.from('promotions').select('sort_order').order('sort_order', { ascending: false }).limit(1).single();
+    const nextSort = maxRow && typeof maxRow.sort_order === 'number' ? maxRow.sort_order + 1 : 1;
+
+    const { error: insertError } = await sb.from('promotions').insert({
+      title,
+      pdf_url: pdfUrl,
+      is_active: true,
+      sort_order: nextSort
+    });
+    if (insertError) throw insertError;
+
+    statusEl.textContent = 'Готово! Акцію додано.';
+    renderPromotionsTab();
+  } catch (e) {
+    statusEl.textContent = 'Помилка: ' + (e.message || 'не вдалося завантажити.');
+    btn.disabled = false;
+  }
 }
 
 /* ---------- Контакти ---------- */
@@ -1498,7 +1746,7 @@ async function handleAdminAction(action, id, value) {
 /* ---------- Перемикання вкладок нижнього меню ---------- */
 function switchTab(tab, pushHistory) {
   currentTab = tab;
-  activeSheet = null;
+  activeTile = null;
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
   });
@@ -1525,7 +1773,7 @@ function renderCurrentTab() {
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const tab = btn.getAttribute('data-tab');
-    if (tab === currentTab && activeSheet === null) return;
+    if (tab === currentTab && activeTile === null) return;
     switchTab(tab, true);
     renderCurrentTab();
   });
