@@ -382,6 +382,71 @@
     margin-top: 18px;
     font-family: inherit;
   }
+  .joke-banner {
+    background: var(--accent-bg);
+    color: var(--accent);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .joke-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .push-status {
+    background: var(--accent-bg);
+    color: var(--accent);
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .push-enable-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-bottom: 14px;
+  }
+  .field .phone-input-row {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .phone-input-row .phone-prefix {
+    padding: 11px 8px 11px 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .field .phone-input-row input {
+    border: none;
+    border-radius: 0;
+    width: auto;
+    flex: 1;
+    padding: 11px 12px 11px 8px;
+    background: transparent;
+  }
+  .field .phone-input-row input:focus { outline: none; }
 
   /* Admin panel */
   .admin-section-title {
@@ -491,6 +556,13 @@ const SHEET_CONFIG = [
   { name: 'GALACTIC', label: 'Galactic', highlight: 'series' },
   { name: 'Galactic LCAC', label: 'Galactic LCAC', highlight: 'category' }
 ];
+
+/* ЖАРТ-НАПИСИ (тимчасово) — щоб прибрати жарти, просто постав false */
+const JOKE_MODE = true;
+
+/* Push-сповіщення адміністраторам про нову заявку + лічильник на іконці застосунку.
+   Публічний VAPID-ключ — безпечно тримати в клієнтському коді (це не секрет). */
+const VAPID_PUBLIC_KEY = 'BIoU6N899jbSOeI02wfVBgX5M4VUq6oM-Vz_TeDiUYxIdjgbW9w2Jeza2ao54kirnajo6eSDzo6QA_-wnmBYKiM';
 /* ======================================================= */
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1051,12 +1123,28 @@ function renderAuthForms() {
   if (cabinetMode === 'login') renderLoginForm(); else renderRegisterForm();
 }
 
+/* Прибирає з поля все, крім цифр, під час вводу (щоб залишався тільки номер після +38) */
+function attachDigitsOnlyFilter(input) {
+  input.addEventListener('input', () => {
+    const cleaned = input.value.replace(/\D/g, '');
+    if (cleaned !== input.value) input.value = cleaned;
+  });
+}
+/* Складає повний номер у форматі +38XXXXXXXXXX з локальної частини, введеної користувачем */
+function fullPhoneFromLocalInput(inputId) {
+  const local = document.getElementById(inputId).value.trim();
+  return '+38' + local;
+}
+
 function renderLoginForm() {
   const holder = document.getElementById('auth-form-holder');
   holder.innerHTML = `
     <div class="field">
       <label>Номер телефону</label>
-      <input type="tel" id="login-phone" placeholder="+38 0__ ___ __ __">
+      <div class="phone-input-row">
+        <span class="phone-prefix">+38</span>
+        <input type="tel" id="login-phone" placeholder="0501234567" maxlength="10" inputmode="numeric">
+      </div>
     </div>
     <div class="field">
       <label>Пароль</label>
@@ -1065,6 +1153,7 @@ function renderLoginForm() {
     <button class="primary-btn" id="login-submit-btn">Увійти</button>
     <div id="login-error"></div>
   `;
+  attachDigitsOnlyFilter(document.getElementById('login-phone'));
   document.getElementById('login-submit-btn').addEventListener('click', handleLogin);
   holder.querySelectorAll('input').forEach(inp => {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
@@ -1072,11 +1161,11 @@ function renderLoginForm() {
 }
 
 async function handleLogin() {
-  const phone = document.getElementById('login-phone').value.trim();
+  const phone = fullPhoneFromLocalInput('login-phone');
   const password = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
   errEl.innerHTML = '';
-  if (!phone || !password) {
+  if (normalizePhoneDigits(phone).length <= 2 || !password) {
     errEl.innerHTML = '<div class="error">Введіть телефон і пароль.</div>';
     return;
   }
@@ -1099,21 +1188,21 @@ async function renderRegisterForm() {
   const regions = await getRegions();
   const options = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
   holder.innerHTML = `
+    ${JOKE_MODE ? '<div class="joke-banner">Зареєструйся і отримаєш винагороду 🎁</div>' : ''}
     <div class="field">
       <label>Ім’я та прізвище</label>
       <input type="text" id="reg-name" placeholder="Введіть ім’я">
     </div>
     <div class="field">
       <label>Номер телефону</label>
-      <input type="tel" id="reg-phone" placeholder="+38 0__ ___ __ __">
+      <div class="phone-input-row">
+        <span class="phone-prefix">+38</span>
+        <input type="tel" id="reg-phone" placeholder="0501234567" maxlength="10" inputmode="numeric">
+      </div>
     </div>
     <div class="field">
       <label>Пароль</label>
-      <input type="password" id="reg-password" placeholder="Не менше 6 символів">
-    </div>
-    <div class="field">
-      <label>Повторіть пароль</label>
-      <input type="password" id="reg-password2" placeholder="Повторіть пароль">
+      <input type="password" id="reg-password" placeholder="Не менше 4 символів">
     </div>
     <div class="field">
       <label>Регіон</label>
@@ -1122,32 +1211,28 @@ async function renderRegisterForm() {
     <button class="primary-btn" id="reg-submit-btn">Зареєструватися</button>
     <div id="reg-error"></div>
   `;
+  attachDigitsOnlyFilter(document.getElementById('reg-phone'));
   document.getElementById('reg-submit-btn').addEventListener('click', handleRegister);
 }
 
 async function handleRegister() {
   const name = document.getElementById('reg-name').value.trim();
-  const phone = document.getElementById('reg-phone').value.trim();
+  const phone = fullPhoneFromLocalInput('reg-phone');
   const password = document.getElementById('reg-password').value;
-  const password2 = document.getElementById('reg-password2').value;
   const regionSelect = document.getElementById('reg-region');
   const regionId = regionSelect.value;
   const errEl = document.getElementById('reg-error');
   errEl.innerHTML = '';
 
-  if (!name || !phone || !password || !regionId) {
+  if (!name || normalizePhoneDigits(phone).length <= 2 || !password || !regionId) {
     errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
     return;
   }
-  if (password.length < 6) {
-    errEl.innerHTML = '<div class="error">Пароль має містити щонайменше 6 символів.</div>';
+  if (password.length < 4) {
+    errEl.innerHTML = '<div class="error">Пароль має містити щонайменше 4 символи.</div>';
     return;
   }
-  if (password !== password2) {
-    errEl.innerHTML = '<div class="error">Паролі не збігаються.</div>';
-    return;
-  }
-  if (normalizePhoneDigits(phone).length < 9) {
+  if (normalizePhoneDigits(phone).length < 11) {
     errEl.innerHTML = '<div class="error">Перевірте номер телефону.</div>';
     return;
   }
@@ -1197,6 +1282,70 @@ async function handleRegister() {
   renderCabinetTab();
 }
 
+/* ---- Push-сповіщення (для адміністраторів) ---- */
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const out = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) out[i] = rawData.charCodeAt(i);
+  return out;
+}
+
+async function getPushSubscriptionState() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return { supported: false, enabled: false };
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    return { supported: true, enabled: !!sub };
+  } catch (e) {
+    return { supported: true, enabled: false };
+  }
+}
+
+async function enablePushNotifications(userId) {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('Цей браузер не підтримує push-сповіщення.');
+    return;
+  }
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      alert('Дозвіл на сповіщення не надано. Увімкнути його можна в налаштуваннях браузера/застосунку.');
+      return;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+    const json = sub.toJSON();
+    const { error } = await sb.from('push_subscriptions').upsert({
+      user_id: userId,
+      endpoint: json.endpoint,
+      p256dh: json.keys.p256dh,
+      auth: json.keys.auth
+    }, { onConflict: 'endpoint' });
+    if (error) { alert('Не вдалося зберегти підписку на сповіщення.'); return; }
+    renderCabinetTab();
+  } catch (e) {
+    alert('Не вдалося увімкнути сповіщення на цьому пристрої.');
+  }
+}
+
+/* Коли адмін відкрив Кабінет — вважаємо, що заявки переглянуті: гасимо бейдж і закриваємо сповіщення */
+function clearNotificationsAndBadge() {
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage('clear-notifications');
+  }
+  if ('clearAppBadge' in navigator) {
+    try { navigator.clearAppBadge(); } catch (e) {}
+  }
+}
+
 /* ---- Авторизований звичайний користувач ---- */
 function renderUserStatus(profile) {
   const main = document.getElementById('main');
@@ -1206,6 +1355,7 @@ function renderUserStatus(profile) {
       <div class="status-card-title">${escapeHtml(statusLabel(profile.status))}</div>
       <div class="status-card-sub">${escapeHtml(profile.full_name || '')}<br>${escapeHtml(profile.phone || '')}${priceLine}</div>
     </div>
+    ${JOKE_MODE && profile.status === 'pending' ? '<div class="joke-note">Зареєструвались, не перенавантажились!? Винагорода? Дякуємо, що не насварили :-)</div>' : ''}
     <button class="logout-btn" id="cab-logout-btn">Вийти</button>
   `;
   document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
@@ -1281,8 +1431,14 @@ async function renderAdminPanel(profile) {
 
   const pending = adminUsersCache.filter(u => u.status === 'pending');
   const others = adminUsersCache.filter(u => u.status !== 'pending');
+  const pushState = await getPushSubscriptionState();
 
   let html = '';
+  if (pushState.supported) {
+    html += pushState.enabled
+      ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
+      : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>';
+  }
   html += `<div class="admin-section-title">Заявки на розгляді (${pending.length})</div>`;
   html += pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>';
   html += `<div class="admin-section-title">Користувачі (${others.length})</div>`;
@@ -1291,6 +1447,7 @@ async function renderAdminPanel(profile) {
   html += '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
 
   main.innerHTML = html;
+  clearNotificationsAndBadge();
 
   document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
   document.getElementById('admin-search').addEventListener('input', (e) => {
@@ -1300,6 +1457,8 @@ async function renderAdminPanel(profile) {
       ? filtered.map(u => userCardHtml(u, false)).join('')
       : '<div class="empty" style="padding:16px;">Нічого не знайдено</div>';
   });
+  const enablePushBtn = document.getElementById('enable-push-btn');
+  if (enablePushBtn) enablePushBtn.addEventListener('click', () => enablePushNotifications(profile.id));
 }
 
 async function handleAdminAction(action, id, value) {
@@ -1397,6 +1556,11 @@ document.getElementById('install-close-btn').addEventListener('click', () => {
   document.getElementById('install-banner').classList.remove('show');
   localStorage.setItem('sunice_install_dismissed', '1');
 });
+
+/* ---------- Service worker (push-сповіщення + бейдж на іконці) ---------- */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(function () {});
+}
 
 /* ---------- Старт ---------- */
 history.replaceState({ tab: 'catalog' }, '', '#catalog');
