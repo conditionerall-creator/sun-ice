@@ -1202,7 +1202,7 @@ async function renderRegisterForm() {
     </div>
     <div class="field">
       <label>Пароль</label>
-      <input type="password" id="reg-password" placeholder="Не менше 4 символів">
+      <input type="password" id="reg-password" placeholder="Не менше 6 символів">
     </div>
     <div class="field">
       <label>Регіон</label>
@@ -1228,8 +1228,8 @@ async function handleRegister() {
     errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
     return;
   }
-  if (password.length < 4) {
-    errEl.innerHTML = '<div class="error">Пароль має містити щонайменше 4 символи.</div>';
+  if (password.length < 6) {
+    errEl.innerHTML = '<div class="error">Пароль має містити щонайменше 6 символів.</div>';
     return;
   }
   if (normalizePhoneDigits(phone).length < 11) {
