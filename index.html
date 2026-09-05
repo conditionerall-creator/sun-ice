@@ -205,7 +205,30 @@
   }
   input[type=file] { display: none; }
 
-  .search-row { margin-top: 10px; display: flex; gap: 8px; }
+  .rate-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+  .rate-label { font-weight: 600; }
+  .rate-value { color: var(--text); font-weight: 700; }
+  .rate-input {
+    width: 70px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12.5px;
+    background: var(--card);
+    color: var(--text);
+  }
+  .rate-edit-btn, .rate-save-btn {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+  }
   input[type=text] {
     flex: 1;
     padding: 10px 12px;
@@ -492,7 +515,7 @@
   }
   .calc-panel.open { display: flex; }
   .calc-panel input.calc-input {
-    width: 46px;
+    width: 62px;
     padding: 5px 6px;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -502,7 +525,102 @@
     color: var(--text);
   }
   .calc-result { font-weight: 700; color: var(--accent); }
+  .calc-modes { display: flex; gap: 4px; }
+  .calc-mode-btn {
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .calc-mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .calc-currency { display: flex; gap: 4px; }
+  .calc-cur-btn {
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .calc-cur-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .calc-eq { font-weight: 600; }
   .count { font-size: 12px; color: var(--text-secondary); padding: 8px 2px 4px; }
+
+  /* ---------- Конфігуратор мультисплітів ---------- */
+  .ms-builder { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-top: 4px; }
+  .ms-field { margin-bottom: 14px; }
+  .ms-field:last-child { margin-bottom: 0; }
+  .ms-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+  .ms-select {
+    width: 100%;
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 13.5px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .ms-add-row { display: flex; gap: 8px; }
+  .ms-add-row .ms-select { flex: 1; }
+  .ms-add-btn {
+    padding: 0 16px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .ms-indoor-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .ms-empty-hint { font-size: 12.5px; color: var(--text-secondary); margin-top: 10px; }
+  .ms-indoor-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+  }
+  .ms-indoor-name { flex: 1; font-size: 13px; min-width: 0; word-break: break-word; }
+  .ms-indoor-price { color: var(--text-secondary); font-weight: 600; }
+  .ms-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .ms-qty-btn {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-weight: 700;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .ms-qty-val { min-width: 14px; text-align: center; font-weight: 600; }
+  .ms-indoor-remove {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .ms-total-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border);
+  }
+  .ms-total-row .calc-panel { display: flex; flex: 1; margin-top: 0; padding-top: 0; border-top: none; }
 
   .error {
     background: #fcebeb;
@@ -908,23 +1026,19 @@
   <header>
     <div class="header-top">
       <div class="back-btn" id="back-btn">←</div>
-      <h1 id="title">Каталог</h1>
+      <h1 id="title">Каталог Sun-Ice</h1>
       <div class="icon-btn" id="refresh-icon" title="Оновити прайс" style="display:none;">↻</div>
       <div class="icon-btn icon-btn-text" id="shortcut-icon" title="Встановити застосунок на головний екран" style="display:none;">Встановити</div>
     </div>
+    <div class="rate-row" id="rate-row" style="display:none;">
+      <span class="rate-label">Курс $:</span>
+      <span class="rate-value" id="rate-value">—</span>
+      <input type="number" class="rate-input" id="rate-input" step="0.01" min="0" style="display:none;">
+      <button type="button" class="rate-edit-btn" id="rate-edit-btn" style="display:none;" aria-label="Редагувати курс">✎</button>
+      <button type="button" class="rate-save-btn" id="rate-save-btn" style="display:none;" aria-label="Зберегти курс">✓</button>
+    </div>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
-    </div>
-    <div id="search-block" style="display:none;">
-      <div class="search-row">
-        <input type="text" id="search" placeholder="Пошук за назвою або кодом">
-        <select id="sort">
-          <option value="none">Без сортування</option>
-          <option value="price-asc">Ціна ↑</option>
-          <option value="price-desc">Ціна ↓</option>
-          <option value="name-asc">Назва А-Я</option>
-        </select>
-      </div>
     </div>
     <div id="error-block"></div>
   </header>
@@ -1040,6 +1154,11 @@ let activeTile = null; // null = меню категорій каталогу
 let activeBrand = 'mhi'; // 'mhi' | 'gal' — активний бренд у плитці з перемикачем
 let priceVersion = null;
 let catalogInitDone = false;
+let usdRate = null;      // курс $ → грн (з app_settings), для перерахунку в калькуляторі
+let canEditRate = false; // чи може поточний користувач редагувати курс (regional_admin/super_admin)
+/* Стан конфігуратора мультисплітів — окремо по бренду (MHI/GAL), щоб перемикання
+   вкладки бренду не губило вже зібрану систему. */
+let msState = { mhi: { outdoor: null, indoor: [] }, gal: { outdoor: null, indoor: [] } };
 /* Повні тексти описів серій для спливаючого вікна "детальніше" — заповнюється заново
    при кожному renderCatalogList(). Тримаємо тут (а не в data-атрибуті HTML), бо в описах
    з прайсу трапляються лапки " і апостроф ' — у HTML-атрибуті вони можуть зламати розмітку. */
@@ -1058,6 +1177,7 @@ const priceKeywordGroups = [
 const modelKeywords = ['модель', 'маркировка', 'маркування', 'артикул', 'sku', 'model', 'найменування', 'наименование'];
 const internalKeywords = ['внутрішній', 'внутренний', 'indoor'];
 const externalKeywords = ['зовнішній', 'наружный', 'outdoor'];
+const unitTypeKeywords = ['тип блоку', 'тип блока'];
 const totalSubKeywords = ['комплект', 'всього', 'разом', 'итого', 'total'];
 const categoryStems = ['настінн', 'стельов', 'касетн', 'канальн', 'колонн', 'підлогов', 'підвісн', 'шафов'];
 const PALETTE = ['#dbeafe', '#dcfce7', '#fef9c3', '#fce7f3', '#ede9fe', '#ffedd5', '#ccfbf1', '#fee2e2'];
@@ -1148,6 +1268,7 @@ function parseSheet(rows, highlightMode, opts) {
 
   const internalCol = findColumnInRow(headerRow, internalKeywords);
   const externalCol = findColumnInRow(headerRow, externalKeywords);
+  const unitTypeCol = findColumnInRow(headerRow, unitTypeKeywords);
   const currency = detectCurrency(priceHeader.text);
   const items = [];
   let currentCategory = null;
@@ -1206,6 +1327,15 @@ function parseSheet(rows, highlightMode, opts) {
         item.groupFullText = currentFullText || null;
       }
     } else if (highlightMode === 'category') item.groupKey = currentCategory;
+    // Тип блоку (зовнішній/внутрішній) — потрібен для конфігуратора мультисплітів.
+    // Колонку "ТИП БЛОКУ" мають лише аркуші МУЛЬТИСИСТЕМИ/GALACTIC, для решти
+    // прайсів unitTypeCol === -1 і item.unitType просто не проставляється.
+    if (unitTypeCol !== -1) {
+      const typeText = norm(row[unitTypeCol]);
+      if (typeText.includes('зовніш') || typeText.includes('наруж')) item.unitType = 'outdoor';
+      else if (typeText.includes('внутр')) item.unitType = 'indoor';
+      else item.unitType = null;
+    }
     items.push(item);
   }
 
@@ -1266,7 +1396,7 @@ function buildSheetsData(wb) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 2;
+const PARSER_VERSION = 3;
 
 function loadProcessedCache() {
   try {
@@ -1320,8 +1450,35 @@ function setCatalogStatus(text) {
   el.textContent = text;
 }
 
+/* ---------- Курс долара в шапці каталогу (редагують regional_admin/super_admin) ---------- */
+async function loadExchangeRate() {
+  try {
+    const { data } = await sb.from('app_settings').select('usd_rate').eq('id', 1).single();
+    usdRate = data && data.usd_rate != null ? Number(data.usd_rate) : null;
+  } catch (e) {
+    usdRate = null;
+  }
+  try {
+    const role = await getCurrentProfileRole();
+    canEditRate = role === 'regional_admin' || role === 'super_admin';
+  } catch (e) {
+    canEditRate = false;
+  }
+  renderRateRow();
+}
+function renderRateRow() {
+  const row = document.getElementById('rate-row');
+  if (!row) return;
+  const show = currentTab === 'catalog' && activeTile === null;
+  row.style.display = show ? 'flex' : 'none';
+  if (!show) return;
+  document.getElementById('rate-value').textContent = usdRate ? usdRate.toLocaleString('uk-UA') + ' ₴' : 'не встановлено';
+  document.getElementById('rate-edit-btn').style.display = canEditRate ? 'flex' : 'none';
+}
+
 async function initCatalog() {
   document.getElementById('refresh-icon').style.display = 'flex';
+  loadExchangeRate();
   const hadCache = loadProcessedCache();
   if (hadCache) {
     renderCatalogView();
@@ -1375,22 +1532,18 @@ function tileActiveCfg(tile) {
 function renderCatalogView() {
   const backBtn = document.getElementById('back-btn');
   const title = document.getElementById('title');
-  const searchBlock = document.getElementById('search-block');
 
   if (activeTile === null) {
     backBtn.style.display = 'none';
-    title.textContent = 'Каталог';
-    searchBlock.style.display = 'none';
+    title.textContent = 'Каталог Sun-Ice';
     renderCatalogMenu();
   } else {
     backBtn.style.display = 'flex';
     const tile = CATALOG_TILES.find(t => t.id === activeTile);
     title.textContent = tile ? tile.label : activeTile;
-    searchBlock.style.display = 'block';
-    document.getElementById('search').value = '';
-    document.getElementById('sort').value = 'none';
     renderCatalogList();
   }
+  renderRateRow();
 }
 
 function renderCatalogMenu() {
@@ -1433,13 +1586,71 @@ function renderCatalogMenu() {
   });
 }
 
+/* ---------- Калькулятор ціни в рядку прайсу / підсумку мультиспліту ---------- */
+/* Три режими: відняти % (знижка), додати % (маржа), або ввести кінцеву суму напряму.
+   Плюс вибір валюти показу — нативна валюта прайсу ($) або перерахунок у гривню за
+   курсом з шапки каталогу (usdRate), який редагують адміни/суперадміни. */
+function convertAmount(amount, fromCur, toCur, rate) {
+  if (fromCur === toCur || !toCur) return amount;
+  if (fromCur === '$' && toCur === 'UAH') return rate ? amount * rate : amount;
+  if (fromCur === 'UAH' && toCur === '$') return rate ? amount / rate : amount;
+  return amount;
+}
+function formatCalcAmount(amount, cur) {
+  const suffix = cur === 'UAH' ? ' ₴' : (cur ? ' ' + cur : '');
+  return Math.round(amount).toLocaleString('uk-UA') + suffix;
+}
+function buildCalcPanelHtml(price, currency, priceStr, opts) {
+  opts = opts || {};
+  const curBtnsHtml = currency === '$' ? `
+            <div class="calc-currency">
+              <button type="button" class="calc-cur-btn active" data-cur="$">$</button>
+              <button type="button" class="calc-cur-btn" data-cur="UAH">₴</button>
+            </div>` : '';
+  const cls = 'calc-panel' + (opts.open ? ' open' : '') + (opts.extraClass ? ' ' + opts.extraClass : '');
+  return `
+          <div class="${cls}" data-price="${price}" data-currency="${escapeHtml(currency || '')}" data-mode="sub" data-cur="${escapeHtml(currency || '')}">
+            <div class="calc-modes">
+              <button type="button" class="calc-mode-btn active" data-mode="sub">−%</button>
+              <button type="button" class="calc-mode-btn" data-mode="add">+%</button>
+              <button type="button" class="calc-mode-btn" data-mode="flat">=Ціна</button>
+            </div>
+            <input type="number" class="calc-input" min="0" inputmode="numeric" placeholder="0">${curBtnsHtml}
+            <span class="calc-eq">=</span>
+            <span class="calc-result">${priceStr}</span>
+          </div>`;
+}
+function computeCalcResult(panel) {
+  if (!panel) return;
+  const price = parseFloat(panel.getAttribute('data-price')) || 0;
+  const nativeCur = panel.getAttribute('data-currency') || '';
+  const mode = panel.getAttribute('data-mode') || 'sub';
+  const cur = panel.getAttribute('data-cur') || nativeCur;
+  const input = panel.querySelector('.calc-input');
+  let val = input ? parseFloat(input.value) : NaN;
+  if (isNaN(val) || val < 0) val = 0;
+
+  let result;
+  if (mode === 'flat' && val > 0) {
+    result = val;
+  } else {
+    const amountNative = mode === 'add' ? price * (1 + val / 100) : price * (1 - val / 100);
+    result = convertAmount(amountNative, nativeCur, cur, usdRate);
+  }
+  const resultEl = panel.querySelector('.calc-result');
+  if (resultEl) resultEl.textContent = formatCalcAmount(result, cur);
+}
+
 function renderCatalogList() {
-  const search = document.getElementById('search').value.toLowerCase().trim();
-  const sort = document.getElementById('sort').value;
   const main = document.getElementById('main');
 
   const tile = CATALOG_TILES.find(t => t.id === activeTile);
   if (!tile) { main.innerHTML = '<div class="empty">Нічого не знайдено</div>'; return; }
+
+  if (tile.id === 'multisplit') {
+    renderMultisplitConfigurator(tile, tileActiveCfg(tile));
+    return;
+  }
 
   const hasBoth = !!(tile.mhi && tile.gal);
   const cfg = tileActiveCfg(tile);
@@ -1457,14 +1668,10 @@ function renderCatalogList() {
     return;
   }
 
-  let filtered = allItems.filter(it => !search || it.model.toLowerCase().includes(search));
+  const filtered = allItems;
 
-  if (sort === 'price-asc') filtered.sort((a, b) => a.price - b.price);
-  else if (sort === 'price-desc') filtered.sort((a, b) => b.price - a.price);
-  else if (sort === 'name-asc') filtered.sort((a, b) => a.model.localeCompare(b.model, 'uk'));
-
-  const countHtml = '<div class="count">Знайдено: ' + filtered.length + '</div>';
-  const showSegments = sort === 'none';
+  const countHtml = '<div class="count">Всього: ' + filtered.length + '</div>';
+  const showSegments = true;
   let lastKey = null;
   seriesInfoTexts = [];
 
@@ -1497,17 +1704,12 @@ function renderCatalogList() {
         <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
         <div class="row-info">
           <p class="row-name">${escapeHtml(it.model)}</p>
-          <div class="calc-panel" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}">
-            <span>${priceStr} −</span>
-            <input type="number" class="calc-input" min="0" max="99" inputmode="numeric">
-            <span>% =</span>
-            <span class="calc-result">${priceStr}</span>
-          </div>
+          ${buildCalcPanelHtml(it.price, it.currency, priceStr)}
         </div>
         <div class="row-right">
           <div class="row-price">${priceStr}</div>
           <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
-          <button class="calc-toggle" type="button" aria-label="Розрахувати знижку">%</button>
+          <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">%</button>
         </div>
       </div>
     `;
@@ -1525,6 +1727,148 @@ function attachBrandToggleHandlers(main) {
       activeBrand = brand;
       renderCatalogList();
     });
+  });
+}
+
+/* ---------- Конфігуратор мультисплітів (Мульти спліт-системи, MHI + GAL) ----------
+   Мультиспліт = один зовнішній блок + декілька внутрішніх. Дані беремо з того ж
+   sheetsData[cfg.key], що й звичайний список, але фільтруємо по item.unitType
+   ('outdoor'/'indoor'), який parseSheet проставляє з колонки "ТИП БЛОКУ" прайсу. */
+function renderMultisplitConfigurator(tile, cfg) {
+  const main = document.getElementById('main');
+  const hasBoth = !!(tile.mhi && tile.gal);
+  const toggleHtml = hasBoth ? `
+    <div class="brand-toggle">
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
+    </div>` : '';
+
+  const allItems = cfg ? (sheetsData[cfg.key] || []) : [];
+  if (!cfg || allItems.length === 0) {
+    main.innerHTML = toggleHtml + '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+    attachBrandToggleHandlers(main);
+    return;
+  }
+
+  const outdoorItems = allItems.filter(it => it.unitType === 'outdoor');
+  const indoorItems = allItems.filter(it => it.unitType === 'indoor');
+  const state = msState[activeBrand];
+  // Прибираємо вибір, якщо модель зникла з прайсу (напр. після оновлення прайсу)
+  if (state.outdoor && !outdoorItems.some(it => it.model === state.outdoor)) state.outdoor = null;
+  state.indoor = state.indoor.filter(sel => indoorItems.some(it => it.model === sel.model));
+
+  if (outdoorItems.length === 0 || indoorItems.length === 0) {
+    main.innerHTML = toggleHtml + '<div class="empty">Не вдалося розпізнати зовнішні/внутрішні блоки в цьому прайсі.</div>';
+    attachBrandToggleHandlers(main);
+    return;
+  }
+
+  const outdoorOptionsHtml = '<option value="">— виберіть зовнішній блок —</option>' + outdoorItems.map(it =>
+    `<option value="${escapeHtml(it.model)}" ${state.outdoor === it.model ? 'selected' : ''}>${escapeHtml(it.model)} — ${Math.round(it.price).toLocaleString('uk-UA')}${it.currency ? ' ' + escapeHtml(it.currency) : ''}</option>`
+  ).join('');
+  const indoorOptionsHtml = '<option value="">— виберіть внутрішній блок —</option>' + indoorItems.map(it =>
+    `<option value="${escapeHtml(it.model)}">${escapeHtml(it.model)} — ${Math.round(it.price).toLocaleString('uk-UA')}${it.currency ? ' ' + escapeHtml(it.currency) : ''}</option>`
+  ).join('');
+
+  const selectedIndoorHtml = state.indoor.length === 0
+    ? '<div class="ms-empty-hint">Додайте хоча б один внутрішній блок</div>'
+    : state.indoor.map(sel => {
+        const it = indoorItems.find(x => x.model === sel.model);
+        const priceStr = it ? Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '') : '';
+        return `
+        <div class="ms-indoor-row" data-model="${escapeHtml(sel.model)}">
+          <span class="ms-indoor-name">${escapeHtml(sel.model)} <span class="ms-indoor-price">${priceStr}</span></span>
+          <div class="ms-qty">
+            <button type="button" class="ms-qty-btn" data-op="minus" aria-label="Менше">−</button>
+            <span class="ms-qty-val">${sel.qty}</span>
+            <button type="button" class="ms-qty-btn" data-op="plus" aria-label="Більше">+</button>
+          </div>
+          <button type="button" class="ms-indoor-remove" aria-label="Прибрати">✕</button>
+        </div>`;
+      }).join('');
+
+  const outdoorItem = outdoorItems.find(it => it.model === state.outdoor);
+  const total = (outdoorItem ? outdoorItem.price : 0) + state.indoor.reduce((sum, sel) => {
+    const it = indoorItems.find(x => x.model === sel.model);
+    return sum + (it ? it.price * sel.qty : 0);
+  }, 0);
+  const nativeCurrency = outdoorItem ? outdoorItem.currency : (indoorItems[0] ? indoorItems[0].currency : '');
+  const totalStr = formatCalcAmount(total, nativeCurrency);
+  const canShare = !!outdoorItem && state.indoor.length > 0;
+
+  main.innerHTML = toggleHtml + `
+    <div class="ms-builder">
+      <div class="ms-field">
+        <label class="ms-label">Зовнішній блок</label>
+        <select id="ms-outdoor-select" class="ms-select">${outdoorOptionsHtml}</select>
+      </div>
+      <div class="ms-field">
+        <label class="ms-label">Внутрішні блоки</label>
+        <div class="ms-add-row">
+          <select id="ms-indoor-select" class="ms-select">${indoorOptionsHtml}</select>
+          <button type="button" id="ms-indoor-add" class="ms-add-btn">Додати</button>
+        </div>
+        <div class="ms-indoor-list">${selectedIndoorHtml}</div>
+      </div>
+      ${canShare ? `
+      <div class="ms-total-row">
+        ${buildCalcPanelHtml(total, nativeCurrency, totalStr, { open: true, extraClass: 'ms-calc-panel' })}
+        <button type="button" class="share-btn ms-share-btn" aria-label="Поділитися системою"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
+      </div>` : ''}
+    </div>`;
+
+  attachBrandToggleHandlers(main);
+
+  const outdoorSelectEl = document.getElementById('ms-outdoor-select');
+  if (outdoorSelectEl) outdoorSelectEl.addEventListener('change', (e) => {
+    state.outdoor = e.target.value || null;
+    renderMultisplitConfigurator(tile, cfg);
+  });
+  const indoorAddBtn = document.getElementById('ms-indoor-add');
+  if (indoorAddBtn) indoorAddBtn.addEventListener('click', () => {
+    const sel = document.getElementById('ms-indoor-select');
+    const model = sel.value;
+    if (!model) return;
+    const existing = state.indoor.find(x => x.model === model);
+    if (existing) existing.qty += 1;
+    else state.indoor.push({ model, qty: 1 });
+    renderMultisplitConfigurator(tile, cfg);
+  });
+  main.querySelectorAll('.ms-indoor-row').forEach(rowEl => {
+    const model = rowEl.getAttribute('data-model');
+    const sel = state.indoor.find(x => x.model === model);
+    if (!sel) return;
+    rowEl.querySelectorAll('.ms-qty-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.getAttribute('data-op') === 'plus') sel.qty += 1;
+        else sel.qty = Math.max(1, sel.qty - 1);
+        renderMultisplitConfigurator(tile, cfg);
+      });
+    });
+    const removeBtn = rowEl.querySelector('.ms-indoor-remove');
+    if (removeBtn) removeBtn.addEventListener('click', () => {
+      state.indoor = state.indoor.filter(x => x.model !== model);
+      renderMultisplitConfigurator(tile, cfg);
+    });
+  });
+  const msShareBtn = main.querySelector('.ms-share-btn');
+  if (msShareBtn) msShareBtn.addEventListener('click', () => {
+    const panel = main.querySelector('.ms-calc-panel');
+    const resultEl = panel ? panel.querySelector('.calc-result') : null;
+    const priceText = (resultEl ? resultEl.textContent : totalStr).trim();
+    const modelsText = [state.outdoor].concat(
+      state.indoor.map(sel => sel.qty > 1 ? sel.model + 'x' + sel.qty : sel.model)
+    ).join('+');
+    const shareText = modelsText + ' — ' + priceText;
+    if (navigator.share) {
+      navigator.share({ text: shareText }).catch(() => {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        const oldHTML = msShareBtn.innerHTML;
+        msShareBtn.innerHTML = '✓';
+        setTimeout(() => { msShareBtn.innerHTML = oldHTML; }, 1200);
+      }).catch(() => {});
+    }
   });
 }
 
@@ -1566,16 +1910,30 @@ document.getElementById('main').addEventListener('click', function(e) {
     }
     return;
   }
+  const modeBtn = e.target.closest('.calc-mode-btn');
+  if (modeBtn) {
+    const panel = modeBtn.closest('.calc-panel');
+    panel.querySelectorAll('.calc-mode-btn').forEach(b => b.classList.toggle('active', b === modeBtn));
+    panel.setAttribute('data-mode', modeBtn.getAttribute('data-mode'));
+    computeCalcResult(panel);
+    return;
+  }
+  const curBtn = e.target.closest('.calc-cur-btn');
+  if (curBtn) {
+    const panel = curBtn.closest('.calc-panel');
+    panel.querySelectorAll('.calc-cur-btn').forEach(b => b.classList.toggle('active', b === curBtn));
+    panel.setAttribute('data-cur', curBtn.getAttribute('data-cur'));
+    computeCalcResult(panel);
+    return;
+  }
   const shareBtn = e.target.closest('.share-btn');
-  if (shareBtn) {
+  if (shareBtn && !shareBtn.classList.contains('ms-share-btn')) {
     const rowEl = shareBtn.closest('.row');
     const nameEl = rowEl.querySelector('.row-name');
     const panel = rowEl.querySelector('.calc-panel');
-    const pctInput = panel ? panel.querySelector('.calc-input') : null;
-    const hasDiscount = panel && panel.classList.contains('open') && pctInput && parseFloat(pctInput.value) > 0;
     const resultEl = panel ? panel.querySelector('.calc-result') : null;
     const basePriceEl = rowEl.querySelector('.row-price');
-    const priceText = (hasDiscount && resultEl ? resultEl.textContent : (basePriceEl ? basePriceEl.textContent : '')).trim();
+    const priceText = (resultEl ? resultEl.textContent : (basePriceEl ? basePriceEl.textContent : '')).trim();
     const model = nameEl ? nameEl.textContent.trim() : '';
     const shareText = model + ' — ' + priceText;
     if (navigator.share) {
@@ -1592,20 +1950,35 @@ document.getElementById('main').addEventListener('click', function(e) {
 });
 document.getElementById('main').addEventListener('input', function(e) {
   if (!e.target.classList.contains('calc-input')) return;
-  const panel = e.target.closest('.calc-panel');
-  const price = parseFloat(panel.getAttribute('data-price'));
-  let pct = parseFloat(e.target.value);
-  if (isNaN(pct) || pct < 0) pct = 0;
-  if (pct > 99) pct = 99;
-  const result = Math.round(price * (1 - pct / 100));
-  const currency = panel.getAttribute('data-currency');
-  const resultEl = panel.querySelector('.calc-result');
-  if (resultEl) resultEl.textContent = result.toLocaleString('uk-UA') + (currency ? ' ' + currency : '');
+  computeCalcResult(e.target.closest('.calc-panel'));
 });
-document.getElementById('search').addEventListener('input', renderCatalogList);
-document.getElementById('sort').addEventListener('change', renderCatalogList);
 document.getElementById('refresh-icon').addEventListener('click', handleRefreshClick);
 document.getElementById('back-btn').addEventListener('click', function() { history.back(); });
+
+document.getElementById('rate-edit-btn').addEventListener('click', function() {
+  document.getElementById('rate-value').style.display = 'none';
+  this.style.display = 'none';
+  const input = document.getElementById('rate-input');
+  input.style.display = 'inline-block';
+  input.value = usdRate || '';
+  input.focus();
+  document.getElementById('rate-save-btn').style.display = 'flex';
+});
+document.getElementById('rate-save-btn').addEventListener('click', async function() {
+  const input = document.getElementById('rate-input');
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val <= 0) return;
+  this.disabled = true;
+  try {
+    await sb.from('app_settings').upsert({ id: 1, usd_rate: val });
+    usdRate = val;
+  } catch (e) {}
+  this.disabled = false;
+  input.style.display = 'none';
+  this.style.display = 'none';
+  document.getElementById('rate-value').style.display = 'inline';
+  renderRateRow();
+});
 
 /* Делеговані обробники дій у адмін-панелі Кабінету (кнопки й селекти з data-action) */
 document.getElementById('main').addEventListener('click', function(e) {
@@ -1857,7 +2230,6 @@ const INFO_CATALOG_DOCS = {
 function renderInfoTab() {
   const backBtn = document.getElementById('back-btn');
   const title = document.getElementById('title');
-  document.getElementById('search-block').style.display = 'none';
 
   if (!infoSection) {
     backBtn.style.display = 'none';
@@ -2377,7 +2749,7 @@ function switchTab(tab, pushHistory) {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
   });
   document.getElementById('back-btn').style.display = 'none';
-  document.getElementById('search-block').style.display = 'none';
+  document.getElementById('rate-row').style.display = 'none';
   document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
   document.getElementById('shortcut-icon').style.display = tab === 'cabinet' ? 'flex' : 'none';
   document.getElementById('status-row').style.display = 'none';
