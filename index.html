@@ -442,6 +442,20 @@
   .promo-upload-btn:disabled { opacity: 0.6; cursor: default; }
   .promo-upload-status { font-size: 12px; color: var(--text-secondary); margin: 0; min-height: 14px; }
   .promo-image { cursor: zoom-in; }
+  .promo-delete-btn {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #f0cccc;
+    background: var(--bg);
+    color: var(--danger);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .promo-doc-note { font-size: 12px; color: var(--text-secondary); margin: -4px 0 0; }
 
   /* Інфо → Каталоги: картка з посиланням на PDF-каталог виробника */
   .info-doc-card {
@@ -1379,6 +1393,7 @@ async function renderPromotionsTab() {
         ${p.conditions ? `<p class="promo-desc">${escapeHtml(p.conditions)}</p>` : ''}
         ${p.valid_until ? `<p class="promo-meta">Діє до ${escapeHtml(p.valid_until)}</p>` : ''}
         ${p.pdf_url ? `<a class="promo-pdf-link" href="${escapeHtml(p.pdf_url)}" target="_blank" rel="noopener">📄 Умови акції (PDF)</a>` : ''}
+        ${isSuper ? `<button type="button" class="promo-delete-btn" data-promo-delete="${p.id}" data-image-url="${escapeHtml(p.image_url || '')}" data-pdf-url="${escapeHtml(p.pdf_url || '')}">🗑 Видалити акцію</button>` : ''}
       </div>
     </div>
   `).join('');
@@ -1463,6 +1478,37 @@ async function handlePromoUpload() {
 document.getElementById('main').addEventListener('click', function(e) {
   const img = e.target.closest('.promo-image');
   if (img && img.tagName === 'IMG') openImageLightbox(img.src);
+});
+
+/* ---------- Видалення акції (тільки super_admin) ---------- */
+function extractPromoStoragePath(url) {
+  if (!url) return null;
+  const marker = '/storage/v1/object/public/promo-pdfs/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  try { return decodeURIComponent(url.slice(idx + marker.length)); } catch (e) { return url.slice(idx + marker.length); }
+}
+
+async function handleDeletePromo(id, imageUrl, pdfUrl) {
+  if (!confirm('Видалити цю акцію назавжди? Цю дію не можна скасувати.')) return;
+  try {
+    const paths = [imageUrl, pdfUrl].map(extractPromoStoragePath).filter(Boolean);
+    if (paths.length) {
+      /* Не критично, якщо видалення файлу зі сховища не вдасться — головне прибрати запис з БД */
+      await sb.storage.from('promo-pdfs').remove(paths).catch(function () {});
+    }
+    const { error } = await sb.from('promotions').delete().eq('id', id);
+    if (error) throw error;
+    renderPromotionsTab();
+  } catch (e) {
+    alert('Не вдалося видалити акцію: ' + (e.message || 'невідома помилка.'));
+  }
+}
+
+document.getElementById('main').addEventListener('click', function(e) {
+  const btn = e.target.closest('[data-promo-delete]');
+  if (!btn) return;
+  handleDeletePromo(btn.getAttribute('data-promo-delete'), btn.getAttribute('data-image-url'), btn.getAttribute('data-pdf-url'));
 });
 
 /* ---------- Контакти ---------- */
@@ -1564,8 +1610,9 @@ function renderInfoDetail() {
     if (!doc) { main.innerHTML = '<div class="empty">Немає даних.</div>'; return; }
     main.innerHTML = `
       <div class="info-doc-card">
-        <a class="info-doc-link" href="${escapeHtml(doc.url)}" target="_blank" rel="noopener">${escapeHtml(doc.text)}</a>
-        <a class="info-doc-btn" href="${escapeHtml(doc.url)}" target="_blank" rel="noopener">Завантажити</a>
+        <a class="info-doc-link" href="${escapeHtml(doc.url)}">${escapeHtml(doc.text)}</a>
+        <a class="info-doc-btn" href="${escapeHtml(doc.url)}">Завантажити</a>
+        <p class="promo-doc-note">Файл каталогу важить десятки мегабайт — на мобільному інтернеті завантаження може зайняти хвилину. Якщо сторінка після натискання виглядає порожньою, зачекайте трохи або спробуйте через Wi-Fi.</p>
       </div>`;
   } else {
     main.innerHTML =
