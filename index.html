@@ -385,6 +385,69 @@
     border-bottom: 3px solid var(--border);
     margin-bottom: 8px;
   }
+  .segment-header-info { cursor: pointer; }
+  .segment-header-info:active { color: var(--accent); }
+  .segment-header-info-icon { margin-left: 4px; font-size: 11px; letter-spacing: normal; }
+
+  /* Спливаюче вікно "детальніше" — повний опис серії з прайсу */
+  .info-sheet-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .info-sheet-overlay.show { display: flex; }
+  .info-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+  }
+  .info-sheet-panel {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: 78vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 34px rgba(0,0,0,0.28);
+    animation: install-gate-slide-up 0.22s ease-out;
+  }
+  .info-sheet-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 18px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .info-sheet-title {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.35;
+  }
+  .info-sheet-close {
+    width: 30px; height: 30px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .info-sheet-body {
+    padding: 14px 16px calc(20px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
   .row-info { min-width: 0; flex: 1; }
   .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; position: relative; z-index: 0; }
   .row-click-zone:active ~ .row-info .row-name { opacity: 0.6; }
@@ -890,6 +953,17 @@
   </div>
 </div>
 
+<div class="info-sheet-overlay" id="series-info-overlay">
+  <div class="info-sheet-backdrop" id="series-info-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title" id="series-info-title"></div>
+      <button type="button" class="info-sheet-close" id="series-info-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body" id="series-info-body"></div>
+  </div>
+</div>
+
 <script>
 /* ==================== НАЛАШТУВАННЯ ==================== */
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
@@ -966,6 +1040,10 @@ let activeTile = null; // null = меню категорій каталогу
 let activeBrand = 'mhi'; // 'mhi' | 'gal' — активний бренд у плитці з перемикачем
 let priceVersion = null;
 let catalogInitDone = false;
+/* Повні тексти описів серій для спливаючого вікна "детальніше" — заповнюється заново
+   при кожному renderCatalogList(). Тримаємо тут (а не в data-атрибуті HTML), бо в описах
+   з прайсу трапляються лапки " і апостроф ' — у HTML-атрибуті вони можуть зламати розмітку. */
+let seriesInfoTexts = [];
 
 /* Навігація вкладки "Інфо": null = верхнє меню (Каталоги / Технічна інфа) */
 let infoSection = null; // 'catalogs' | 'techinfo' | null
@@ -1074,6 +1152,7 @@ function parseSheet(rows, highlightMode, opts) {
   const items = [];
   let currentCategory = null;
   let currentSeriesLabel = null;
+  let currentFullText = null; // повний опис серії з прайсу — для спливаючого вікна "детальніше"
 
   for (let r = dataStart; r < rows.length; r++) {
     const row = rows[r] || [];
@@ -1088,12 +1167,21 @@ function parseSheet(rows, highlightMode, opts) {
       }
     }
 
-    if (price === null && highlightMode === 'series' && seriesLabelMode === 'first-sentence' && modelCol !== -1) {
+    if (price === null && highlightMode === 'series' && modelCol !== -1) {
       const cellText = String(row[modelCol] || '').trim();
-      if (cellText.includes('.')) {
-        // Рядок-опис серії (GALACTIC): весь текст жирний, беремо перше речення до крапки.
+      if (seriesLabelMode === 'first-sentence' && cellText.includes('.')) {
+        // Рядок-опис серії (GALACTIC): весь текст жирний, беремо перше речення до крапки
+        // для короткого підпису, а весь текст рядка зберігаємо для вікна "детальніше".
         const firstSentence = cellText.split('.', 1)[0].trim();
-        if (firstSentence.length > 12) currentSeriesLabel = firstSentence + '.';
+        if (firstSentence.length > 12) {
+          currentSeriesLabel = firstSentence + '.';
+          currentFullText = cellText;
+        }
+      } else if (labelMap && cellText.length > 8) {
+        // MHI: короткий підпис — за ручним списком SPLIT_MHI_LABELS (нижче), а повний
+        // текст опису серії беремо як є з цього рядка прайсу (без жодної обробки) —
+        // саме він піде у спливаюче вікно "детальніше".
+        currentFullText = cellText;
       }
     }
 
@@ -1113,7 +1201,10 @@ function parseSheet(rows, highlightMode, opts) {
     const item = { model, price, currency };
     if (highlightMode === 'series') {
       item.groupKey = extractSeries(model);
-      if (seriesLabelMode || labelMap) item.groupLabel = currentSeriesLabel || null;
+      if (seriesLabelMode || labelMap) {
+        item.groupLabel = currentSeriesLabel || null;
+        item.groupFullText = currentFullText || null;
+      }
     } else if (highlightMode === 'category') item.groupKey = currentCategory;
     items.push(item);
   }
@@ -1375,6 +1466,7 @@ function renderCatalogList() {
   const countHtml = '<div class="count">Знайдено: ' + filtered.length + '</div>';
   const showSegments = sort === 'none';
   let lastKey = null;
+  seriesInfoTexts = [];
 
   const rowsHtml = filtered.map(it => {
     let header = '';
@@ -1385,7 +1477,17 @@ function renderCatalogList() {
     const effectiveKey = it.groupLabel || it.groupKey;
     if (showSegments && effectiveKey && effectiveKey !== lastKey) {
       lastKey = effectiveKey;
-      header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}</div>`;
+      // Клікабельним заголовок робимо, лише якщо повний опис з прайсу дає щось суттєво
+      // більше за сам короткий підпис — щоб не показувати вікно, у якому просто
+      // повторюється той самий короткий текст.
+      const hasMoreInfo = it.groupFullText && it.groupFullText.trim().length > effectiveKey.length + 15;
+      if (hasMoreInfo) {
+        const idx = seriesInfoTexts.length;
+        seriesInfoTexts.push({ title: effectiveKey, text: it.groupFullText.trim() });
+        header = `<div class="segment-header segment-header-info" data-info-idx="${idx}" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}<span class="segment-header-info-icon">ⓘ</span></div>`;
+      } else {
+        header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}</div>`;
+      }
     } else if (showSegments && !effectiveKey) {
       lastKey = null;
     }
@@ -1426,8 +1528,25 @@ function attachBrandToggleHandlers(main) {
   });
 }
 
+function openSeriesInfo(title, text) {
+  document.getElementById('series-info-title').textContent = title;
+  document.getElementById('series-info-body').textContent = text;
+  document.getElementById('series-info-overlay').classList.add('show');
+}
+function closeSeriesInfo() {
+  document.getElementById('series-info-overlay').classList.remove('show');
+}
+document.getElementById('series-info-close').addEventListener('click', closeSeriesInfo);
+document.getElementById('series-info-backdrop').addEventListener('click', closeSeriesInfo);
+
 document.getElementById('main').addEventListener('click', function(e) {
   if (currentTab !== 'catalog') return;
+  const infoHeader = e.target.closest('.segment-header-info');
+  if (infoHeader) {
+    const info = seriesInfoTexts[Number(infoHeader.getAttribute('data-info-idx'))];
+    if (info) openSeriesInfo(info.title, info.text);
+    return;
+  }
   const zoneEl = e.target.closest('.row-click-zone');
   if (zoneEl) {
     const model = zoneEl.getAttribute('data-model');
