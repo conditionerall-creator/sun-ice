@@ -383,12 +383,19 @@
     border-radius: 12px;
     padding: 12px 14px;
     margin-bottom: 8px;
+  }
+  /* Верхня частина рядка (назва + ціна/кнопки) — окремий блок, щоб зона кліку "пошук в
+     Google" (яка розтягується на всю висоту свого контейнера) НЕ перекривала форму
+     калькулятора, коли та розкрита нижче. */
+  .row-top {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 10px;
   }
-  /* Клікабельна зона для пошуку в Google — тільки ліва чверть рядка (не весь рядок і не весь напис) */
+  /* Клікабельна зона для пошуку в Google — тільки ліва чверть верхньої частини рядка
+     (не весь рядок і не весь напис, і не заходить у розкритий калькулятор нижче) */
   .row-click-zone {
     position: absolute;
     top: 0; left: 0; bottom: 0;
@@ -396,6 +403,11 @@
     min-width: 60px;
     cursor: pointer;
     z-index: 1;
+  }
+  /* Форма калькулятора виводиться нижче row-top, притиснута праворуч — під ціною товару */
+  .calc-panel-slot {
+    display: flex;
+    justify-content: flex-end;
   }
   .segment-header {
     text-align: center;
@@ -550,6 +562,7 @@
   }
   .calc-cur-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
   .calc-eq { font-weight: 600; }
+  .calc-base { font-weight: 600; color: var(--text); white-space: nowrap; }
   .count { font-size: 12px; color: var(--text-secondary); padding: 8px 2px 4px; }
 
   /* ---------- "Підбірка" (кошик): галочка біля рядка + плаваюча кнопка + панель ---------- */
@@ -582,64 +595,72 @@
     line-height: 1;
   }
 
+  /* Підказка з'являється прямо під шапкою (шапка — position: sticky, тому підказка
+     лишається зверху екрана, а не десь знизу, де її легко не помітити). */
   .cart-toast {
-    position: fixed;
+    position: absolute;
+    top: 100%;
     left: 50%;
-    bottom: 78px;
-    transform: translateX(-50%) translateY(8px);
+    transform: translateX(-50%) translateY(-6px);
+    margin-top: 6px;
     background: rgba(15,23,42,0.92);
     color: #fff;
     font-size: 12.5px;
     font-weight: 600;
     padding: 9px 16px;
     border-radius: 20px;
-    z-index: 40;
+    z-index: 20;
     opacity: 0;
     pointer-events: none;
     transition: opacity .18s, transform .18s;
-    max-width: 88%;
+    max-width: 70%;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.22);
   }
   .cart-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+  /* "Ручка" підбірки — не плаваюча кнопка знизу, а яскравий "хвостик", що звисає з шапки
+     праворуч. Лічильник завжди на видному місці зверху; повторний дотик ховає підбірку. */
   .cart-fab {
-    position: fixed;
-    right: 16px;
-    bottom: 78px;
-    width: 52px; height: 52px;
-    border-radius: 50%;
+    position: absolute;
+    top: 100%;
+    right: 14px;
+    display: none;
+    align-items: center;
+    gap: 6px;
     border: none;
-    background: var(--accent);
+    background: linear-gradient(135deg, #FF8A1E, #FF3D5A);
     color: #fff;
-    font-size: 21px;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 6px 18px -4px rgba(230,0,18,0.5);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 14px 9px;
+    border-radius: 0 0 14px 14px;
     cursor: pointer;
-    z-index: 25;
+    box-shadow: 0 6px 14px -3px rgba(255, 61, 90, 0.55);
+    z-index: 20;
   }
   .cart-fab-badge {
-    position: absolute;
-    top: -4px; right: -4px;
-    min-width: 20px; height: 20px;
+    min-width: 18px; height: 18px;
     padding: 0 5px;
-    border-radius: 10px;
-    background: var(--navy);
+    border-radius: 9px;
+    background: rgba(255,255,255,0.3);
     color: #fff;
     font-size: 11px;
     font-weight: 700;
     display: flex; align-items: center; justify-content: center;
-    border: 2px solid var(--bg);
   }
 
+  /* Панель підбірки опускається згори (не спливає знизу) — щоб рахувати натискання
+     "ручки" зверху як єдину дію відкрити/закрити. */
   .cart-panel-overlay {
     display: none;
     position: fixed;
     inset: 0;
     z-index: 2600;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: center;
   }
   .cart-panel-overlay.show { display: flex; }
@@ -652,9 +673,14 @@
     display: flex;
     flex-direction: column;
     background: var(--card);
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -10px 34px rgba(0,0,0,0.28);
-    animation: install-gate-slide-up 0.22s ease-out;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.28);
+    animation: cart-panel-slide-down 0.22s ease-out;
+    padding-top: env(safe-area-inset-top);
+  }
+  @keyframes cart-panel-slide-down {
+    from { transform: translateY(-24px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
   }
   .cart-panel-header {
     display: flex;
@@ -722,16 +748,42 @@
     border-top: 1px dashed var(--border);
   }
   .cart-total-row .calc-panel { display: flex; flex: 1; margin-top: 0; padding-top: 0; border-top: none; }
+  /* Калькулятор підбірки — окрема "рівняння"-розкладка (щоб підсумок після "=" не виходив
+     за межі і не з'їжджав): ціна + форма% = число зверху, режими під формою, валюта під
+     числом знизу. Потрійна специфічність (.calc-panel.cart-calc-panel.open), щоб надійно
+     перебити і базовий display:flex з .calc-panel.open, і .cart-total-row .calc-panel. */
+  .calc-panel.cart-calc-panel.open {
+    display: grid;
+    grid-template-columns: auto minmax(56px, 76px) auto 1fr;
+    column-gap: 8px;
+    row-gap: 6px;
+    align-items: center;
+    width: 100%;
+  }
+  .cart-calc-panel .calc-base { grid-column: 1; grid-row: 1; }
+  .cart-calc-panel .calc-input { grid-column: 2; grid-row: 1; width: 100%; box-sizing: border-box; }
+  .cart-calc-panel .calc-eq { grid-column: 3; grid-row: 1; }
+  .cart-calc-panel .calc-result {
+    grid-column: 4; grid-row: 1;
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .cart-calc-panel .calc-modes { grid-column: 2; grid-row: 2; }
+  .cart-calc-panel .calc-currency { grid-column: 4; grid-row: 2; justify-content: flex-end; }
   .cart-clear-btn {
-    margin-top: 4px;
-    padding: 8px;
+    margin-top: 10px;
+    padding: 11px;
+    width: 100%;
     border: none;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 12.5px;
-    text-decoration: underline;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
     cursor: pointer;
   }
+  .cart-clear-btn:active { opacity: 0.85; }
   .cart-empty-hint { font-size: 12.5px; color: var(--text-secondary); margin: 4px 0; text-align: center; }
 
   .error {
@@ -1153,6 +1205,12 @@
       <div class="status-text" id="status-text"></div>
     </div>
     <div id="error-block"></div>
+    <!-- "Підбірка" (кошик): і підказка, і кнопка-"ручка" підв'язані до шапки (position: sticky),
+         тому лишаються зверху екрана під час гортання прайсу, а не десь знизу. -->
+    <div class="cart-toast" id="cart-toast"></div>
+    <button type="button" class="cart-fab" id="cart-fab" style="display:none;" aria-label="Відкрити підбірку">
+      🧾<span class="cart-fab-badge" id="cart-fab-badge">0</span>
+    </button>
   </header>
   <main id="main">
     <div class="empty">Завантаження...</div>
@@ -1190,11 +1248,6 @@
   </div>
 </div>
 
-<!-- "Підбірка" (кошик): галочка біля рядка додає товар сюди, не заважаючи гортати прайс -->
-<div class="cart-toast" id="cart-toast"></div>
-<button type="button" class="cart-fab" id="cart-fab" style="display:none;" aria-label="Відкрити підбірку">
-  🧾<span class="cart-fab-badge" id="cart-fab-badge">0</span>
-</button>
 <div class="cart-panel-overlay" id="cart-panel-overlay">
   <div class="cart-panel-backdrop" id="cart-panel-backdrop"></div>
   <div class="cart-panel">
@@ -1290,6 +1343,10 @@ let canEditRate = false; // чи може поточний користувач 
    однакові моделі з різних розділів каталогу. */
 let cart = [];
 let cartToastTimer = null;
+// Калькулятор у рядку прайсу: тримаємо, який саме .calc-panel зараз розкритий (лише один
+// одночасно), щоб дотик поза ним чи гортання списку самі його згортали.
+let openCalcPanelEl = null;
+let calcPanelOpenedAt = 0;
 /* Повні тексти описів серій для спливаючого вікна "детальніше" — заповнюється заново
    при кожному renderCatalogList(). Тримаємо тут (а не в data-атрибуті HTML), бо в описах
    з прайсу трапляються лапки " і апостроф ' — у HTML-атрибуті вони можуть зламати розмітку. */
@@ -1740,14 +1797,18 @@ function buildCalcPanelHtml(price, currency, priceStr, opts) {
               <button type="button" class="calc-cur-btn" data-cur="UAH">₴</button>
             </div>` : '';
   const cls = 'calc-panel' + (opts.open ? ' open' : '') + (opts.extraClass ? ' ' + opts.extraClass : '');
+  // showBase: показати базову ціну як окремий елемент рівняння "ціна + форма% = число"
+  // (використовується в калькуляторі підбірки, де це важливо бачити явно).
+  const baseHtml = opts.showBase ? `<span class="calc-base">${priceStr}</span>` : '';
   return `
           <div class="${cls}" data-price="${price}" data-currency="${escapeHtml(currency || '')}" data-mode="sub" data-cur="${escapeHtml(currency || '')}">
+            ${baseHtml}
             <div class="calc-modes">
               <button type="button" class="calc-mode-btn active" data-mode="sub">−%</button>
               <button type="button" class="calc-mode-btn" data-mode="add">+%</button>
               <button type="button" class="calc-mode-btn" data-mode="flat">=Ціна</button>
             </div>
-            <input type="number" class="calc-input" min="0" inputmode="numeric" placeholder="0">${curBtnsHtml}
+            <input type="number" class="calc-input" min="0" inputmode="numeric" placeholder="">${curBtnsHtml}
             <span class="calc-eq">=</span>
             <span class="calc-result">${priceStr}</span>
           </div>`;
@@ -1909,7 +1970,7 @@ function renderCartPanel() {
   const singleCurrency = currencies.length === 1 ? currencies[0] : null;
   const totalsLineHtml = currencies.map(cur => formatCalcAmount(totals[cur], cur)).join(' + ');
   const calcHtml = singleCurrency !== null
-    ? buildCalcPanelHtml(totals[singleCurrency], singleCurrency, formatCalcAmount(totals[singleCurrency], singleCurrency), { open: true, extraClass: 'cart-calc-panel' })
+    ? buildCalcPanelHtml(totals[singleCurrency], singleCurrency, formatCalcAmount(totals[singleCurrency], singleCurrency), { open: true, extraClass: 'cart-calc-panel', showBase: true })
     : `<div class="cart-empty-hint">Разом: ${totalsLineHtml}</div>`;
 
   body.innerHTML = itemsHtml + `
@@ -1931,6 +1992,7 @@ function closeCartPanel() {
 
 function renderCatalogList() {
   const main = document.getElementById('main');
+  openCalcPanelEl = null; // старі вузли DOM зараз буде замінено — посилання все одно застаріє
 
   const tile = CATALOG_TILES.find(t => t.id === activeTile);
   if (!tile) { main.innerHTML = '<div class="empty">Нічого не знайдено</div>'; return; }
@@ -1986,17 +2048,19 @@ function renderCatalogList() {
     const cartQty = cartQtyFor(cartKey);
     return header + `
       <div class="row" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
-        <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
-        <div class="row-info">
-          <p class="row-name">${escapeHtml(it.model)}</p>
-          ${buildCalcPanelHtml(it.price, it.currency, priceStr)}
+        <div class="row-top">
+          <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
+          <div class="row-info">
+            <p class="row-name">${escapeHtml(it.model)}</p>
+          </div>
+          <div class="row-right">
+            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
+            <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">%</button>
+            <div class="row-price">${priceStr}</div>
+            <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
+          </div>
         </div>
-        <div class="row-right">
-          <div class="row-price">${priceStr}</div>
-          <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
-          <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">%</button>
-          <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
-        </div>
+        <div class="calc-panel-slot">${buildCalcPanelHtml(it.price, it.currency, priceStr)}</div>
       </div>
     `;
   }).join('');
@@ -2046,8 +2110,12 @@ document.getElementById('main').addEventListener('click', function(e) {
     const rowEl = toggleBtn.closest('.row');
     const panel = rowEl.querySelector('.calc-panel');
     if (panel) {
-      const showing = panel.classList.toggle('open');
-      if (showing) {
+      const willOpen = !panel.classList.contains('open');
+      if (openCalcPanelEl && openCalcPanelEl !== panel) openCalcPanelEl.classList.remove('open');
+      panel.classList.toggle('open', willOpen);
+      openCalcPanelEl = willOpen ? panel : null;
+      calcPanelOpenedAt = Date.now();
+      if (willOpen) {
         const input = panel.querySelector('.calc-input');
         if (input) input.focus();
       }
@@ -2086,8 +2154,36 @@ document.getElementById('main').addEventListener('input', handleCalcDelegatedInp
 document.getElementById('refresh-icon').addEventListener('click', handleRefreshClick);
 document.getElementById('back-btn').addEventListener('click', function() { history.back(); });
 
+/* Калькулятор у рядку прайсу сам згортається: дотик поза розкритою формою (в тому числі
+   в порожню область того самого рядка), або гортання списку — і панель знову маленька.
+   Слухач у фазі "capture", щоб спрацювати ДО кліку по кнопці % іншого рядка (тоді стара
+   панель встигає закритись, перш ніж відкриється нова). Власну кнопку %, яка й керує
+   відкриттям/закриттям цієї ж панелі, тут навмисно ігноруємо — нею керує toggleBtn-гілка
+   вище. */
+document.addEventListener('click', function(e) {
+  if (!openCalcPanelEl) return;
+  if (openCalcPanelEl.contains(e.target)) return;
+  const rowEl = openCalcPanelEl.closest('.row');
+  const ownToggle = rowEl ? rowEl.querySelector('.calc-toggle') : null;
+  if (ownToggle && e.target.closest('.calc-toggle') === ownToggle) return;
+  openCalcPanelEl.classList.remove('open');
+  openCalcPanelEl = null;
+}, true);
+window.addEventListener('scroll', function() {
+  // Невелика затримка після відкриття — інакше авто-прокрутка сторінки до фокусу на
+  // мобільній клавіатурі одразу ж закривала б щойно відкриту панель.
+  if (openCalcPanelEl && Date.now() - calcPanelOpenedAt > 400) {
+    openCalcPanelEl.classList.remove('open');
+    openCalcPanelEl = null;
+  }
+}, { passive: true, capture: true });
+
 /* ---------- "Підбірка" (кошик): плаваюча кнопка і панель ---------- */
-document.getElementById('cart-fab').addEventListener('click', openCartPanel);
+document.getElementById('cart-fab').addEventListener('click', function() {
+  const overlay = document.getElementById('cart-panel-overlay');
+  if (overlay.classList.contains('show')) closeCartPanel();
+  else openCartPanel();
+});
 document.getElementById('cart-panel-close').addEventListener('click', closeCartPanel);
 document.getElementById('cart-panel-backdrop').addEventListener('click', closeCartPanel);
 document.getElementById('cart-panel-overlay').addEventListener('input', handleCalcDelegatedInput);
@@ -2939,6 +3035,7 @@ function switchTab(tab, pushHistory) {
   });
   document.getElementById('back-btn').style.display = 'none';
   document.getElementById('rate-row').style.display = 'none';
+  openCalcPanelEl = null;
   closeCartPanel();
   renderCartBar();
   document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
