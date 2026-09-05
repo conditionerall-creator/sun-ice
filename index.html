@@ -390,7 +390,7 @@
     overflow: hidden;
     margin-bottom: 12px;
   }
-  .promo-image { width: 100%; display: block; max-height: 160px; object-fit: cover; }
+  .promo-image { width: 100%; display: block; height: auto; max-height: 80vh; object-fit: contain; background: var(--bg); }
   .promo-body { padding: 14px 16px; }
   .promo-title { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
   .promo-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 6px; }
@@ -753,6 +753,7 @@
       <div class="back-btn" id="back-btn">←</div>
       <h1 id="title">Каталог</h1>
       <div class="icon-btn" id="refresh-icon" title="Оновити прайс" style="display:none;">↻</div>
+      <div class="icon-btn" id="shortcut-icon" title="Додати ярлик на головний екран" style="display:none;">📲</div>
     </div>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
@@ -1362,7 +1363,7 @@ async function renderPromotionsTab() {
 
   const [role, promoResult] = await Promise.all([
     getCurrentProfileRole(),
-    sb.from('promotions').select('*').eq('is_active', true).order('sort_order')
+    sb.from('promotions').select('*').eq('is_active', true).order('sort_order', { ascending: false })
   ]);
   const { data, error } = promoResult;
   const isSuper = role === 'super_admin';
@@ -2077,6 +2078,7 @@ function switchTab(tab, pushHistory) {
   document.getElementById('back-btn').style.display = 'none';
   document.getElementById('search-block').style.display = 'none';
   document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
+  document.getElementById('shortcut-icon').style.display = tab === 'contacts' ? 'flex' : 'none';
   document.getElementById('status-row').style.display = 'none';
   document.getElementById('error-block').innerHTML = '';
   if (pushHistory) {
@@ -2128,11 +2130,7 @@ function showInstallBanner(platform) {
     actionBtn.style.display = 'inline-block';
     actionBtn.onclick = async () => {
       banner.classList.remove('show');
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        await deferredInstallPrompt.userChoice;
-        deferredInstallPrompt = null;
-      }
+      await triggerAddToHomeScreen();
     };
   } else {
     textEl.textContent = 'Щоб встановити застосунок: натисніть «Поділитися» ⬆ внизу екрана → «На екран Домой»';
@@ -2140,6 +2138,29 @@ function showInstallBanner(platform) {
   }
   banner.classList.add('show');
 }
+
+/* Кнопка "Ярлик" у вкладці Контакти — той самий системний діалог встановлення,
+   викликаний вручну (корисно, якщо автоматичний банер з якоїсь причини не показався). */
+async function triggerAddToHomeScreen() {
+  if (isStandalone) {
+    alert('Застосунок уже встановлено на цьому пристрої.');
+    return;
+  }
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    document.getElementById('shortcut-icon').style.opacity = '0.5';
+    return;
+  }
+  if (isIOS) {
+    alert('Щоб встановити застосунок на iPhone/iPad: натисніть кнопку «Поділитися» ⬆ внизу екрана Safari → «На екран Домой».');
+    return;
+  }
+  alert('Браузер поки не пропонує швидке встановлення (можливо, застосунок вже додавався раніше, або сторінку щойно відкрито). Спробуйте: меню браузера (⋮) → «Додати на головний екран» / «Встановити застосунок».');
+}
+document.getElementById('shortcut-icon').addEventListener('click', triggerAddToHomeScreen);
+
 document.getElementById('install-close-btn').addEventListener('click', () => {
   document.getElementById('install-banner').classList.remove('show');
   localStorage.setItem('sunice_install_dismissed', '1');
