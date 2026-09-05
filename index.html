@@ -443,6 +443,36 @@
   .promo-upload-status { font-size: 12px; color: var(--text-secondary); margin: 0; min-height: 14px; }
   .promo-image { cursor: zoom-in; }
 
+  /* Інфо → Каталоги: картка з посиланням на PDF-каталог виробника */
+  .info-doc-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .info-doc-link {
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--text);
+    text-decoration: none;
+  }
+  .info-doc-link:active { color: var(--accent); }
+  .info-doc-btn {
+    display: block;
+    text-align: center;
+    padding: 11px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
   /* Перегляд зображення акції на весь екран (наближення/панорамування) */
   .img-lightbox-overlay {
     display: none;
@@ -801,6 +831,10 @@ let activeTile = null; // null = меню категорій каталогу
 let activeBrand = 'mhi'; // 'mhi' | 'gal' — активний бренд у плитці з перемикачем
 let priceVersion = null;
 let catalogInitDone = false;
+
+/* Навігація вкладки "Інфо": null = верхнє меню (Каталоги / Технічна інфа) */
+let infoSection = null; // 'catalogs' | 'techinfo' | null
+let infoBrand = null;   // 'mhi' | 'galactic' | null
 
 /* ---------- Допоміжні функції парсингу прайсу ---------- */
 const priceKeywordGroups = [
@@ -1283,10 +1317,14 @@ window.addEventListener('popstate', function(event) {
   if (state && state.tab) {
     switchTab(state.tab, false);
     if (state.tab === 'catalog') { activeTile = state.tile || null; activeBrand = 'mhi'; }
+    if (state.tab === 'info') { infoSection = state.section || null; infoBrand = state.brand || null; }
     renderCurrentTab();
   } else {
     activeTile = null;
+    infoSection = null;
+    infoBrand = null;
     if (currentTab === 'catalog') renderCatalogView();
+    else if (currentTab === 'info') renderInfoTab();
   }
 });
 
@@ -1448,10 +1486,91 @@ async function renderContactsTab() {
 }
 
 /* ---------- Тех. інформація ---------- */
+const INFO_SECTIONS = [
+  { id: 'catalogs', label: 'Каталоги' },
+  { id: 'techinfo', label: 'Технічна інфа' }
+];
+const INFO_BRANDS = [
+  { id: 'mhi', label: 'Mitsubishi Heavy' },
+  { id: 'galactic', label: 'GALACTIC' }
+];
+/* Посилання на офіційні PDF-каталоги виробників (розділ Інфо → Каталоги) */
+const INFO_CATALOG_DOCS = {
+  mhi: {
+    text: 'Каталог побутових і напівпромислових кондиціонерів Mitsubishi H.I.',
+    url: 'https://sun-ice.com.ua/download/catalog/mhi/catalog-mhi-rac-pac.pdf'
+  },
+  galactic: {
+    text: 'Актуальний каталог продукції Galactic',
+    url: 'https://sun-ice.com.ua/pdf_catalogs/cat_Galactic.pdf'
+  }
+};
+
 function renderInfoTab() {
-  document.getElementById('title').textContent = 'Тех. інформація';
-  document.getElementById('main').innerHTML =
-    '<div class="empty">Розділ у розробці.<br>Найближчим часом тут з’являться інструкції, каталоги, технічні характеристики, сертифікати та інші документи.</div>';
+  const backBtn = document.getElementById('back-btn');
+  const title = document.getElementById('title');
+  document.getElementById('search-block').style.display = 'none';
+
+  if (!infoSection) {
+    backBtn.style.display = 'none';
+    title.textContent = 'Інфо';
+    renderInfoMenu(INFO_SECTIONS, (id) => {
+      infoSection = id;
+      infoBrand = null;
+      history.pushState({ tab: 'info', section: id, brand: null }, '', '#info-' + id);
+      renderInfoTab();
+    });
+    return;
+  }
+
+  const section = INFO_SECTIONS.find(s => s.id === infoSection);
+
+  if (!infoBrand) {
+    backBtn.style.display = 'flex';
+    title.textContent = section ? section.label : 'Інфо';
+    renderInfoMenu(INFO_BRANDS, (id) => {
+      infoBrand = id;
+      history.pushState({ tab: 'info', section: infoSection, brand: id }, '', '#info-' + infoSection + '-' + id);
+      renderInfoTab();
+    });
+    return;
+  }
+
+  backBtn.style.display = 'flex';
+  const brand = INFO_BRANDS.find(b => b.id === infoBrand);
+  title.textContent = brand ? brand.label : 'Інфо';
+  renderInfoDetail();
+}
+
+function renderInfoMenu(items, onSelect) {
+  const main = document.getElementById('main');
+  const tiles = items.map(item => `
+    <div class="menu-tile" data-info-id="${escapeHtml(item.id)}">
+      <div class="menu-tile-row">
+        <div class="menu-tile-icon">${escapeHtml(item.label.slice(0, 2).toUpperCase())}</div>
+      </div>
+      <div class="menu-tile-title">${escapeHtml(item.label)}</div>
+    </div>`).join('');
+  main.innerHTML = '<div class="menu-grid">' + tiles + '</div>';
+  main.querySelectorAll('.menu-tile[data-info-id]').forEach(el => {
+    el.addEventListener('click', () => onSelect(el.getAttribute('data-info-id')));
+  });
+}
+
+function renderInfoDetail() {
+  const main = document.getElementById('main');
+  if (infoSection === 'catalogs') {
+    const doc = INFO_CATALOG_DOCS[infoBrand];
+    if (!doc) { main.innerHTML = '<div class="empty">Немає даних.</div>'; return; }
+    main.innerHTML = `
+      <div class="info-doc-card">
+        <a class="info-doc-link" href="${escapeHtml(doc.url)}" target="_blank" rel="noopener">${escapeHtml(doc.text)}</a>
+        <a class="info-doc-btn" href="${escapeHtml(doc.url)}" target="_blank" rel="noopener">Завантажити</a>
+      </div>`;
+  } else {
+    main.innerHTML =
+      '<div class="empty">Розділ у розробці.<br>Найближчим часом тут з’являться технічні характеристики, інструкції та сертифікати.</div>';
+  }
 }
 
 /* ---------- Кабінет ---------- */
@@ -1903,6 +2022,8 @@ async function handleAdminAction(action, id, value) {
 function switchTab(tab, pushHistory) {
   currentTab = tab;
   activeTile = null;
+  infoSection = null;
+  infoBrand = null;
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
   });
