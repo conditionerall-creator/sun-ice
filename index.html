@@ -552,36 +552,136 @@
   .calc-eq { font-weight: 600; }
   .count { font-size: 12px; color: var(--text-secondary); padding: 8px 2px 4px; }
 
-  /* ---------- Конфігуратор мультисплітів ---------- */
-  .ms-builder { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-top: 4px; }
-  .ms-field { margin-bottom: 14px; }
-  .ms-field:last-child { margin-bottom: 0; }
-  .ms-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
-  .ms-select {
-    width: 100%;
-    padding: 10px 8px;
+  /* ---------- "Підбірка" (кошик): галочка біля рядка + плаваюча кнопка + панель ---------- */
+  .cart-check-btn {
+    position: relative;
+    width: 24px; height: 24px;
+    border-radius: 50%;
     border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: 13.5px;
-    background: var(--bg);
-    color: var(--text);
+    background: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    opacity: 0.45;
   }
-  .ms-add-row { display: flex; gap: 8px; }
-  .ms-add-row .ms-select { flex: 1; }
-  .ms-add-btn {
-    padding: 0 16px;
+  .cart-check-btn .cart-check-icon { font-size: 12px; font-weight: 700; color: var(--text-secondary); line-height: 1; }
+  .cart-check-btn.active { opacity: 1; background: var(--accent); border-color: var(--accent); }
+  .cart-check-btn.active .cart-check-icon { color: #fff; }
+  .cart-check-badge {
+    position: absolute;
+    top: -6px; right: -6px;
+    min-width: 15px; height: 15px;
+    padding: 0 3px;
+    border-radius: 8px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    line-height: 1;
+  }
+
+  .cart-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 78px;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(15,23,42,0.92);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 20px;
+    z-index: 40;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s, transform .18s;
+    max-width: 88%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cart-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .cart-fab {
+    position: fixed;
+    right: 16px;
+    bottom: 78px;
+    width: 52px; height: 52px;
+    border-radius: 50%;
     border: none;
-    border-radius: 10px;
     background: var(--accent);
     color: #fff;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 21px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px -4px rgba(230,0,18,0.5);
+    cursor: pointer;
+    z-index: 25;
+  }
+  .cart-fab-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    min-width: 20px; height: 20px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid var(--bg);
+  }
+
+  .cart-panel-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2600;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .cart-panel-overlay.show { display: flex; }
+  .cart-panel-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.45); }
+  .cart-panel {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 34px rgba(0,0,0,0.28);
+    animation: install-gate-slide-up 0.22s ease-out;
+  }
+  .cart-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 18px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .cart-panel-title { flex: 1; font-size: 15px; font-weight: 700; color: var(--text); }
+  .cart-panel-close {
+    width: 30px; height: 30px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 15px;
     cursor: pointer;
     flex-shrink: 0;
   }
-  .ms-indoor-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-  .ms-empty-hint { font-size: 12.5px; color: var(--text-secondary); margin-top: 10px; }
-  .ms-indoor-row {
+  .cart-panel-body {
+    padding: 14px 16px calc(20px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .cart-item-row {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -590,10 +690,11 @@
     border-radius: 10px;
     background: var(--bg);
   }
-  .ms-indoor-name { flex: 1; font-size: 13px; min-width: 0; word-break: break-word; }
-  .ms-indoor-price { color: var(--text-secondary); font-weight: 600; }
-  .ms-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-  .ms-qty-btn {
+  .cart-item-name { flex: 1; font-size: 13px; min-width: 0; word-break: break-word; }
+  .cart-item-tile { display: block; font-size: 10.5px; color: var(--text-secondary); font-weight: 500; }
+  .cart-item-price { color: var(--text-secondary); font-weight: 600; }
+  .cart-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .cart-qty-btn {
     width: 24px; height: 24px;
     border-radius: 7px;
     border: 1px solid var(--border);
@@ -602,8 +703,8 @@
     color: var(--accent);
     cursor: pointer;
   }
-  .ms-qty-val { min-width: 14px; text-align: center; font-weight: 600; }
-  .ms-indoor-remove {
+  .cart-qty-val { min-width: 14px; text-align: center; font-weight: 600; }
+  .cart-item-remove {
     width: 24px; height: 24px;
     border-radius: 7px;
     border: none;
@@ -612,15 +713,26 @@
     cursor: pointer;
     flex-shrink: 0;
   }
-  .ms-total-row {
+  .cart-total-row {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 14px;
+    margin-top: 6px;
     padding-top: 14px;
     border-top: 1px dashed var(--border);
   }
-  .ms-total-row .calc-panel { display: flex; flex: 1; margin-top: 0; padding-top: 0; border-top: none; }
+  .cart-total-row .calc-panel { display: flex; flex: 1; margin-top: 0; padding-top: 0; border-top: none; }
+  .cart-clear-btn {
+    margin-top: 4px;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .cart-empty-hint { font-size: 12.5px; color: var(--text-secondary); margin: 4px 0; text-align: center; }
 
   .error {
     background: #fcebeb;
@@ -1078,6 +1190,22 @@
   </div>
 </div>
 
+<!-- "Підбірка" (кошик): галочка біля рядка додає товар сюди, не заважаючи гортати прайс -->
+<div class="cart-toast" id="cart-toast"></div>
+<button type="button" class="cart-fab" id="cart-fab" style="display:none;" aria-label="Відкрити підбірку">
+  🧾<span class="cart-fab-badge" id="cart-fab-badge">0</span>
+</button>
+<div class="cart-panel-overlay" id="cart-panel-overlay">
+  <div class="cart-panel-backdrop" id="cart-panel-backdrop"></div>
+  <div class="cart-panel">
+    <div class="cart-panel-header">
+      <div class="cart-panel-title">Підбірка</div>
+      <button type="button" class="cart-panel-close" id="cart-panel-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="cart-panel-body" id="cart-panel-body"></div>
+  </div>
+</div>
+
 <script>
 /* ==================== НАЛАШТУВАННЯ ==================== */
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
@@ -1156,9 +1284,12 @@ let priceVersion = null;
 let catalogInitDone = false;
 let usdRate = null;      // курс $ → грн (з app_settings), для перерахунку в калькуляторі
 let canEditRate = false; // чи може поточний користувач редагувати курс (regional_admin/super_admin)
-/* Стан конфігуратора мультисплітів — окремо по бренду (MHI/GAL), щоб перемикання
-   вкладки бренду не губило вже зібрану систему. */
-let msState = { mhi: { outdoor: null, indoor: [] }, gal: { outdoor: null, indoor: [] } };
+/* "Підбірка" (кошик) — позиції, які користувач додав галочкою біля рядка прайсу, щоб
+   зібрати кілька товарів в один розрахунок і поділитися одним повідомленням. Ключ кожної
+   позиції унікальний у межах плитки+бренду+моделі, щоб той самий кошик коректно різнив
+   однакові моделі з різних розділів каталогу. */
+let cart = [];
+let cartToastTimer = null;
 /* Повні тексти описів серій для спливаючого вікна "детальніше" — заповнюється заново
    при кожному renderCatalogList(). Тримаємо тут (а не в data-атрибуті HTML), бо в описах
    з прайсу трапляються лапки " і апостроф ' — у HTML-атрибуті вони можуть зламати розмітку. */
@@ -1544,6 +1675,7 @@ function renderCatalogView() {
     renderCatalogList();
   }
   renderRateRow();
+  renderCartBar();
 }
 
 function renderCatalogMenu() {
@@ -1641,16 +1773,167 @@ function computeCalcResult(panel) {
   if (resultEl) resultEl.textContent = formatCalcAmount(result, cur);
 }
 
+/* Спільна логіка кнопок режиму (-%/+%/=Ціна) і валюти ($/₴) калькулятора — використовується
+   і для калькулятора в рядку прайсу (всередині #main), і для калькулятора підбірки
+   (всередині #cart-panel-overlay, це окремий контейнер поза #main). Повертає true, якщо
+   подія оброблена (щоб виклик міг одразу зробити return). */
+function handleCalcDelegatedClick(e) {
+  const modeBtn = e.target.closest('.calc-mode-btn');
+  if (modeBtn) {
+    const panel = modeBtn.closest('.calc-panel');
+    panel.querySelectorAll('.calc-mode-btn').forEach(b => b.classList.toggle('active', b === modeBtn));
+    panel.setAttribute('data-mode', modeBtn.getAttribute('data-mode'));
+    computeCalcResult(panel);
+    return true;
+  }
+  const curBtn = e.target.closest('.calc-cur-btn');
+  if (curBtn) {
+    const panel = curBtn.closest('.calc-panel');
+    panel.querySelectorAll('.calc-cur-btn').forEach(b => b.classList.toggle('active', b === curBtn));
+    panel.setAttribute('data-cur', curBtn.getAttribute('data-cur'));
+    computeCalcResult(panel);
+    return true;
+  }
+  return false;
+}
+function handleCalcDelegatedInput(e) {
+  if (!e.target.classList.contains('calc-input')) return false;
+  computeCalcResult(e.target.closest('.calc-panel'));
+  return true;
+}
+
+/* ---------- "Підбірка" (кошик) ----------
+   Галочка біля рядка прайсу (.cart-check-btn) додає товар у cart[] і одразу оновлює
+   тільки саму кнопку (без перерендеру всього списку — інакше гортання прайсу збивалось би
+   при кожному натисканні). Плаваюча кнопка (#cart-fab) і панель (#cart-panel-overlay) —
+   статичні елементи поза #main, що показуються лише коли підбірка не порожня. */
+function cartQtyFor(key) {
+  const entry = cart.find(c => c.key === key);
+  return entry ? entry.qty : 0;
+}
+function cartTotalsByCurrency() {
+  const totals = {};
+  cart.forEach(c => { totals[c.currency || ''] = (totals[c.currency || ''] || 0) + c.price * c.qty; });
+  return totals;
+}
+function addToCart(btn) {
+  const key = btn.getAttribute('data-key');
+  const model = btn.getAttribute('data-model');
+  const price = parseFloat(btn.getAttribute('data-price')) || 0;
+  const currency = btn.getAttribute('data-currency') || '';
+  const tileLabel = btn.getAttribute('data-tile-label') || '';
+  let entry = cart.find(c => c.key === key);
+  if (!entry) {
+    entry = { key, model, price, currency, tileLabel, qty: 0 };
+    cart.push(entry);
+  }
+  entry.qty += 1;
+  btn.classList.add('active');
+  const badge = btn.querySelector('.cart-check-badge');
+  if (badge) { badge.textContent = entry.qty; badge.style.display = 'flex'; }
+  showCartToast(model, entry.qty);
+  renderCartBar();
+}
+function showCartToast(model, qty) {
+  const toast = document.getElementById('cart-toast');
+  if (!toast) return;
+  toast.textContent = model + ' — ' + qty + ' шт. Натисни знову — буде +1';
+  toast.classList.add('show');
+  if (cartToastTimer) clearTimeout(cartToastTimer);
+  cartToastTimer = setTimeout(() => { toast.classList.remove('show'); }, 1800);
+}
+function syncCartRowBadge(key) {
+  const main = document.getElementById('main');
+  if (!main) return;
+  const entry = cart.find(c => c.key === key);
+  const qty = entry ? entry.qty : 0;
+  main.querySelectorAll('.cart-check-btn').forEach(btn => {
+    if (btn.getAttribute('data-key') !== key) return;
+    const badge = btn.querySelector('.cart-check-badge');
+    if (qty > 0) {
+      btn.classList.add('active');
+      if (badge) { badge.textContent = qty; badge.style.display = 'flex'; }
+    } else {
+      btn.classList.remove('active');
+      if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
+    }
+  });
+}
+function syncAllCartBadges() {
+  const main = document.getElementById('main');
+  if (!main) return;
+  main.querySelectorAll('.cart-check-btn').forEach(btn => {
+    btn.classList.remove('active');
+    const badge = btn.querySelector('.cart-check-badge');
+    if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
+  });
+}
+function renderCartBar() {
+  const fab = document.getElementById('cart-fab');
+  if (!fab) return;
+  const totalQty = cart.reduce((s, c) => s + c.qty, 0);
+  if (totalQty === 0 || currentTab !== 'catalog') {
+    fab.style.display = 'none';
+    if (totalQty === 0) closeCartPanel();
+    return;
+  }
+  fab.style.display = 'flex';
+  document.getElementById('cart-fab-badge').textContent = totalQty;
+  if (document.getElementById('cart-panel-overlay').classList.contains('show')) renderCartPanel();
+}
+function renderCartPanel() {
+  const body = document.getElementById('cart-panel-body');
+  if (!body) return;
+  if (cart.length === 0) {
+    body.innerHTML = '<div class="cart-empty-hint">Підбірка порожня — натисни ✓ біля позиції в прайсі</div>';
+    return;
+  }
+  const itemsHtml = cart.map(c => {
+    const priceStr = formatCalcAmount(c.price * c.qty, c.currency);
+    return `
+      <div class="cart-item-row" data-key="${escapeHtml(c.key)}">
+        <span class="cart-item-name">${escapeHtml(c.model)}${c.tileLabel ? '<span class="cart-item-tile">' + escapeHtml(c.tileLabel) + '</span>' : ''}<span class="cart-item-price">${priceStr}</span></span>
+        <div class="cart-qty">
+          <button type="button" class="cart-qty-btn" data-op="minus" aria-label="Менше">−</button>
+          <span class="cart-qty-val">${c.qty}</span>
+          <button type="button" class="cart-qty-btn" data-op="plus" aria-label="Більше">+</button>
+        </div>
+        <button type="button" class="cart-item-remove" aria-label="Видалити">✕</button>
+      </div>`;
+  }).join('');
+
+  const totals = cartTotalsByCurrency();
+  const currencies = Object.keys(totals);
+  // Калькулятор з перерахунком валюти має сенс, лише коли всі позиції в одній валюті —
+  // на практиці так завжди (весь прайс у $), але про всяк випадок обробляємо і змішаний.
+  const singleCurrency = currencies.length === 1 ? currencies[0] : null;
+  const totalsLineHtml = currencies.map(cur => formatCalcAmount(totals[cur], cur)).join(' + ');
+  const calcHtml = singleCurrency !== null
+    ? buildCalcPanelHtml(totals[singleCurrency], singleCurrency, formatCalcAmount(totals[singleCurrency], singleCurrency), { open: true, extraClass: 'cart-calc-panel' })
+    : `<div class="cart-empty-hint">Разом: ${totalsLineHtml}</div>`;
+
+  body.innerHTML = itemsHtml + `
+    <div class="cart-total-row">
+      ${calcHtml}
+      <button type="button" class="share-btn cart-share-btn" aria-label="Поділитися підбіркою"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
+    </div>
+    <button type="button" class="cart-clear-btn" id="cart-clear-btn">Очистити підбірку</button>
+  `;
+}
+function openCartPanel() {
+  renderCartPanel();
+  document.getElementById('cart-panel-overlay').classList.add('show');
+}
+function closeCartPanel() {
+  const overlay = document.getElementById('cart-panel-overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
 function renderCatalogList() {
   const main = document.getElementById('main');
 
   const tile = CATALOG_TILES.find(t => t.id === activeTile);
   if (!tile) { main.innerHTML = '<div class="empty">Нічого не знайдено</div>'; return; }
-
-  if (tile.id === 'multisplit') {
-    renderMultisplitConfigurator(tile, tileActiveCfg(tile));
-    return;
-  }
 
   const hasBoth = !!(tile.mhi && tile.gal);
   const cfg = tileActiveCfg(tile);
@@ -1699,6 +1982,8 @@ function renderCatalogList() {
       lastKey = null;
     }
     const priceStr = Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '');
+    const cartKey = activeTile + '|' + activeBrand + '|' + it.model;
+    const cartQty = cartQtyFor(cartKey);
     return header + `
       <div class="row" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
         <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
@@ -1710,6 +1995,7 @@ function renderCatalogList() {
           <div class="row-price">${priceStr}</div>
           <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
           <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">%</button>
+          <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
         </div>
       </div>
     `;
@@ -1727,148 +2013,6 @@ function attachBrandToggleHandlers(main) {
       activeBrand = brand;
       renderCatalogList();
     });
-  });
-}
-
-/* ---------- Конфігуратор мультисплітів (Мульти спліт-системи, MHI + GAL) ----------
-   Мультиспліт = один зовнішній блок + декілька внутрішніх. Дані беремо з того ж
-   sheetsData[cfg.key], що й звичайний список, але фільтруємо по item.unitType
-   ('outdoor'/'indoor'), який parseSheet проставляє з колонки "ТИП БЛОКУ" прайсу. */
-function renderMultisplitConfigurator(tile, cfg) {
-  const main = document.getElementById('main');
-  const hasBoth = !!(tile.mhi && tile.gal);
-  const toggleHtml = hasBoth ? `
-    <div class="brand-toggle">
-      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
-      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
-    </div>` : '';
-
-  const allItems = cfg ? (sheetsData[cfg.key] || []) : [];
-  if (!cfg || allItems.length === 0) {
-    main.innerHTML = toggleHtml + '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
-    attachBrandToggleHandlers(main);
-    return;
-  }
-
-  const outdoorItems = allItems.filter(it => it.unitType === 'outdoor');
-  const indoorItems = allItems.filter(it => it.unitType === 'indoor');
-  const state = msState[activeBrand];
-  // Прибираємо вибір, якщо модель зникла з прайсу (напр. після оновлення прайсу)
-  if (state.outdoor && !outdoorItems.some(it => it.model === state.outdoor)) state.outdoor = null;
-  state.indoor = state.indoor.filter(sel => indoorItems.some(it => it.model === sel.model));
-
-  if (outdoorItems.length === 0 || indoorItems.length === 0) {
-    main.innerHTML = toggleHtml + '<div class="empty">Не вдалося розпізнати зовнішні/внутрішні блоки в цьому прайсі.</div>';
-    attachBrandToggleHandlers(main);
-    return;
-  }
-
-  const outdoorOptionsHtml = '<option value="">— виберіть зовнішній блок —</option>' + outdoorItems.map(it =>
-    `<option value="${escapeHtml(it.model)}" ${state.outdoor === it.model ? 'selected' : ''}>${escapeHtml(it.model)} — ${Math.round(it.price).toLocaleString('uk-UA')}${it.currency ? ' ' + escapeHtml(it.currency) : ''}</option>`
-  ).join('');
-  const indoorOptionsHtml = '<option value="">— виберіть внутрішній блок —</option>' + indoorItems.map(it =>
-    `<option value="${escapeHtml(it.model)}">${escapeHtml(it.model)} — ${Math.round(it.price).toLocaleString('uk-UA')}${it.currency ? ' ' + escapeHtml(it.currency) : ''}</option>`
-  ).join('');
-
-  const selectedIndoorHtml = state.indoor.length === 0
-    ? '<div class="ms-empty-hint">Додайте хоча б один внутрішній блок</div>'
-    : state.indoor.map(sel => {
-        const it = indoorItems.find(x => x.model === sel.model);
-        const priceStr = it ? Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '') : '';
-        return `
-        <div class="ms-indoor-row" data-model="${escapeHtml(sel.model)}">
-          <span class="ms-indoor-name">${escapeHtml(sel.model)} <span class="ms-indoor-price">${priceStr}</span></span>
-          <div class="ms-qty">
-            <button type="button" class="ms-qty-btn" data-op="minus" aria-label="Менше">−</button>
-            <span class="ms-qty-val">${sel.qty}</span>
-            <button type="button" class="ms-qty-btn" data-op="plus" aria-label="Більше">+</button>
-          </div>
-          <button type="button" class="ms-indoor-remove" aria-label="Прибрати">✕</button>
-        </div>`;
-      }).join('');
-
-  const outdoorItem = outdoorItems.find(it => it.model === state.outdoor);
-  const total = (outdoorItem ? outdoorItem.price : 0) + state.indoor.reduce((sum, sel) => {
-    const it = indoorItems.find(x => x.model === sel.model);
-    return sum + (it ? it.price * sel.qty : 0);
-  }, 0);
-  const nativeCurrency = outdoorItem ? outdoorItem.currency : (indoorItems[0] ? indoorItems[0].currency : '');
-  const totalStr = formatCalcAmount(total, nativeCurrency);
-  const canShare = !!outdoorItem && state.indoor.length > 0;
-
-  main.innerHTML = toggleHtml + `
-    <div class="ms-builder">
-      <div class="ms-field">
-        <label class="ms-label">Зовнішній блок</label>
-        <select id="ms-outdoor-select" class="ms-select">${outdoorOptionsHtml}</select>
-      </div>
-      <div class="ms-field">
-        <label class="ms-label">Внутрішні блоки</label>
-        <div class="ms-add-row">
-          <select id="ms-indoor-select" class="ms-select">${indoorOptionsHtml}</select>
-          <button type="button" id="ms-indoor-add" class="ms-add-btn">Додати</button>
-        </div>
-        <div class="ms-indoor-list">${selectedIndoorHtml}</div>
-      </div>
-      ${canShare ? `
-      <div class="ms-total-row">
-        ${buildCalcPanelHtml(total, nativeCurrency, totalStr, { open: true, extraClass: 'ms-calc-panel' })}
-        <button type="button" class="share-btn ms-share-btn" aria-label="Поділитися системою"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
-      </div>` : ''}
-    </div>`;
-
-  attachBrandToggleHandlers(main);
-
-  const outdoorSelectEl = document.getElementById('ms-outdoor-select');
-  if (outdoorSelectEl) outdoorSelectEl.addEventListener('change', (e) => {
-    state.outdoor = e.target.value || null;
-    renderMultisplitConfigurator(tile, cfg);
-  });
-  const indoorAddBtn = document.getElementById('ms-indoor-add');
-  if (indoorAddBtn) indoorAddBtn.addEventListener('click', () => {
-    const sel = document.getElementById('ms-indoor-select');
-    const model = sel.value;
-    if (!model) return;
-    const existing = state.indoor.find(x => x.model === model);
-    if (existing) existing.qty += 1;
-    else state.indoor.push({ model, qty: 1 });
-    renderMultisplitConfigurator(tile, cfg);
-  });
-  main.querySelectorAll('.ms-indoor-row').forEach(rowEl => {
-    const model = rowEl.getAttribute('data-model');
-    const sel = state.indoor.find(x => x.model === model);
-    if (!sel) return;
-    rowEl.querySelectorAll('.ms-qty-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (btn.getAttribute('data-op') === 'plus') sel.qty += 1;
-        else sel.qty = Math.max(1, sel.qty - 1);
-        renderMultisplitConfigurator(tile, cfg);
-      });
-    });
-    const removeBtn = rowEl.querySelector('.ms-indoor-remove');
-    if (removeBtn) removeBtn.addEventListener('click', () => {
-      state.indoor = state.indoor.filter(x => x.model !== model);
-      renderMultisplitConfigurator(tile, cfg);
-    });
-  });
-  const msShareBtn = main.querySelector('.ms-share-btn');
-  if (msShareBtn) msShareBtn.addEventListener('click', () => {
-    const panel = main.querySelector('.ms-calc-panel');
-    const resultEl = panel ? panel.querySelector('.calc-result') : null;
-    const priceText = (resultEl ? resultEl.textContent : totalStr).trim();
-    const modelsText = [state.outdoor].concat(
-      state.indoor.map(sel => sel.qty > 1 ? sel.model + 'x' + sel.qty : sel.model)
-    ).join('+');
-    const shareText = modelsText + ' — ' + priceText;
-    if (navigator.share) {
-      navigator.share({ text: shareText }).catch(() => {});
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(shareText).then(() => {
-        const oldHTML = msShareBtn.innerHTML;
-        msShareBtn.innerHTML = '✓';
-        setTimeout(() => { msShareBtn.innerHTML = oldHTML; }, 1200);
-      }).catch(() => {});
-    }
   });
 }
 
@@ -1910,24 +2054,9 @@ document.getElementById('main').addEventListener('click', function(e) {
     }
     return;
   }
-  const modeBtn = e.target.closest('.calc-mode-btn');
-  if (modeBtn) {
-    const panel = modeBtn.closest('.calc-panel');
-    panel.querySelectorAll('.calc-mode-btn').forEach(b => b.classList.toggle('active', b === modeBtn));
-    panel.setAttribute('data-mode', modeBtn.getAttribute('data-mode'));
-    computeCalcResult(panel);
-    return;
-  }
-  const curBtn = e.target.closest('.calc-cur-btn');
-  if (curBtn) {
-    const panel = curBtn.closest('.calc-panel');
-    panel.querySelectorAll('.calc-cur-btn').forEach(b => b.classList.toggle('active', b === curBtn));
-    panel.setAttribute('data-cur', curBtn.getAttribute('data-cur'));
-    computeCalcResult(panel);
-    return;
-  }
+  if (handleCalcDelegatedClick(e)) return;
   const shareBtn = e.target.closest('.share-btn');
-  if (shareBtn && !shareBtn.classList.contains('ms-share-btn')) {
+  if (shareBtn) {
     const rowEl = shareBtn.closest('.row');
     const nameEl = rowEl.querySelector('.row-name');
     const panel = rowEl.querySelector('.calc-panel');
@@ -1947,13 +2076,73 @@ document.getElementById('main').addEventListener('click', function(e) {
     }
     return;
   }
+  const cartBtn = e.target.closest('.cart-check-btn');
+  if (cartBtn) {
+    addToCart(cartBtn);
+    return;
+  }
 });
-document.getElementById('main').addEventListener('input', function(e) {
-  if (!e.target.classList.contains('calc-input')) return;
-  computeCalcResult(e.target.closest('.calc-panel'));
-});
+document.getElementById('main').addEventListener('input', handleCalcDelegatedInput);
 document.getElementById('refresh-icon').addEventListener('click', handleRefreshClick);
 document.getElementById('back-btn').addEventListener('click', function() { history.back(); });
+
+/* ---------- "Підбірка" (кошик): плаваюча кнопка і панель ---------- */
+document.getElementById('cart-fab').addEventListener('click', openCartPanel);
+document.getElementById('cart-panel-close').addEventListener('click', closeCartPanel);
+document.getElementById('cart-panel-backdrop').addEventListener('click', closeCartPanel);
+document.getElementById('cart-panel-overlay').addEventListener('input', handleCalcDelegatedInput);
+document.getElementById('cart-panel-overlay').addEventListener('click', function(e) {
+  if (handleCalcDelegatedClick(e)) return;
+  const qtyBtn = e.target.closest('.cart-qty-btn');
+  if (qtyBtn) {
+    const key = qtyBtn.closest('.cart-item-row').getAttribute('data-key');
+    const entry = cart.find(c => c.key === key);
+    if (entry) {
+      if (qtyBtn.getAttribute('data-op') === 'plus') entry.qty += 1;
+      else entry.qty = Math.max(1, entry.qty - 1);
+      renderCartPanel();
+      renderCartBar();
+      syncCartRowBadge(key);
+    }
+    return;
+  }
+  const removeBtn = e.target.closest('.cart-item-remove');
+  if (removeBtn) {
+    const key = removeBtn.closest('.cart-item-row').getAttribute('data-key');
+    cart = cart.filter(c => c.key !== key);
+    renderCartPanel();
+    renderCartBar();
+    syncCartRowBadge(key);
+    return;
+  }
+  const clearBtn = e.target.closest('#cart-clear-btn');
+  if (clearBtn) {
+    cart = [];
+    renderCartPanel();
+    renderCartBar();
+    syncAllCartBadges();
+    return;
+  }
+  const cartShareBtn = e.target.closest('.cart-share-btn');
+  if (cartShareBtn) {
+    const panel = document.querySelector('.cart-calc-panel');
+    const resultEl = panel ? panel.querySelector('.calc-result') : null;
+    const totals = cartTotalsByCurrency();
+    const priceText = resultEl ? resultEl.textContent.trim() : Object.keys(totals).map(cur => formatCalcAmount(totals[cur], cur)).join(' + ');
+    const modelsText = cart.map(c => c.qty > 1 ? c.model + 'x' + c.qty : c.model).join('+');
+    const shareText = modelsText + ' — ' + priceText;
+    if (navigator.share) {
+      navigator.share({ text: shareText }).catch(() => {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        const oldHTML = cartShareBtn.innerHTML;
+        cartShareBtn.innerHTML = '✓';
+        setTimeout(() => { cartShareBtn.innerHTML = oldHTML; }, 1200);
+      }).catch(() => {});
+    }
+    return;
+  }
+});
 
 document.getElementById('rate-edit-btn').addEventListener('click', function() {
   document.getElementById('rate-value').style.display = 'none';
@@ -2750,6 +2939,8 @@ function switchTab(tab, pushHistory) {
   });
   document.getElementById('back-btn').style.display = 'none';
   document.getElementById('rate-row').style.display = 'none';
+  closeCartPanel();
+  renderCartBar();
   document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
   document.getElementById('shortcut-icon').style.display = tab === 'cabinet' ? 'flex' : 'none';
   document.getElementById('status-row').style.display = 'none';
