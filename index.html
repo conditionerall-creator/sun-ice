@@ -93,6 +93,71 @@
     z-index: 10;
   }
   .install-banner.show ~ .app header { padding-top: 16px; }
+
+  /* Пропозиція встановити застосунок — вигляд, близький до нативного системного діалогу */
+  .install-gate {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .install-gate.show { display: flex; }
+  .install-gate-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+  }
+  .install-gate-sheet {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: var(--card);
+    border-radius: 20px 20px 0 0;
+    padding: 22px 20px calc(20px + env(safe-area-inset-bottom));
+    box-shadow: 0 -10px 34px rgba(0,0,0,0.28);
+    animation: install-gate-slide-up 0.22s ease-out;
+  }
+  @keyframes install-gate-slide-up {
+    from { transform: translateY(24px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .install-gate-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .install-gate-appicon img { width: 52px; height: 52px; border-radius: 14px; display: block; box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
+  .install-gate-appinfo { flex: 1; min-width: 0; }
+  .install-gate-appname { font-size: 16px; font-weight: 700; color: var(--text); }
+  .install-gate-appsub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .install-gate-desc { font-size: 13.5px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 16px; }
+  .install-gate-list { margin: 0 0 14px; padding-left: 18px; font-size: 13.5px; color: var(--text-secondary); line-height: 1.6; }
+  .install-gate-install-btn {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    margin-bottom: 8px;
+  }
+  .install-gate-later-btn, .install-gate-skip-btn, .install-gate-back-btn {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    opacity: 0.75;
+  }
+  .install-gate-later-btn:active, .install-gate-skip-btn:active, .install-gate-back-btn:active { opacity: 1; }
   .header-top { display: flex; align-items: center; gap: 10px; }
   .back-btn {
     display: none;
@@ -127,6 +192,16 @@
     font-size: 16px;
     cursor: pointer;
     flex-shrink: 0;
+  }
+  .icon-btn-text {
+    width: auto;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--accent);
+    border-color: var(--accent);
+    white-space: nowrap;
   }
   input[type=file] { display: none; }
 
@@ -747,13 +822,18 @@
   <button id="install-action-btn" style="display:none;">Встановити</button>
   <button class="close-x" id="install-close-btn">✕</button>
 </div>
+
+<div class="install-gate" id="install-gate">
+  <div class="install-gate-backdrop"></div>
+  <div class="install-gate-sheet" id="install-gate-sheet"></div>
+</div>
 <div class="app">
   <header>
     <div class="header-top">
       <div class="back-btn" id="back-btn">←</div>
       <h1 id="title">Каталог</h1>
       <div class="icon-btn" id="refresh-icon" title="Оновити прайс" style="display:none;">↻</div>
-      <div class="icon-btn" id="shortcut-icon" title="Додати ярлик на головний екран" style="display:none;">📲</div>
+      <div class="icon-btn icon-btn-text" id="shortcut-icon" title="Встановити застосунок на головний екран" style="display:none;">Встановити</div>
     </div>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
@@ -2078,7 +2158,7 @@ function switchTab(tab, pushHistory) {
   document.getElementById('back-btn').style.display = 'none';
   document.getElementById('search-block').style.display = 'none';
   document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
-  document.getElementById('shortcut-icon').style.display = tab === 'contacts' ? 'flex' : 'none';
+  document.getElementById('shortcut-icon').style.display = tab === 'cabinet' ? 'flex' : 'none';
   document.getElementById('status-row').style.display = 'none';
   document.getElementById('error-block').innerHTML = '';
   if (pushHistory) {
@@ -2114,12 +2194,9 @@ const bannerDismissed = localStorage.getItem('sunice_install_dismissed') === '1'
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredInstallPrompt = e;
-  if (!isStandalone && !bannerDismissed) showInstallBanner('android');
+  /* Автоматичний банер відключено — замість нього при першому відкритті показується
+     повноекранна пропозиція встановлення (install-gate, див. нижче). */
 });
-
-if (isIOS && !isStandalone && !bannerDismissed) {
-  showInstallBanner('ios');
-}
 
 function showInstallBanner(platform) {
   const banner = document.getElementById('install-banner');
@@ -2164,6 +2241,132 @@ document.getElementById('shortcut-icon').addEventListener('click', triggerAddToH
 document.getElementById('install-close-btn').addEventListener('click', () => {
   document.getElementById('install-banner').classList.remove('show');
   localStorage.setItem('sunice_install_dismissed', '1');
+});
+
+/* ---------- Пропозиція встановити застосунок при першому відкритті ---------- */
+const INSTALL_GATE_SKIP_KEY = 'sunice_continue_in_browser';
+
+function installGateIconHtml() {
+  const iconLink = document.querySelector('link[rel="icon"]');
+  const src = iconLink ? iconLink.getAttribute('href') : '';
+  return '<div class="install-gate-appicon"><img src="' + src + '" alt=""></div>';
+}
+
+function installGateHeaderHtml() {
+  return (
+    '<div class="install-gate-row">' +
+    installGateIconHtml() +
+    '<div class="install-gate-appinfo">' +
+    '<div class="install-gate-appname">Sun-ice</div>' +
+    '<div class="install-gate-appsub">sun-ice.com.ua • Застосунок</div>' +
+    '</div></div>'
+  );
+}
+
+function setInstallGateSheet(html) {
+  document.getElementById('install-gate-sheet').innerHTML = html;
+}
+
+function closeInstallGate() {
+  document.getElementById('install-gate').classList.remove('show');
+}
+
+function detectInAppBrowserName() {
+  const ua = navigator.userAgent || '';
+  if (/FBAN|FBAV/i.test(ua)) return 'Facebook';
+  if (/Instagram/i.test(ua)) return 'Instagram';
+  if (/Telegram/i.test(ua)) return 'Telegram';
+  if (/Viber/i.test(ua)) return 'Viber';
+  if (/MicroMessenger/i.test(ua)) return 'WeChat';
+  return null;
+}
+
+function renderInstallGateConfirmSkip() {
+  setInstallGateSheet(
+    '<p class="install-gate-desc"><strong>Якщо продовжити в браузері:</strong></p>' +
+    '<ul class="install-gate-list">' +
+    '<li>не приходитимуть push-сповіщення про нові акції та статус заявки;</li>' +
+    '<li>доведеться щоразу заново відкривати сайт через браузер, а не одним дотиком з головного екрана.</li>' +
+    '</ul>' +
+    '<p class="install-gate-desc">Каталог, акції, кабінет і контакти працюватимуть так само — це лише менш зручний спосіб.</p>' +
+    '<button type="button" class="install-gate-install-btn" id="install-gate-back-to-install-btn">Все ж встановити</button>' +
+    '<button type="button" class="install-gate-skip-btn" id="install-gate-skip-btn">Продовжити в браузері</button>'
+  );
+  document.getElementById('install-gate-back-to-install-btn').addEventListener('click', renderInstallGateMain);
+  document.getElementById('install-gate-skip-btn').addEventListener('click', () => {
+    localStorage.setItem(INSTALL_GATE_SKIP_KEY, '1');
+    closeInstallGate();
+  });
+}
+
+function renderInstallGateInstalled() {
+  setInstallGateSheet(
+    '<p class="install-gate-desc">Готово! Застосунок встановлено. Закрийте цю вкладку браузера і відкрийте Sun-ice з ярлика на головному екрані.</p>'
+  );
+}
+
+function renderInstallGateManualFallback() {
+  setInstallGateSheet(
+    installGateHeaderHtml() +
+    '<p class="install-gate-desc">Браузер поки не готовий запропонувати швидке встановлення. Відкрийте меню браузера (⋮) і оберіть «Додати на головний екран» / «Встановити застосунок».</p>' +
+    '<button type="button" class="install-gate-later-btn" id="install-gate-later-btn">Не зараз</button>'
+  );
+  document.getElementById('install-gate-later-btn').addEventListener('click', renderInstallGateConfirmSkip);
+}
+
+function renderInstallGateIOS() {
+  setInstallGateSheet(
+    installGateHeaderHtml() +
+    '<p class="install-gate-desc">Щоб встановити застосунок на iPhone/iPad: натисніть кнопку «Поділитися» ⬆ внизу екрана Safari, потім оберіть «На екран Домой».</p>' +
+    '<button type="button" class="install-gate-later-btn" id="install-gate-later-btn">Не зараз</button>'
+  );
+  document.getElementById('install-gate-later-btn').addEventListener('click', renderInstallGateConfirmSkip);
+}
+
+function renderInstallGateInApp(name) {
+  setInstallGateSheet(
+    installGateHeaderHtml() +
+    '<p class="install-gate-desc">Це посилання відкрито у вбудованому браузері ' + escapeHtml(name) + ' — з нього застосунок не встановлюється. Натисніть «⋮» (або «...») у верхньому куті екрана і оберіть «Відкрити в браузері» (Chrome/Safari), а вже там встановіть застосунок.</p>' +
+    '<button type="button" class="install-gate-later-btn" id="install-gate-later-btn">Не зараз</button>'
+  );
+  document.getElementById('install-gate-later-btn').addEventListener('click', renderInstallGateConfirmSkip);
+}
+
+function renderInstallGateMain() {
+  const inApp = detectInAppBrowserName();
+  if (inApp) { renderInstallGateInApp(inApp); return; }
+  if (isIOS) { renderInstallGateIOS(); return; }
+
+  setInstallGateSheet(
+    installGateHeaderHtml() +
+    '<p class="install-gate-desc">Встановіть застосунок на головний екран телефону — швидкий запуск без браузера та push-сповіщення про нові акції і статус заявки.</p>' +
+    '<button type="button" class="install-gate-install-btn" id="install-gate-install-btn">Встановити</button>' +
+    '<button type="button" class="install-gate-later-btn" id="install-gate-later-btn">Не зараз</button>'
+  );
+  document.getElementById('install-gate-install-btn').addEventListener('click', async () => {
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      if (choice && choice.outcome === 'accepted') renderInstallGateInstalled();
+    } else {
+      renderInstallGateManualFallback();
+    }
+  });
+  document.getElementById('install-gate-later-btn').addEventListener('click', renderInstallGateConfirmSkip);
+}
+
+function showInstallGate() {
+  if (isStandalone) return;
+  if (localStorage.getItem(INSTALL_GATE_SKIP_KEY) === '1') return;
+  renderInstallGateMain();
+  document.getElementById('install-gate').classList.add('show');
+}
+
+window.addEventListener('appinstalled', () => {
+  if (document.getElementById('install-gate').classList.contains('show')) {
+    renderInstallGateInstalled();
+  }
 });
 
 /* ---------- Перегляд зображення на весь екран: наближення/віддалення, панорамування ---------- */
@@ -2287,6 +2490,7 @@ if ('serviceWorker' in navigator) {
 /* ---------- Старт ---------- */
 history.replaceState({ tab: 'catalog' }, '', '#catalog');
 renderCurrentTab();
+showInstallGate();
 </script>
 </body>
 </html>
