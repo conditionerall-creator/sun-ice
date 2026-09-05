@@ -441,6 +441,61 @@
   }
   .promo-upload-btn:disabled { opacity: 0.6; cursor: default; }
   .promo-upload-status { font-size: 12px; color: var(--text-secondary); margin: 0; min-height: 14px; }
+  .promo-image { cursor: zoom-in; }
+
+  /* Перегляд зображення акції на весь екран (наближення/панорамування) */
+  .img-lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.94);
+    z-index: 1000;
+    flex-direction: column;
+  }
+  .img-lightbox-overlay.active { display: flex; }
+  .img-lightbox-topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    padding-top: max(10px, env(safe-area-inset-top));
+  }
+  .img-lightbox-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-family: inherit;
+    line-height: 1;
+  }
+  .img-lightbox-btn:active { background: rgba(255,255,255,0.28); }
+  .img-lightbox-stage {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .img-lightbox-stage img {
+    max-width: 92%;
+    max-height: 92%;
+    transform-origin: center center;
+    will-change: transform;
+    cursor: grab;
+    -webkit-user-drag: none;
+    user-select: none;
+  }
 
   /* Cabinet */
   .field { margin-bottom: 14px; }
@@ -683,6 +738,18 @@
   <button class="nav-btn" data-tab="contacts"><span class="nav-icon">📞</span>Контакти</button>
   <button class="nav-btn" data-tab="info"><span class="nav-icon">ℹ️</span>Інфо</button>
 </nav>
+
+<div class="img-lightbox-overlay" id="img-lightbox-overlay">
+  <div class="img-lightbox-topbar">
+    <button type="button" class="img-lightbox-btn" id="img-lightbox-zoomout" aria-label="Віддалити">−</button>
+    <button type="button" class="img-lightbox-btn" id="img-lightbox-zoomin" aria-label="Наблизити">+</button>
+    <button type="button" class="img-lightbox-btn" id="img-lightbox-reset" aria-label="Скинути масштаб">⟲</button>
+    <button type="button" class="img-lightbox-btn" id="img-lightbox-close" aria-label="Закрити">✕</button>
+  </div>
+  <div class="img-lightbox-stage" id="img-lightbox-stage">
+    <img id="img-lightbox-img" src="" alt="Зображення акції">
+  </div>
+</div>
 
 <script>
 /* ==================== НАЛАШТУВАННЯ ==================== */
@@ -1255,12 +1322,10 @@ async function renderPromotionsTab() {
 
   const uploadHtml = isSuper ? `
     <div class="promo-upload-card">
-      <p class="promo-upload-title">Додати акцію (PDF з умовами та/або PNG-зображення)</p>
+      <p class="promo-upload-title">Додати акцію (зображення)</p>
       <input type="text" id="promo-title-input" class="admin-search" placeholder="Назва акції">
-      <label class="promo-upload-label">PDF з умовами (необов'язково)</label>
-      <input type="file" id="promo-pdf-input" accept="application/pdf">
-      <label class="promo-upload-label">Зображення PNG (необов'язково)</label>
-      <input type="file" id="promo-image-input" accept="image/png">
+      <label class="promo-upload-label">Зображення акції (PNG, JPG, WEBP, GIF)</label>
+      <input type="file" id="promo-image-input" accept=".png,.jpg,.jpeg,.webp,.gif">
       <button type="button" id="promo-upload-btn" class="promo-upload-btn">Завантажити</button>
       <p id="promo-upload-status" class="promo-upload-status"></p>
     </div>` : '';
@@ -1269,7 +1334,7 @@ async function renderPromotionsTab() {
     ? '<div class="empty">Наразі активних акцій немає.<br>Заходьте пізніше!</div>'
     : data.map(p => `
     <div class="promo-card">
-      ${p.image_url ? `<img class="promo-image" src="${escapeHtml(p.image_url)}" alt="">` : ''}
+      ${p.image_url ? `<img class="promo-image" src="${escapeHtml(p.image_url)}" alt="" role="button" aria-label="Переглянути зображення">` : ''}
       <div class="promo-body">
         <p class="promo-title">${escapeHtml(p.title)}</p>
         ${p.description ? `<p class="promo-desc">${escapeHtml(p.description)}</p>` : ''}
@@ -1287,11 +1352,34 @@ async function renderPromotionsTab() {
   }
 }
 
-async function uploadPromoFile(file, expectedType, label) {
-  if (file.type !== expectedType) throw new Error(label + ': непідтримуваний формат файлу.');
+/* Дозволені формати зображень для акцій: за MIME-типом і, про всяк випадок, за розширенням
+   (деякі Android-пікери не завжди коректно проставляють file.type). */
+const PROMO_IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+const PROMO_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif'];
+
+function isAllowedPromoImage(file) {
+  if (file.type && PROMO_IMAGE_MIME_TYPES.includes(file.type)) return true;
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  return PROMO_IMAGE_EXTENSIONS.includes(ext);
+}
+
+function guessImageContentType(file) {
+  if (file.type && PROMO_IMAGE_MIME_TYPES.includes(file.type)) return file.type;
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  if (ext === 'webp') return 'image/webp';
+  if (ext === 'gif') return 'image/gif';
+  return 'image/png';
+}
+
+async function uploadPromoFile(file) {
+  if (!isAllowedPromoImage(file)) {
+    throw new Error('Непідтримуваний формат файлу. Дозволені: PNG, JPG, WEBP, GIF.');
+  }
+  const contentType = guessImageContentType(file);
   const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const { error: uploadError } = await sb.storage.from('promo-pdfs').upload(fileName, file, {
-    contentType: expectedType,
+    contentType,
     upsert: false
   });
   if (uploadError) throw uploadError;
@@ -1301,31 +1389,25 @@ async function uploadPromoFile(file, expectedType, label) {
 
 async function handlePromoUpload() {
   const titleInput = document.getElementById('promo-title-input');
-  const pdfInput = document.getElementById('promo-pdf-input');
   const imageInput = document.getElementById('promo-image-input');
   const statusEl = document.getElementById('promo-upload-status');
   const title = (titleInput.value || '').trim();
-  const pdfFile = pdfInput.files && pdfInput.files[0];
   const imageFile = imageInput.files && imageInput.files[0];
 
   if (!title) { statusEl.textContent = 'Введіть назву акції.'; return; }
-  if (!pdfFile && !imageFile) { statusEl.textContent = 'Виберіть PDF-файл і/або PNG-зображення.'; return; }
+  if (!imageFile) { statusEl.textContent = 'Виберіть зображення акції.'; return; }
 
   statusEl.textContent = 'Завантаження...';
   const btn = document.getElementById('promo-upload-btn');
   btn.disabled = true;
 
   try {
-    const [pdfUrl, imageUrl] = await Promise.all([
-      pdfFile ? uploadPromoFile(pdfFile, 'application/pdf', 'PDF') : Promise.resolve(null),
-      imageFile ? uploadPromoFile(imageFile, 'image/png', 'PNG') : Promise.resolve(null)
-    ]);
+    const imageUrl = await uploadPromoFile(imageFile);
 
     const { data: maxRow } = await sb.from('promotions').select('sort_order').order('sort_order', { ascending: false }).limit(1).single();
     const nextSort = maxRow && typeof maxRow.sort_order === 'number' ? maxRow.sort_order + 1 : 1;
 
     const row = { title, is_active: true, sort_order: nextSort };
-    if (pdfUrl) row.pdf_url = pdfUrl;
     if (imageUrl) row.image_url = imageUrl;
 
     const { error: insertError } = await sb.from('promotions').insert(row);
@@ -1338,6 +1420,12 @@ async function handlePromoUpload() {
     btn.disabled = false;
   }
 }
+
+/* ---------- Перегляд зображення акції: наближення/віддалення, панорамування ---------- */
+document.getElementById('main').addEventListener('click', function(e) {
+  const img = e.target.closest('.promo-image');
+  if (img && img.tagName === 'IMG') openImageLightbox(img.src);
+});
 
 /* ---------- Контакти ---------- */
 async function renderContactsTab() {
@@ -1888,6 +1976,119 @@ document.getElementById('install-close-btn').addEventListener('click', () => {
   document.getElementById('install-banner').classList.remove('show');
   localStorage.setItem('sunice_install_dismissed', '1');
 });
+
+/* ---------- Перегляд зображення на весь екран: наближення/віддалення, панорамування ---------- */
+(function () {
+  const overlay = document.getElementById('img-lightbox-overlay');
+  const stage = document.getElementById('img-lightbox-stage');
+  const imgEl = document.getElementById('img-lightbox-img');
+  const zoomInBtn = document.getElementById('img-lightbox-zoomin');
+  const zoomOutBtn = document.getElementById('img-lightbox-zoomout');
+  const resetBtn = document.getElementById('img-lightbox-reset');
+  const closeBtn = document.getElementById('img-lightbox-close');
+
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 6;
+  let scale = 1, tx = 0, ty = 0;
+  const pointers = new Map();
+  let pinchStartDist = null;
+  let dragStart = null;
+  let lastTapTime = 0;
+
+  function applyTransform() {
+    imgEl.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+  }
+
+  function clampScale(s) { return Math.min(MAX_SCALE, Math.max(MIN_SCALE, s)); }
+
+  function resetView() { scale = 1; tx = 0; ty = 0; applyTransform(); }
+
+  window.openImageLightbox = function (url) {
+    if (!url) return;
+    imgEl.src = url;
+    resetView();
+    overlay.classList.add('active');
+  };
+
+  function closeLightbox() {
+    overlay.classList.remove('active');
+    imgEl.src = '';
+    pointers.clear();
+    pinchStartDist = null;
+    dragStart = null;
+  }
+
+  closeBtn.addEventListener('click', closeLightbox);
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay || e.target === stage) closeLightbox();
+  });
+  zoomInBtn.addEventListener('click', function () { scale = clampScale(scale + 0.5); applyTransform(); });
+  zoomOutBtn.addEventListener('click', function () { scale = clampScale(scale - 0.5); applyTransform(); });
+  resetBtn.addEventListener('click', resetView);
+
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+  function mid(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+
+  imgEl.addEventListener('pointerdown', function (e) {
+    imgEl.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1) {
+      dragStart = { x: e.clientX - tx, y: e.clientY - ty };
+    } else if (pointers.size === 2) {
+      dragStart = null;
+      const pts = Array.from(pointers.values());
+      pinchStartDist = dist(pts[0], pts[1]);
+    }
+  });
+
+  imgEl.addEventListener('pointermove', function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      const pts = Array.from(pointers.values());
+      const d = dist(pts[0], pts[1]);
+      const m = mid(pts[0], pts[1]);
+      if (pinchStartDist) {
+        const newScale = clampScale(scale * (d / pinchStartDist));
+        tx = m.x - (m.x - tx) * (newScale / scale);
+        ty = m.y - (m.y - ty) * (newScale / scale);
+        scale = newScale;
+        applyTransform();
+      }
+      pinchStartDist = d;
+    } else if (dragStart && pointers.size === 1 && scale > MIN_SCALE) {
+      tx = e.clientX - dragStart.x;
+      ty = e.clientY - dragStart.y;
+      applyTransform();
+    }
+  });
+
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) pinchStartDist = null;
+    if (pointers.size === 0) {
+      dragStart = null;
+      const now = Date.now();
+      if (now - lastTapTime < 300) {
+        if (scale > MIN_SCALE) resetView();
+        else { scale = 2.5; applyTransform(); }
+      }
+      lastTapTime = now;
+    }
+  }
+  imgEl.addEventListener('pointerup', endPointer);
+  imgEl.addEventListener('pointercancel', endPointer);
+  imgEl.addEventListener('pointerleave', endPointer);
+
+  imgEl.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    const newScale = clampScale(scale + (e.deltaY < 0 ? 0.3 : -0.3));
+    tx = e.clientX - (e.clientX - tx) * (newScale / scale);
+    ty = e.clientY - (e.clientY - ty) * (newScale / scale);
+    scale = newScale;
+    applyTransform();
+  }, { passive: false });
+})();
 
 /* ---------- Service worker (push-сповіщення + бейдж на іконці) ---------- */
 if ('serviceWorker' in navigator) {
