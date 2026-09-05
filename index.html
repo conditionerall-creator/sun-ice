@@ -888,8 +888,8 @@ const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xls
 const CATALOG_TILES = [
   {
     id: 'split', label: 'Спліт-системи',
-    mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series' },
-    gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before' }
+    mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series', seriesLabelMode: 'bold-lead' },
+    gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before', seriesLabelMode: 'first-sentence' }
   },
   {
     id: 'multisplit', label: 'Мульти спліт-системи',
@@ -990,6 +990,40 @@ function extractSeries(model) {
   const m = first.match(/^[A-ZА-ЯІЇЄ]+-?(\d+)([A-ZА-ЯІЇЄ]+)/i);
   return m ? m[2].toUpperCase() : null;
 }
+function decodeXmlEntities(s) {
+  return String(s || '')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+/* Читає "сирий" richtext-опис клітинки (МОДЕЛЬ-колонка) прямо з файлу Excel і повертає
+   текст лише тих слів на самому початку, які у прайсі виділені жирним шрифтом (як просив
+   користувач для опису серій MHI). Повертає null, якщо жирного початку не знайдено —
+   тоді застосунок просто лишає стару коротку назву серії (безпечний фолбек). */
+function richLeadBold(sheet, r0, c0) {
+  if (!sheet) return null;
+  const addr = XLSX.utils.encode_cell({ r: r0, c: c0 });
+  const cell = sheet[addr];
+  if (!cell || !cell.r) return null;
+  const runRe = /<r>([\s\S]*?)<\/r>/g;
+  let lead = '';
+  let found = false;
+  let m;
+  while ((m = runRe.exec(cell.r))) {
+    found = true;
+    const runXml = m[1];
+    const rPrMatch = /<rPr>([\s\S]*?)<\/rPr>/.exec(runXml);
+    const rPr = rPrMatch ? rPrMatch[1] : '';
+    const isBold = /<b(\s[^>]*)?\/?>/.test(rPr) && !/<b[^>]*val="0"/.test(rPr);
+    const tMatch = /<t[^>]*>([\s\S]*?)<\/t>/.exec(runXml);
+    const text = tMatch ? decodeXmlEntities(tMatch[1]) : '';
+    if (isBold) lead += text;
+    else break;
+  }
+  if (!found) return null;
+  const trimmed = lead.replace(/^[\s!*#>•-]+/, '').replace(/\s+$/, '');
+  return trimmed || null;
+}
 function isCategoryLabel(text) {
   const s = norm(text);
   if (!s) return false;
@@ -1000,7 +1034,11 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
-function parseSheet(rows, highlightMode) {
+function parseSheet(rows, highlightMode, opts) {
+  opts = opts || {};
+  const seriesLabelMode = opts.seriesLabelMode || null; // 'bold-lead' (MHI) | 'first-sentence' (GAL)
+  const rawSheet = opts.rawSheet || null;
+
   const priceHeader = findPriceHeader(rows);
   if (!priceHeader) return { items: [], error: 'Не знайдено колонку з ціною' };
 
@@ -1027,6 +1065,7 @@ function parseSheet(rows, highlightMode) {
   const currency = detectCurrency(priceHeader.text);
   const items = [];
   let currentCategory = null;
+  let currentSeriesLabel = null;
 
   for (let r = dataStart; r < rows.length; r++) {
     const row = rows[r] || [];
@@ -1041,6 +1080,20 @@ function parseSheet(rows, highlightMode) {
       }
     }
 
+    if (price === null && highlightMode === 'series' && seriesLabelMode && modelCol !== -1) {
+      const cellText = String(row[modelCol] || '').trim();
+      if (seriesLabelMode === 'bold-lead' && cellText.length > 8) {
+        // Рядок-опис серії (MHI): беремо слова, виділені жирним на самому початку.
+        // Якщо жирний початок не знайдено — свідомо скидаємо в null (а не лишаємо
+        // попередній опис), щоб не підписати серію чужим текстом.
+        currentSeriesLabel = richLeadBold(rawSheet, r, modelCol);
+      } else if (seriesLabelMode === 'first-sentence' && cellText.includes('.')) {
+        // Рядок-опис серії (GALACTIC): весь текст жирний, беремо перше речення до крапки.
+        const firstSentence = cellText.split('.', 1)[0].trim();
+        if (firstSentence.length > 12) currentSeriesLabel = firstSentence + '.';
+      }
+    }
+
     if (price === null) continue;
 
     let model = modelCol !== -1 ? String(row[modelCol] || '').trim() : '';
@@ -1051,8 +1104,10 @@ function parseSheet(rows, highlightMode) {
     if (!model) continue;
 
     const item = { model, price, currency };
-    if (highlightMode === 'series') item.groupKey = extractSeries(model);
-    else if (highlightMode === 'category') item.groupKey = currentCategory;
+    if (highlightMode === 'series') {
+      item.groupKey = extractSeries(model);
+      if (seriesLabelMode) item.groupLabel = currentSeriesLabel || null;
+    } else if (highlightMode === 'category') item.groupKey = currentCategory;
     items.push(item);
   }
 
@@ -1089,7 +1144,7 @@ function buildSheetsData(wb) {
       const sheet = wb.Sheets[cfg.sheet];
       let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (cfg.splitMarker) rows = sliceBySplitMarker(rows, cfg.splitMarker, cfg.splitSide);
-      const result = parseSheet(rows, cfg.highlight);
+      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, rawSheet: sheet });
       if (result.items.length > 0) {
         if (cfg.baseAdjustPct) {
           const factor = 1 - cfg.baseAdjustPct / 100;
@@ -1308,7 +1363,7 @@ function renderCatalogList() {
     let header = '';
     if (showSegments && it.groupKey && it.groupKey !== lastKey) {
       lastKey = it.groupKey;
-      header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(it.groupKey)}</div>`;
+      header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(it.groupLabel || it.groupKey)}</div>`;
     } else if (showSegments && !it.groupKey) {
       lastKey = null;
     }
