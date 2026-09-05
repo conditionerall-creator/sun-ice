@@ -402,6 +402,20 @@
     flex-shrink: 0;
   }
   .calc-toggle:active { background: var(--accent-bg); }
+  .share-btn {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .share-btn svg { width: 16px; height: 16px; display: block; }
+  .share-btn:active { background: var(--accent-bg); color: var(--accent); }
   .calc-panel {
     display: none;
     flex-wrap: wrap;
@@ -882,13 +896,39 @@ const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
 
+/* Підписи серій для ПОБУТОВІ / MHI (плитка "Спліт-системи"), задані користувачем вручну —
+   спроба автоматично витягати "жирні слова" з Excel через SheetJS у реальному браузері
+   не спрацювала (бібліотека не віддає richtext-форматування клітинки на цьому проєкті),
+   тому список нижче — єдине надійне джерело цих підписів.
+   fromModel — код МОДЕЛІ (колонка B), з якого починається серія/під-група; підпис діє
+   для всіх наступних рядків, поки не зустрінеться наступний fromModel у списку.
+   Якщо в майбутньому прайсі з'являться нові серії — сюди треба додати новий рядок,
+   інакше нова серія просто покаже свій короткий буквений код (як було раніше), нічого
+   не зламається. */
+const SPLIT_MHI_LABELS = [
+  { fromModel: 'SRK20ZSPR-S', label: 'Популярний інвертор R410' },
+  { fromModel: 'SRK25ZSP-W1', label: 'Популярний інвертор R32' },
+  { fromModel: 'SRK15ZTL-W', label: 'Серія ZTL-W R32' },
+  { fromModel: 'SRK20ZS-W', label: 'БІЗНЕС-КЛАС ДИЗАЙН СЕРІЯ R32' },
+  { fromModel: 'SRK20ZT-WF', label: 'Premium Series ZT-W R32' },
+  { fromModel: 'SRK20ZT-WFT', label: 'Внутрішні кольорові' },
+  { fromModel: 'SRC20ZT-WB', label: 'Зовнішні чорні' },
+  { fromModel: 'SRK63ZR-W', label: 'Потужний інвертор R32' },
+  { fromModel: 'SRK20ZSX-W', label: 'ТЕПЛОВИЙ НАСОС / БІЗНЕС-КЛАС / ДИЗАЙН СЕРІЯ R32' },
+  { fromModel: 'SRF25ZS-W', label: 'Моделі 2-х потокові підлогового виконання' },
+  { fromModel: 'SRR25ZS-W', label: 'Моделі канальні R32 DC PAM Inverter' },
+  { fromModel: 'UT-BAT1EF', label: 'Комплект для забору повітря знизу (опція)' },
+  { fromModel: 'FDTC25VH1', label: 'Моделі 4-х потокові компактні касети 600х600' },
+  { fromModel: 'RC-E5', label: 'Пульт для касетного блоку (опція)' }
+];
+
 /* Плитки головного екрану каталогу, у потрібному порядку.
    Плитка з "mhi"/"gal" — активна (є перемикач брендів MHI/GAL).
    Плитка без них — поки не наповнена, показується сірою "Скоро". */
 const CATALOG_TILES = [
   {
     id: 'split', label: 'Спліт-системи',
-    mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series', seriesLabelMode: 'bold-lead' },
+    mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series', labelSequence: SPLIT_MHI_LABELS },
     gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before', seriesLabelMode: 'first-sentence' }
   },
   {
@@ -990,40 +1030,6 @@ function extractSeries(model) {
   const m = first.match(/^[A-ZА-ЯІЇЄ]+-?(\d+)([A-ZА-ЯІЇЄ]+)/i);
   return m ? m[2].toUpperCase() : null;
 }
-function decodeXmlEntities(s) {
-  return String(s || '')
-    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-    .replace(/&amp;/g, '&');
-}
-/* Читає "сирий" richtext-опис клітинки (МОДЕЛЬ-колонка) прямо з файлу Excel і повертає
-   текст лише тих слів на самому початку, які у прайсі виділені жирним шрифтом (як просив
-   користувач для опису серій MHI). Повертає null, якщо жирного початку не знайдено —
-   тоді застосунок просто лишає стару коротку назву серії (безпечний фолбек). */
-function richLeadBold(sheet, r0, c0) {
-  if (!sheet) return null;
-  const addr = XLSX.utils.encode_cell({ r: r0, c: c0 });
-  const cell = sheet[addr];
-  if (!cell || !cell.r) return null;
-  const runRe = /<r>([\s\S]*?)<\/r>/g;
-  let lead = '';
-  let found = false;
-  let m;
-  while ((m = runRe.exec(cell.r))) {
-    found = true;
-    const runXml = m[1];
-    const rPrMatch = /<rPr>([\s\S]*?)<\/rPr>/.exec(runXml);
-    const rPr = rPrMatch ? rPrMatch[1] : '';
-    const isBold = /<b(\s[^>]*)?\/?>/.test(rPr) && !/<b[^>]*val="0"/.test(rPr);
-    const tMatch = /<t[^>]*>([\s\S]*?)<\/t>/.exec(runXml);
-    const text = tMatch ? decodeXmlEntities(tMatch[1]) : '';
-    if (isBold) lead += text;
-    else break;
-  }
-  if (!found) return null;
-  const trimmed = lead.replace(/^[\s!*#>•-]+/, '').replace(/\s+$/, '');
-  return trimmed || null;
-}
 function isCategoryLabel(text) {
   const s = norm(text);
   if (!s) return false;
@@ -1036,8 +1042,10 @@ function escapeHtml(str) {
 }
 function parseSheet(rows, highlightMode, opts) {
   opts = opts || {};
-  const seriesLabelMode = opts.seriesLabelMode || null; // 'bold-lead' (MHI) | 'first-sentence' (GAL)
-  const rawSheet = opts.rawSheet || null;
+  const seriesLabelMode = opts.seriesLabelMode || null; // 'first-sentence' (GALACTIC)
+  const labelMap = opts.labelSequence
+    ? new Map(opts.labelSequence.map(e => [e.fromModel, e.label]))
+    : null; // ручний список підписів серій за кодом моделі (MHI, див. SPLIT_MHI_LABELS)
 
   const priceHeader = findPriceHeader(rows);
   if (!priceHeader) return { items: [], error: 'Не знайдено колонку з ціною' };
@@ -1080,14 +1088,9 @@ function parseSheet(rows, highlightMode, opts) {
       }
     }
 
-    if (price === null && highlightMode === 'series' && seriesLabelMode && modelCol !== -1) {
+    if (price === null && highlightMode === 'series' && seriesLabelMode === 'first-sentence' && modelCol !== -1) {
       const cellText = String(row[modelCol] || '').trim();
-      if (seriesLabelMode === 'bold-lead' && cellText.length > 8) {
-        // Рядок-опис серії (MHI): беремо слова, виділені жирним на самому початку.
-        // Якщо жирний початок не знайдено — свідомо скидаємо в null (а не лишаємо
-        // попередній опис), щоб не підписати серію чужим текстом.
-        currentSeriesLabel = richLeadBold(rawSheet, r, modelCol);
-      } else if (seriesLabelMode === 'first-sentence' && cellText.includes('.')) {
+      if (cellText.includes('.')) {
         // Рядок-опис серії (GALACTIC): весь текст жирний, беремо перше речення до крапки.
         const firstSentence = cellText.split('.', 1)[0].trim();
         if (firstSentence.length > 12) currentSeriesLabel = firstSentence + '.';
@@ -1103,10 +1106,14 @@ function parseSheet(rows, highlightMode, opts) {
     }
     if (!model) continue;
 
+    // MHI (ПОБУТОВІ): підпис серії — за ручним списком SPLIT_MHI_LABELS, прив'язаним
+    // до конкретного коду моделі, з якого починається серія/під-група.
+    if (labelMap && labelMap.has(model)) currentSeriesLabel = labelMap.get(model);
+
     const item = { model, price, currency };
     if (highlightMode === 'series') {
       item.groupKey = extractSeries(model);
-      if (seriesLabelMode) item.groupLabel = currentSeriesLabel || null;
+      if (seriesLabelMode || labelMap) item.groupLabel = currentSeriesLabel || null;
     } else if (highlightMode === 'category') item.groupKey = currentCategory;
     items.push(item);
   }
@@ -1144,7 +1151,7 @@ function buildSheetsData(wb) {
       const sheet = wb.Sheets[cfg.sheet];
       let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (cfg.splitMarker) rows = sliceBySplitMarker(rows, cfg.splitMarker, cfg.splitSide);
-      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, rawSheet: sheet });
+      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence });
       if (result.items.length > 0) {
         if (cfg.baseAdjustPct) {
           const factor = 1 - cfg.baseAdjustPct / 100;
@@ -1161,12 +1168,22 @@ function buildSheetsData(wb) {
 }
 
 /* ---------- Кеш прайсу (локально на пристрої) ---------- */
+/* PARSER_VERSION — версія ЛОГІКИ розбору прайсу (не самого файлу price.xlsx).
+   Якщо на телефоні користувача вже лежить закешований розібраний прайс зі старою
+   версією логіки (наприклад, до того як з'явились підписи серій) — кеш ігнорується
+   і прайс перечитується наново, навіть якщо сам price.xlsx на сервері не змінювався.
+   Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
+   на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
+   кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
+const PARSER_VERSION = 2;
+
 function loadProcessedCache() {
   try {
     const raw = localStorage.getItem('sunice_price_cache');
     if (!raw) return false;
     const cached = JSON.parse(raw);
     if (!cached || !cached.data) return false;
+    if (cached.parserVersion !== PARSER_VERSION) return false; // логіка розбору змінилась — треба перечитати
     sheetsData = cached.data;
     priceVersion = cached.version || null;
     setCatalogStatus('Востаннє оновлено: ' + new Date(cached.savedAt).toLocaleString('uk-UA') + (priceVersion ? ' · версія ' + priceVersion : ''));
@@ -1177,7 +1194,7 @@ function loadProcessedCache() {
 }
 function persistProcessedCache(version) {
   try {
-    localStorage.setItem('sunice_price_cache', JSON.stringify({ data: sheetsData, version, savedAt: Date.now() }));
+    localStorage.setItem('sunice_price_cache', JSON.stringify({ data: sheetsData, version, savedAt: Date.now(), parserVersion: PARSER_VERSION }));
   } catch (e) {}
 }
 
@@ -1361,10 +1378,15 @@ function renderCatalogList() {
 
   const rowsHtml = filtered.map(it => {
     let header = '';
-    if (showSegments && it.groupKey && it.groupKey !== lastKey) {
-      lastKey = it.groupKey;
-      header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(it.groupLabel || it.groupKey)}</div>`;
-    } else if (showSegments && !it.groupKey) {
+    // Заголовок сегмента показуємо за "ефективним" підписом (groupLabel, якщо є — інакше
+    // короткий буквений код). Так під-підписи (напр. "Внутрішні кольорові"/"Зовнішні чорні"
+    // всередині однієї серії ZT) теж створюють новий заголовок, навіть якщо колір і
+    // groupKey лишаються тими самими.
+    const effectiveKey = it.groupLabel || it.groupKey;
+    if (showSegments && effectiveKey && effectiveKey !== lastKey) {
+      lastKey = effectiveKey;
+      header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}</div>`;
+    } else if (showSegments && !effectiveKey) {
       lastKey = null;
     }
     const priceStr = Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '');
@@ -1373,15 +1395,16 @@ function renderCatalogList() {
         <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
         <div class="row-info">
           <p class="row-name">${escapeHtml(it.model)}</p>
-          <div class="calc-panel" data-price="${it.price}">
+          <div class="calc-panel" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}">
             <span>${priceStr} −</span>
-            <input type="number" class="calc-input" min="0" max="99" placeholder="0" inputmode="numeric">
+            <input type="number" class="calc-input" min="0" max="99" inputmode="numeric">
             <span>% =</span>
             <span class="calc-result">${priceStr}</span>
           </div>
         </div>
         <div class="row-right">
           <div class="row-price">${priceStr}</div>
+          <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
           <button class="calc-toggle" type="button" aria-label="Розрахувати знижку">%</button>
         </div>
       </div>
@@ -1424,6 +1447,29 @@ document.getElementById('main').addEventListener('click', function(e) {
     }
     return;
   }
+  const shareBtn = e.target.closest('.share-btn');
+  if (shareBtn) {
+    const rowEl = shareBtn.closest('.row');
+    const nameEl = rowEl.querySelector('.row-name');
+    const panel = rowEl.querySelector('.calc-panel');
+    const pctInput = panel ? panel.querySelector('.calc-input') : null;
+    const hasDiscount = panel && panel.classList.contains('open') && pctInput && parseFloat(pctInput.value) > 0;
+    const resultEl = panel ? panel.querySelector('.calc-result') : null;
+    const basePriceEl = rowEl.querySelector('.row-price');
+    const priceText = (hasDiscount && resultEl ? resultEl.textContent : (basePriceEl ? basePriceEl.textContent : '')).trim();
+    const model = nameEl ? nameEl.textContent.trim() : '';
+    const shareText = model + ' — ' + priceText;
+    if (navigator.share) {
+      navigator.share({ text: shareText }).catch(() => {});
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        const oldHTML = shareBtn.innerHTML;
+        shareBtn.innerHTML = '✓';
+        setTimeout(() => { shareBtn.innerHTML = oldHTML; }, 1200);
+      }).catch(() => {});
+    }
+    return;
+  }
 });
 document.getElementById('main').addEventListener('input', function(e) {
   if (!e.target.classList.contains('calc-input')) return;
@@ -1433,8 +1479,9 @@ document.getElementById('main').addEventListener('input', function(e) {
   if (isNaN(pct) || pct < 0) pct = 0;
   if (pct > 99) pct = 99;
   const result = Math.round(price * (1 - pct / 100));
+  const currency = panel.getAttribute('data-currency');
   const resultEl = panel.querySelector('.calc-result');
-  if (resultEl) resultEl.textContent = result.toLocaleString('uk-UA');
+  if (resultEl) resultEl.textContent = result.toLocaleString('uk-UA') + (currency ? ' ' + currency : '');
 });
 document.getElementById('search').addEventListener('input', renderCatalogList);
 document.getElementById('sort').addEventListener('change', renderCatalogList);
