@@ -1504,6 +1504,53 @@
     margin: 6px 0 0;
   }
 
+  /* Самодіагностика прайсу — картка тільки для super_admin над фільтрами адмінки:
+     список нерозв'язаних проблем розбору price.xlsx + кнопка ручної перевірки. */
+  .price-diag-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+  .price-diag-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .price-diag-header .link-btn { margin-top: 0; font-size: 12px; white-space: nowrap; }
+  .price-diag-status-line { font-size: 11.5px; color: var(--text-secondary); margin: 4px 0 8px; min-height: 14px; }
+  .price-diag-ok { font-size: 12.5px; color: var(--text-secondary); padding: 4px 0; }
+  .price-issue-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+  }
+  .price-issue-row:first-child { border-top: none; }
+  .price-issue-text { flex: 1; min-width: 0; }
+  .price-issue-row strong { font-size: 12.5px; display: block; }
+  .price-issue-row.price-issue-error strong { color: var(--danger); }
+  .price-issue-row.price-issue-warning strong { color: #854f0b; }
+  .price-issue-msg { font-size: 12px; color: var(--text); margin-top: 2px; line-height: 1.4; }
+  .price-issue-meta { font-size: 10.5px; color: var(--text-secondary); margin-top: 3px; }
+  .price-issue-resolve-btn {
+    flex-shrink: 0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--text);
+  }
+
   /* Фільтри в адмін-панелі: пошук на весь рядок, під ним — роль (завжди) і регіон (тільки
      для super_admin — регіональний адмін і так бачить лише свій регіон завдяки RLS на
      профілях, тож для нього цей вибір був би оманливим порожнім вибором). */
@@ -1932,16 +1979,25 @@ function sliceBySplitMarker(rows, marker, side) {
   return side === 'after' ? rows.slice(idx) : rows.slice(0, idx);
 }
 
-function buildSheetsData(wb) {
+// previousData — попередньо завантажений sheetsData (з кешу чи попередньої версії),
+// потрібен лише для м'якого попередження "різко зменшилась кількість позицій" (issues,
+// нижче) — на сам розбір поточного файлу ніяк не впливає.
+function buildSheetsData(wb, previousData) {
   const data = {};
   const problems = [];
+  // issues — те саме, що й problems, але структуровано (для самодіагностики прайсу,
+  // report_price_issue — див. reportPriceDiagnostics) і з додатковими "м'якими"
+  // попередженнями (kind: 'warning'), яких немає в problems/#error-block.
+  const issues = [];
 
   CATALOG_TILES.forEach(tile => {
     ['mhi', 'gal'].forEach(brand => {
       const cfg = tile[brand];
       if (!cfg) return;
       if (!wb.SheetNames.includes(cfg.sheet)) {
+        const msg = 'Вкладку "' + cfg.sheet + '" не знайдено у файлі прайсу';
         problems.push(tile.label + ' / ' + brand.toUpperCase() + ' (вкладку "' + cfg.sheet + '" не знайдено у файлі)');
+        issues.push({ tile: tile.label, brand: brand, kind: 'error', message: msg });
         return;
       }
       const sheet = wb.Sheets[cfg.sheet];
@@ -1954,13 +2010,27 @@ function buildSheetsData(wb) {
           result.items.forEach(it => { it.price = it.price * factor; });
         }
         data[cfg.key] = result.items;
+        // М'яке попередження, а не помилка: різке падіння кількості позицій порівняно з
+        // раніше завантаженою версією найчастіше означає, що частина рядків прайсу не
+        // розпізналась (злиті клітинки, зміна структури аркуша), а не те, що асортимент
+        // справді так сильно скоротився. Поріг 4 позицій — щоб не сіпатись на дрібних
+        // тайлах, де й 2-3 позиції — нормальна кількість.
+        const prevItems = previousData && previousData[cfg.key];
+        if (prevItems && prevItems.length >= 4 && result.items.length < prevItems.length * 0.5) {
+          issues.push({
+            tile: tile.label, brand: brand, kind: 'warning',
+            message: 'Різко зменшилась кількість позицій: було ' + prevItems.length + ', стало ' + result.items.length + ' — можливо, частина рядків не розпізналась'
+          });
+        }
       } else {
+        const msg = result.error || 'Не знайдено жодної позиції з ціною';
         problems.push(tile.label + ' / ' + brand.toUpperCase() + (result.error ? ' (' + result.error + ')' : ''));
+        issues.push({ tile: tile.label, brand: brand, kind: 'error', message: msg });
       }
     });
   });
 
-  return { data, problems };
+  return { data, problems, issues };
 }
 
 /* ---------- Кеш прайсу (локально на пристрої) ---------- */
@@ -2004,17 +2074,61 @@ async function checkPriceVersion() {
   }
 }
 
-async function downloadAndParsePrice() {
+// newVersion — версія прайсу (з price_meta), яку саме зараз завантажуємо; передається
+// явно викликачем (а не читається з глобальної priceVersion), бо в обох місцях виклику
+// (initCatalog/handleRefreshClick) priceVersion оновлюється ПІСЛЯ цього виклику — інакше
+// самодіагностика підписувала б знахідки старою версією.
+async function downloadAndParsePrice(newVersion) {
   const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
-  const { data, problems } = buildSheetsData(wb);
+  const previousData = sheetsData;
+  const { data, problems, issues } = buildSheetsData(wb, previousData);
   sheetsData = data;
   const errBlock = document.getElementById('error-block');
   errBlock.innerHTML = problems.length
     ? '<div class="warn">Не вдалося розпізнати: ' + escapeHtml(problems.join(', ')) + '</div>'
     : '';
+  reportPriceDiagnostics(issues, newVersion);
+}
+
+/* Самодіагностика прайсу: тихо (без жодного UI, ніколи не блокує показ каталогу)
+   повідомляє в Supabase (RPC report_price_issue/resolve_price_issue_if_ok — див.
+   price-diagnostics-setup.sql) про проблеми розбору поточного price.xlsx. Працює з
+   БУДЬ-ЯКОГО пристрою, що завантажив і розібрав прайс — не лише з пристрою того, хто
+   його заливав — тому проблему помітять, навіть якщо сам адмін не відкриє каталог одразу
+   після завантаження нового файлу. Супер-адмін бачить підсумок у Кабінеті
+   (renderAdminPanel → price-diag-card). Якщо SQL ще не виконано в Supabase (функцій
+   report_price_issue/resolve_price_issue_if_ok не існує) — виклик просто мовчки
+   провалиться, на звичайну роботу каталогу це ніяк не впливає. */
+async function reportPriceDiagnostics(issues, newVersion) {
+  try {
+    const version = String(newVersion != null ? newVersion : '');
+    const seen = new Set();
+    for (const it of issues) {
+      seen.add(it.tile + '|' + it.brand);
+      await sb.rpc('report_price_issue', {
+        p_version: version, p_tile_label: it.tile, p_brand: it.brand,
+        p_kind: it.kind, p_message: it.message
+      });
+    }
+    // "Гасимо" раніше зафіксовані проблеми для тайлів/брендів, які цього разу розпізнались
+    // нормально (їх немає серед issues) — щоб список у Кабінеті не засмічувався записами
+    // про вже виправлене, і супер-адміну не доводилось вручну натискати "Вирішено".
+    CATALOG_TILES.forEach(tile => {
+      ['mhi', 'gal'].forEach(brand => {
+        const cfg = tile[brand];
+        if (!cfg) return;
+        const key = tile.label + '|' + brand;
+        if (!seen.has(key) && sheetsData[cfg.key] && sheetsData[cfg.key].length > 0) {
+          sb.rpc('resolve_price_issue_if_ok', { p_tile_label: tile.label, p_brand: brand }).catch(function () {});
+        }
+      });
+    });
+  } catch (e) {
+    // Тиха відмова — самодіагностика ніколи не повинна заважати звичайному перегляду каталогу.
+  }
 }
 
 function setCatalogStatus(text) {
@@ -2063,7 +2177,7 @@ async function initCatalog() {
   renderCatalogView();
   try {
     const meta = await checkPriceVersion();
-    await downloadAndParsePrice();
+    await downloadAndParsePrice(meta ? meta.version : null);
     priceVersion = meta ? meta.version : 1;
     persistProcessedCache(priceVersion);
     setCatalogStatus('Завантажено: ' + new Date().toLocaleString('uk-UA') + (meta ? ' · версія ' + priceVersion : ''));
@@ -2086,7 +2200,7 @@ async function handleRefreshClick() {
   }
   setCatalogStatus('Завантаження нового прайсу...');
   try {
-    await downloadAndParsePrice();
+    await downloadAndParsePrice(meta.version);
     priceVersion = meta.version;
     persistProcessedCache(priceVersion);
     setCatalogStatus('Оновлено: ' + new Date().toLocaleString('uk-UA') + ' · версія ' + priceVersion);
@@ -3889,6 +4003,71 @@ let adminUsersCache = [];
 
 const USER_CARD_OPEN_ICON = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
+/* ---- Самодіагностика прайсу (тільки super_admin) — див. price-diagnostics-setup.sql ---- */
+async function loadPriceIssues() {
+  try {
+    const { data, error } = await sb.from('price_issues').select('*').eq('resolved', false).order('created_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function priceIssueRowHtml(issue) {
+  const kindClass = issue.kind === 'warning' ? 'price-issue-warning' : 'price-issue-error';
+  const kindIcon = issue.kind === 'warning' ? '⚠️' : '⛔';
+  return `
+    <div class="price-issue-row ${kindClass}">
+      <div class="price-issue-text">
+        <strong>${kindIcon} ${escapeHtml(issue.tile_label)} / ${escapeHtml(String(issue.brand || '').toUpperCase())}</strong>
+        <div class="price-issue-msg">${escapeHtml(issue.message)}</div>
+        <div class="price-issue-meta">версія ${escapeHtml(String(issue.version))} · ${new Date(issue.created_at).toLocaleString('uk-UA')}</div>
+      </div>
+      <button type="button" class="price-issue-resolve-btn" data-action="resolve-price-issue" data-id="${issue.id}">Вирішено</button>
+    </div>`;
+}
+
+function priceIssuesListHtml(issues) {
+  return issues.length ? issues.map(priceIssueRowHtml).join('') : '<div class="price-diag-ok">Проблем не виявлено ✓</div>';
+}
+
+function wirePriceIssueButtons(profile) {
+  document.querySelectorAll('[data-action="resolve-price-issue"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      await sb.from('price_issues').update({ resolved: true }).eq('id', btn.getAttribute('data-id'));
+      const issues = await loadPriceIssues();
+      const list = document.getElementById('price-issues-list');
+      if (list) list.innerHTML = priceIssuesListHtml(issues);
+      wirePriceIssueButtons(profile);
+    });
+  });
+}
+
+// Ручна перевірка прайсу "на вимогу" — не чекаючи, поки хтось із клієнтів відкриє каталог
+// і сам про це не здогадається. Корисно одразу після заливання нового price.xlsx у Storage:
+// натиснув — і одразу видно, чи все розпізналось, і де саме проблема, якщо ні.
+async function runManualPriceCheck(profile) {
+  const statusEl = document.getElementById('price-diag-status');
+  const btn = document.getElementById('price-check-btn');
+  if (btn) btn.disabled = true;
+  if (statusEl) statusEl.textContent = 'Перевірка...';
+  try {
+    const meta = await checkPriceVersion();
+    await downloadAndParsePrice(meta ? meta.version : priceVersion);
+    if (meta) { priceVersion = meta.version; persistProcessedCache(priceVersion); }
+    const issues = await loadPriceIssues();
+    const list = document.getElementById('price-issues-list');
+    if (list) list.innerHTML = priceIssuesListHtml(issues);
+    wirePriceIssueButtons(profile);
+    if (statusEl) statusEl.textContent = 'Перевірку завершено: ' + new Date().toLocaleString('uk-UA');
+  } catch (e) {
+    if (statusEl) statusEl.textContent = 'Не вдалося перевірити — немає інтернету?';
+  }
+  if (btn) btn.disabled = false;
+}
+
 async function renderAdminPanel(profile) {
   const main = document.getElementById('main');
   main.innerHTML = '<div class="empty">Завантаження...</div>';
@@ -3998,6 +4177,7 @@ async function renderAdminPanel(profile) {
   const pending = adminUsersCache.filter(u => u.status === 'pending');
   const others = adminUsersCache.filter(u => u.status !== 'pending');
   const pushState = await getPushSubscriptionState();
+  const priceIssues = isSuper ? await loadPriceIssues() : [];
   const regionOptionsHtml = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
   // super_admin бачить усіх — потрібно розрізняти три ролі окремо. regional_admin і так
   // бачить (завдяки RLS) тільки свій регіон, тож для нього достатньо простого поділу
@@ -4016,6 +4196,17 @@ async function renderAdminPanel(profile) {
     html += pushState.enabled
       ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
       : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>';
+  }
+  if (isSuper) {
+    html += `
+      <div class="price-diag-card">
+        <div class="price-diag-header">
+          <span>Діагностика прайсу</span>
+          <button type="button" class="link-btn" id="price-check-btn">🔍 Перевірити зараз</button>
+        </div>
+        <div class="price-diag-status-line" id="price-diag-status"></div>
+        <div id="price-issues-list">${priceIssuesListHtml(priceIssues)}</div>
+      </div>`;
   }
   html += `
     <div class="admin-filters">
@@ -4041,6 +4232,10 @@ async function renderAdminPanel(profile) {
   if (regionFilterEl) regionFilterEl.addEventListener('change', rerenderLists);
   const enablePushBtn = document.getElementById('enable-push-btn');
   if (enablePushBtn) enablePushBtn.addEventListener('click', () => enablePushNotifications(profile.id));
+  if (isSuper) {
+    document.getElementById('price-check-btn').addEventListener('click', () => runManualPriceCheck(profile));
+    wirePriceIssueButtons(profile);
+  }
 }
 
 async function handleAdminAction(action, id, value) {
