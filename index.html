@@ -537,9 +537,41 @@
     color: var(--text);
   }
   .calc-result { font-weight: 700; color: var(--accent); }
-  .calc-modes { display: flex; gap: 4px; }
-  .calc-mode-btn {
-    padding: 5px 8px;
+  /* Спрощений вибір знаку операції: замість трьох кнопок поруч — одна іконка з поточним
+     знаком (за замовчуванням −%), а решта варіантів (+%, −, +) ховаються у спливаючому
+     меню, яке з'являється тільки по дотику на цю іконку і "обгортає" її зверху й знизу
+     (меню центроване по вертикалі саме на іконці). */
+  .calc-mode-wrap { position: relative; }
+  .calc-mode-current {
+    min-width: 30px;
+    height: 26px;
+    padding: 0 7px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .calc-mode-popup {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    flex-direction: column;
+    gap: 4px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    z-index: 30;
+  }
+  .calc-mode-wrap.open .calc-mode-popup { display: flex; }
+  .calc-mode-opt {
+    padding: 5px 9px;
     border: 1px solid var(--border);
     border-radius: 6px;
     background: var(--card);
@@ -547,8 +579,9 @@
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
   }
-  .calc-mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .calc-mode-opt.is-current { display: none; }
   .calc-currency { display: flex; gap: 4px; }
   .calc-cur-btn {
     padding: 5px 8px;
@@ -691,39 +724,46 @@
     line-height: 1;
   }
 
-  /* Підказка з'являється прямо під шапкою (шапка — position: sticky, тому підказка
-     лишається зверху екрана, а не десь знизу, де її легко не помітити). */
-  .cart-toast {
+  /* "Ручка" підбірки і підказка тепер об'єднані в один блок (.cart-hud), який висить по
+     центру під шапкою (шапка — position: sticky, тому лишається зверху екрана) — саме там,
+     де на екранах прайсу проходить межа між кнопками MHI/GAL (.brand-toggle: два елементи
+     flex:1 з проміжком) — тому ручка не сідає повністю на жодну з двох кнопок і не заважає
+     ними користуватись. Підказка виводиться під ручкою (звичайний потік у flex-column),
+     а не поверх неї. */
+  .cart-hud {
     position: absolute;
     top: 100%;
     left: 50%;
-    transform: translateX(-50%) translateY(-6px);
-    margin-top: 6px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .cart-hud > * { pointer-events: auto; }
+  .cart-toast {
     background: rgba(15,23,42,0.92);
     color: #fff;
     font-size: 12.5px;
     font-weight: 600;
     padding: 9px 16px;
     border-radius: 20px;
-    z-index: 20;
     opacity: 0;
+    transform: translateY(-6px);
     pointer-events: none;
     transition: opacity .18s, transform .18s;
-    max-width: 70%;
+    max-width: 70vw;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     box-shadow: 0 6px 16px rgba(0,0,0,0.22);
   }
-  .cart-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .cart-toast.show { opacity: 1; transform: translateY(0); }
 
-  /* "Ручка" підбірки — не плаваюча кнопка знизу, а яскравий "хвостик", що звисає з шапки
-     праворуч. Лічильник завжди на видному місці зверху; повторний дотик ховає підбірку. */
   .cart-fab {
-    position: absolute;
-    top: 100%;
-    right: 14px;
     display: none;
     align-items: center;
     gap: 6px;
@@ -736,7 +776,6 @@
     border-radius: 0 0 14px 14px;
     cursor: pointer;
     box-shadow: 0 6px 14px -3px rgba(255, 61, 90, 0.55);
-    z-index: 20;
   }
   .cart-fab-badge {
     min-width: 18px; height: 18px;
@@ -748,6 +787,84 @@
     font-weight: 700;
     display: flex; align-items: center; justify-content: center;
   }
+
+  /* "Цікава новина" — глобальна плаваюча кулька над нижнім меню (щоб не перекривала
+     навігацію і не заважала шапці, де вже є ручка "Підбірки"). */
+  .promo-balloon {
+    position: fixed;
+    right: 16px;
+    bottom: 78px;
+    z-index: 1200;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+  }
+  .promo-balloon.show { display: flex; animation: promo-balloon-in .25s ease-out; }
+  .promo-balloon.popping { animation: promo-balloon-pop .3s ease-in forwards; pointer-events: none; }
+  .promo-balloon-bubble {
+    position: relative;
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 2px solid var(--accent);
+    box-shadow: 0 10px 26px -6px rgba(230,0,18,0.5);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    padding: 8px;
+  }
+  .promo-balloon-logo { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; pointer-events: none; }
+  .promo-balloon-close {
+    position: absolute;
+    top: -6px; right: -6px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: var(--navy);
+    color: #fff;
+    font-size: 10px;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .promo-balloon-label {
+    margin-top: 6px;
+    background: var(--navy);
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+  @keyframes promo-balloon-in {
+    from { transform: translateY(14px) scale(0.7); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes promo-balloon-pop {
+    0% { transform: scale(1); opacity: 1; }
+    40% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.15); opacity: 0; }
+  }
+
+  /* Банер-чекбокс "буду мати на увазі" — вгорі вкладки Акції, над умовами акцій, доки
+     користувач не підтвердить, що бачив найновішу. */
+  .promo-ack-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--accent);
+    cursor: pointer;
+  }
+  .promo-ack-banner input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--accent); cursor: pointer; }
 
   /* Панель підбірки опускається згори (не спливає знизу) — щоб рахувати натискання
      "ручки" зверху як єдину дію відкрити/закрити. */
@@ -865,7 +982,7 @@
     white-space: normal;
     overflow-wrap: anywhere;
   }
-  .cart-calc-panel .calc-modes { grid-column: 2; grid-row: 2; }
+  .cart-calc-panel .calc-mode-wrap { grid-column: 2; grid-row: 2; }
   .cart-calc-panel .calc-currency { grid-column: 4; grid-row: 2; justify-content: flex-end; }
   .cart-clear-btn {
     margin-top: 10px;
@@ -1282,6 +1399,17 @@
   <div class="install-gate-backdrop"></div>
   <div class="install-gate-sheet" id="install-gate-sheet"></div>
 </div>
+<!-- "Цікава новина" — глобальна кулька-нагадування про нову акцію, з'являється поверх
+     будь-якої вкладки (не тільки Акції), тому лежить тут, поруч з install-gate, а не
+     всередині .app. Дотик по кульці переносить у розділ Акції; хрестик у кутку кульки —
+     просто ховає її без переходу. -->
+<div class="promo-balloon" id="promo-balloon">
+  <div class="promo-balloon-bubble" id="promo-balloon-bubble">
+    <button type="button" class="promo-balloon-close" id="promo-balloon-close" aria-label="Закрити">✕</button>
+    <img src="icon-192.png" alt="Sun-ice" class="promo-balloon-logo">
+  </div>
+  <div class="promo-balloon-label">Цікава новина</div>
+</div>
 <div class="app">
   <header>
     <div class="header-top">
@@ -1301,12 +1429,15 @@
       <div class="status-text" id="status-text"></div>
     </div>
     <div id="error-block"></div>
-    <!-- "Підбірка" (кошик): і підказка, і кнопка-"ручка" підв'язані до шапки (position: sticky),
-         тому лишаються зверху екрана під час гортання прайсу, а не десь знизу. -->
-    <div class="cart-toast" id="cart-toast"></div>
-    <button type="button" class="cart-fab" id="cart-fab" style="display:none;" aria-label="Відкрити підбірку">
-      🧾<span class="cart-fab-badge" id="cart-fab-badge">0</span>
-    </button>
+    <!-- "Підбірка" (кошик): ручка + підказка підв'язані до шапки (position: sticky) і
+         центровані по горизонталі — так ручка лягає в проміжок між кнопками MHI/GAL, а не
+         повністю на одну з них, і не заважає навігації. -->
+    <div class="cart-hud" id="cart-hud">
+      <button type="button" class="cart-fab" id="cart-fab" style="display:none;" aria-label="Відкрити підбірку">
+        🧾<span class="cart-fab-badge" id="cart-fab-badge">0</span>
+      </button>
+      <div class="cart-toast" id="cart-toast"></div>
+    </div>
   </header>
   <main id="main">
     <div class="empty">Завантаження...</div>
@@ -1885,6 +2016,11 @@ function formatCalcAmount(amount, cur) {
   const suffix = cur === 'UAH' ? ' ₴' : (cur ? ' ' + cur : '');
   return Math.round(amount).toLocaleString('uk-UA') + suffix;
 }
+// Чотири режими калькулятора: відняти %, додати %, відняти суму, додати суму. За
+// замовчуванням завжди −% (найчастіший випадок — знижка) — решта ховаються у спливаючому
+// меню (див. CSS .calc-mode-popup) і не займають місця, поки не потрібні.
+const CALC_MODE_ICON = { sub_pct: '−%', add_pct: '+%', sub_flat: '−', add_flat: '+' };
+const CALC_MODE_ORDER = ['sub_pct', 'add_pct', 'sub_flat', 'add_flat'];
 function buildCalcPanelHtml(price, currency, priceStr, opts) {
   opts = opts || {};
   const curBtnsHtml = currency === '$' ? `
@@ -1896,13 +2032,15 @@ function buildCalcPanelHtml(price, currency, priceStr, opts) {
   // showBase: показати базову ціну як окремий елемент рівняння "ціна + форма% = число"
   // (використовується в калькуляторі підбірки, де це важливо бачити явно).
   const baseHtml = opts.showBase ? `<span class="calc-base">${priceStr}</span>` : '';
+  const modeOptsHtml = CALC_MODE_ORDER.map(m =>
+    `<button type="button" class="calc-mode-opt${m === 'sub_pct' ? ' is-current' : ''}" data-mode="${m}">${CALC_MODE_ICON[m]}</button>`
+  ).join('');
   return `
-          <div class="${cls}" data-price="${price}" data-currency="${escapeHtml(currency || '')}" data-mode="sub" data-cur="${escapeHtml(currency || '')}">
+          <div class="${cls}" data-price="${price}" data-currency="${escapeHtml(currency || '')}" data-mode="sub_pct" data-cur="${escapeHtml(currency || '')}">
             ${baseHtml}
-            <div class="calc-modes">
-              <button type="button" class="calc-mode-btn active" data-mode="sub">−%</button>
-              <button type="button" class="calc-mode-btn" data-mode="add">+%</button>
-              <button type="button" class="calc-mode-btn" data-mode="flat">=Ціна</button>
+            <div class="calc-mode-wrap">
+              <button type="button" class="calc-mode-current" data-mode="sub_pct">−%</button>
+              <div class="calc-mode-popup">${modeOptsHtml}</div>
             </div>
             <input type="number" class="calc-input" min="0" inputmode="numeric" placeholder="">${curBtnsHtml}
             <span class="calc-eq">=</span>
@@ -1913,41 +2051,66 @@ function computeCalcResult(panel) {
   if (!panel) return;
   const price = parseFloat(panel.getAttribute('data-price')) || 0;
   const nativeCur = panel.getAttribute('data-currency') || '';
-  const mode = panel.getAttribute('data-mode') || 'sub';
+  const mode = panel.getAttribute('data-mode') || 'sub_pct';
   const cur = panel.getAttribute('data-cur') || nativeCur;
   const input = panel.querySelector('.calc-input');
   let val = input ? parseFloat(input.value) : NaN;
   if (isNaN(val) || val < 0) val = 0;
 
+  // Рахуємо в тій валюті, яку зараз показує калькулятор (cur) — для %-режимів це байдуже
+  // (відсоток однаково масштабується при конвертації), а для сум +/− так природніше:
+  // введене число користувач сприймає як суму саме у видимій валюті ($ або ₴).
+  const priceInCur = convertAmount(price, nativeCur, cur, usdRate);
   let result;
-  if (mode === 'flat' && val > 0) {
-    result = val;
-  } else {
-    const amountNative = mode === 'add' ? price * (1 + val / 100) : price * (1 - val / 100);
-    result = convertAmount(amountNative, nativeCur, cur, usdRate);
-  }
+  if (mode === 'add_pct') result = priceInCur * (1 + val / 100);
+  else if (mode === 'sub_flat') result = priceInCur - val;
+  else if (mode === 'add_flat') result = priceInCur + val;
+  else result = priceInCur * (1 - val / 100); // sub_pct (за замовчуванням)
+  if (result < 0) result = 0;
+
   const resultEl = panel.querySelector('.calc-result');
   if (resultEl) resultEl.textContent = formatCalcAmount(result, cur);
 }
 
-/* Спільна логіка кнопок режиму (-%/+%/=Ціна) і валюти ($/₴) калькулятора — використовується
-   і для калькулятора в рядку прайсу (всередині #main), і для калькулятора підбірки
-   (всередині #cart-panel-overlay, це окремий контейнер поза #main). Повертає true, якщо
-   подія оброблена (щоб виклик міг одразу зробити return). */
+/* Закриває будь-яке відкрите спливаюче меню вибору знаку в межах panel (або всюди, якщо
+   panel не передано) — використовується, коли закривається сама панель калькулятора, щоб
+   меню не лишалось "відкритим за лаштунками" до наступного разу. */
+function closeCalcModePopups(panel) {
+  const scope = panel || document;
+  scope.querySelectorAll('.calc-mode-wrap.open').forEach(w => w.classList.remove('open'));
+}
+
+/* Спільна логіка калькулятора — використовується і для рядка прайсу (всередині #main), і
+   для підсумку "Підбірки" (всередині #cart-panel-overlay). Повертає true, якщо подія
+   оброблена (щоб виклик міг одразу зробити return). */
 function handleCalcDelegatedClick(e) {
-  const modeBtn = e.target.closest('.calc-mode-btn');
-  if (modeBtn) {
-    const panel = modeBtn.closest('.calc-panel');
-    panel.querySelectorAll('.calc-mode-btn').forEach(b => b.classList.toggle('active', b === modeBtn));
-    panel.setAttribute('data-mode', modeBtn.getAttribute('data-mode'));
+  const modeCurBtn = e.target.closest('.calc-mode-current');
+  if (modeCurBtn) {
+    const wrap = modeCurBtn.closest('.calc-mode-wrap');
+    const willOpen = !wrap.classList.contains('open');
+    closeCalcModePopups();
+    wrap.classList.toggle('open', willOpen);
+    return true;
+  }
+  const modeOptBtn = e.target.closest('.calc-mode-opt');
+  if (modeOptBtn) {
+    const wrap = modeOptBtn.closest('.calc-mode-wrap');
+    const panel = modeOptBtn.closest('.calc-panel');
+    const newMode = modeOptBtn.getAttribute('data-mode');
+    panel.setAttribute('data-mode', newMode);
+    const curBtn = wrap.querySelector('.calc-mode-current');
+    curBtn.textContent = CALC_MODE_ICON[newMode] || newMode;
+    curBtn.setAttribute('data-mode', newMode);
+    wrap.querySelectorAll('.calc-mode-opt').forEach(b => b.classList.toggle('is-current', b.getAttribute('data-mode') === newMode));
+    wrap.classList.remove('open');
     computeCalcResult(panel);
     return true;
   }
-  const curBtn = e.target.closest('.calc-cur-btn');
-  if (curBtn) {
-    const panel = curBtn.closest('.calc-panel');
-    panel.querySelectorAll('.calc-cur-btn').forEach(b => b.classList.toggle('active', b === curBtn));
-    panel.setAttribute('data-cur', curBtn.getAttribute('data-cur'));
+  const curBtn2 = e.target.closest('.calc-cur-btn');
+  if (curBtn2) {
+    const panel = curBtn2.closest('.calc-panel');
+    panel.querySelectorAll('.calc-cur-btn').forEach(b => b.classList.toggle('active', b === curBtn2));
+    panel.setAttribute('data-cur', curBtn2.getAttribute('data-cur'));
     computeCalcResult(panel);
     return true;
   }
@@ -2151,7 +2314,7 @@ function renderCatalogList() {
           </div>
           <div class="row-right">
             <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
-            <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">%</button>
+            <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">🧮</button>
             <div class="row-price">${priceStr}</div>
             <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
           </div>
@@ -2207,8 +2370,9 @@ document.getElementById('main').addEventListener('click', function(e) {
     const panel = rowEl.querySelector('.calc-panel');
     if (panel) {
       const willOpen = !panel.classList.contains('open');
-      if (openCalcPanelEl && openCalcPanelEl !== panel) openCalcPanelEl.classList.remove('open');
+      if (openCalcPanelEl && openCalcPanelEl !== panel) { openCalcPanelEl.classList.remove('open'); closeCalcModePopups(openCalcPanelEl); }
       panel.classList.toggle('open', willOpen);
+      if (!willOpen) closeCalcModePopups(panel);
       openCalcPanelEl = willOpen ? panel : null;
       calcPanelOpenedAt = Date.now();
       if (willOpen) {
@@ -2257,11 +2421,20 @@ document.getElementById('back-btn').addEventListener('click', function() { histo
    відкриттям/закриттям цієї ж панелі, тут навмисно ігноруємо — нею керує toggleBtn-гілка
    вище. */
 document.addEventListener('click', function(e) {
+  // Спершу — спливаюче меню вибору знаку (+/-/%): дотик будь-де поза ним (включно з іншою
+  // ділянкою тієї ж відкритої панелі) закриває його. Власну кнопку поточного знаку, яка й
+  // відкриває/закриває це саме меню, ігноруємо — нею керує handleCalcDelegatedClick нижче
+  // (bubble-фаза), інакше меню закривалось би тут же, не встигнувши відкритись.
+  document.querySelectorAll('.calc-mode-wrap.open').forEach(function(wrap) {
+    if (wrap.contains(e.target)) return;
+    wrap.classList.remove('open');
+  });
   if (!openCalcPanelEl) return;
   if (openCalcPanelEl.contains(e.target)) return;
   const rowEl = openCalcPanelEl.closest('.row');
   const ownToggle = rowEl ? rowEl.querySelector('.calc-toggle') : null;
   if (ownToggle && e.target.closest('.calc-toggle') === ownToggle) return;
+  closeCalcModePopups(openCalcPanelEl);
   openCalcPanelEl.classList.remove('open');
   openCalcPanelEl = null;
 }, true);
@@ -2269,6 +2442,7 @@ window.addEventListener('scroll', function() {
   // Невелика затримка після відкриття — інакше авто-прокрутка сторінки до фокусу на
   // мобільній клавіатурі одразу ж закривала б щойно відкриту панель.
   if (openCalcPanelEl && Date.now() - calcPanelOpenedAt > 400) {
+    closeCalcModePopups(openCalcPanelEl);
     openCalcPanelEl.classList.remove('open');
     openCalcPanelEl = null;
   }
@@ -2399,6 +2573,95 @@ window.addEventListener('popstate', function(event) {
 });
 
 /* ---------- Акції ---------- */
+
+/* "Буду мати на увазі" / кулька "Цікава новина" — спільний стан для обох механізмів:
+   promo_ack_id (яку акцію користувач востаннє підтвердив) і promo_last_nag_at (коли
+   його востаннє нагадували про поточну найновішу — і push, і сама кулька в застосунку
+   оновлюють це поле, щоб не нагадувати частіше ніж раз на 3 дні). Для залогіненого
+   користувача це поля в public.profiles (щоб те саме бачив і сервер при розсилці
+   push — див. send-promo-push.ts); для гостя (не залогінений) — той самий стан у
+   localStorage, суто для показу кульки на цьому пристрої (гостям push однаково не
+   надсилається, бо в них немає підписки push_subscriptions). */
+const PROMO_NAG_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
+const PROMO_GUEST_KEY = 'sunice_promo_guest';
+
+async function getPromoAckState() {
+  const { data: sessionData } = await sb.auth.getSession();
+  const session = sessionData ? sessionData.session : null;
+  let ackId = null, lastNagAt = null;
+  if (session) {
+    const { data: profile } = await sb.from('profiles').select('promo_ack_id, promo_last_nag_at').eq('id', session.user.id).single();
+    if (profile) { ackId = profile.promo_ack_id; lastNagAt = profile.promo_last_nag_at; }
+  } else {
+    try {
+      const raw = localStorage.getItem(PROMO_GUEST_KEY);
+      if (raw) { const s = JSON.parse(raw); ackId = s.ackId != null ? s.ackId : null; lastNagAt = s.lastNagAt || null; }
+    } catch (e) {}
+  }
+  return { session, ackId, lastNagAt };
+}
+
+async function ackPromo(latestId, session) {
+  const nowIso = new Date().toISOString();
+  if (session) {
+    await sb.from('profiles').update({ promo_ack_id: latestId, promo_last_nag_at: nowIso }).eq('id', session.user.id).catch(function () {});
+  } else {
+    try { localStorage.setItem(PROMO_GUEST_KEY, JSON.stringify({ ackId: latestId, lastNagAt: nowIso })); } catch (e) {}
+  }
+}
+
+async function nagPromo(ackId, session) {
+  const nowIso = new Date().toISOString();
+  if (session) {
+    await sb.from('profiles').update({ promo_last_nag_at: nowIso }).eq('id', session.user.id).catch(function () {});
+  } else {
+    try { localStorage.setItem(PROMO_GUEST_KEY, JSON.stringify({ ackId: ackId, lastNagAt: nowIso })); } catch (e) {}
+  }
+}
+
+/* Глобальна кулька "Цікава новина" — перевіряється один раз при старті застосунку,
+   з'являється поверх будь-якої вкладки (не тільки Акції). */
+async function checkPromoBalloon() {
+  try {
+    const { data: promos, error } = await sb.from('promotions').select('id').eq('is_active', true).order('id', { ascending: false }).limit(1);
+    if (error || !promos || !promos.length) return;
+    const latestId = promos[0].id;
+
+    const state = await getPromoAckState();
+    if (state.ackId === latestId) return; // цю саму акцію вже підтвердили
+    if (state.lastNagAt && (Date.now() - new Date(state.lastNagAt).getTime()) < PROMO_NAG_INTERVAL_MS) return;
+
+    showPromoBalloon();
+    nagPromo(state.ackId, state.session);
+  } catch (e) {}
+}
+
+function showPromoBalloon() {
+  const el = document.getElementById('promo-balloon');
+  if (!el) return;
+  el.classList.remove('popping');
+  el.classList.add('show');
+}
+function hidePromoBalloon(navigateToPromotions) {
+  const el = document.getElementById('promo-balloon');
+  if (!el || !el.classList.contains('show')) return;
+  el.classList.add('popping');
+  setTimeout(function () {
+    el.classList.remove('show', 'popping');
+  }, 300);
+  if (navigateToPromotions) {
+    switchTab('promotions', true);
+    renderCurrentTab();
+  }
+}
+document.getElementById('promo-balloon-bubble').addEventListener('click', function () {
+  hidePromoBalloon(true);
+});
+document.getElementById('promo-balloon-close').addEventListener('click', function (e) {
+  e.stopPropagation();
+  hidePromoBalloon(false);
+});
+
 async function getCurrentProfileRole() {
   try {
     const { data: sessionData } = await sb.auth.getSession();
@@ -2415,10 +2678,13 @@ async function renderPromotionsTab() {
   document.getElementById('title').textContent = 'Акції';
   const main = document.getElementById('main');
   main.innerHTML = '<div class="empty">Завантаження...</div>';
+  clearNotificationsAndBadge();
+  hidePromoBalloon(false); // користувач і так зараз відкриває Акції — кулька більше не потрібна
 
-  const [role, promoResult] = await Promise.all([
+  const [role, promoResult, promoAck] = await Promise.all([
     getCurrentProfileRole(),
-    sb.from('promotions').select('*').eq('is_active', true).order('sort_order', { ascending: false })
+    sb.from('promotions').select('*').eq('is_active', true).order('sort_order', { ascending: false }),
+    getPromoAckState()
   ]);
   const { data, error } = promoResult;
   const isSuper = role === 'super_admin';
@@ -2427,6 +2693,12 @@ async function renderPromotionsTab() {
     main.innerHTML = '<div class="empty">Не вдалося завантажити акції. Перевірте з’єднання з інтернетом.</div>';
     return;
   }
+
+  // "Буду мати на увазі" — показуємо банер, тільки якщо є активна акція, яку користувач
+  // ще не підтвердив (найновіша визначається за id, а не за sort_order — див. коментар
+  // у send-promo-push.ts).
+  const latestPromoId = data && data.length ? Math.max.apply(null, data.map(function (p) { return p.id; })) : null;
+  const showAckBanner = latestPromoId != null && promoAck.ackId !== latestPromoId;
 
   const uploadHtml = isSuper ? `
     <div class="promo-upload-card">
@@ -2437,6 +2709,12 @@ async function renderPromotionsTab() {
       <button type="button" id="promo-upload-btn" class="promo-upload-btn">Завантажити</button>
       <p id="promo-upload-status" class="promo-upload-status"></p>
     </div>` : '';
+
+  const ackBannerHtml = showAckBanner ? `
+    <label class="promo-ack-banner">
+      <input type="checkbox" id="promo-ack-checkbox">
+      <span>Добре, добре, буду мати на увазі</span>
+    </label>` : '';
 
   const cardsHtml = (!data || data.length === 0)
     ? '<div class="empty">Наразі активних акцій немає.<br>Заходьте пізніше!</div>'
@@ -2454,10 +2732,17 @@ async function renderPromotionsTab() {
     </div>
   `).join('');
 
-  main.innerHTML = uploadHtml + cardsHtml;
+  main.innerHTML = uploadHtml + ackBannerHtml + cardsHtml;
 
   if (isSuper) {
     document.getElementById('promo-upload-btn').addEventListener('click', handlePromoUpload);
+  }
+  if (showAckBanner) {
+    document.getElementById('promo-ack-checkbox').addEventListener('change', async function (e) {
+      if (!e.target.checked) return;
+      await ackPromo(latestPromoId, promoAck.session);
+      renderPromotionsTab();
+    });
   }
 }
 
@@ -3156,18 +3441,31 @@ function clearNotificationsAndBadge() {
 }
 
 /* ---- Авторизований звичайний користувач ---- */
-function renderUserStatus(profile) {
+async function renderUserStatus(profile) {
   const main = document.getElementById('main');
   const priceLine = profile.status === 'approved' ? '<br>Тип цін: ' + escapeHtml(priceTypeLabel(profile.price_type)) : '';
+  // Кнопка "Увімкнути сповіщення" тут потрібна не тільки адмінам (як було раніше) — саме
+  // через цю підписку звичайні користувачі й отримують push про нові акції (див.
+  // send-promo-push.ts): без неї в push_subscriptions не було б жодного запису для
+  // звичайного користувача, і "усім користувачам" push не дійшов би нікому, крім адмінів.
+  const pushState = await getPushSubscriptionState();
+  const pushHtml = pushState.supported
+    ? (pushState.enabled
+        ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
+        : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>')
+    : '';
   main.innerHTML = `
     <div class="status-card">
       <div class="status-card-title">${escapeHtml(statusLabel(profile.status))}</div>
       <div class="status-card-sub">${escapeHtml(profile.full_name || '')}<br>${escapeHtml(profile.phone || '')}${priceLine}</div>
     </div>
     ${JOKE_MODE && profile.status === 'pending' ? '<div class="joke-note">Зареєструвались, не перенавантажились!? Винагорода? Дякуємо, що не насварили :-)</div>' : ''}
+    ${pushHtml}
     <button class="logout-btn" id="cab-logout-btn">Вийти</button>
   `;
   document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
+  const enablePushBtn = document.getElementById('enable-push-btn');
+  if (enablePushBtn) enablePushBtn.addEventListener('click', () => enablePushNotifications(profile.id));
 }
 
 async function handleLogout() {
@@ -3652,6 +3950,7 @@ if ('serviceWorker' in navigator) {
 history.replaceState({ tab: 'catalog' }, '', '#catalog');
 renderCurrentTab();
 showInstallGate();
+checkPromoBalloon();
 </script>
 </body>
 </html>
