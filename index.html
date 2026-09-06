@@ -493,12 +493,15 @@
     border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--bg);
-    font-size: 13px;
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--accent);
     cursor: pointer;
     flex-shrink: 0;
+    padding: 0;
   }
+  .calc-toggle svg { width: 17px; height: 17px; display: block; }
   .calc-toggle:active { background: var(--accent-bg); }
   .share-btn {
     width: 28px; height: 28px;
@@ -2314,7 +2317,18 @@ function renderCatalogList() {
           </div>
           <div class="row-right">
             <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
-            <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">🧮</button>
+            <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="3" y="1.5" width="18" height="21" rx="3" fill="var(--navy)"/>
+                <rect x="6" y="4.5" width="12" height="5" rx="1.1" fill="#CFE0F0"/>
+                <rect x="6" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="10.2" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="14.4" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="6" y="16.1" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="10.2" y="16.1" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="14.4" y="16.1" width="3.6" height="3.4" rx="0.8" fill="var(--accent)"/>
+              </svg>
+            </button>
             <div class="row-price">${priceStr}</div>
             <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
           </div>
