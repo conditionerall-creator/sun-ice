@@ -81,6 +81,44 @@
     font-weight: 400;
   }
 
+  /* Банер "увімкніть сповіщення" — навмисно червоний (на відміну від темного install-banner),
+     щоб виділятись як застереження, але лишатись тонкою смужкою, що не заважає роботі. */
+  .notify-banner {
+    display: none;
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 14px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    font-size: 13px;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #a3000d;
+  }
+  .notify-banner.show { display: flex; }
+  .notify-banner-text { flex: 1; line-height: 1.4; }
+  .notify-banner button:not(.close-x) {
+    background: #fff;
+    color: var(--accent);
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .notify-banner .close-x {
+    background: transparent;
+    color: #fecaca;
+    font-size: 16px;
+    padding: 4px 6px;
+    font-weight: 400;
+    flex-shrink: 0;
+  }
+  .notify-banner.show ~ .app header { padding-top: 16px; }
+  .install-banner.show ~ .notify-banner.show { border-top: 1px solid #a3000d; }
+
   /* Header */
   header {
     padding: calc(16px + env(safe-area-inset-top)) 16px 16px;
@@ -1182,18 +1220,6 @@
     padding: 0;
     font-family: inherit;
   }
-  .info-doc-status {
-    margin-top: 4px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .info-doc-status-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text-secondary); }
-  .info-doc-status-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
-  .info-doc-status-badge.yes { background: #d8f5ea; color: #00875a; }
-  .info-doc-status-badge.no { background: #f1f5f9; color: #64748b; }
 
   /* Перегляд зображення акції на весь екран (наближення/панорамування) */
   .img-lightbox-overlay {
@@ -1500,6 +1526,16 @@
   <div class="install-banner-text" id="install-banner-text"></div>
   <button id="install-action-btn" style="display:none;">Встановити</button>
   <button class="close-x" id="install-close-btn">✕</button>
+</div>
+
+<!-- Ненав'язливий, але помітний банер: показується, поки на цьому пристрої не надано
+     дозвіл на сповіщення (Notification.permission !== 'granted'), незалежно від того,
+     показано зараз install-banner чи ні. Ховається сам, щойно дозвіл отримано —
+     дивись updateNotifyBanner(). -->
+<div class="notify-banner" id="notify-banner">
+  <div class="notify-banner-text">Сповіщення вимкнено — можете пропустити нові акції та статус заявки</div>
+  <button type="button" id="notify-banner-btn">Дозволити</button>
+  <button type="button" class="close-x" id="notify-banner-close" aria-label="Закрити">✕</button>
 </div>
 
 <div class="install-gate" id="install-gate">
@@ -2720,6 +2756,7 @@ sb.auth.onAuthStateChange(function() {
   refreshAccessState().then(function () {
     if (currentTab === 'catalog' && activeTile) renderCatalogList();
   });
+  autoAttachPushIfGranted();
 });
 
 window.addEventListener('popstate', function(event) {
@@ -3177,19 +3214,6 @@ function renderInfoMenu(items, onSelect) {
   });
 }
 
-function infoDocStatusHtml() {
-  const rows = Object.keys(INFO_CATALOG_DOCS).map(brand => {
-    const b = INFO_BRANDS.find(x => x.id === brand);
-    const downloaded = isCatalogMarkedDownloaded(brand);
-    return `
-      <div class="info-doc-status-row">
-        <span>${escapeHtml(b ? b.label : brand)}</span>
-        <span class="info-doc-status-badge ${downloaded ? 'yes' : 'no'}">${downloaded ? 'Вже завантажено' : 'Не завантажено'}</span>
-      </div>`;
-  }).join('');
-  return `<div class="info-doc-status">${rows}</div>`;
-}
-
 function renderInfoDetail() {
   const main = document.getElementById('main');
   if (infoSection === 'catalogs') {
@@ -3208,7 +3232,7 @@ function renderInfoDetail() {
         <a class="info-doc-btn" href="${escapeHtml(doc.url)}" download data-catalog-download="${escapeHtml(infoBrand)}">Завантажити</a>
         <p class="promo-doc-note">Файл каталогу важить десятки мегабайт. Якщо після натискання сторінка виглядає порожньою або нічого не відбувається — натисніть і потримайте посилання/кнопку секунду, у меню, що з'явиться, оберіть «Завантажити посилання» — файл почне завантажуватись стандартним завантажувачем телефону в папку «Завантаження», незалежно від переглядача PDF. Бажано робити це через Wi-Fi.</p>
       `;
-    main.innerHTML = `<div class="info-doc-card">${body}${infoDocStatusHtml()}</div>`;
+    main.innerHTML = `<div class="info-doc-card">${body}</div>`;
     main.querySelectorAll('[data-catalog-download]').forEach(el => {
       el.addEventListener('click', () => markCatalogDownloaded(el.getAttribute('data-catalog-download')));
     });
@@ -3791,6 +3815,25 @@ async function enablePushNotifications(userId) {
   }
 }
 
+function notifyPushSupported() {
+  return ('Notification' in window) && ('serviceWorker' in navigator) && ('PushManager' in window);
+}
+
+/* Якщо дозвіл на сповіщення на цьому пристрої вже надано (наприклад, гість натиснув
+   "Дозволити" в банері чи у формі після встановлення до того, як зареєструвався), але
+   підписки push_subscriptions ще немає (бо тоді не було userId) — доприв'язуємо її
+   мовчки одразу після входу/реєстрації, щоб не питати дозвіл вдруге. */
+async function autoAttachPushIfGranted() {
+  try {
+    if (!notifyPushSupported() || Notification.permission !== 'granted') return;
+    const { data: sessionData } = await sb.auth.getSession();
+    const session = sessionData ? sessionData.session : null;
+    if (!session) return;
+    const state = await getPushSubscriptionState();
+    if (!state.enabled) await enablePushNotifications(session.user.id);
+  } catch (e) {}
+}
+
 /* Коли адмін відкрив Кабінет — вважаємо, що заявки переглянуті: гасимо бейдж і закриваємо сповіщення */
 function clearNotificationsAndBadge() {
   if (navigator.serviceWorker && navigator.serviceWorker.controller) {
@@ -4166,9 +4209,29 @@ function renderInstallGateConfirmSkip() {
 }
 
 function renderInstallGateInstalled() {
+  const offerNotify = notifyPushSupported() && Notification.permission === 'default';
   setInstallGateSheet(
-    '<p class="install-gate-desc">Готово! Застосунок встановлено. Закрийте цю вкладку браузера і відкрийте Sun-ice з ярлика на головному екрані.</p>'
+    '<p class="install-gate-desc">Готово! Застосунок встановлено. Закрийте цю вкладку браузера і відкрийте Sun-ice з ярлика на головному екрані.</p>' +
+    (offerNotify
+      ? '<p class="install-gate-desc">Останній крок — увімкніть сповіщення, щоб не пропустити акції та статус заявки:</p>' +
+        '<button type="button" class="install-gate-install-btn" id="install-gate-notify-btn">Дозволити сповіщення</button>'
+      : '')
   );
+  const notifyBtn = document.getElementById('install-gate-notify-btn');
+  if (notifyBtn) {
+    notifyBtn.addEventListener('click', async () => {
+      notifyBtn.disabled = true;
+      await Notification.requestPermission();
+      await autoAttachPushIfGranted();
+      updateNotifyBanner();
+      if (Notification.permission === 'granted') {
+        notifyBtn.textContent = 'Дозволено ✓';
+      } else {
+        notifyBtn.textContent = 'Дозволити сповіщення';
+        notifyBtn.disabled = false;
+      }
+    });
+  }
 }
 
 function renderInstallGateManualFallback() {
@@ -4234,6 +4297,55 @@ window.addEventListener('appinstalled', () => {
     renderInstallGateInstalled();
   }
 });
+
+/* ---------- Банер "увімкніть сповіщення" ---------- */
+/* Хрестик не вимикає нагадування назавжди (сповіщення про акції й статус заявки —
+   не дрібниця) — лише відкладає банер на кілька днів, за аналогією з нагадуванням
+   про акції (PROMO_NAG_INTERVAL_MS нижче). Якщо дозвіл надано в налаштуваннях
+   назавжди відхилено (Notification.permission === 'denied'), банер не показуємо
+   взагалі — повторний запит браузер однаково заблокує, а поради "змініть у
+   налаштуваннях браузера" в тонкому банері лише дратуватимуть. */
+const NOTIFY_BANNER_SNOOZE_KEY = 'sunice_notify_banner_snooze_until';
+const NOTIFY_BANNER_SNOOZE_MS = 3 * 24 * 60 * 60 * 1000;
+
+function updateNotifyBanner() {
+  const banner = document.getElementById('notify-banner');
+  if (!banner) return;
+  if (!notifyPushSupported() || Notification.permission !== 'default') {
+    banner.classList.remove('show');
+    return;
+  }
+  const snoozeUntil = Number(localStorage.getItem(NOTIFY_BANNER_SNOOZE_KEY) || 0);
+  banner.classList.toggle('show', Date.now() >= snoozeUntil);
+}
+
+async function handleNotifyBannerEnable() {
+  const btn = document.getElementById('notify-banner-btn');
+  btn.disabled = true;
+  try {
+    const { data: sessionData } = await sb.auth.getSession();
+    const session = sessionData ? sessionData.session : null;
+    if (session) {
+      await enablePushNotifications(session.user.id);
+    } else {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('Дозвіл на сповіщення не надано. Увімкнути його можна пізніше в налаштуваннях браузера.');
+      }
+    }
+  } catch (e) {
+    alert('Не вдалося увімкнути сповіщення на цьому пристрої.');
+  }
+  btn.disabled = false;
+  updateNotifyBanner();
+}
+
+document.getElementById('notify-banner-btn').addEventListener('click', handleNotifyBannerEnable);
+document.getElementById('notify-banner-close').addEventListener('click', () => {
+  localStorage.setItem(NOTIFY_BANNER_SNOOZE_KEY, String(Date.now() + NOTIFY_BANNER_SNOOZE_MS));
+  updateNotifyBanner();
+});
+updateNotifyBanner();
 
 /* ---------- Перегляд зображення на весь екран: наближення/віддалення, панорамування ---------- */
 (function () {
