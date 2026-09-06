@@ -374,6 +374,19 @@
     color: #475569;
     border: 1px solid #cbd5e1;
   }
+  /* Плитки з фото (замість буквеної іконки) — фото зверху (contain, на білому тлі, щоб
+     не обрізати логотипи/підписи на різних за пропорціями зображеннях), назва знизу. */
+  .menu-tile-photo { padding: 8px; gap: 6px; }
+  .menu-tile-photo-wrap {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+  }
+  .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .menu-tile-photo .menu-tile-title { padding: 0 2px; }
 
   /* List rows */
   .row {
@@ -488,6 +501,10 @@
   .row-click-zone:active ~ .row-info .row-name { opacity: 0.6; }
   .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 1px; }
   .row-price { font-size: 16px; font-weight: 600; white-space: nowrap; }
+  /* Ціна для незареєстрованих/заблокованих: цифри видно, що вони там є, але розібрати їх
+     неможливо — розмиття, а не приховування, щоб рядок виглядав так само, як і зазвичай. */
+  .row-price-locked { filter: blur(4.5px); user-select: none; cursor: pointer; }
+  .row-locked .calc-toggle, .row-locked .cart-check-btn, .row-locked .share-btn { opacity: .4; }
   .calc-toggle {
     width: 28px; height: 28px;
     border-radius: 8px;
@@ -1136,6 +1153,47 @@
     font-weight: 600;
     text-decoration: none;
   }
+  /* Каталог уже відкривався на цьому пристрої раніше — замість кнопки "Завантажити"
+     показуємо обкладинку (1-шу сторінку PDF) і "Відкрити" (без примусового завантаження
+     файлу наново — просто відкриваємо посилання). */
+  .info-doc-cached-preview {
+    display: block;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    line-height: 0;
+  }
+  .info-doc-cached-preview img { width: 100%; display: block; }
+  .info-doc-cached-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .info-doc-redownload-btn {
+    align-self: flex-start;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+  }
+  .info-doc-status {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .info-doc-status-row { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--text-secondary); }
+  .info-doc-status-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+  .info-doc-status-badge.yes { background: #d8f5ea; color: #00875a; }
+  .info-doc-status-badge.no { background: #f1f5f9; color: #64748b; }
 
   /* Перегляд зображення акції на весь екран (наближення/панорамування) */
   .img-lightbox-overlay {
@@ -1389,6 +1447,52 @@
   }
   .user-card-actions button.approve { background: var(--accent); color: #fff; border-color: var(--accent); }
   .user-card-actions button.reject { color: var(--danger); border-color: #f0cccc; }
+
+  /* Кнопка "відкрити" — іконка без тексту, розкриває дії/налаштування картки користувача */
+  .user-card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .user-card-open-btn {
+    width: 30px; height: 30px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .user-card-open-btn svg { width: 16px; height: 16px; transition: transform .15s; }
+  .user-card.open .user-card-open-btn svg { transform: rotate(180deg); }
+  .user-card-expand { display: none; }
+  .user-card.open .user-card-expand { display: block; }
+  .user-card-rereg-badge {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #ffedd5;
+    color: #9a3412;
+    margin: 6px 0 0;
+  }
+
+  /* Фільтр за регіоном в адмін-панелі — той самий вигляд, що й пошук */
+  .admin-filters { display: flex; gap: 8px; margin-bottom: 10px; }
+  .admin-filters .admin-search { flex: 1.3; margin-bottom: 0; }
+  .admin-region-filter { flex: 1; }
+  .admin-region-filter select {
+    width: 100%;
+    height: 100%;
+    padding: 9px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 13px;
+    color: var(--text);
+    font-family: inherit;
+  }
 </style>
 </head>
 <body>
@@ -1478,6 +1582,20 @@
   </div>
 </div>
 
+<div class="info-sheet-overlay" id="register-gate-overlay">
+  <div class="info-sheet-backdrop" id="register-gate-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title">Ціни доступні зареєстрованим користувачам</div>
+      <button type="button" class="info-sheet-close" id="register-gate-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body">
+      <p style="margin:0 0 14px;">Зареєструйтесь, щоб побачити ціни та скористатись усіма функціями застосунку — це займе хвилину, а доступ надається одразу після заповнення заявки.</p>
+      <button type="button" class="primary-btn" id="register-gate-cta">Зареєструватись</button>
+    </div>
+  </div>
+</div>
+
 <div class="cart-panel-overlay" id="cart-panel-overlay">
   <div class="cart-panel-backdrop" id="cart-panel-backdrop"></div>
   <div class="cart-panel">
@@ -1526,17 +1644,17 @@ const SPLIT_MHI_LABELS = [
    Плитка без них — поки не наповнена, показується сірою "Скоро". */
 const CATALOG_TILES = [
   {
-    id: 'split', label: 'Спліт-системи',
+    id: 'split', label: 'Спліт-системи', img: 'tile-images/tile-split.jpg',
     mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series', labelSequence: SPLIT_MHI_LABELS },
     gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before', seriesLabelMode: 'first-sentence' }
   },
   {
-    id: 'multisplit', label: 'Мульти спліт-системи',
+    id: 'multisplit', label: 'Мульти спліт-системи', img: 'tile-images/tile-multisplit.jpg',
     mhi: { key: 'multisplit_mhi', sheet: 'МУЛЬТИСИСТЕМИ', highlight: 'series' },
     gal: { key: 'multisplit_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'after' }
   },
   {
-    id: 'semi', label: 'Напівпромислові спліт-системи',
+    id: 'semi', label: 'Напівпромислові спліт-системи', img: 'tile-images/tile-semi.jpg',
     mhi: { key: 'semi_mhi', sheet: 'НАПІВПРОМ', highlight: 'category', baseAdjustPct: 20 },
     gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category' }
   },
@@ -1985,6 +2103,13 @@ function renderCatalogMenu() {
           <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
         </div>`;
     }
+    if (tile.img) {
+      return `
+        <div class="menu-tile menu-tile-photo" data-tile="${escapeHtml(tile.id)}">
+          <div class="menu-tile-photo-wrap"><img src="${escapeHtml(tile.img)}" alt="" loading="lazy"></div>
+          <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
+        </div>`;
+    }
     return `
       <div class="menu-tile" data-tile="${escapeHtml(tile.id)}">
         <div class="menu-tile-row">
@@ -2308,8 +2433,9 @@ function renderCatalogList() {
     const priceStr = Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '');
     const cartKey = activeTile + '|' + activeBrand + '|' + it.model;
     const cartQty = cartQtyFor(cartKey);
+    const locked = !hasFullAccess;
     return header + `
-      <div class="row" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
+      <div class="row${locked ? ' row-locked' : ''}" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
         <div class="row-top">
           <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
           <div class="row-info">
@@ -2329,11 +2455,11 @@ function renderCatalogList() {
                 <rect x="14.4" y="16.1" width="3.6" height="3.4" rx="0.8" fill="var(--accent)"/>
               </svg>
             </button>
-            <div class="row-price">${priceStr}</div>
+            <div class="row-price${locked ? ' row-price-locked' : ''}" aria-label="${locked ? 'Ціна доступна після реєстрації' : ''}">${priceStr}</div>
             <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
           </div>
         </div>
-        <div class="calc-panel-slot">${buildCalcPanelHtml(it.price, it.currency, priceStr)}</div>
+        ${locked ? '' : '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, priceStr) + '</div>'}
       </div>
     `;
   }).join('');
@@ -2364,8 +2490,24 @@ function closeSeriesInfo() {
 document.getElementById('series-info-close').addEventListener('click', closeSeriesInfo);
 document.getElementById('series-info-backdrop').addEventListener('click', closeSeriesInfo);
 
+document.getElementById('register-gate-close').addEventListener('click', closeRegisterGate);
+document.getElementById('register-gate-backdrop').addEventListener('click', closeRegisterGate);
+document.getElementById('register-gate-cta').addEventListener('click', () => {
+  closeRegisterGate();
+  cabinetMode = 'register';
+  switchTab('cabinet', true);
+  renderCurrentTab();
+});
+
 document.getElementById('main').addEventListener('click', function(e) {
   if (currentTab !== 'catalog') return;
+  // Ціна захована (немає повного доступу) — дотик на саму ціну, калькулятор чи галочку
+  // "в підбірку" (усі вони працюють із ціною) показує пропозицію зареєструватись замість
+  // звичайної дії. Решта рядка (назва, пошук у Google, "поділитися") лишається робочою.
+  if (!hasFullAccess && e.target.closest('.row-locked') && e.target.closest('.row-price-locked, .calc-toggle, .cart-check-btn, .share-btn')) {
+    showRegisterGate();
+    return;
+  }
   const infoHeader = e.target.closest('.segment-header-info');
   if (infoHeader) {
     const info = seriesInfoTexts[Number(infoHeader.getAttribute('data-info-idx'))];
@@ -2555,6 +2697,11 @@ document.getElementById('main').addEventListener('click', function(e) {
   if (!target || target.tagName === 'SELECT') return;
   const action = target.getAttribute('data-action');
   const id = target.getAttribute('data-id');
+  if (action === 'toggle-menu') {
+    const card = target.closest('.user-card');
+    if (card) card.classList.toggle('open');
+    return;
+  }
   if (action && id) handleAdminAction(action, id, null);
 });
 document.getElementById('main').addEventListener('change', function(e) {
@@ -2565,9 +2712,14 @@ document.getElementById('main').addEventListener('change', function(e) {
   if (action && id) handleAdminAction(action, id, target.value);
 });
 
-/* Перерендер Кабінету при зміні стану авторизації (напр., після виходу в іншій вкладці) */
+/* Перерендер Кабінету при зміні стану авторизації (напр., після виходу в іншій вкладці);
+   а також перерахунок доступу до цін і перерендер прайсу, якщо він саме зараз відкритий —
+   щоб одразу після входу/реєстрації/виходу ціни з'явились чи зникли без ручного оновлення. */
 sb.auth.onAuthStateChange(function() {
   if (currentTab === 'cabinet') renderCabinetTab();
+  refreshAccessState().then(function () {
+    if (currentTab === 'catalog' && activeTile) renderCatalogList();
+  });
 });
 
 window.addEventListener('popstate', function(event) {
@@ -2686,6 +2838,39 @@ async function getCurrentProfileRole() {
   } catch (e) {
     return null;
   }
+}
+
+/* ---------- Доступ до цін (розділ "Каталог") ----------
+   Ціни бачать лише ті, хто увійшов у застосунок і має акаунт (profiles), окрім явно
+   заблокованих/відхилених — саме так реалізовано "негайний доступ при реєстрації": як
+   тільки заявка подана (status = 'pending'), profiles-рядок уже існує і людина одразу
+   бачить ціни, а адмін пізніше або підтверджує (approved), або блокує/відхиляє — і саме
+   ця дія миттєво (при наступному відкритті/перевірці) знову ховає ціни. Гостям (без
+   сесії) ціни завжди заховані. */
+const PRICE_ACCESS_DENIED_STATUSES = ['blocked', 'rejected'];
+let hasFullAccess = false;
+let lastAccessCheckAt = 0;
+
+async function refreshAccessState() {
+  try {
+    const { data: sessionData } = await sb.auth.getSession();
+    const session = sessionData ? sessionData.session : null;
+    if (!session) { hasFullAccess = false; return hasFullAccess; }
+    const { data: profile } = await sb.from('profiles').select('status').eq('id', session.user.id).single();
+    hasFullAccess = !!profile && !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status);
+  } catch (e) {
+    hasFullAccess = false;
+  }
+  lastAccessCheckAt = Date.now();
+  return hasFullAccess;
+}
+
+/* Спливаюча картка "Зареєструйтесь" — при дотику на заховану ціну/калькулятор. */
+function showRegisterGate() {
+  document.getElementById('register-gate-overlay').classList.add('show');
+}
+function closeRegisterGate() {
+  document.getElementById('register-gate-overlay').classList.remove('show');
 }
 
 async function renderPromotionsTab() {
@@ -2888,25 +3073,43 @@ async function renderContactsTab() {
 
 /* ---------- Тех. інформація ---------- */
 const INFO_SECTIONS = [
-  { id: 'catalogs', label: 'Каталоги' },
-  { id: 'mhi-errors', label: 'Коди помилок MHI' },
+  { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.jpg' },
+  { id: 'mhi-errors', label: 'Коди помилок MHI', img: 'tile-images/tile-error-codes.jpg' },
   { id: 'techinfo', label: 'Технічна інфа' }
 ];
 const INFO_BRANDS = [
-  { id: 'mhi', label: 'Mitsubishi Heavy' },
-  { id: 'galactic', label: 'GALACTIC' }
+  { id: 'mhi', label: 'Mitsubishi Heavy', img: 'tile-images/catalog-preview-mhi.jpg' },
+  { id: 'galactic', label: 'GALACTIC', img: 'tile-images/catalog-preview-galactic.jpg' }
 ];
 /* Посилання на офіційні PDF-каталоги виробників (розділ Інфо → Каталоги) */
 const INFO_CATALOG_DOCS = {
   mhi: {
     text: 'Каталог побутових і напівпромислових кондиціонерів Mitsubishi H.I.',
-    url: 'https://sun-ice.com.ua/download/catalog/mhi/catalog-mhi-rac-pac.pdf'
+    url: 'https://sun-ice.com.ua/download/catalog/mhi/catalog-mhi-rac-pac.pdf',
+    preview: 'tile-images/catalog-preview-mhi.jpg'
   },
   galactic: {
     text: 'Актуальний каталог продукції Galactic',
-    url: 'https://sun-ice.com.ua/pdf_catalogs/cat_Galactic.pdf'
+    url: 'https://sun-ice.com.ua/pdf_catalogs/cat_Galactic.pdf',
+    preview: 'tile-images/catalog-preview-galactic.jpg'
   }
 };
+/* Позначка "цей каталог уже відкривали на цьому пристрої" — суто локально (localStorage),
+   щоб замість кнопки "Завантажити" показати обкладинку і "Відкрити". Це не справжня
+   перевірка кешу браузера/диска (це неможливо дізнатись напевно з коду сторінки), а
+   практичний замінник: якщо людина вже відкривала файл із цього телефону, найімовірніше
+   він і зараз швидко відкриється (або з кешу браузера, або просто повторно завантажиться,
+   якщо кеш очистили, — гіршого не станеться). */
+function catalogDownloadedKey(brand) { return 'sunice_catalog_dl_' + brand; }
+function isCatalogMarkedDownloaded(brand) {
+  try { return localStorage.getItem(catalogDownloadedKey(brand)) === '1'; } catch (e) { return false; }
+}
+function markCatalogDownloaded(brand) {
+  try { localStorage.setItem(catalogDownloadedKey(brand), '1'); } catch (e) {}
+}
+function clearCatalogDownloaded(brand) {
+  try { localStorage.removeItem(catalogDownloadedKey(brand)); } catch (e) {}
+}
 
 function renderInfoTab() {
   const backBtn = document.getElementById('back-btn');
@@ -2952,17 +3155,39 @@ function renderInfoTab() {
 
 function renderInfoMenu(items, onSelect) {
   const main = document.getElementById('main');
-  const tiles = items.map(item => `
+  const tiles = items.map(item => {
+    if (item.img) {
+      return `
+        <div class="menu-tile menu-tile-photo" data-info-id="${escapeHtml(item.id)}">
+          <div class="menu-tile-photo-wrap"><img src="${escapeHtml(item.img)}" alt="" loading="lazy"></div>
+          <div class="menu-tile-title">${escapeHtml(item.label)}</div>
+        </div>`;
+    }
+    return `
     <div class="menu-tile" data-info-id="${escapeHtml(item.id)}">
       <div class="menu-tile-row">
         <div class="menu-tile-icon">${escapeHtml(item.label.slice(0, 2).toUpperCase())}</div>
       </div>
       <div class="menu-tile-title">${escapeHtml(item.label)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   main.innerHTML = '<div class="menu-grid">' + tiles + '</div>';
   main.querySelectorAll('.menu-tile[data-info-id]').forEach(el => {
     el.addEventListener('click', () => onSelect(el.getAttribute('data-info-id')));
   });
+}
+
+function infoDocStatusHtml() {
+  const rows = Object.keys(INFO_CATALOG_DOCS).map(brand => {
+    const b = INFO_BRANDS.find(x => x.id === brand);
+    const downloaded = isCatalogMarkedDownloaded(brand);
+    return `
+      <div class="info-doc-status-row">
+        <span>${escapeHtml(b ? b.label : brand)}</span>
+        <span class="info-doc-status-badge ${downloaded ? 'yes' : 'no'}">${downloaded ? 'Вже завантажено' : 'Не завантажено'}</span>
+      </div>`;
+  }).join('');
+  return `<div class="info-doc-status">${rows}</div>`;
 }
 
 function renderInfoDetail() {
@@ -2970,12 +3195,30 @@ function renderInfoDetail() {
   if (infoSection === 'catalogs') {
     const doc = INFO_CATALOG_DOCS[infoBrand];
     if (!doc) { main.innerHTML = '<div class="empty">Немає даних.</div>'; return; }
-    main.innerHTML = `
-      <div class="info-doc-card">
-        <a class="info-doc-link" href="${escapeHtml(doc.url)}" download>${escapeHtml(doc.text)}</a>
-        <a class="info-doc-btn" href="${escapeHtml(doc.url)}" download>Завантажити</a>
+    const downloaded = isCatalogMarkedDownloaded(infoBrand);
+    const body = downloaded ? `
+        <a class="info-doc-cached-preview" href="${escapeHtml(doc.url)}" target="_blank" rel="noopener" data-catalog-open="${escapeHtml(infoBrand)}">
+          <img src="${escapeHtml(doc.preview)}" alt="">
+        </a>
+        <p class="info-doc-cached-note">📄 ${escapeHtml(doc.text)}</p>
+        <a class="info-doc-btn" href="${escapeHtml(doc.url)}" target="_blank" rel="noopener" data-catalog-open="${escapeHtml(infoBrand)}">Відкрити</a>
+        <button type="button" class="info-doc-redownload-btn" data-catalog-redownload="${escapeHtml(infoBrand)}">Файл оновився? Завантажити ще раз</button>
+      ` : `
+        <a class="info-doc-link" href="${escapeHtml(doc.url)}" download data-catalog-download="${escapeHtml(infoBrand)}">${escapeHtml(doc.text)}</a>
+        <a class="info-doc-btn" href="${escapeHtml(doc.url)}" download data-catalog-download="${escapeHtml(infoBrand)}">Завантажити</a>
         <p class="promo-doc-note">Файл каталогу важить десятки мегабайт. Якщо після натискання сторінка виглядає порожньою або нічого не відбувається — натисніть і потримайте посилання/кнопку секунду, у меню, що з'явиться, оберіть «Завантажити посилання» — файл почне завантажуватись стандартним завантажувачем телефону в папку «Завантаження», незалежно від переглядача PDF. Бажано робити це через Wi-Fi.</p>
-      </div>`;
+      `;
+    main.innerHTML = `<div class="info-doc-card">${body}${infoDocStatusHtml()}</div>`;
+    main.querySelectorAll('[data-catalog-download]').forEach(el => {
+      el.addEventListener('click', () => markCatalogDownloaded(el.getAttribute('data-catalog-download')));
+    });
+    const redownloadBtn = main.querySelector('[data-catalog-redownload]');
+    if (redownloadBtn) {
+      redownloadBtn.addEventListener('click', () => {
+        clearCatalogDownloaded(redownloadBtn.getAttribute('data-catalog-redownload'));
+        renderInfoDetail();
+      });
+    }
   } else {
     main.innerHTML =
       '<div class="empty">Розділ у розробці.<br>Найближчим часом тут з’являться технічні характеристики, інструкції та сертифікати.</div>';
@@ -3219,16 +3462,22 @@ async function renderCabinetTab() {
 /* ---- Неавторизований стан: вхід / реєстрація ---- */
 function renderAuthForms() {
   const main = document.getElementById('main');
+  // Режим "reregister" (забули пароль) навмисно не має власної вкладки в перемикачі —
+  // це не третій рівноправний варіант входу, а виправлення ситуації "забув пароль",
+  // тому підсвічуємо вкладку Реєстрація (найближчу за змістом), а сама форма далі явно
+  // пояснює, що відбувається.
   main.innerHTML = `
     <div class="auth-toggle">
       <button type="button" id="auth-tab-login" class="${cabinetMode === 'login' ? 'active' : ''}">Вхід</button>
-      <button type="button" id="auth-tab-register" class="${cabinetMode === 'register' ? 'active' : ''}">Реєстрація</button>
+      <button type="button" id="auth-tab-register" class="${cabinetMode !== 'login' ? 'active' : ''}">Реєстрація</button>
     </div>
     <div id="auth-form-holder"></div>
   `;
   document.getElementById('auth-tab-login').addEventListener('click', () => { cabinetMode = 'login'; renderAuthForms(); });
   document.getElementById('auth-tab-register').addEventListener('click', () => { cabinetMode = 'register'; renderAuthForms(); });
-  if (cabinetMode === 'login') renderLoginForm(); else renderRegisterForm();
+  if (cabinetMode === 'login') renderLoginForm();
+  else if (cabinetMode === 'reregister') renderReregisterForm();
+  else renderRegisterForm();
 }
 
 /* Прибирає з поля все, крім цифр, під час вводу (щоб залишався тільки номер після +38) */
@@ -3259,10 +3508,12 @@ function renderLoginForm() {
       <input type="password" id="login-password" placeholder="Ваш пароль">
     </div>
     <button class="primary-btn" id="login-submit-btn">Увійти</button>
+    <button type="button" class="link-btn" id="forgot-password-btn">Забули пароль? Зареєструватися повторно</button>
     <div id="login-error"></div>
   `;
   attachDigitsOnlyFilter(document.getElementById('login-phone'));
   document.getElementById('login-submit-btn').addEventListener('click', handleLogin);
+  document.getElementById('forgot-password-btn').addEventListener('click', () => { cabinetMode = 'reregister'; renderAuthForms(); });
   holder.querySelectorAll('input').forEach(inp => {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
   });
@@ -3390,6 +3641,102 @@ async function handleRegister() {
   renderCabinetTab();
 }
 
+/* ---- "Забули пароль" — повторна реєстрація з тим самим номером ----
+   Старий обліковий запис із цим номером видаляється (через Edge Function reregister-user,
+   бо видалення чужого auth-акаунту потребує service role — з анонімного ключа це
+   неможливо), натомість створюється новий з новим паролем і статусом "На розгляді",
+   позначений reregistered_at — щоб адмін одразу бачив у списку, що це саме повторна
+   заявка, а не звичайна нова людина. Без SMS/email-підтвердження номера це той самий
+   рівень довіри, що й у звичайній реєстрації застосунку (номер ніяк не підтверджується
+   і там), тому й тут навмисно не посилюється. */
+async function renderReregisterForm() {
+  const holder = document.getElementById('auth-form-holder');
+  holder.innerHTML = '<div class="empty">Завантаження...</div>';
+  const regions = await getRegions();
+  const options = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+  holder.innerHTML = `
+    <p class="promo-doc-note" style="margin:-4px 0 4px;">Якщо ви забули пароль — введіть свій номер телефону, ім'я, регіон і новий пароль. Старий обліковий запис із цим номером буде видалено, а нова заявка знову пройде підтвердження адміністратором.</p>
+    <div class="field">
+      <label>Ім’я та прізвище</label>
+      <input type="text" id="rereg-name" placeholder="Введіть ім’я">
+    </div>
+    <div class="field">
+      <label>Номер телефону</label>
+      <div class="phone-input-row">
+        <span class="phone-prefix">+38</span>
+        <input type="tel" id="rereg-phone" placeholder="0501234567" maxlength="10" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field">
+      <label>Новий пароль</label>
+      <input type="password" id="rereg-password" placeholder="Не менше 6 символів">
+    </div>
+    <div class="field">
+      <label>Регіон</label>
+      <select id="rereg-region">${options}</select>
+    </div>
+    <button class="primary-btn" id="rereg-submit-btn">Зареєструватися повторно</button>
+    <button type="button" class="link-btn" id="rereg-back-btn">Назад до входу</button>
+    <div id="rereg-error"></div>
+  `;
+  attachDigitsOnlyFilter(document.getElementById('rereg-phone'));
+  document.getElementById('rereg-submit-btn').addEventListener('click', handleReregister);
+  document.getElementById('rereg-back-btn').addEventListener('click', () => { cabinetMode = 'login'; renderAuthForms(); });
+}
+
+async function handleReregister() {
+  const name = document.getElementById('rereg-name').value.trim();
+  const phone = fullPhoneFromLocalInput('rereg-phone');
+  const password = document.getElementById('rereg-password').value;
+  const regionSelect = document.getElementById('rereg-region');
+  const regionId = regionSelect.value;
+  const errEl = document.getElementById('rereg-error');
+  errEl.innerHTML = '';
+
+  if (!name || normalizePhoneDigits(phone).length <= 2 || !password || !regionId) {
+    errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
+    return;
+  }
+  if (password.length < 6) {
+    errEl.innerHTML = '<div class="error">Пароль має містити щонайменше 6 символів.</div>';
+    return;
+  }
+  if (normalizePhoneDigits(phone).length < 11) {
+    errEl.innerHTML = '<div class="error">Перевірте номер телефону.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('rereg-submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Реєстрація...';
+
+  const { data, error } = await sb.functions.invoke('reregister-user', {
+    body: { phone: phone, full_name: name, password: password, region_id: parseInt(regionId, 10) }
+  });
+
+  if (error || (data && data.error)) {
+    const detail = (data && data.error) || (error && error.message) || '';
+    const notFound = /not.?found/i.test(detail);
+    errEl.innerHTML = '<div class="error">' + (notFound
+      ? 'Обліковий запис із цим номером не знайдено. Якщо ви ще не реєструвались — скористайтесь звичайною реєстрацією.'
+      : 'Не вдалося виконати повторну реєстрацію. Спробуйте ще раз або зверніться до адміністратора.') + '</div>';
+    btn.disabled = false;
+    btn.textContent = 'Зареєструватися повторно';
+    return;
+  }
+
+  const { error: signInError } = await sb.auth.signInWithPassword({ email: phoneToEmail(phone), password: password });
+  if (signInError) {
+    errEl.innerHTML = '<div class="error">Заявку створено, але не вдалося увійти автоматично. Спробуйте увійти вручну з новим паролем.</div>';
+    btn.disabled = false;
+    btn.textContent = 'Зареєструватися повторно';
+    cabinetMode = 'login';
+    return;
+  }
+
+  renderCabinetTab();
+}
+
 /* ---- Push-сповіщення (для адміністраторів) ---- */
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -3457,7 +3804,10 @@ function clearNotificationsAndBadge() {
 /* ---- Авторизований звичайний користувач ---- */
 async function renderUserStatus(profile) {
   const main = document.getElementById('main');
-  const priceLine = profile.status === 'approved' ? '<br>Тип цін: ' + escapeHtml(priceTypeLabel(profile.price_type)) : '';
+  // Доступ (у т.ч. до цін у прайсі) діє одразу після подання заявки (status='pending') —
+  // адмін пізніше або підтверджує, або блокує/відхиляє (саме ці два статуси закривають
+  // доступ, див. PRICE_ACCESS_DENIED_STATUSES).
+  const priceLine = !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status) ? '<br>Тип цін: ' + escapeHtml(priceTypeLabel(profile.price_type)) : '';
   // Кнопка "Увімкнути сповіщення" тут потрібна не тільки адмінам (як було раніше) — саме
   // через цю підписку звичайні користувачі й отримують push про нові акції (див.
   // send-promo-push.ts): без неї в push_subscriptions не було б жодного запису для
@@ -3491,6 +3841,8 @@ async function handleLogout() {
 /* ---- Адмін-панель (regional_admin / super_admin) ---- */
 let adminUsersCache = [];
 
+const USER_CARD_OPEN_ICON = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
 async function renderAdminPanel(profile) {
   const main = document.getElementById('main');
   main.innerHTML = '<div class="empty">Завантаження...</div>';
@@ -3508,6 +3860,9 @@ async function renderAdminPanel(profile) {
   adminUsersCache = users || [];
   const isSuper = profile.role === 'super_admin';
 
+  // Компактний рядок картки: тільки ім'я, регіон, телефон і статус (як просили) — решта
+  // (тип ціни, роль, підтвердження/блокування/видалення) ховається під кнопку "відкрити"
+  // і не займає місця в списку, поки адмін явно не розгорне картку.
   function userCardHtml(u, isPending) {
     const badgeClass = 'badge-' + u.status;
     const canDelete = u.id !== profile.id && (isSuper || (profile.role === 'regional_admin' && u.role !== 'super_admin'));
@@ -3541,22 +3896,56 @@ async function renderAdminPanel(profile) {
           ${deleteBtn}
         </div>`;
     }
+    const reregBadge = u.reregistered_at
+      ? '<div class="user-card-rereg-badge">🔁 Повторна реєстрація (забули пароль)</div>' : '';
     return `
-      <div class="user-card">
+      <div class="user-card" data-card-id="${u.id}">
         <div class="user-card-top">
           <div>
             <p class="user-card-name">${escapeHtml(u.full_name || '(без імені)')}</p>
-            <p class="user-card-sub">${escapeHtml(u.phone || '')} · ${escapeHtml(regionName(u.region_id))}${!isPending ? ' · ' + escapeHtml(roleLabel(u.role)) : ''}</p>
+            <p class="user-card-sub">${escapeHtml(regionName(u.region_id))} · ${escapeHtml(u.phone || '')}</p>
+            ${reregBadge}
           </div>
-          <span class="badge ${badgeClass}">${escapeHtml(statusLabel(u.status))}</span>
+          <div class="user-card-top-right">
+            <span class="badge ${badgeClass}">${escapeHtml(statusLabel(u.status))}</span>
+            <button type="button" class="user-card-open-btn" data-action="toggle-menu" data-id="${u.id}" aria-label="Відкрити">${USER_CARD_OPEN_ICON}</button>
+          </div>
         </div>
-        ${actions}
+        <div class="user-card-expand">
+          ${actions}
+        </div>
       </div>`;
+  }
+
+  function passesFilters(u, q, regionId) {
+    if (regionId && String(u.region_id) !== regionId) return false;
+    if (q && !((u.full_name || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q))) return false;
+    return true;
+  }
+
+  function currentFilters() {
+    const searchEl = document.getElementById('admin-search');
+    const regionEl = document.getElementById('admin-region-filter');
+    return {
+      q: searchEl ? searchEl.value.toLowerCase().trim() : '',
+      regionId: regionEl ? regionEl.value : ''
+    };
+  }
+
+  function rerenderLists() {
+    const { q, regionId } = currentFilters();
+    const pending = adminUsersCache.filter(u => u.status === 'pending' && passesFilters(u, q, regionId));
+    const others = adminUsersCache.filter(u => u.status !== 'pending' && passesFilters(u, q, regionId));
+    document.getElementById('admin-pending-list').innerHTML =
+      pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нічого не знайдено</div>';
+    document.getElementById('admin-users-list').innerHTML =
+      others.length ? others.map(u => userCardHtml(u, false)).join('') : '<div class="empty" style="padding:16px;">Нічого не знайдено</div>';
   }
 
   const pending = adminUsersCache.filter(u => u.status === 'pending');
   const others = adminUsersCache.filter(u => u.status !== 'pending');
   const pushState = await getPushSubscriptionState();
+  const regionOptionsHtml = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
 
   let html = '';
   if (pushState.supported) {
@@ -3564,10 +3953,19 @@ async function renderAdminPanel(profile) {
       ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
       : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>';
   }
+  html += `
+    <div class="admin-filters">
+      <div class="admin-search"><input type="text" id="admin-search" placeholder="Пошук за іменем або телефоном"></div>
+      <div class="admin-region-filter">
+        <select id="admin-region-filter">
+          <option value="">Усі регіони</option>
+          ${regionOptionsHtml}
+        </select>
+      </div>
+    </div>`;
   html += `<div class="admin-section-title">Заявки на розгляді (${pending.length})</div>`;
-  html += pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>';
+  html += '<div id="admin-pending-list">' + (pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>') + '</div>';
   html += `<div class="admin-section-title">Користувачі (${others.length})</div>`;
-  html += '<div class="admin-search"><input type="text" id="admin-search" placeholder="Пошук за іменем або телефоном"></div>';
   html += '<div id="admin-users-list">' + (others.length ? others.map(u => userCardHtml(u, false)).join('') : '<div class="empty" style="padding:16px;">Користувачів немає</div>') + '</div>';
   html += '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
 
@@ -3575,13 +3973,8 @@ async function renderAdminPanel(profile) {
   clearNotificationsAndBadge();
 
   document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
-  document.getElementById('admin-search').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase().trim();
-    const filtered = others.filter(u => !q || (u.full_name || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q));
-    document.getElementById('admin-users-list').innerHTML = filtered.length
-      ? filtered.map(u => userCardHtml(u, false)).join('')
-      : '<div class="empty" style="padding:16px;">Нічого не знайдено</div>';
-  });
+  document.getElementById('admin-search').addEventListener('input', rerenderLists);
+  document.getElementById('admin-region-filter').addEventListener('change', rerenderLists);
   const enablePushBtn = document.getElementById('enable-push-btn');
   if (enablePushBtn) enablePushBtn.addEventListener('click', () => enablePushNotifications(profile.id));
 }
@@ -3962,6 +4355,7 @@ if ('serviceWorker' in navigator) {
 
 /* ---------- Старт ---------- */
 history.replaceState({ tab: 'catalog' }, '', '#catalog');
+refreshAccessState().then(function () { if (currentTab === 'catalog' && activeTile) renderCatalogList(); });
 renderCurrentTab();
 showInstallGate();
 checkPromoBalloon();
