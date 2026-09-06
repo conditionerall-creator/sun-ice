@@ -601,12 +601,39 @@
     cursor: pointer;
   }
   .mhi-search-btn:active { opacity: 0.88; }
+  .mhi-btn-row { display: flex; gap: 8px; margin-top: 4px; }
+  .mhi-btn-row .mhi-search-btn { margin-top: 0; flex: 1 1 auto; }
+  .mhi-clear-btn {
+    display: block;
+    flex: 0 0 auto;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .mhi-clear-btn:active { opacity: 0.7; }
   .mhi-result-loading { text-align: center; color: var(--text-secondary); font-size: 13px; padding: 14px 0; }
   .mhi-result {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 16px;
+  }
+  .mhi-result + .mhi-result { margin-top: 10px; }
+  .mhi-result-scope {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(230, 0, 18, 0.08);
+    border-radius: 8px;
+    padding: 8px 10px;
+    line-height: 1.4;
+    margin-bottom: 12px;
   }
   .mhi-result-empty { color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; text-align: center; padding: 8px 4px; }
   .mhi-result-code {
@@ -2657,15 +2684,18 @@ function renderInfoDetail() {
 }
 
 /* ---------- Коди помилок Mitsubishi Heavy Industries (розділ "Інфо") ----------
-   Дані — в таблиці Supabase public.mhi_error_codes (файл mhi-error-codes-setup.sql).
-   Два способи пошуку: за комбінацією RUN/TIMER (тільки для побутових/мультиспліт — у
-   напівпромислових код показується напряму на пульті) і за самим кодом (працює для обох
-   типів обладнання). Джерело (таблиця "Джерела" у наданому файлі) навмисно НЕ виводиться
-   окремим текстом у формі — назва помилки й рекомендовані дії в базі вже узяті з неї;
-   сама назва джерела показується дрібним текстом унизу картки результату. */
-let mhiErrType = 'household'; // 'household' | 'semi'
-let mhiResult = null;         // знайдений запис із mhi_error_codes або null
-let mhiResultState = null;    // null | 'notfound' | 'needinput'
+   Дані — в таблиці Supabase public.mhi_error_codes (файл mhi-error-codes-setup.sql),
+   редагується напряму в Supabase Table Editor — код індекс.html чіпати не потрібно.
+   Два способи пошуку: за комбінацією RUN/TIMER (це завжди побутові/мультиспліт — у
+   напівпрому код показується напряму на пульті, миготіння там не задіяне) і за самим
+   кодом (шукає одразу серед ВСІХ типів обладнання — вибір типу заздалегідь не потрібен,
+   тип показується в самому результаті). Джерело (таблиця "Джерела" у наданому файлі)
+   навмисно НЕ виводиться окремим текстом у формі — назва помилки й рекомендовані дії в
+   базі вже узяті з неї; сама назва джерела показується дрібним текстом унизу картки
+   результату. */
+let mhiResults = [];       // масив знайдених записів із mhi_error_codes (0, 1 або 2 — якщо
+                            // код збігається і в побутових, і в напівпромі одночасно)
+let mhiResultState = null; // null | 'notfound' | 'needinput'
 
 const MHI_BLINK_OPTIONS = [
   'Не блимає', '1', '2', '3', '4', '5', '6', '7', 'Постійно блимає', 'Постійно світиться'
@@ -2673,96 +2703,97 @@ const MHI_BLINK_OPTIONS = [
 
 function renderMhiErrorsScreen() {
   const main = document.getElementById('main');
-  const optHtml = (selected) => MHI_BLINK_OPTIONS.map(v =>
-    `<option value="${escapeHtml(v)}"${v === selected ? ' selected' : ''}>${escapeHtml(v)}</option>`
+  const optHtml = MHI_BLINK_OPTIONS.map(v =>
+    `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`
   ).join('');
 
-  const blinkFormHtml = mhiErrType === 'household' ? `
-      <div class="mhi-block">
-        <div class="mhi-block-title">Пошук за індикацією</div>
-        <div class="mhi-field">
-          <label class="mhi-label"><span class="mhi-dot mhi-dot-run"></span>Кількість миготінь RUN</label>
-          <select class="mhi-select" id="mhi-run-select">
-            <option value="">— оберіть —</option>${optHtml()}
-          </select>
-        </div>
-        <div class="mhi-field">
-          <label class="mhi-label"><span class="mhi-dot mhi-dot-timer"></span>Кількість миготінь TIMER</label>
-          <select class="mhi-select" id="mhi-timer-select">
-            <option value="">— оберіть —</option>${optHtml()}
-          </select>
-        </div>
-        <button type="button" class="mhi-search-btn" id="mhi-blink-search-btn">Показати помилку</button>
-      </div>` : `
-      <div class="mhi-block">
-        <div class="mhi-hint">Напівпромислові (пакетні) кондиціонери показують код помилки напряму на пульті керування — миготінням індикаторів тут не користуються. Скористайтесь пошуком за кодом нижче.</div>
-      </div>`;
-
   main.innerHTML = `
-    <div class="brand-toggle">
-      <button type="button" class="brand-toggle-btn${mhiErrType === 'household' ? ' active' : ''}" data-equip="household">Побутові та мультиспліт</button>
-      <button type="button" class="brand-toggle-btn${mhiErrType === 'semi' ? ' active' : ''}" data-equip="semi">Напівпромислові</button>
+    <div class="mhi-block">
+      <div class="mhi-block-title">Пошук за індикацією</div>
+      <div class="mhi-hint">Для побутових та мультиспліт систем — за кількістю миготінь RUN і TIMER на внутрішньому блоці.</div>
+      <div class="mhi-field">
+        <label class="mhi-label"><span class="mhi-dot mhi-dot-run"></span>Кількість миготінь RUN</label>
+        <select class="mhi-select" id="mhi-run-select">
+          <option value="">— оберіть —</option>${optHtml}
+        </select>
+      </div>
+      <div class="mhi-field">
+        <label class="mhi-label"><span class="mhi-dot mhi-dot-timer"></span>Кількість миготінь TIMER</label>
+        <select class="mhi-select" id="mhi-timer-select">
+          <option value="">— оберіть —</option>${optHtml}
+        </select>
+      </div>
+      <button type="button" class="mhi-search-btn" id="mhi-blink-search-btn">Показати помилку</button>
     </div>
-    ${blinkFormHtml}
     <div class="mhi-block">
       <div class="mhi-block-title">Пошук за кодом</div>
       <div class="mhi-field">
-        <input type="text" class="mhi-code-input" id="mhi-code-input" placeholder="Введіть код, наприклад E39">
+        <input type="text" class="mhi-code-input" id="mhi-code-input" placeholder="Наприклад: E39">
+        <div class="mhi-hint">Введіть код так, як він показаний на пульті чи блоці — можна набрати лише цифри (наприклад «39»), літеру E додамо автоматично.</div>
       </div>
-      <button type="button" class="mhi-search-btn" id="mhi-code-search-btn">Знайти</button>
+      <div class="mhi-btn-row">
+        <button type="button" class="mhi-search-btn" id="mhi-code-search-btn">Знайти</button>
+        <button type="button" class="mhi-clear-btn" id="mhi-clear-btn">Очистити</button>
+      </div>
     </div>
-    <div id="mhi-result-slot">${renderMhiResultHtml()}</div>
+    <div id="mhi-result-slot">${renderMhiResultsHtml()}</div>
   `;
   attachMhiErrorsHandlers();
 }
 
-function renderMhiResultHtml() {
+function renderMhiResultsHtml() {
   if (mhiResultState === 'needinput') {
     return '<div class="mhi-result mhi-result-empty">Оберіть кількість миготінь для RUN і TIMER.</div>';
   }
   if (mhiResultState === 'notfound') {
     return '<div class="mhi-result mhi-result-empty">Код не знайдено. Перевірте правильність підрахунку миготінь або введений код і спробуйте ще раз.</div>';
   }
-  if (!mhiResult) return '';
-  const checksHtml = String(mhiResult.actions || '')
+  if (!mhiResults || !mhiResults.length) return '';
+  return mhiResults.map(renderOneMhiResultHtml).join('');
+}
+
+function renderOneMhiResultHtml(r) {
+  const isSemi = r.equipment_type === 'semi';
+  const equipLabel = isSemi ? 'Напівпром MHI' : 'Побутові та мультиспліт-системи MHI';
+  // Тип обладнання заздалегідь не обирається (див. коментар вище), тому картка сама прямо
+  // каже, до якого обладнання належить знайдена помилка — це головне уточнення користувача.
+  const scopeNote = isSemi
+    ? 'Ця помилка стосується лише напівпрому MHI.'
+    : 'Ця помилка стосується лише побутових та мультиспліт систем MHI.';
+  const checksHtml = String(r.actions || '')
     .split(';')
     .map(s => s.trim().replace(/\.+$/, ''))
     .filter(Boolean)
     .map(s => '<li>' + escapeHtml(s) + '.</li>')
     .join('');
-  const equipLabel = mhiResult.equipment_type === 'semi'
-    ? 'Напівпромислові (пакетні) кондиціонери MHI'
-    : 'Побутові та мультиспліт-системи MHI';
   return `
     <div class="mhi-result">
-      <div class="mhi-result-code">${escapeHtml(mhiResult.code)}</div>
-      <div class="mhi-result-name">${escapeHtml(mhiResult.name_uk)}</div>
+      <div class="mhi-result-scope">${escapeHtml(scopeNote)}</div>
+      <div class="mhi-result-code">${escapeHtml(r.code)}</div>
+      <div class="mhi-result-name">${escapeHtml(r.name_uk)}</div>
       <div class="mhi-result-section-title">Рекомендовані дії</div>
       <ul class="mhi-result-checks">${checksHtml}</ul>
       <div class="mhi-result-section-title">Застосування</div>
       <div class="mhi-result-equip">${escapeHtml(equipLabel)}</div>
-      ${mhiResult.source ? '<div class="mhi-result-source">Джерело: ' + escapeHtml(mhiResult.source) + '</div>' : ''}
+      ${r.source ? '<div class="mhi-result-source">Джерело: ' + escapeHtml(r.source) + '</div>' : ''}
     </div>`;
 }
 
 function attachMhiErrorsHandlers() {
-  const main = document.getElementById('main');
-  main.querySelectorAll('.brand-toggle-btn[data-equip]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const equip = btn.getAttribute('data-equip');
-      if (equip === mhiErrType) return;
-      mhiErrType = equip;
-      mhiResult = null;
-      mhiResultState = null;
-      renderMhiErrorsScreen();
-    });
-  });
   const blinkBtn = document.getElementById('mhi-blink-search-btn');
   if (blinkBtn) blinkBtn.addEventListener('click', searchMhiByBlink);
   const codeBtn = document.getElementById('mhi-code-search-btn');
   if (codeBtn) codeBtn.addEventListener('click', searchMhiByCode);
+  const clearBtn = document.getElementById('mhi-clear-btn');
+  if (clearBtn) clearBtn.addEventListener('click', clearMhiSearch);
   const codeInput = document.getElementById('mhi-code-input');
   if (codeInput) codeInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') searchMhiByCode(); });
+}
+
+function clearMhiSearch() {
+  mhiResults = [];
+  mhiResultState = null;
+  renderMhiErrorsScreen();
 }
 
 async function searchMhiByBlink() {
@@ -2772,9 +2803,9 @@ async function searchMhiByBlink() {
   const timerVal = timerSelect ? timerSelect.value : '';
   const slot = document.getElementById('mhi-result-slot');
   if (!runVal || !timerVal) {
-    mhiResult = null;
+    mhiResults = [];
     mhiResultState = 'needinput';
-    if (slot) slot.innerHTML = renderMhiResultHtml();
+    if (slot) slot.innerHTML = renderMhiResultsHtml();
     return;
   }
   if (slot) slot.innerHTML = '<div class="mhi-result-loading">Пошук…</div>';
@@ -2785,13 +2816,13 @@ async function searchMhiByBlink() {
       .eq('timer_value', timerVal)
       .limit(1);
     if (error) throw error;
-    if (data && data.length) { mhiResult = data[0]; mhiResultState = null; }
-    else { mhiResult = null; mhiResultState = 'notfound'; }
+    mhiResults = data || [];
+    mhiResultState = mhiResults.length ? null : 'notfound';
   } catch (e) {
     if (slot) slot.innerHTML = '<div class="mhi-result mhi-result-empty">Помилка з’єднання. Спробуйте ще раз.</div>';
     return;
   }
-  if (slot) slot.innerHTML = renderMhiResultHtml();
+  if (slot) slot.innerHTML = renderMhiResultsHtml();
 }
 
 function normalizeMhiCode(raw) {
@@ -2806,25 +2837,26 @@ async function searchMhiByCode() {
   const code = normalizeMhiCode(input ? input.value : '');
   const slot = document.getElementById('mhi-result-slot');
   if (!code) {
-    mhiResult = null;
+    mhiResults = [];
     mhiResultState = null;
     if (slot) slot.innerHTML = '';
     return;
   }
   if (slot) slot.innerHTML = '<div class="mhi-result-loading">Пошук…</div>';
   try {
+    // Тип обладнання заздалегідь не обирається — шукаємо код одразу серед усіх типів;
+    // якщо один код є і в побутових, і в напівпромі (з різним значенням) — прийдуть обидва
+    // записи, і кожен покаже своє "Ця помилка стосується лише ..." окремою карткою.
     const { data, error } = await sb.from('mhi_error_codes').select('*')
-      .eq('equipment_type', mhiErrType)
-      .ilike('code', code)
-      .limit(1);
+      .ilike('code', code);
     if (error) throw error;
-    if (data && data.length) { mhiResult = data[0]; mhiResultState = null; }
-    else { mhiResult = null; mhiResultState = 'notfound'; }
+    mhiResults = data || [];
+    mhiResultState = mhiResults.length ? null : 'notfound';
   } catch (e) {
     if (slot) slot.innerHTML = '<div class="mhi-result mhi-result-empty">Помилка з’єднання. Спробуйте ще раз.</div>';
     return;
   }
-  if (slot) slot.innerHTML = renderMhiResultHtml();
+  if (slot) slot.innerHTML = renderMhiResultsHtml();
 }
 
 /* ---------- Кабінет ---------- */
