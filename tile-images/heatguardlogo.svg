@@ -1,0 +1,19 @@
+<svg width="900" height="675" viewBox="0 0 900 675" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8A1E"/>
+      <stop offset="55%" stop-color="#FF3D00"/>
+      <stop offset="100%" stop-color="#C41E1E"/>
+    </linearGradient>
+    <filter id="hgShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#7a1a00" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="900" height="675" fill="#ffffff"/>
+  <g filter="url(#hgShadow)">
+    <text x="450" y="300" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="128" fill="url(#hgGrad)" letter-spacing="2">HEAT</text>
+    <text x="450" y="410" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="128" fill="url(#hgGrad)" letter-spacing="2">GUARD</text>
+  </g>
+  <rect x="300" y="440" width="300" height="7" rx="3.5" fill="url(#hgGrad)"/>
+  <text x="450" y="475" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="26" fill="#94724F" letter-spacing="6">ТЕПЛОВІ НАСОСИ</text>
+</svg>

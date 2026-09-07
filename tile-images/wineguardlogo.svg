@@ -1,0 +1,23 @@
+<svg width="900" height="675" viewBox="0 0 900 675" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="wgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7A1030"/>
+      <stop offset="55%" stop-color="#4E0B24"/>
+      <stop offset="100%" stop-color="#2E0716"/>
+    </linearGradient>
+    <linearGradient id="wgGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#D8B463"/>
+      <stop offset="50%" stop-color="#F3E0A8"/>
+      <stop offset="100%" stop-color="#D8B463"/>
+    </linearGradient>
+    <filter id="wgShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="7" flood-color="#3a0316" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="900" height="675" fill="#ffffff"/>
+  <g filter="url(#wgShadow)">
+    <text x="450" y="320" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-style="italic" font-size="112" fill="url(#wgGrad)" letter-spacing="3">WINE</text>
+    <text x="450" y="428" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-style="italic" font-size="112" fill="url(#wgGrad)" letter-spacing="3">GUARD</text>
+  </g>
+  <rect x="300" y="458" width="300" height="4" rx="2" fill="url(#wgGold)"/>
+</svg>
