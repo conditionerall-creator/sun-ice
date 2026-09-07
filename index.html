@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sun-ice">
-<meta name="theme-color" content="#0F172A">
+<meta name="theme-color" content="#0A0A0A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -19,16 +19,19 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --bg: #F8FAFC;
+    /* Преміум-палітра 2026-09-08: нейтральний чорно-білий + акцентний червоний (той самий
+       відтінок, що в лого MHI і на sun-ice.com.ua) — без синьо-сірого "SaaS"-відтінку, який
+       був раніше (slate-палітра Tailwind). Мета — "породисто, дорого, мінімалістично". */
+    --bg: #FAFAFA;
     --card: #ffffff;
-    --border: #E2E8F0;
-    --text: #0F172A;
-    --text-secondary: #64748B;
+    --border: #E4E4E4;
+    --text: #121212;
+    --text-secondary: #6E6E73;
     --accent: #E60012;
     --accent-bg: #FEE2E2;
     --danger: #a32d2d;
-    --navy: #0F172A;
-    --navy-2: #1E293B;
+    --navy: #0A0A0A;
+    --navy-2: #242426;
   }
   * { box-sizing: border-box; }
   body {
@@ -51,7 +54,7 @@
     font-size: 13px;
     align-items: center;
     gap: 10px;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid #242426;
   }
   .install-banner.show { display: flex; }
   .install-banner-text { flex: 1; line-height: 1.4; display: flex; align-items: center; gap: 8px; }
@@ -75,7 +78,7 @@
   }
   .install-banner .close-x {
     background: transparent;
-    color: #94a3b8;
+    color: #9A9AA0;
     font-size: 16px;
     padding: 4px 6px;
     font-weight: 400;
@@ -125,7 +128,7 @@
     background: rgba(255,255,255,0.95);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--navy);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -200,7 +203,7 @@
   .back-btn {
     display: none;
     width: 34px; height: 34px;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--bg);
     align-items: center;
@@ -210,12 +213,12 @@
     flex-shrink: 0;
     color: var(--text);
   }
-  h1 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; margin: 0; flex: 1; display: flex; align-items: center; gap: 9px; }
+  h1 { font-size: 18px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; margin: 0; flex: 1; display: flex; align-items: center; gap: 9px; }
   h1::before {
     content: '';
-    width: 9px; height: 9px;
+    width: 8px; height: 8px;
     background: var(--accent);
-    border-radius: 2px;
+    border-radius: 1px;
     transform: rotate(45deg);
     flex-shrink: 0;
   }
@@ -223,7 +226,7 @@
   .status-text { font-size: 12px; color: var(--text-secondary); flex: 1; }
   .icon-btn {
     width: 34px; height: 34px;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--bg);
     display: flex; align-items: center; justify-content: center;
@@ -302,7 +305,7 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-top: 1px solid var(--border);
-    box-shadow: 0 -4px 16px -1px rgba(15,23,42,0.06);
+    box-shadow: 0 -4px 16px -1px rgba(10,10,10,0.06);
     display: flex;
     max-width: 480px;
     margin: 0 auto;
@@ -345,8 +348,8 @@
   }
   .menu-tile {
     background: var(--card);
-    border: 1px solid #CBD5E1;
-    border-radius: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
     padding: 12px;
     cursor: pointer;
     display: flex;
@@ -354,24 +357,24 @@
     gap: 10px;
     min-height: 92px;
     justify-content: space-between;
-    box-shadow: 0 2px 8px -2px rgba(15,23,42,0.05), 0 1px 4px -1px rgba(15,23,42,0.03);
+    box-shadow: 0 1px 2px rgba(10,10,10,0.03), 0 10px 24px -16px rgba(10,10,10,0.18);
     transition: box-shadow .15s, transform .1s, border-color .15s;
   }
-  .menu-tile:active { transform: scale(0.985); border-color: #CBD5E1; box-shadow: none; }
+  .menu-tile:active { transform: scale(0.985); border-color: var(--navy); box-shadow: none; }
   .menu-tile-row { display: flex; align-items: center; justify-content: space-between; }
-  .menu-tile-title { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; color: var(--text); }
-  .menu-tile-empty { cursor: default; border-color: rgba(203,213,225,0.7); }
+  .menu-tile-title { font-size: 12.5px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; line-height: 1.35; color: var(--text); }
+  .menu-tile-empty { cursor: default; border-color: var(--border); box-shadow: none; }
   .menu-tile-empty:active { transform: none; }
-  .menu-tile-empty .menu-tile-title { color: var(--text-secondary); font-weight: 600; }
+  .menu-tile-empty .menu-tile-title { color: var(--text-secondary); font-weight: 700; }
   .menu-tile-soon {
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: .05em;
-    color: #64748b;
-    background: #f1f5f9;
-    border: 1px solid #cbd5e1;
-    border-radius: 5px;
+    color: var(--text-secondary);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
     padding: 2px 8px;
   }
   /* Перемикач бренду MHI / GAL у прайсі */
@@ -383,7 +386,7 @@
   .brand-toggle-btn {
     flex: 1;
     padding: 9px 0;
-    border-radius: 10px;
+    border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--card);
     font-size: 14px;
@@ -399,18 +402,18 @@
   .menu-tile-icon {
     display: inline-flex; align-items: center; justify-content: center;
     padding: 4px 10px;
-    border-radius: 6px;
-    background: #d8f5ea;
-    color: #00875a;
-    border: 1px solid #99e6cb;
+    border-radius: 5px;
+    background: var(--navy);
+    color: #fff;
+    border: 1px solid var(--navy);
     font-size: 12px;
     font-weight: 700;
     letter-spacing: .03em;
   }
   .menu-tile-empty .menu-tile-icon {
-    background: #edf2f7;
-    color: #475569;
-    border: 1px solid #cbd5e1;
+    background: var(--bg);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
   }
   /* Плитки з фото (замість буквеної іконки) — фото зверху (contain, на білому тлі, щоб
      не обрізати логотипи/підписи на різних за пропорціями зображеннях), назва знизу. */
@@ -418,10 +421,10 @@
   .menu-tile-photo-wrap {
     width: 100%;
     aspect-ratio: 4 / 3;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
     background: #fff;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
   }
   .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .menu-tile-photo .menu-tile-title { padding: 0 2px; }
@@ -431,7 +434,7 @@
     position: relative;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 10px;
     padding: 12px 14px;
     margin-bottom: 8px;
   }
@@ -463,12 +466,12 @@
   .segment-header {
     text-align: center;
     font-size: 12px;
-    font-weight: 700;
-    color: var(--text-secondary);
+    font-weight: 800;
+    color: var(--text);
     text-transform: uppercase;
-    letter-spacing: .03em;
-    padding: 14px 6px 6px;
-    border-bottom: 3px solid var(--border);
+    letter-spacing: .06em;
+    padding: 14px 6px 8px;
+    border-bottom: 2px solid var(--navy);
     margin-bottom: 8px;
   }
   .segment-header-info { cursor: pointer; }
@@ -849,7 +852,7 @@
   }
   .cart-hud > * { pointer-events: auto; }
   .cart-toast {
-    background: rgba(15,23,42,0.92);
+    background: rgba(10,10,10,0.92);
     color: #fff;
     font-size: 12.5px;
     font-weight: 600;
@@ -1857,7 +1860,11 @@ const externalKeywords = ['зовнішній', 'наружный', 'outdoor'];
 const unitTypeKeywords = ['тип блоку', 'тип блока'];
 const totalSubKeywords = ['комплект', 'всього', 'разом', 'итого', 'total'];
 const categoryStems = ['настінн', 'стельов', 'касетн', 'канальн', 'колонн', 'підлогов', 'підвісн', 'шафов'];
-const PALETTE = ['#dbeafe', '#dcfce7', '#fef9c3', '#fce7f3', '#ede9fe', '#ffedd5', '#ccfbf1', '#fee2e2'];
+// Насичені "ювелірні" тони для тонкої кольорової позначки серії (ліва смужка рядка +
+// нижня лінія заголовка сегмента) — навмисно НЕ пастельні заливки фону рядка (як було раніше):
+// суцільна заливка кольором виглядала по-дитячому яскраво, тонка смужка на білому тлі —
+// стримано і "дорого", але зберігає ту саму функцію швидкого візуального розрізнення серій.
+const PALETTE = ['#2563EB', '#059669', '#B45309', '#BE185D', '#7C3AED', '#C2410C', '#0D9488', '#991B1B'];
 
 function norm(v) { return String(v == null ? '' : v).toLowerCase().trim(); }
 function cellContainsAny(v, keywords) {
@@ -2923,7 +2930,7 @@ function renderCatalogList() {
     const cartQty = cartQtyFor(cartKey);
     const locked = !hasFullAccess;
     return header + `
-      <div class="row${locked ? ' row-locked' : ''}" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
+      <div class="row${locked ? ' row-locked' : ''}" style="${it.color ? 'border-left:4px solid ' + it.color + ';' : ''}">
         <div class="row-top">
           <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
           <div class="row-info">
@@ -3041,7 +3048,7 @@ function buildSimplePriceRowsHtml(items, opts) {
       : '';
 
     return header + `
-      <div class="row${rowLocked ? ' row-locked' : ''}" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
+      <div class="row${rowLocked ? ' row-locked' : ''}" style="${it.color ? 'border-left:4px solid ' + it.color + ';' : ''}">
         <div class="row-top">
           <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
           <div class="row-info">
