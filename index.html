@@ -474,6 +474,14 @@
   .segment-header-info { cursor: pointer; }
   .segment-header-info:active { color: var(--accent); }
   .segment-header-info-icon { margin-left: 4px; font-size: 11px; letter-spacing: normal; }
+  .segment-header-note {
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
 
   /* Спливаюче вікно "детальніше" — повний опис серії з прайсу */
   .info-sheet-overlay {
@@ -655,6 +663,45 @@
   .calc-eq { font-weight: 600; }
   .calc-base { font-weight: 600; color: var(--text); white-space: nowrap; }
   .count { font-size: 12px; color: var(--text-secondary); padding: 8px 2px 4px; }
+
+  /* Теплові насоси / VRF: додатковий рядок під назвою (потужність тощо) */
+  .row-sub { font-size: 12px; color: var(--text-secondary); margin: 2px 0 0; }
+  /* ⓘ "детальніше" біля товару (склад комплекту "Теплові насоси", примітка VRF) — та сама
+     іконка-кнопка, що й .calc-toggle/.share-btn, щоб не заходити в ліву чверть рядка
+     (.row-click-zone), яка перекриває саме цю частину — див. застереження в 12.6 хендоффу. */
+  .kit-info-btn {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .kit-info-btn:active { background: var(--accent-bg); color: var(--accent); }
+  /* "За запитом" (VRF GALACTIC) — веде на вкладку "Контакти" замість ціни/калькулятора */
+  .price-request-btn {
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  /* Перемикач з 3 варіантів (джерела прайсу VRF MHI, зовнішні/внутрішні GAL) — той самий
+     .brand-toggle, тільки менший шрифт і перенесення тексту, щоб довгі підписи вміщались. */
+  .brand-toggle.toggle-3way .brand-toggle-btn {
+    font-size: 11px;
+    line-height: 1.25;
+    padding: 7px 2px;
+    white-space: normal;
+  }
 
   /* ---------- Коди помилок Mitsubishi Heavy Industries (розділ "Інфо") ---------- */
   .mhi-block {
@@ -1744,9 +1791,9 @@ const CATALOG_TILES = [
     mhi: { key: 'semi_mhi', sheet: 'НАПІВПРОМ', highlight: 'category', baseAdjustPct: 20 },
     gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category' }
   },
-  { id: 'vrf', label: 'Мультизональні VRF' },
+  { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tile-vrf.jpg', custom: 'vrf' },
   { id: 'ccb', label: 'Компресорно-конденсаторні блоки' },
-  { id: 'heatpumps', label: 'Теплові насоси' },
+  { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tile-heatpumps.jpg', custom: 'heatpumps' },
   { id: 'chillers', label: 'Чиллери' },
   { id: 'ventilation', label: 'Вентиляційне обладнання' },
   { id: 'aircurtains', label: 'Повітряні завіси' },
@@ -1767,6 +1814,14 @@ let currentTab = 'catalog';
 let sheetsData = {};
 let activeTile = null; // null = меню категорій каталогу
 let activeBrand = 'mhi'; // 'mhi' | 'gal' — активний бренд у плитці з перемикачем
+/* Плитка "Теплові насоси": null = меню з 3 плиток (MHI/HeatGuard/WineGuard) — див.
+   renderHeatpumpsList(). Перемикання між плитками — через history.pushState (як і в "Інфо"),
+   щоб апаратна/шапкова кнопка "назад" повертала саме до цього меню. */
+let heatpumpsBrand = null;
+/* Плитка "Мультизональні VRF": для MHI — 3 перемикачі за вкладками прайсу (як activeBrand,
+   без history.pushState), для GAL — 2 перемикачі (зовнішні/внутрішні). */
+let vrfMhiSource = 'outdoor'; // 'outdoor' | 'indoor_r410a' | 'indoor_kxze1w'
+let vrfGalSide = 'outdoor';   // 'outdoor' | 'indoor'
 let priceVersion = null;
 let catalogInitDone = false;
 let usdRate = null;      // курс $ → грн (з app_settings), для перерахунку в калькуляторі
@@ -1979,6 +2034,254 @@ function sliceBySplitMarker(rows, marker, side) {
   return side === 'after' ? rows.slice(idx) : rows.slice(0, idx);
 }
 
+/* Розфарбовує items за groupKey тим самим PALETTE, що й parseSheet() — окрема функція для
+   кастомних парсерів нижче (Теплові насоси/VRF), щоб не чіпати вже перевірений parseSheet. */
+function assignGroupColors(items) {
+  const colorMap = new Map();
+  items.forEach(it => {
+    if (!it.groupKey) return;
+    if (!colorMap.has(it.groupKey)) colorMap.set(it.groupKey, PALETTE[colorMap.size % PALETTE.length]);
+    it.color = colorMap.get(it.groupKey);
+  });
+  return items;
+}
+
+function sheetRows(wb, sheetName) {
+  const sheet = wb.Sheets[sheetName];
+  if (!sheet) return null;
+  return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+}
+
+/* ---------- "Теплові насоси" — MHI: комплекти "все-в-одному" ----------
+   Структура аркуша "Теплові насоси" нестандартна (не флоу ціна/модель, а вкладені
+   комплекти): "Комплект "X"" (заголовок групи) → "• опис підгрупи" (не завжди) → рядок-опис
+   насоса (стовпчик C, зелений у прайсі — тут детектуємо як "є текст у C, але немає ні D, ні
+   ціни") → 1+ рядків компонентів (C=модель, D=опис, E=ціна) → рядок "Разом" (C="Разом",
+   E=підсумкова ціна). Далі в файлі є розділ "АКСЕСУАРИ" (B="АКСЕСУАРИ") — плоский список
+   (B=модель, C=опис, E=ціна), без "Разом". Модель товару в застосунку = сам опис насоса
+   (моделі окремих компонентів комплекту в назву не виносимо — їх видно у "детальніше"). */
+function parseHeatpumpsMhiSheet(wb) {
+  const rows = sheetRows(wb, 'Теплові насоси');
+  if (!rows) return [];
+  // Аркуш без колонки A (у файлі вона порожня по всій вкладці) — SheetJS обрізає діапазон
+  // до першої фактично використаної колонки, тому позиції стовпчиків "Комплект/Найменування/
+  // Опис/Роздрібна ціна" зсуваються. Визначаємо їх динамічно через той самий заголовок
+  // "Роздрібна ціна", яким користується звичайний parseSheet() — так само знаходить його
+  // findPriceHeader(), — а не хардкодимо номери стовпчиків.
+  const priceHeader = findPriceHeader(rows);
+  const priceCol = priceHeader ? priceHeader.col : 4;
+  const bCol = priceCol - 3;  // "Комплект .../• підгрупа"
+  const cCol = priceCol - 2;  // "Найменування" (опис насоса / модель аксесуара)
+  const dCol = priceCol - 1;  // "Опис" (компонент комплекту / опис аксесуара)
+
+  const items = [];
+  let kitCategory = null;
+  let kitSubgroup = null;
+  let inAccessories = false;
+  let current = null; // { description, components: [] }
+
+  function finalizeKit(total) {
+    if (!current) return;
+    const lines = [];
+    if (kitSubgroup) { lines.push(kitSubgroup.replace(/\n/g, ' '), ''); }
+    lines.push('Склад комплекту:');
+    current.components.forEach(c => {
+      lines.push('• ' + c.model + (c.desc ? ' — ' + c.desc.replace(/\n/g, ' ') : '') + ' — ' + Math.round(c.price).toLocaleString('uk-UA') + ' у.е.');
+    });
+    lines.push('', 'Разом: ' + Math.round(total).toLocaleString('uk-UA') + ' у.е.');
+    items.push({
+      model: current.description,
+      price: total,
+      currency: '$',
+      groupKey: kitCategory,
+      groupLabel: kitCategory,
+      breakdownText: lines.join('\n')
+    });
+    current = null;
+  }
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const b = String(row[bCol] || '').trim();
+    const c = String(row[cCol] || '').trim();
+    const d = String(row[dCol] || '').trim();
+    const ePrice = parseNumber(row[priceCol]);
+
+    if (b) {
+      if (/^комплект/i.test(b)) { kitCategory = b; kitSubgroup = null; inAccessories = false; }
+      else if (/^аксесуари/i.test(b)) { kitCategory = 'Аксесуари'; kitSubgroup = null; inAccessories = true; }
+      else if (!inAccessories) { kitSubgroup = b; }
+    }
+
+    if (inAccessories) {
+      if (b && !/^аксесуари/i.test(b) && ePrice !== null) {
+        items.push({ model: b, price: ePrice, currency: '$', groupKey: kitCategory, groupLabel: kitCategory, breakdownText: c || null });
+      }
+      continue;
+    }
+
+    if (c && !d && ePrice === null) { current = { description: c, components: [] }; continue; }
+    if (current && /^разом$/i.test(c) && ePrice !== null) { finalizeKit(ePrice); continue; }
+    if (current && c && ePrice !== null) { current.components.push({ model: c, desc: d, price: ePrice }); }
+  }
+  return assignGroupColors(items);
+}
+
+/* ---------- "Теплові насоси" — HeatGuard ----------
+   Простий список (без калькулятора й підбірки — ціна статична, за проханням користувача):
+   МОДЕЛЬ (колонка A), потужність (колонка H), ціна в Євро (колонка I). Групуємо за рядками
+   "Таблиця підбору ...". За проханням користувача поки що беремо лише основні таблиці
+   (Micro/Hyper Inverter) — БЕЗ "каскад"-варіантів, безкорпусних версій і бака (окремий
+   товар, не тепловий насос): відфільтровуємо по назві групи, а не по номеру рядка Excel —
+   номер рядка користувач називав "на око" по гутеру Excel, і не збігається з індексом
+   масиву, який повертає SheetJS (перші порожні рядки аркуша обрізаються). */
+function parseHeatGuardSheet(wb) {
+  const rows = sheetRows(wb, 'HeatGuard');
+  if (!rows) return [];
+  const items = [];
+  let groupLabel = null;
+  let skipGroup = false;
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const a = String(row[0] || '').trim();
+    if (!a) continue;
+    if (/^таблиця підбору/i.test(a)) {
+      groupLabel = a;
+      skipGroup = /каскад|безкорпус|бака/i.test(a);
+      continue;
+    }
+    if (skipGroup) continue;
+    if (norm(a) === 'модель') continue;
+    const powerRaw = String(row[7] || '').trim();
+    const priceNum = parseNumber(row[8]);
+    const isOnRequest = priceNum === null && norm(row[8]).includes('запит');
+    if (!powerRaw && priceNum === null && !isOnRequest) continue;
+    items.push({
+      model: a, power: powerRaw ? powerRaw + ' кВт' : null, price: priceNum, currency: 'EUR', onRequest: isOnRequest,
+      groupKey: groupLabel, groupLabel: groupLabel
+    });
+  }
+  return assignGroupColors(items);
+}
+
+/* ---------- "Теплові насоси" — WineGuard ----------
+   МОДЕЛЬ (колонка A), продуктивність у Вт (колонка H — умови вимірювання tвн.+10/tзов.+35°С
+   не повторюємо в кожному рядку, а показуємо один раз дрібним підписом під заголовком секції,
+   див. opts.headerNote у renderHeatpumpsList), роздрібна ціна у $ (колонка N). Групуємо за
+   назвами секцій ("НАСТІННА КЛІМАТИЧНА СИСТЕМА.../КАНАЛЬНА..."). */
+function parseWineGuardSheet(wb) {
+  const rows = sheetRows(wb, 'WineGuard');
+  if (!rows) return [];
+  const items = [];
+  let groupLabel = null;
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const a = String(row[0] || '').trim();
+    if (!a) continue;
+    if (norm(a) === 'модель') continue;
+    const power = String(row[7] || '').trim();
+    const priceNum = parseNumber(row[13]);
+    if (!power || priceNum === null) {
+      if (a.length > 10) groupLabel = a;
+      continue;
+    }
+    items.push({
+      model: a, power: power + ' Вт', price: priceNum, currency: '$',
+      groupKey: groupLabel, groupLabel: groupLabel
+    });
+  }
+  return assignGroupColors(items);
+}
+
+/* ---------- "Мультизональні VRF" — MHI (3 вкладки прайсу, одна логіка) ----------
+   Спільна форма для "VRF Зовнішні блоки", "VRF Внутрішні R410A" і "VRF Внутрішні
+   KXZE1-W R32": модель завжди у стовпчику C, ціна завжди у стовпчику G. Рядок без ціни —
+   заголовок серії/типажу (підпис бере з C, якщо є, інакше з B — так однаково працює і для
+   "Зовнішніх блоків" (назва серії в B), і для "Внутрішніх" (назва типажу в C, короткий код
+   у B)). */
+function parseVrfTypeSheet(wb, sheetName) {
+  const rows = sheetRows(wb, sheetName);
+  if (!rows) return [];
+  // Стовпчик "Тип блоку"/моделі завжди рівно на 4 позиції лівіше за стовпчик ціни (яку б
+  // саме колонку не займала ціна у конкретному аркуші) — тому знаходимо ціну через
+  // findPriceHeader() (як і generic parseSheet()) і рахуємо решту від неї, а не хардкодимо
+  // номери стовпчиків: аркуш "VRF Зовнішні блоки" має колонку A використаною (модель у C),
+  // а аркуші "VRF Внутрішні ..." — ні (SheetJS обрізає порожню колонку A, усе зсувається
+  // на 1 вліво, модель опиняється у B) — офсет "модель − 4 = ціна" однаковий для обох форм.
+  const priceHeader = findPriceHeader(rows);
+  if (!priceHeader) return [];
+  const priceCol = priceHeader.col;
+  const modelCol = priceCol - 4;
+  const labelCol = modelCol - 1;
+  if (modelCol < 0) return [];
+  const items = [];
+  let groupLabel = null;
+  for (let r = priceHeader.row + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const b = String(row[labelCol] || '').trim();
+    const c = String(row[modelCol] || '').trim();
+    const price = parseNumber(row[priceCol]);
+    if (price === null) {
+      const label = c || b;
+      if (label) groupLabel = label;
+      continue;
+    }
+    if (!c) continue;
+    items.push({ model: c, price: price, currency: '$', groupKey: groupLabel, groupLabel: groupLabel });
+  }
+  return assignGroupColors(items);
+}
+
+/* ---------- "Мультизональні VRF" — GALACTIC ----------
+   Один аркуш "Galactic VRF" містить і зовнішні, і внутрішні блоки (розділені банерами
+   "Зовнішні блоки"/"Внутрішні блоки" у стовпчику A). Ціна завжди "За запитом" — кнопка веде
+   на вкладку "Контакти" (без калькулятора й підбірки, як і просив користувач). */
+function parseGalVrfOutdoorSheet(wb) {
+  const rows = sheetRows(wb, 'Galactic VRF');
+  if (!rows) return [];
+  const items = [];
+  let groupLabel = null;
+  let started = false;
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    if (!started) { if (norm(row[0]) === 'зовнішні блоки') started = true; continue; }
+    if (norm(row[0]).startsWith('внутрішні блок')) break;
+    const model = String(row[1] || '').trim();
+    if (!model || norm(model) === 'модель') continue;
+    const note = String(row[9] || '').trim();
+    // "Все, що після цифри в моделі — це серія блоку" (напр. GUC-136Z-SR → серія Z-SR)
+    const m = model.match(/^([A-ZА-ЯІЇЄ]+)-(\d+)(.+)$/i);
+    if (m) groupLabel = m[1].toUpperCase() + ' ' + m[3].toUpperCase();
+    else if (note) groupLabel = note.replace(/\n/g, ' ');
+    items.push({
+      model: model, price: null, currency: '', onRequest: true,
+      groupKey: groupLabel, groupLabel: groupLabel, breakdownText: note || null
+    });
+  }
+  return assignGroupColors(items);
+}
+function parseGalVrfIndoorSheet(wb) {
+  const rows = sheetRows(wb, 'Galactic VRF');
+  if (!rows) return [];
+  const items = [];
+  let groupLabel = null;
+  let started = false;
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r] || [];
+    if (!started) { if (norm(row[0]).startsWith('внутрішні блок')) started = true; continue; }
+    const model = String(row[1] || '').trim();
+    const typeLabel = String(row[5] || '').trim();
+    if (typeLabel) groupLabel = typeLabel;
+    if (!model || norm(model) === 'модель') continue;
+    const note = String(row[7] || '').trim();
+    items.push({
+      model: model, price: null, currency: '', onRequest: true,
+      groupKey: groupLabel, groupLabel: groupLabel, breakdownText: note || null
+    });
+  }
+  return assignGroupColors(items);
+}
+
 // previousData — попередньо завантажений sheetsData (з кешу чи попередньої версії),
 // потрібен лише для м'якого попередження "різко зменшилась кількість позицій" (issues,
 // нижче) — на сам розбір поточного файлу ніяк не впливає.
@@ -2030,6 +2333,21 @@ function buildSheetsData(wb, previousData) {
     });
   });
 
+  // Кастомні розділи "Теплові насоси" і "Мультизональні VRF" — нестандартна структура
+  // аркушів (вкладені комплекти, кілька вкладок прайсу в одній вкладці застосунку), тому
+  // не проходять через generic CATALOG_TILES.forEach/parseSheet вище, а розбираються
+  // окремими функціями. Загорнуто в try/catch — помилка тут не повинна ламати решту
+  // каталогу; не підключено до самодіагностики price_issues (issues[]) — це можна додати
+  // пізніше, якщо знадобиться.
+  try { data.heatpumps_mhi = parseHeatpumpsMhiSheet(wb); } catch (e) { data.heatpumps_mhi = []; }
+  try { data.heatguard = parseHeatGuardSheet(wb); } catch (e) { data.heatguard = []; }
+  try { data.wineguard = parseWineGuardSheet(wb); } catch (e) { data.wineguard = []; }
+  try { data.vrf_mhi_outdoor = parseVrfTypeSheet(wb, 'VRF Зовнішні блоки'); } catch (e) { data.vrf_mhi_outdoor = []; }
+  try { data.vrf_mhi_indoor_r410a = parseVrfTypeSheet(wb, 'VRF Внутрішні R410A'); } catch (e) { data.vrf_mhi_indoor_r410a = []; }
+  try { data.vrf_mhi_indoor_kxze1w = parseVrfTypeSheet(wb, 'VRF Внутрішні KXZE1-W R32'); } catch (e) { data.vrf_mhi_indoor_kxze1w = []; }
+  try { data.vrf_gal_outdoor = parseGalVrfOutdoorSheet(wb); } catch (e) { data.vrf_gal_outdoor = []; }
+  try { data.vrf_gal_indoor = parseGalVrfIndoorSheet(wb); } catch (e) { data.vrf_gal_indoor = []; }
+
   return { data, problems, issues };
 }
 
@@ -2041,7 +2359,7 @@ function buildSheetsData(wb, previousData) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 3;
+const PARSER_VERSION = 5;
 
 function loadProcessedCache() {
   try {
@@ -2212,6 +2530,13 @@ async function handleRefreshClick() {
 
 /* ---------- Відображення каталогу ---------- */
 function tileHasAnyData(tile) {
+  if (tile.custom === 'heatpumps') {
+    return !!((sheetsData.heatpumps_mhi && sheetsData.heatpumps_mhi.length) || (sheetsData.heatguard && sheetsData.heatguard.length) || (sheetsData.wineguard && sheetsData.wineguard.length));
+  }
+  if (tile.custom === 'vrf') {
+    return !!((sheetsData.vrf_mhi_outdoor && sheetsData.vrf_mhi_outdoor.length) || (sheetsData.vrf_mhi_indoor_r410a && sheetsData.vrf_mhi_indoor_r410a.length) ||
+      (sheetsData.vrf_mhi_indoor_kxze1w && sheetsData.vrf_mhi_indoor_kxze1w.length) || (sheetsData.vrf_gal_outdoor && sheetsData.vrf_gal_outdoor.length) || (sheetsData.vrf_gal_indoor && sheetsData.vrf_gal_indoor.length));
+  }
   return (tile.mhi && sheetsData[tile.mhi.key]) || (tile.gal && sheetsData[tile.gal.key]);
 }
 function tileActiveCfg(tile) {
@@ -2278,6 +2603,9 @@ function renderCatalogMenu() {
       history.pushState({ tab: 'catalog', tile: tileId }, '', '#' + encodeURIComponent(tileId));
       activeTile = tileId;
       activeBrand = 'mhi';
+      heatpumpsBrand = null;
+      vrfMhiSource = 'outdoor';
+      vrfGalSide = 'outdoor';
       renderCatalogView();
     });
   });
@@ -2531,6 +2859,13 @@ function closeCartPanel() {
 }
 
 function renderCatalogList() {
+  // "Теплові насоси" і "Мультизональні VRF" мають нестандартну структуру (вкладені комплекти,
+  // кілька вкладок прайсу під одним перемикачем) — рендеряться окремими функціями нижче,
+  // а не спільним потоком "один плаский список" цієї функції.
+  const tileForDispatch = CATALOG_TILES.find(t => t.id === activeTile);
+  if (tileForDispatch && tileForDispatch.custom === 'heatpumps') { renderHeatpumpsList(); return; }
+  if (tileForDispatch && tileForDispatch.custom === 'vrf') { renderVrfList(); return; }
+
   const main = document.getElementById('main');
   openCalcPanelEl = null; // старі вузли DOM зараз буде замінено — посилання все одно застаріє
 
@@ -2622,7 +2957,10 @@ function renderCatalogList() {
 }
 
 function attachBrandToggleHandlers(main) {
-  main.querySelectorAll('.brand-toggle-btn').forEach(btn => {
+  // [data-brand] — щоб не чіпляти обробник до кнопок "3 перемикачі" вкладки VRF
+  // (.brand-toggle-btn там теж використовується для вигляду, але з іншими data-атрибутами,
+  // див. attachVrfHandlers).
+  main.querySelectorAll('.brand-toggle-btn[data-brand]').forEach(btn => {
     btn.addEventListener('click', () => {
       const brand = btn.getAttribute('data-brand');
       if (brand === activeBrand) return;
@@ -2630,6 +2968,210 @@ function attachBrandToggleHandlers(main) {
       renderCatalogList();
     });
   });
+}
+
+/* ---------- Спільний рендер плоского списку цін для кастомних розділів (VRF, Теплові
+   насоси HeatGuard/WineGuard/MHI) — та сама розмітка рядка, що й у renderCatalogList(),
+   але параметризована: які саме кнопки показувати. Реюзить існуючий делегований клік-
+   обробник #main (calc-toggle/share-btn/cart-check-btn/row-click-zone/segment-header-info
+   спрацьовують так само, бо класи ті самі) — і два нових класи, kit-info-btn та
+   price-request-btn, оброблені окремими гілками в тому ж обробнику нижче. */
+function buildSimplePriceRowsHtml(items, opts) {
+  opts = opts || {};
+  const showCalc = opts.showCalc !== false;
+  const showShare = opts.showShare !== false;
+  const showCart = opts.showCart !== false;
+  const cartSourceKey = opts.cartSourceKey || '';
+  const tileLabel = opts.tileLabel || '';
+  const locked = !hasFullAccess;
+  let lastKey = null;
+
+  return items.map(it => {
+    let header = '';
+    const effectiveKey = it.groupLabel || it.groupKey;
+    if (effectiveKey && effectiveKey !== lastKey) {
+      lastKey = effectiveKey;
+      // headerNote — дрібний підпис під заголовком секції, показується під КОЖНИМ
+      // заголовком групи однаково (напр. умови вимірювання потужності WineGuard), щоб не
+      // повторювати його в кожному рядку товару.
+      const noteHtml = opts.headerNote ? `<div class="segment-header-note">${escapeHtml(opts.headerNote)}</div>` : '';
+      header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}${noteHtml}</div>`;
+    } else if (!effectiveKey) {
+      lastKey = null;
+    }
+
+    let infoBtnHtml = '';
+    if (it.breakdownText) {
+      const idx = seriesInfoTexts.length;
+      seriesInfoTexts.push({ title: it.model, text: it.breakdownText });
+      infoBtnHtml = `<button class="kit-info-btn" type="button" data-info-idx="${idx}" aria-label="Детальніше">ⓘ</button>`;
+    }
+
+    const rowLocked = locked && !it.onRequest;
+    let rightHtml = infoBtnHtml;
+    if (it.onRequest) {
+      rightHtml += (opts.onRequestLink === false)
+        ? `<div class="row-price">За запитом</div>`
+        : `<button type="button" class="price-request-btn">За запитом</button>`;
+    } else {
+      let priceStr = Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '');
+      if (opts.priceNote) priceStr += ' · ' + opts.priceNote;
+      const cartKey = cartSourceKey + '|' + it.model;
+      const cartQty = showCart ? cartQtyFor(cartKey) : 0;
+      const cartBtnHtml = showCart ? `<button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tileLabel)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>` : '';
+      const calcBtnHtml = showCalc ? `<button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <rect x="3" y="1.5" width="18" height="21" rx="3" fill="var(--navy)"/>
+                <rect x="6" y="4.5" width="12" height="5" rx="1.1" fill="#CFE0F0"/>
+                <rect x="6" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="10.2" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="14.4" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="6" y="16.1" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="10.2" y="16.1" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
+                <rect x="14.4" y="16.1" width="3.6" height="3.4" rx="0.8" fill="var(--accent)"/>
+              </svg>
+            </button>` : '';
+      const shareBtnHtml = showShare ? `<button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>` : '';
+      rightHtml += `${cartBtnHtml}${calcBtnHtml}<div class="row-price${rowLocked ? ' row-price-locked' : ''}" aria-label="${rowLocked ? 'Ціна доступна після реєстрації' : ''}">${priceStr}</div>${shareBtnHtml}`;
+    }
+
+    const powerHtml = it.power ? `<p class="row-sub">${escapeHtml(it.power)}</p>` : '';
+    const calcSlotHtml = (showCalc && !it.onRequest && !rowLocked)
+      ? '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '')) + '</div>'
+      : '';
+
+    return header + `
+      <div class="row${rowLocked ? ' row-locked' : ''}" style="${it.color ? 'background:' + it.color + ';border-color:transparent;' : ''}">
+        <div class="row-top">
+          <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
+          <div class="row-info">
+            <p class="row-name">${escapeHtml(it.model)}</p>
+            ${powerHtml}
+          </div>
+          <div class="row-right">${rightHtml}</div>
+        </div>
+        ${calcSlotHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---------- "Мультизональні VRF" ---------- */
+const VRF_MHI_SOURCES = [
+  { key: 'outdoor', label: 'VRF Зовнішні блоки', dataKey: 'vrf_mhi_outdoor' },
+  { key: 'indoor_r410a', label: 'VRF Внутрішні R410A', dataKey: 'vrf_mhi_indoor_r410a' },
+  { key: 'indoor_kxze1w', label: 'VRF Внутрішні KXZE1-W R32', dataKey: 'vrf_mhi_indoor_kxze1w' }
+];
+function renderVrfList() {
+  const main = document.getElementById('main');
+  openCalcPanelEl = null;
+  seriesInfoTexts = [];
+
+  const brandToggleHtml = `
+    <div class="brand-toggle">
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
+    </div>`;
+
+  let subToggleHtml, items, cartSourceKey, opts;
+  if (activeBrand === 'mhi') {
+    subToggleHtml = '<div class="brand-toggle toggle-3way">' + VRF_MHI_SOURCES.map(s =>
+      `<button type="button" class="brand-toggle-btn${vrfMhiSource === s.key ? ' active' : ''}" data-vrf-source="${s.key}">${escapeHtml(s.label)}</button>`
+    ).join('') + '</div>';
+    const src = VRF_MHI_SOURCES.find(s => s.key === vrfMhiSource);
+    items = sheetsData[src.dataKey] || [];
+    cartSourceKey = 'vrf_mhi_' + vrfMhiSource;
+    opts = { cartSourceKey, tileLabel: 'Мультизональні VRF', showCalc: false, showShare: false, priceNote: 'роздрібна' };
+  } else {
+    subToggleHtml = `
+      <div class="brand-toggle toggle-3way">
+        <button type="button" class="brand-toggle-btn${vrfGalSide === 'outdoor' ? ' active' : ''}" data-vrf-gal-side="outdoor">Зовнішні</button>
+        <button type="button" class="brand-toggle-btn${vrfGalSide === 'indoor' ? ' active' : ''}" data-vrf-gal-side="indoor">Внутрішні</button>
+      </div>`;
+    items = sheetsData[vrfGalSide === 'outdoor' ? 'vrf_gal_outdoor' : 'vrf_gal_indoor'] || [];
+    cartSourceKey = 'vrf_gal_' + vrfGalSide;
+    opts = { cartSourceKey, tileLabel: 'Мультизональні VRF' };
+  }
+
+  if (items.length === 0) {
+    main.innerHTML = brandToggleHtml + subToggleHtml + '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+    attachVrfHandlers(main);
+    return;
+  }
+
+  const rowsHtml = buildSimplePriceRowsHtml(items, opts);
+  main.innerHTML = brandToggleHtml + subToggleHtml + '<div class="count">Всього: ' + items.length + '</div>' + rowsHtml;
+  attachVrfHandlers(main);
+}
+function attachVrfHandlers(main) {
+  attachBrandToggleHandlers(main);
+  main.querySelectorAll('[data-vrf-source]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-vrf-source');
+      if (key === vrfMhiSource) return;
+      vrfMhiSource = key;
+      renderVrfList();
+    });
+  });
+  main.querySelectorAll('[data-vrf-gal-side]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const side = btn.getAttribute('data-vrf-gal-side');
+      if (side === vrfGalSide) return;
+      vrfGalSide = side;
+      renderVrfList();
+    });
+  });
+}
+
+/* ---------- "Теплові насоси" ---------- */
+// MHI — фото реального теплового насоса MHI; HeatGuard/WineGuard — не фото товару (у прайсі
+// немає єдиної "картинки бренду"), а намальований логотип-напис (SVG), за проханням
+// користувача — "просто красивий текст великими літерами, як малюнок".
+const HEATPUMPS_BRANDS = [
+  { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumps-mhi.jpg' },
+  { key: 'heatguard', label: 'HeatGuard', img: 'tile-images/heatguard-logo.svg' },
+  { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguard-logo.svg' }
+];
+function renderHeatpumpsList() {
+  const main = document.getElementById('main');
+  openCalcPanelEl = null;
+  seriesInfoTexts = [];
+
+  if (!heatpumpsBrand) {
+    const tilesHtml = HEATPUMPS_BRANDS.map(b => `
+      <div class="menu-tile menu-tile-photo" data-heatpumps-brand="${b.key}">
+        <div class="menu-tile-photo-wrap"><img src="${escapeHtml(b.img)}" alt="" loading="lazy"></div>
+        <div class="menu-tile-title">${escapeHtml(b.label)}</div>
+      </div>`).join('');
+    main.innerHTML = '<div class="menu-grid">' + tilesHtml + '</div>';
+    main.querySelectorAll('[data-heatpumps-brand]').forEach(el => {
+      el.addEventListener('click', () => {
+        const key = el.getAttribute('data-heatpumps-brand');
+        history.pushState({ tab: 'catalog', tile: 'heatpumps', hpBrand: key }, '', '#heatpumps-' + key);
+        heatpumpsBrand = key;
+        renderHeatpumpsList();
+      });
+    });
+    return;
+  }
+
+  let items, opts;
+  if (heatpumpsBrand === 'mhi') {
+    items = sheetsData.heatpumps_mhi || [];
+    opts = { cartSourceKey: 'heatpumps_mhi', tileLabel: 'Теплові насоси', showCalc: false, priceNote: 'роздрібна' };
+  } else if (heatpumpsBrand === 'heatguard') {
+    items = sheetsData.heatguard || [];
+    opts = { cartSourceKey: 'heatguard', tileLabel: 'Теплові насоси', showCalc: false, showCart: false, onRequestLink: false };
+  } else {
+    items = sheetsData.wineguard || [];
+    opts = {
+      cartSourceKey: 'wineguard', tileLabel: 'Теплові насоси',
+      priceNote: 'роздрібна', headerNote: 'Потужність вказана при tвн.+10°C, tзов.+35°C'
+    };
+  }
+
+  const rowsHtml = items.length ? buildSimplePriceRowsHtml(items, opts) : '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+  main.innerHTML = '<div class="count">Всього: ' + items.length + '</div>' + rowsHtml;
 }
 
 function openSeriesInfo(title, text) {
@@ -2665,6 +3207,20 @@ document.getElementById('main').addEventListener('click', function(e) {
   if (infoHeader) {
     const info = seriesInfoTexts[Number(infoHeader.getAttribute('data-info-idx'))];
     if (info) openSeriesInfo(info.title, info.text);
+    return;
+  }
+  // ⓘ біля рядка "Теплові насоси"/VRF — той самий спливаючий блок "детальніше", що й для
+  // заголовків серій, тільки прив'язаний до конкретного товару (склад комплекту, примітка).
+  const kitInfoBtn = e.target.closest('.kit-info-btn');
+  if (kitInfoBtn) {
+    const info = seriesInfoTexts[Number(kitInfoBtn.getAttribute('data-info-idx'))];
+    if (info) openSeriesInfo(info.title, info.text);
+    return;
+  }
+  // "За запитом" (VRF GALACTIC) — веде на вкладку "Контакти" замість ціни/калькулятора.
+  if (e.target.closest('.price-request-btn')) {
+    switchTab('contacts', true);
+    renderCurrentTab();
     return;
   }
   const zoneEl = e.target.closest('.row-click-zone');
@@ -2880,13 +3436,19 @@ window.addEventListener('popstate', function(event) {
   const state = event.state;
   if (state && state.tab) {
     switchTab(state.tab, false);
-    if (state.tab === 'catalog') { activeTile = state.tile || null; activeBrand = 'mhi'; }
+    if (state.tab === 'catalog') {
+      activeTile = state.tile || null; activeBrand = 'mhi';
+      heatpumpsBrand = state.hpBrand || null;
+      vrfMhiSource = 'outdoor'; vrfGalSide = 'outdoor';
+    }
     if (state.tab === 'info') { infoSection = state.section || null; infoBrand = state.brand || null; }
     renderCurrentTab();
   } else {
     activeTile = null;
     infoSection = null;
     infoBrand = null;
+    heatpumpsBrand = null;
+    vrfMhiSource = 'outdoor'; vrfGalSide = 'outdoor';
     if (currentTab === 'catalog') renderCatalogView();
     else if (currentTab === 'info') renderInfoTab();
   }
