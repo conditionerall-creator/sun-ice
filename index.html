@@ -527,9 +527,11 @@
     align-items: flex-start;
     gap: 10px;
   }
-  /* Клікабельна зона для пошуку в Google — тільки ліва чверть верхньої частини рядка
-     (не весь рядок і не весь напис, і не заходить у розкритий калькулятор нижче) */
-  .row-click-zone {
+  /* Клікабельна зона в лівій чверті верхньої частини рядка (не весь рядок і не весь
+     напис, і не заходить у розкритий калькулятор нижче) — .row-click-zone: пошук у
+     Google (Спліт-системи), .row-info-zone: тип+продуктивність блоку (Мульти
+     спліт-системи MHI, внутрішні блоки) — той самий прямокутник, різна дія. */
+  .row-click-zone, .row-info-zone {
     position: absolute;
     top: 0; left: 0; bottom: 0;
     width: 25%;
@@ -541,6 +543,21 @@
   .calc-panel-slot {
     display: flex;
     justify-content: flex-end;
+  }
+  /* Великий заголовок секції "Зовнішні блоки"/"Внутрішні блоки" (Мульти спліт-системи,
+     обидва бренди) — навмисно помітніший за звичайний .segment-header нижче, бо це
+     більший структурний поділ (весь блок моделей), а не підгрупа всередині нього. */
+  .section-label {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    padding: 10px 10px;
+    margin: 6px 0 10px;
+    background: var(--navy);
+    border-radius: 8px;
   }
   .segment-header {
     text-align: center;
@@ -626,7 +643,7 @@
   }
   .row-info { min-width: 0; flex: 1; }
   .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; position: relative; z-index: 0; }
-  .row-click-zone:active ~ .row-info .row-name { opacity: 0.6; }
+  .row-click-zone:active ~ .row-info .row-name, .row-info-zone:active ~ .row-info .row-name { opacity: 0.6; }
   .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 1px; }
   .row-price { font-size: 16px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
   /* Ціна для незареєстрованих/заблокованих: цифри видно, що вони там є, але розібрати їх
@@ -1870,8 +1887,8 @@ const CATALOG_TILES = [
   },
   {
     id: 'multisplit', label: 'Мульти спліт-системи', img: 'tile-images/tile-multisplit.jpg',
-    mhi: { key: 'multisplit_mhi', sheet: 'МУЛЬТИСИСТЕМИ', highlight: 'series' },
-    gal: { key: 'multisplit_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'after' }
+    mhi: { key: 'multisplit_mhi', sheet: 'МУЛЬТИСИСТЕМИ', highlight: 'series', multisplitSections: true, blockGrouping: true },
+    gal: { key: 'multisplit_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'after', multisplitSections: true }
   },
   {
     id: 'semi', label: 'Напівпромислові спліт-системи', img: 'tile-images/tile-semi.jpg',
@@ -1949,6 +1966,7 @@ const modelKeywords = ['модель', 'маркировка', 'маркуван
 const internalKeywords = ['внутрішній', 'внутренний', 'indoor'];
 const externalKeywords = ['зовнішній', 'наружный', 'outdoor'];
 const unitTypeKeywords = ['тип блоку', 'тип блока'];
+const blockNameKeywords = ['найменування блоку', 'наименование блока'];
 const totalSubKeywords = ['комплект', 'всього', 'разом', 'итого', 'total'];
 const categoryStems = ['настінн', 'стельов', 'касетн', 'канальн', 'колонн', 'підлогов', 'підвісн', 'шафов'];
 // Насичені "ювелірні" тони для тонкої кольорової позначки серії (ліва смужка рядка +
@@ -2044,11 +2062,21 @@ function parseSheet(rows, highlightMode, opts) {
   const internalCol = findColumnInRow(headerRow, internalKeywords);
   const externalCol = findColumnInRow(headerRow, externalKeywords);
   const unitTypeCol = findColumnInRow(headerRow, unitTypeKeywords);
+  // НАЙМЕНУВАННЯ БЛОКУ — лише поряд із ТИП БЛОКУ (Мульти спліт-системи MHI/GALACTIC).
+  // ПРОДУКТИВНІСТЬ для внутрішніх блоків (охолодження/нагрів) читаємо позиційно —
+  // два стовпчики одразу після НАЙМЕНУВАННЯ БЛОКУ — бо окремого стійкого заголовка
+  // в прайсі під це немає (там просто "Охолодження, кВт"/"Нагрів, кВт" в підрядку).
+  const blockNameCol = unitTypeCol !== -1 ? findColumnInRow(headerRow, blockNameKeywords) : -1;
   const currency = detectCurrency(priceHeader.text);
   const items = [];
   let currentCategory = null;
   let currentSeriesLabel = null;
   let currentFullText = null; // повний опис серії з прайсу — для спливаючого вікна "детальніше"
+  // Для секцій "Зовнішні/Внутрішні блоки" (Мульти спліт-системи): порівнюємо тільки з
+  // ПОПЕРЕДНІМ реальним зовніш./внутр. рядком, ігноруючи проміжні рядки-аксесуари
+  // (пульти/адаптери — тип блоку не "зовніш."/"внутр.") — інакше заголовок секції
+  // помилково повторювався б щоразу після такого рядка.
+  let lastRealUnitType = null;
 
   for (let r = dataStart; r < rows.length; r++) {
     const row = rows[r] || [];
@@ -2103,13 +2131,58 @@ function parseSheet(rows, highlightMode, opts) {
       }
     } else if (highlightMode === 'category') item.groupKey = currentCategory;
     // Тип блоку (зовнішній/внутрішній) — потрібен для конфігуратора мультисплітів.
-    // Колонку "ТИП БЛОКУ" мають лише аркуші МУЛЬТИСИСТЕМИ/GALACTIC, для решти
-    // прайсів unitTypeCol === -1 і item.unitType просто не проставляється.
+    // УВАГА: колонка "ТИП БЛОКУ" є не лише в МУЛЬТИСИСТЕМИ/GALACTIC, а й у ПОБУТОВІ
+    // (Спліт-системи MHI) — з'ясувалось під час перевірки живими даними, старий
+    // коментар про "лише мультисистеми" був неточним. Тому unitTypeCol !== -1 сам
+    // по собі НЕ означає "це екран Мульти спліт-систем" — усе, що нижче в цьому
+    // блоці (заголовки секцій, groupKey за типажем, продуктивність), додатково
+    // гейтиться через opts.multisplitSections, який виставлено тільки в конфігу
+    // плитки "Мульти спліт-системи" (CATALOG_TILES) — і Спліт-системи це не чіпає.
     if (unitTypeCol !== -1) {
       const typeText = norm(row[unitTypeCol]);
       if (typeText.includes('зовніш') || typeText.includes('наруж')) item.unitType = 'outdoor';
       else if (typeText.includes('внутр')) item.unitType = 'indoor';
       else item.unitType = null;
+    }
+
+    if (unitTypeCol !== -1 && opts.multisplitSections) {
+      // Заголовок секції "Зовнішні блоки"/"Внутрішні блоки" — тільки в момент, коли
+      // реальний тип справді змінився (рядки-аксесуари з unitType===null пропускаємо,
+      // не рахуємо і не скидаємо lastRealUnitType — див. коментар вище).
+      if (item.unitType && item.unitType !== lastRealUnitType) {
+        item.sectionLabel = item.unitType === 'outdoor' ? 'Зовнішні блоки' : 'Внутрішні блоки';
+        lastRealUnitType = item.unitType;
+      } else {
+        item.sectionLabel = null;
+      }
+
+      // НАЙМЕНУВАННЯ БЛОКУ ("Настінний"/"Касетний"/...) стає groupKey замість
+      // серійного extractSeries(model) для цього прайсу — воно змістовніше і саме
+      // його просив показувати як підзаголовок для внутрішніх блоків. Але тільки
+      // коли opts.blockGrouping (наразі — лише MHI): для GAL просили показати ЛИШЕ
+      // заголовки секцій (sectionLabel вище), без підгрупування — тому groupKey там
+      // завжди null, "старий" серійний groupKey теж свідомо не лишаємо (замінили
+      // на "нічого", а не повернули extractSeries). Для зовнішніх блоків підзаголовка
+      // не показуємо в обох брендах (там лише один спільний заголовок секції).
+      const blockName = blockNameCol !== -1 ? String(row[blockNameCol] || '').trim() : '';
+      item.blockName = blockName || null;
+      item.groupKey = (opts.blockGrouping && item.unitType === 'indoor') ? (blockName || null) : null;
+
+      // Продуктивність (охолодження/нагрів) — тільки для зовнішніх блоків MHI (на
+      // прохання користувача — спершу зробив для внутрішніх, потім попросили
+      // навпаки), показуємо за тапом на маркування (див. renderCatalogList). GAL
+      // має інші одиниці/семантику цих самих колонок (Вт, споживана потужність) —
+      // там ця інформація й не показується, тому не витягуємо.
+      // Зовнішній блок у прайсі займає ДВА фізичні рядки: у поточному —
+      // "Охолодження, кВт" (той самий стовпчик, що й НАЙМЕНУВАННЯ БЛОКУ + 1), у
+      // наступному (без маркування, продовження) — "Нагрів, кВт" у ТОМУ Ж
+      // стовпчику. Колонку "Коефіцієнт ефективності" (EER/COP) поруч — не чіпаємо,
+      // просили тільки ПРОДУКТИВНІСТЬ.
+      if (opts.blockGrouping && item.unitType === 'outdoor' && blockNameCol !== -1) {
+        const nextRowForProductivity = rows[r + 1] || [];
+        item.productivityCooling = row[blockNameCol + 1];
+        item.productivityHeating = nextRowForProductivity[blockNameCol + 1];
+      }
     }
     items.push(item);
   }
@@ -2404,7 +2477,7 @@ function buildSheetsData(wb, previousData) {
       const sheet = wb.Sheets[cfg.sheet];
       let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (cfg.splitMarker) rows = sliceBySplitMarker(rows, cfg.splitMarker, cfg.splitSide);
-      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence });
+      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence, multisplitSections: cfg.multisplitSections, blockGrouping: cfg.blockGrouping });
       if (result.items.length > 0) {
         if (cfg.baseAdjustPct) {
           const factor = 1 - cfg.baseAdjustPct / 100;
@@ -2457,7 +2530,7 @@ function buildSheetsData(wb, previousData) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 5;
+const PARSER_VERSION = 8;
 
 function loadProcessedCache() {
   try {
@@ -3117,8 +3190,19 @@ function renderCatalogList() {
   let lastKey = null;
   seriesInfoTexts = [];
 
+  // Мульти спліт-системи MHI: тап на маркування зовнішнього блоку показує його тип і
+  // продуктивність (охолодження/нагрів) — тих даних, що в самому рядку не вміщаються.
+  // Тільки MHI (на прохання користувача) і тільки для зовнішніх блоків (спершу
+  // зробив для внутрішніх, потім попросили навпаки).
+  const showBlockInfoZone = activeTile === 'multisplit' && activeBrand === 'mhi';
+
   const rowsHtml = filtered.map((it, rowIndex) => {
     let header = '';
+    // "Зовнішні блоки"/"Внутрішні блоки" — великий заголовок секції (Мульти спліт-системи,
+    // обидва бренди), над звичайним segment-header. Рахує parseSheet() у item.sectionLabel.
+    const sectionLabelHtml = it.sectionLabel
+      ? `<div class="section-label">${escapeHtml(it.sectionLabel)}</div>`
+      : '';
     // Заголовок сегмента показуємо за "ефективним" підписом (groupLabel, якщо є — інакше
     // короткий буквений код). Так під-підписи (напр. "Внутрішні кольорові"/"Зовнішні чорні"
     // всередині однієї серії ZT) теж створюють новий заголовок, навіть якщо колір і
@@ -3145,11 +3229,25 @@ function renderCatalogList() {
     const cartQty = cartQtyFor(cartKey);
     const locked = !hasFullAccess;
     const rowCls = 'row' + (locked ? ' row-locked' : '') + (animateRows ? ' tile-enter' : '');
-    const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
-    return header + `
+    const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';border-right:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
+
+    let infoZoneHtml = '';
+    if (showBlockInfoZone && it.unitType === 'outdoor') {
+      const lines = [];
+      if (it.blockName) lines.push('Тип блоку: ' + it.blockName);
+      if (it.productivityCooling) lines.push('Охолодження: ' + String(it.productivityCooling).replace('.', ',') + ' кВт');
+      if (it.productivityHeating) lines.push('Нагрів: ' + String(it.productivityHeating).replace('.', ',') + ' кВт');
+      if (lines.length) {
+        const idx = seriesInfoTexts.length;
+        seriesInfoTexts.push({ title: it.model, text: lines.join('\n') });
+        infoZoneHtml = `<div class="row-info-zone" data-info-idx="${idx}" aria-label="Тип і продуктивність блоку"></div>`;
+      }
+    }
+
+    return sectionLabelHtml + header + `
       <div class="${rowCls}" style="${rowStyle}">
         <div class="row-top">
-          ${showGoogleSearch ? `<div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>` : ''}
+          ${showGoogleSearch ? `<div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>` : infoZoneHtml}
           <div class="row-info">
             <p class="row-name">${escapeHtml(it.model)}</p>
           </div>
@@ -3269,7 +3367,7 @@ function buildSimplePriceRowsHtml(items, opts) {
       : '';
 
     const rowCls = 'row' + (rowLocked ? ' row-locked' : '') + (animateRows ? ' tile-enter' : '');
-    const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
+    const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';border-right:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
     return header + `
       <div class="${rowCls}" style="${rowStyle}">
         <div class="row-top">
@@ -3454,6 +3552,14 @@ document.getElementById('main').addEventListener('click', function(e) {
   const kitInfoBtn = e.target.closest('.kit-info-btn');
   if (kitInfoBtn) {
     const info = seriesInfoTexts[Number(kitInfoBtn.getAttribute('data-info-idx'))];
+    if (info) openSeriesInfo(info.title, info.text);
+    return;
+  }
+  // Тап на маркування внутрішнього блоку в Мульти спліт-системах MHI — тип блоку і
+  // продуктивність (охолодження/нагрів), той самий спливаючий блок "детальніше".
+  const blockInfoZone = e.target.closest('.row-info-zone');
+  if (blockInfoZone) {
+    const info = seriesInfoTexts[Number(blockInfoZone.getAttribute('data-info-idx'))];
     if (info) openSeriesInfo(info.title, info.text);
     return;
   }
