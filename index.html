@@ -902,6 +902,48 @@
   .mhi-result-equip { font-size: 13.5px; color: var(--text); }
   .mhi-result-source { font-size: 11px; color: var(--text-secondary); margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
 
+  /* Сумісність блоків MHI — картка результату (той самий .mhi-result, що й коди помилок) */
+  .mhi-compat-status {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .mhi-compat-status-recommended { background: #1E8E3E; }
+  .mhi-compat-status-conditional { background: #B8860B; }
+  .mhi-compat-status-incompatible { background: var(--accent); }
+  .mhi-compat-status-na, .mhi-compat-status-other { background: var(--text-secondary); }
+  .mhi-compat-footnote {
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .mhi-compat-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .mhi-compat-facts { display: flex; flex-direction: column; gap: 6px; }
+  .mhi-compat-fact-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .mhi-compat-fact-row:last-child { border-bottom: none; }
+  .mhi-compat-fact-type { color: var(--text-secondary); }
+  .mhi-compat-fact-val { color: var(--text); font-weight: 600; text-align: right; }
+
   /* ---------- "Підбірка" (кошик): галочка біля рядка + плаваюча кнопка + панель ---------- */
   .cart-check-btn {
     position: relative;
@@ -4150,6 +4192,7 @@ async function renderContactsTab() {
 const INFO_SECTIONS = [
   { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.jpg' },
   { id: 'mhi-errors', label: 'Коди помилок MHI', img: 'tile-images/tile-error-codes.jpg' },
+  { id: 'mhi-compat', label: 'Сумісність блоків MHI' },
   { id: 'techinfo', label: 'Технічна інфа' }
 ];
 const INFO_BRANDS = [
@@ -4206,6 +4249,13 @@ function renderInfoTab() {
     backBtn.style.display = 'flex';
     title.textContent = 'Коди помилок MHI';
     renderMhiErrorsScreen();
+    return;
+  }
+
+  if (infoSection === 'mhi-compat') {
+    backBtn.style.display = 'flex';
+    title.textContent = 'Сумісність блоків MHI';
+    renderMhiCompatScreen();
     return;
   }
 
@@ -4461,6 +4511,240 @@ async function searchMhiByCode() {
     return;
   }
   if (slot) slot.innerHTML = renderMhiResultsHtml();
+}
+
+/* ---------- Сумісність блоків MHI (розділ "Інфо") ----------
+   Дані — заздалегідь розібраний офлайн (ETL) result з двох дилерських xlsx-таблиць
+   сумісності MHI (Compatibility of RAC, версії 2019 та 2026), у файлі
+   data/mhi-compat.json. Самі xlsx НЕ в репозиторії (внутрішні документи MHI, не
+   публічна документація) — тільки похідний JSON + метадані походження в його ж
+   полі meta. Файл підвантажується (fetch) лише коли користувач відкриває цей розділ,
+   а не при старті застосунку — на розмір/швидкість завантаження застосунку не впливає.
+   Логіка розбору маркувань (parseMhiCode/matchMhiPattern) — той самий алгоритм, що і
+   в офлайн ETL-скрипті, який згенерував сам файл (щоб не розсинхронитись). */
+let mhiCompatData = null;   // null (ще не завантажено) | 'loading' | 'error' | розібраний об'єкт
+let mhiCompatResult = null; // null | 'needinput' | {kind:...}
+
+function parseMhiCode(raw) {
+  let s = String(raw || '').trim();
+  let refrigerant = null;
+  const r32m = s.match(/\(R\s*32\)/i);
+  if (r32m) { refrigerant = 'R32'; s = s.slice(0, r32m.index) + s.slice(r32m.index + r32m[0].length); }
+  s = s.replace(/[※☆]/g, '').replace(/\s+/g, '').toUpperCase();
+  const famM = s.match(/^[A-Z]+/);
+  if (!famM) return { raw, error: 'no-family', refrigerant };
+  const family = famM[0];
+  let rest = s.slice(family.length);
+  let capacityKind = 'none', capacityList = null, capacityRange = null;
+  if (/^(\.{2,}|…)\.?/.test(rest)) {
+    capacityKind = 'wildcard';
+    rest = rest.replace(/^(\.{2,}|…)\.?/, '');
+  } else if (rest.startsWith('-') && /^[A-Z]/.test(rest.slice(1))) {
+    capacityKind = 'wildcard';
+    rest = rest.slice(1);
+  } else {
+    const numM = rest.match(/^(\d+(?:[,~.\-]\d+)*)/);
+    if (numM) {
+      const numStr = numM[0];
+      rest = rest.slice(numStr.length);
+      if (numStr.includes('-') || numStr.includes('~')) {
+        const parts = numStr.split(/[-~]/).map(Number);
+        capacityKind = 'range';
+        capacityRange = { min: Math.min(...parts), max: Math.max(...parts) };
+      } else if (numStr.includes(',') || numStr.includes('.')) {
+        capacityKind = 'list';
+        capacityList = numStr.split(/[,.]/).map(Number);
+      } else {
+        capacityKind = 'list';
+        capacityList = [Number(numStr)];
+      }
+    }
+  }
+  const dashIdx = rest.indexOf('-');
+  let series, suffixVariants;
+  if (dashIdx === -1) { series = rest; suffixVariants = []; }
+  else { series = rest.slice(0, dashIdx); suffixVariants = rest.slice(dashIdx + 1).split(',').map(x => x.trim()).filter(Boolean); }
+  if (!series) return { raw, error: 'no-series', family, refrigerant };
+  return { raw, family, capacityKind, capacityList, capacityRange, series, suffixVariants, refrigerant };
+}
+
+/* input — розібраний ввід користувача (завжди конкретний: без wildcard/range/list);
+   stored — розібраний рядок/стовпець з таблиці (може мати wildcard/range/list). */
+function matchMhiPattern(input, stored) {
+  if (input.error || stored.error) return false;
+  if (input.family !== stored.family) return false;
+  if ((input.refrigerant || null) !== (stored.refrigerant || null)) return false;
+  if (input.series !== stored.series) return false;
+  const sSuffixes = stored.suffixVariants || [];
+  const iSuffix = (input.suffixVariants && input.suffixVariants[0]) || '';
+  if (sSuffixes.length === 0) { if (iSuffix !== '') return false; }
+  else if (!sSuffixes.includes(iSuffix)) return false;
+  if (stored.capacityKind === 'wildcard' || stored.capacityKind === 'none') return true;
+  const cap = (input.capacityList && input.capacityList[0]) || null;
+  if (cap == null) return true; // користувач не вказав ємність — не можемо виключити збіг
+  if (stored.capacityKind === 'list') return stored.capacityList.includes(cap);
+  if (stored.capacityKind === 'range') return cap >= stored.capacityRange.min && cap <= stored.capacityRange.max;
+  return false;
+}
+
+const MHI_COMPAT_VRF_FAMILIES = ['FDC', 'KXZ', 'KXZE', 'KX'];
+
+async function loadMhiCompatData() {
+  if (mhiCompatData && mhiCompatData !== 'error') return mhiCompatData;
+  mhiCompatData = 'loading';
+  try {
+    const resp = await fetch('data/mhi-compat.json');
+    if (!resp.ok) throw new Error('http ' + resp.status);
+    const json = await resp.json();
+    // пре-парсимо всі рядки/стовпці один раз одразу після завантаження — сам пошук
+    // після цього миттєвий, повторний парсинг на кожен тап не потрібен.
+    json.rules.forEach(r => { r._i = parseMhiCode(r.i); r._o = parseMhiCode(r.o); });
+    json.fact_rules.forEach(r => { r._i = parseMhiCode(r.i); });
+    json.legacy_r22_rules.forEach(r => { r._i = parseMhiCode(r.i); r._o = parseMhiCode(r.o); });
+    mhiCompatData = json;
+  } catch (e) {
+    mhiCompatData = 'error';
+  }
+  return mhiCompatData;
+}
+
+function lookupMhiCompat(indoorRaw, outdoorRaw) {
+  const data = mhiCompatData;
+  const inIndoor = parseMhiCode(indoorRaw);
+  const inOutdoor = parseMhiCode(outdoorRaw);
+  // VRF/PAC (FDC + KX-серії) — свідомо поза межами цього довідника (тільки RAC/RAC
+  // MULTI), тому кажемо про це прямо, а не мовчки видаємо "немає даних" як для одруку.
+  // Перевіряємо ДО гейту "не вдалося розпізнати" — родину (family) parseMhiCode
+  // встигає визначити навіть коли решта коду не збирається в звичну для RAC схему
+  // (у VRF-кодів на кшталт KXZE1-W інша граматика, яку цей довідник не описує).
+  if (MHI_COMPAT_VRF_FAMILIES.includes(inIndoor.family) || MHI_COMPAT_VRF_FAMILIES.includes(inOutdoor.family)) {
+    return { kind: 'vrf-out-of-scope' };
+  }
+  if (inIndoor.error || inOutdoor.error) {
+    return { kind: 'parse-error', badIndoor: !!inIndoor.error, badOutdoor: !!inOutdoor.error };
+  }
+  const findIn = (rules) => rules.find(r => matchMhiPattern(inIndoor, r._i) && matchMhiPattern(inOutdoor, r._o));
+  const rules2026 = data.rules.filter(r => r.src.startsWith('R2026'));
+  let hit = findIn(rules2026);
+  if (hit) return { kind: 'found', rule: hit, archival: false, indoorPattern: inIndoor };
+  const rules2019 = data.rules.filter(r => r.src.startsWith('R2019'));
+  hit = findIn(rules2019);
+  if (hit) return { kind: 'found', rule: hit, archival: true, indoorPattern: inIndoor };
+  return { kind: 'no-data' };
+}
+
+const MHI_COMPAT_STATUS_LABEL = {
+  recommended: 'Сумісно (рекомендовано)',
+  conditional: 'Сумісно (умовно/неофіційно)',
+  incompatible: 'Несумісно',
+  na: 'Не застосовується',
+  other: 'Див. позначку'
+};
+
+function renderMhiCompatScreen() {
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="mhi-block">
+      <div class="mhi-block-title">Перевірка сумісності</div>
+      <div class="mhi-hint">Введіть маркування внутрішнього і зовнішнього блоків MHI (Спліт-системи та Мульти спліт-системи серій RAC/SCM) — так, як вони написані на блоці чи в прайсі, наприклад SRK50ZSX-W або SRC50ZMX-S.</div>
+      <div class="mhi-field">
+        <label class="mhi-label">Внутрішній блок</label>
+        <input type="text" class="mhi-code-input" id="mhi-compat-indoor" placeholder="Наприклад: SRK50ZSX-W">
+      </div>
+      <div class="mhi-field">
+        <label class="mhi-label">Зовнішній блок</label>
+        <input type="text" class="mhi-code-input" id="mhi-compat-outdoor" placeholder="Наприклад: SRC50ZMX-S">
+      </div>
+      <div class="mhi-btn-row">
+        <button type="button" class="mhi-search-btn" id="mhi-compat-check-btn">Перевірити</button>
+        <button type="button" class="mhi-clear-btn" id="mhi-compat-clear-btn">Очистити</button>
+      </div>
+    </div>
+    <div id="mhi-compat-result-slot">${renderMhiCompatResultHtml()}</div>
+  `;
+  document.getElementById('mhi-compat-check-btn').addEventListener('click', checkMhiCompat);
+  document.getElementById('mhi-compat-clear-btn').addEventListener('click', clearMhiCompat);
+  ['mhi-compat-indoor', 'mhi-compat-outdoor'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', function(e) { if (e.key === 'Enter') checkMhiCompat(); });
+  });
+}
+
+function clearMhiCompat() {
+  mhiCompatResult = null;
+  renderMhiCompatScreen();
+}
+
+async function checkMhiCompat() {
+  const indoorEl = document.getElementById('mhi-compat-indoor');
+  const outdoorEl = document.getElementById('mhi-compat-outdoor');
+  const indoor = indoorEl ? indoorEl.value.trim() : '';
+  const outdoor = outdoorEl ? outdoorEl.value.trim() : '';
+  const slot = document.getElementById('mhi-compat-result-slot');
+  if (!indoor || !outdoor) {
+    mhiCompatResult = 'needinput';
+    if (slot) slot.innerHTML = renderMhiCompatResultHtml();
+    return;
+  }
+  if (slot) slot.innerHTML = '<div class="mhi-result-loading">Пошук…</div>';
+  const data = await loadMhiCompatData();
+  if (data === 'error') {
+    mhiCompatResult = { kind: 'load-error' };
+    if (slot) slot.innerHTML = renderMhiCompatResultHtml();
+    return;
+  }
+  mhiCompatResult = lookupMhiCompat(indoor, outdoor);
+  if (slot) slot.innerHTML = renderMhiCompatResultHtml();
+}
+
+function renderMhiCompatFactsHtml(indoorPattern) {
+  const data = mhiCompatData;
+  if (!data || data === 'loading' || data === 'error') return '';
+  const facts = data.fact_rules.filter(f => f.src === '2026' && matchMhiPattern(indoorPattern, f._i));
+  if (!facts.length) return '';
+  const rows = facts.map(f => `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(f.t)}</span><span class="mhi-compat-fact-val">${escapeHtml(f.v)}</span></div>`).join('');
+  return `<div class="mhi-result-section-title">Додатково (за внутрішнім блоком)</div><div class="mhi-compat-facts">${rows}</div>`;
+}
+
+function renderMhiCompatResultHtml() {
+  const r = mhiCompatResult;
+  if (r === 'needinput') {
+    return '<div class="mhi-result mhi-result-empty">Заповніть обидва поля — внутрішній і зовнішній блок.</div>';
+  }
+  if (!r) return '';
+  if (r.kind === 'load-error') {
+    return '<div class="mhi-result mhi-result-empty">Не вдалося завантажити довідник сумісності. Перевірте з’єднання і спробуйте ще раз.</div>';
+  }
+  if (r.kind === 'parse-error') {
+    const which = r.badIndoor && r.badOutdoor ? 'обидва маркування' : (r.badIndoor ? 'маркування внутрішнього блока' : 'маркування зовнішнього блока');
+    return `<div class="mhi-result mhi-result-empty">Не вдалося розпізнати ${escapeHtml(which)}. Перевірте, чи правильно введено маркування (має починатись з літер серії, напр. SRK, SRC, SCM).</div>`;
+  }
+  if (r.kind === 'vrf-out-of-scope') {
+    return '<div class="mhi-result mhi-result-empty">Це схоже на маркування серії VRF/PAC (FDC/KX) — цей довідник охоплює лише побутові RAC і Мульти спліт-системи SCM. Для VRF зверніться до офіційного технічного посібника MHI або на вкладку "Мультизональні VRF" каталогу.</div>';
+  }
+  if (r.kind === 'no-data') {
+    return '<div class="mhi-result mhi-result-empty">Немає даних для цієї пари в жодній з версій довідника. Це не означає, що блоки несумісні — просто ця комбінація не знайдена в таблицях MHI. Уточніть у офіційному технічному посібнику MHI або в дилера.</div>';
+  }
+  if (r.kind === 'found') {
+    const rule = r.rule;
+    const statusClass = 'mhi-compat-status-' + rule.s;
+    const statusLabel = MHI_COMPAT_STATUS_LABEL[rule.s] || rule.sr;
+    const footnoteHtml = rule.f && rule.f.length
+      ? `<div class="mhi-compat-footnote">${rule.f.map(escapeHtml).join('<br>')}</div>` : '';
+    const archivalHtml = r.archival
+      ? '<div class="mhi-compat-note">Знайдено лише в архівній версії довідника (2019 рік) — актуальність не гарантована, уточніть у дилера.</div>' : '';
+    const deprecatedHtml = rule.d
+      ? '<div class="mhi-compat-note">Одна з моделей позначена як така, що знімається з виробництва (☆) — на статус сумісності це не впливає.</div>' : '';
+    const factsHtml = !r.archival ? renderMhiCompatFactsHtml(r.indoorPattern) : '';
+    return `
+      <div class="mhi-result">
+        <div class="mhi-compat-status ${statusClass}">${escapeHtml(statusLabel)}</div>
+        ${footnoteHtml}
+        ${archivalHtml}
+        ${deprecatedHtml}
+        ${factsHtml}
+      </div>`;
+  }
+  return '';
 }
 
 /* ---------- Кабінет ---------- */
