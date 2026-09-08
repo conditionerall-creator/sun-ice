@@ -329,10 +329,13 @@
   }
   .nav-btn .nav-icon { font-size: 19px; line-height: 1; }
   .nav-btn.active { color: var(--accent); font-weight: 700; }
-  .nav-btn.active::before {
-    content: '';
+  /* Один спільний індикатор активної вкладки (замість окремого ::before на кожній
+     кнопці) — тільки так його можна плавно "переїжджати" transform-ом між кнопками
+     замість миттєвого перескоку. Позицію рахує JS (updateNavIndicator), сам рух —
+     тільки transform, база — left:0. */
+  .nav-indicator {
     position: absolute;
-    top: 0;
+    top: 0; left: 0;
     width: 30px;
     height: 3px;
     border-radius: 0 0 4px 4px;
@@ -360,7 +363,7 @@
     box-shadow: 0 1px 2px rgba(10,10,10,0.03), 0 10px 24px -16px rgba(10,10,10,0.18);
     transition: box-shadow .15s, transform .1s, border-color .15s;
   }
-  .menu-tile:active { transform: scale(0.985); border-color: var(--navy); box-shadow: none; }
+  .menu-tile:active { transform: scale(0.96); border-color: var(--navy); box-shadow: none; }
   .menu-tile-row { display: flex; align-items: center; justify-content: space-between; }
   .menu-tile-title { font-size: 12.5px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; line-height: 1.35; color: var(--text); }
   .menu-tile-empty { cursor: default; border-color: var(--border); box-shadow: none; }
@@ -399,6 +402,22 @@
     border-color: var(--accent);
     color: #fff;
   }
+  /* Перемикач з "бігунком", що переїжджає (тільки простий 2-way MHI/GAL, не 3-way
+     VRF) — сама заливка активної кнопки тепер окремий шар позаду тексту, JS рухає
+     його transform-ом (translateX), кнопки лишаються прозорими там, де на них лежить
+     бігунок. Базове позиціювання тут статичне, сам рух — у словнику анімацій. */
+  .brand-toggle-sliding { position: relative; }
+  /* top/bottom дзеркалять вертикальний padding .brand-toggle (4px 0 12px), щоб бігунок
+     точно збігався з висотою кнопок, а не з висотою контейнера разом із його padding. */
+  .brand-toggle-slider {
+    position: absolute; top: 4px; bottom: 12px; left: 0;
+    width: 50%;
+    background: var(--accent);
+    border-radius: 8px;
+    z-index: 0;
+  }
+  .brand-toggle-sliding .brand-toggle-btn { position: relative; z-index: 1; }
+  .brand-toggle-sliding .brand-toggle-btn.active { background: transparent; border-color: transparent; }
   .menu-tile-icon {
     display: inline-flex; align-items: center; justify-content: center;
     padding: 4px 10px;
@@ -428,6 +447,66 @@
   }
   .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .menu-tile-photo .menu-tile-title { padding: 0 2px; }
+
+  /* ---------- Словник анімацій (тільки transform+opacity, ніколи width/height/top/
+     left/margin/padding). Усе всередині prefers-reduced-motion: no-preference — при
+     вимкнених системних анімаціях ці класи ніяк не впливають на елементи, перехід
+     миттєвий. Використовується на кількох екранах, не переізобретається під кожен. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* Stagger-поява карток сітки/списку: fade + translateY. Затримку між рядами задає
+       JS через inline animation-delay на кожній картці. */
+    @keyframes tileEnter { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+    .menu-tile.tile-enter { animation: tileEnter 280ms ease-out both; }
+
+    /* Спільний "grow+fade" перехід плитка → деталі. Анімується #main як ціле, з
+       transform-origin у точці, де була натиснута плитка (рахує JS), тому виглядає
+       ніби контент "виростає" саме з неї. Використовується на переходах
+       каталог→категорія і надалі на інших переходах "плитка → екран" у застосунку. */
+    @keyframes growFadeEnter { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+    #main.grow-fade-enter { animation: growFadeEnter 260ms ease-out; }
+
+    /* Дзеркало growFadeEnter — для кнопки "назад" зі списку моделей: екран ніби
+       стискається назад у плитку каталогу, звідки прийшов. */
+    @keyframes growFadeLeave { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.94); } }
+    #main.grow-fade-leave { animation: growFadeLeave 220ms ease-in; }
+
+    /* Дрож картки "Скоро" при тапі — показує, що вона не клікабельна. */
+    @keyframes soonShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+    .menu-tile-empty.soon-shake { animation: soonShake 150ms ease-in-out; }
+
+    /* Підказка над карткою "Скоро": fade in → пауза → fade out, single-shot. */
+    @keyframes soonTipShow { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+    .menu-tile-soon-tip.soon-tip-show { animation: soonTipShow 1900ms ease-in-out; }
+
+    /* Нижня навігація: простий cross-fade вмісту екрана (без зсувів/поворотів — це
+       перемикання між паралельними розділами, не вкладений перехід), + індикатор
+       активної вкладки, що плавно "їде" transform-ом до нової кнопки (позицію рахує
+       JS), + плавне підсвічування/тьмяніння іконки кольором. Іконку не масштабуємо
+       і не підкидаємо. */
+    #main { transition: opacity 180ms ease-in-out; }
+    #main.nav-fade-out { opacity: 0; }
+    .nav-indicator { transition: transform 220ms ease-in-out; }
+    .nav-btn { transition: color 200ms ease; }
+
+    /* Екран категорії: бігунок перемикача бренду MHI/GAL "переїжджає" (transform),
+       замість миттєвої зміни заливки. Стосується тільки простого 2-way перемикача
+       (клас brand-toggle-sliding) — 3-way перемикачі VRF лишаються як були. Плюс
+       tap-феєдбек (scale) для трьох іконок рядка прайсу (чекбокс/калькулятор/
+       поділитися) — сама іконка нижньої навігації тут ні до чого, не чіпав. */
+    .brand-toggle-slider { transition: transform 220ms ease-in-out; }
+    .calc-toggle:active, .share-btn:active, .cart-check-btn:active { transform: scale(0.96); }
+  }
+  .menu-tile-empty { position: relative; }
+  .menu-tile-soon-tip {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 10px;
+    background: var(--card);
+    border-radius: 9px;
+    font-size: 11px; font-weight: 600; color: var(--text-secondary);
+    opacity: 0; pointer-events: none;
+  }
+  .menu-tile-soon-tip.soon-tip-show-instant { opacity: 1; }
 
   /* List rows */
   .row {
@@ -549,7 +628,7 @@
   .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; position: relative; z-index: 0; }
   .row-click-zone:active ~ .row-info .row-name { opacity: 0.6; }
   .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 1px; }
-  .row-price { font-size: 16px; font-weight: 600; white-space: nowrap; }
+  .row-price { font-size: 16px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
   /* Ціна для незареєстрованих/заблокованих: цифри видно, що вони там є, але розібрати їх
      неможливо — розмиття, а не приховування, щоб рядок виглядав так само, як і зазвичай. */
   .row-price-locked { filter: blur(4.5px); user-select: none; cursor: pointer; }
@@ -583,6 +662,10 @@
   }
   .share-btn svg { width: 16px; height: 16px; display: block; }
   .share-btn:active { background: var(--accent-bg); color: var(--accent); }
+  /* Плавний перехід стану галочки "в підбірку" — тільки opacity/колір, без стрибків
+     розміру; tap-феєдбек (scale) для всіх трьох іконок рядка — у словнику анімацій. */
+  .cart-check-btn { transition: opacity 200ms ease, background-color 200ms ease, border-color 200ms ease; }
+  .cart-check-btn .cart-check-icon { transition: color 200ms ease; }
   .calc-panel {
     display: none;
     flex-wrap: wrap;
@@ -605,7 +688,7 @@
     background: var(--card);
     color: var(--text);
   }
-  .calc-result { font-weight: 700; color: var(--accent); }
+  .calc-result { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
   /* Спрощений вибір знаку операції: замість трьох кнопок поруч — одна іконка з поточним
      знаком (за замовчуванням −%), а решта варіантів (+%, −, +) ховаються у спливаючому
      меню, яке з'являється тільки по дотику на цю іконку і "обгортає" її зверху й знизу
@@ -664,7 +747,7 @@
   }
   .calc-cur-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
   .calc-eq { font-weight: 600; }
-  .calc-base { font-weight: 600; color: var(--text); white-space: nowrap; }
+  .calc-base { font-weight: 600; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .count { font-size: 12px; color: var(--text-secondary); padding: 8px 2px 4px; }
 
   /* Теплові насоси / VRF: додатковий рядок під назвою (потужність тощо) */
@@ -1688,6 +1771,7 @@
 </div>
 
 <nav class="bottom-nav">
+  <div class="nav-indicator" id="nav-indicator"></div>
   <button class="nav-btn active" data-tab="catalog"><span class="nav-icon">🏠</span>Каталог</button>
   <button class="nav-btn" data-tab="promotions"><span class="nav-icon">🔥</span>Акції</button>
   <button class="nav-btn" data-tab="cabinet"><span class="nav-icon">👤</span>Кабінет</button>
@@ -1812,6 +1896,13 @@ const VAPID_PUBLIC_KEY = 'BIoU6N899jbSOeI02wfVBgX5M4VUq6oM-Vz_TeDiUYxIdjgbW9w2Je
 /* ======================================================= */
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* Спільна перевірка prefers-reduced-motion для всіх анімацій застосунку (словник
+   анімацій — CSS-класи всередині @media (prefers-reduced-motion: no-preference) в
+   <style>, і той самий прапорець тут в JS, щоб не запускати навіть JS-частину
+   ефекту — таймери, обчислення transform-origin тощо — коли анімації вимкнені
+   системно). */
+const prefersReducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 let currentTab = 'catalog';
 let sheetsData = {};
@@ -2529,6 +2620,7 @@ async function handleRefreshClick() {
     priceVersion = meta.version;
     persistProcessedCache(priceVersion);
     setCatalogStatus('Оновлено: ' + new Date().toLocaleString('uk-UA') + ' · версія ' + priceVersion);
+    catalogMenuSkipEnterAnim = true; // користувач і так стоїть на цьому екрані — не повторювати stagger
     renderCatalogView();
   } catch (e) {
     setCatalogStatus('Немає підключення. Відображається остання завантажена версія прайсу.');
@@ -2568,6 +2660,108 @@ function renderCatalogView() {
   renderCartBar();
 }
 
+/* Одноразовий прапорець: пропустити stagger-появу сітки каталогу на наступному
+   renderCatalogMenu(). Потрібен тільки для "оновлення прайсу на місці" (користувач
+   стоїть на екрані каталогу і тисне ↻) — там сітка перемальовується з тими самими
+   картками, і повторний stagger виглядав би як глюк, а не як відкриття екрана.
+   При звичайному вході на екран (перша відкриття, перемикання вкладок, повернення
+   з категорії) прапорець не чіпається, тому анімація грає щоразу — так і задумано. */
+let catalogMenuSkipEnterAnim = false;
+
+/* Спільний "grow+fade" перехід плитка → деталі (див. словник анімацій у <style>).
+   originEl — елемент плитки, з якої "виростає" наступний екран; викликати ОДРАЗУ
+   ПІСЛЯ того, як main.innerHTML вже замінено на вміст нового екрана. Переюзається на
+   всіх переходах "плитка → екран" у застосунку, а не переізобретається під кожен. */
+function playGrowFadeEnter(originEl) {
+  if (prefersReducedMotionQuery.matches) return;
+  const main = document.getElementById('main');
+  if (!originEl || !main) return;
+  const mainRect = main.getBoundingClientRect();
+  const originRect = originEl.getBoundingClientRect();
+  if (!mainRect.width || !mainRect.height) return;
+  const originX = ((originRect.left + originRect.width / 2) - mainRect.left) / mainRect.width * 100;
+  const originY = ((originRect.top + originRect.height / 2) - mainRect.top) / mainRect.height * 100;
+  main.style.transformOrigin = originX + '% ' + originY + '%';
+  main.classList.remove('grow-fade-enter');
+  void main.offsetWidth;
+  main.classList.add('grow-fade-enter');
+  main.addEventListener('animationend', function handler() {
+    main.classList.remove('grow-fade-enter');
+    main.style.transformOrigin = '';
+    main.removeEventListener('animationend', handler);
+  });
+}
+
+/* Дзеркало playGrowFadeEnter — для кнопки "назад" зі списку моделей. Стискає й
+   ховає поточний вміст #main (звідки б не було натиснуто — якір беремо як #back-btn,
+   а не точну позицію плитки в сітці каталогу, бо сітки в момент виклику ще нема в
+   DOM, її геометрію наперед не порахувати). callback викликається через setTimeout,
+   а не animationend — той самий підхід, що і в cross-fade нижньої навігації, щоб не
+   покладатись на подію, чия надійність під час фонового/схованого стану сторінки не
+   гарантована. */
+function playGrowFadeLeave(originEl, callback) {
+  if (prefersReducedMotionQuery.matches) { callback(); return; }
+  const main = document.getElementById('main');
+  if (!originEl || !main) { callback(); return; }
+  const mainRect = main.getBoundingClientRect();
+  const originRect = originEl.getBoundingClientRect();
+  if (!mainRect.width || !mainRect.height) { callback(); return; }
+  const originX = ((originRect.left + originRect.width / 2) - mainRect.left) / mainRect.width * 100;
+  const originY = ((originRect.top + originRect.height / 2) - mainRect.top) / mainRect.height * 100;
+  main.style.transformOrigin = originX + '% ' + originY + '%';
+  main.classList.add('grow-fade-leave');
+  setTimeout(() => {
+    main.classList.remove('grow-fade-leave');
+    main.style.transformOrigin = '';
+    callback();
+  }, 220);
+}
+
+/* Прапорці для екрана категорії (список моделей): те саме "не повторювати stagger",
+   що й для сітки каталогу (catalogMenuSkipEnterAnim), тільки для рядків прайсу —
+   вмикається перед перемиканням бренду MHI/GAL(/VRF-джерела), щоб часте перемикання
+   не відчувалось повільним. brandSliderPrevBrand — з якого стану "переїжджає" бігунок
+   перемикача (null = щойно відкрили екран, бігунок просто з'являється на місці). */
+let catalogRowsSkipStagger = false;
+let brandSliderPrevBrand = null;
+
+/* Плавно "переїжджає" заливку перемикача MHI/GAL (тільки .brand-toggle-sliding, не
+   3-way VRF) до активного боку. Викликати одразу після заміни main.innerHTML. */
+function positionBrandSlider(container, brand, prevBrand) {
+  const slider = container.querySelector('.brand-toggle-slider');
+  if (!slider) return;
+  const toX = brand === 'gal' ? '100%' : '0%';
+  if (prevBrand && prevBrand !== brand && !prefersReducedMotionQuery.matches) {
+    const fromX = prevBrand === 'gal' ? '100%' : '0%';
+    slider.style.transition = 'none';
+    slider.style.transform = 'translateX(' + fromX + ')';
+    void slider.offsetWidth;
+    slider.style.transition = '';
+    slider.style.transform = 'translateX(' + toX + ')';
+  } else {
+    slider.style.transform = 'translateX(' + toX + ')';
+  }
+}
+
+/* Дрож + підказка на нескліковній картці "Скоро" (див. словник анімацій у <style>).
+   При prefers-reduced-motion підказку все одно показуємо (це інформація, а не
+   прикраса), але миттєво замість fade, і без дрожу (той суто декоративний). */
+function triggerSoonFeedback(tileEl) {
+  const tip = tileEl.querySelector('.menu-tile-soon-tip');
+  if (!tip) return;
+  if (prefersReducedMotionQuery.matches) {
+    clearTimeout(tip._soonHideTimer);
+    tip.classList.add('soon-tip-show-instant');
+    tip._soonHideTimer = setTimeout(() => tip.classList.remove('soon-tip-show-instant'), 1800);
+    return;
+  }
+  tileEl.classList.remove('soon-shake');
+  tip.classList.remove('soon-tip-show');
+  void tileEl.offsetWidth;
+  tileEl.classList.add('soon-shake');
+  tip.classList.add('soon-tip-show');
+}
+
 function renderCatalogMenu() {
   const main = document.getElementById('main');
   const hasData = Object.keys(sheetsData).length > 0;
@@ -2575,28 +2769,32 @@ function renderCatalogMenu() {
     main.innerHTML = '<div class="empty">Прайс ще не завантажено.</div>';
     return;
   }
-  const tiles = CATALOG_TILES.map(tile => {
+  const animateEntrance = !catalogMenuSkipEnterAnim;
+  catalogMenuSkipEnterAnim = false;
+  const tiles = CATALOG_TILES.map((tile, i) => {
     const initials = tile.label.slice(0, 2).toUpperCase();
     const filled = tileHasAnyData(tile);
+    const enterAttr = animateEntrance ? ` tile-enter" style="animation-delay:${Math.floor(i / 2) * 45}ms` : '';
     if (!filled) {
       return `
-        <div class="menu-tile menu-tile-empty">
+        <div class="menu-tile menu-tile-empty${enterAttr}">
           <div class="menu-tile-row">
             <div class="menu-tile-icon">${escapeHtml(initials)}</div>
             <div class="menu-tile-soon">Скоро</div>
           </div>
           <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
+          <div class="menu-tile-soon-tip">Дані ще уточнюються</div>
         </div>`;
     }
     if (tile.img) {
       return `
-        <div class="menu-tile menu-tile-photo" data-tile="${escapeHtml(tile.id)}">
+        <div class="menu-tile menu-tile-photo${enterAttr}" data-tile="${escapeHtml(tile.id)}">
           <div class="menu-tile-photo-wrap"><img src="${escapeHtml(tile.img)}" alt="" loading="lazy"></div>
           <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
         </div>`;
     }
     return `
-      <div class="menu-tile" data-tile="${escapeHtml(tile.id)}">
+      <div class="menu-tile${enterAttr}" data-tile="${escapeHtml(tile.id)}">
         <div class="menu-tile-row">
           <div class="menu-tile-icon">${escapeHtml(initials)}</div>
         </div>
@@ -2614,7 +2812,11 @@ function renderCatalogMenu() {
       vrfMhiSource = 'outdoor';
       vrfGalSide = 'outdoor';
       renderCatalogView();
+      playGrowFadeEnter(el);
     });
+  });
+  main.querySelectorAll('.menu-tile-empty').forEach(el => {
+    el.addEventListener('click', () => triggerSoonFeedback(el));
   });
 }
 
@@ -2882,16 +3084,26 @@ function renderCatalogList() {
   const hasBoth = !!(tile.mhi && tile.gal);
   const cfg = tileActiveCfg(tile);
   const toggleHtml = hasBoth ? `
-    <div class="brand-toggle">
+    <div class="brand-toggle brand-toggle-sliding">
+      <div class="brand-toggle-slider"></div>
       <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
       <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
     </div>` : '';
+
+  // Одноразово consume: чи це перше відкриття екрана (stagger рядків, бігунок просто
+  // з'являється) чи перемикання MHI/GAL на місці (без stagger, бігунок "переїжджає" з
+  // попереднього боку) — прапорці виставляє attachBrandToggleHandlers перед кліком.
+  const animateRows = !catalogRowsSkipStagger;
+  const prevBrandForSlider = brandSliderPrevBrand;
+  catalogRowsSkipStagger = false;
+  brandSliderPrevBrand = null;
 
   const allItems = cfg ? (sheetsData[cfg.key] || []) : [];
 
   if (!cfg || allItems.length === 0) {
     main.innerHTML = toggleHtml + '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
     attachBrandToggleHandlers(main);
+    positionBrandSlider(main, activeBrand, prevBrandForSlider);
     return;
   }
 
@@ -2899,10 +3111,13 @@ function renderCatalogList() {
 
   const countHtml = '<div class="count">Всього: ' + filtered.length + '</div>';
   const showSegments = true;
+  // Пошук моделі в Google по тапу на назву — лишили тільки для "Спліт-системи"
+  // (на прохання користувача), для решти плиток каталогу зону кліку не малюємо.
+  const showGoogleSearch = activeTile === 'split';
   let lastKey = null;
   seriesInfoTexts = [];
 
-  const rowsHtml = filtered.map(it => {
+  const rowsHtml = filtered.map((it, rowIndex) => {
     let header = '';
     // Заголовок сегмента показуємо за "ефективним" підписом (groupLabel, якщо є — інакше
     // короткий буквений код). Так під-підписи (напр. "Внутрішні кольорові"/"Зовнішні чорні"
@@ -2929,10 +3144,12 @@ function renderCatalogList() {
     const cartKey = activeTile + '|' + activeBrand + '|' + it.model;
     const cartQty = cartQtyFor(cartKey);
     const locked = !hasFullAccess;
+    const rowCls = 'row' + (locked ? ' row-locked' : '') + (animateRows ? ' tile-enter' : '');
+    const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
     return header + `
-      <div class="row${locked ? ' row-locked' : ''}" style="${it.color ? 'border-left:4px solid ' + it.color + ';' : ''}">
+      <div class="${rowCls}" style="${rowStyle}">
         <div class="row-top">
-          <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
+          ${showGoogleSearch ? `<div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>` : ''}
           <div class="row-info">
             <p class="row-name">${escapeHtml(it.model)}</p>
           </div>
@@ -2961,6 +3178,7 @@ function renderCatalogList() {
 
   main.innerHTML = toggleHtml + countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
   attachBrandToggleHandlers(main);
+  positionBrandSlider(main, activeBrand, prevBrandForSlider);
 }
 
 function attachBrandToggleHandlers(main) {
@@ -2971,6 +3189,8 @@ function attachBrandToggleHandlers(main) {
     btn.addEventListener('click', () => {
       const brand = btn.getAttribute('data-brand');
       if (brand === activeBrand) return;
+      catalogRowsSkipStagger = true;
+      brandSliderPrevBrand = activeBrand;
       activeBrand = brand;
       renderCatalogList();
     });
@@ -2980,7 +3200,7 @@ function attachBrandToggleHandlers(main) {
 /* ---------- Спільний рендер плоского списку цін для кастомних розділів (VRF, Теплові
    насоси HeatGuard/WineGuard/MHI) — та сама розмітка рядка, що й у renderCatalogList(),
    але параметризована: які саме кнопки показувати. Реюзить існуючий делегований клік-
-   обробник #main (calc-toggle/share-btn/cart-check-btn/row-click-zone/segment-header-info
+   обробник #main (calc-toggle/share-btn/cart-check-btn/segment-header-info
    спрацьовують так само, бо класи ті самі) — і два нових класи, kit-info-btn та
    price-request-btn, оброблені окремими гілками в тому ж обробнику нижче. */
 function buildSimplePriceRowsHtml(items, opts) {
@@ -2991,9 +3211,10 @@ function buildSimplePriceRowsHtml(items, opts) {
   const cartSourceKey = opts.cartSourceKey || '';
   const tileLabel = opts.tileLabel || '';
   const locked = !hasFullAccess;
+  const animateRows = opts.stagger !== false; // той самий stagger, що й у звичайному списку прайсу
   let lastKey = null;
 
-  return items.map(it => {
+  return items.map((it, rowIndex) => {
     let header = '';
     const effectiveKey = it.groupLabel || it.groupKey;
     if (effectiveKey && effectiveKey !== lastKey) {
@@ -3047,10 +3268,11 @@ function buildSimplePriceRowsHtml(items, opts) {
       ? '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '')) + '</div>'
       : '';
 
+    const rowCls = 'row' + (rowLocked ? ' row-locked' : '') + (animateRows ? ' tile-enter' : '');
+    const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
     return header + `
-      <div class="row${rowLocked ? ' row-locked' : ''}" style="${it.color ? 'border-left:4px solid ' + it.color + ';' : ''}">
+      <div class="${rowCls}" style="${rowStyle}">
         <div class="row-top">
-          <div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>
           <div class="row-info">
             <p class="row-name">${escapeHtml(it.model)}</p>
             ${powerHtml}
@@ -3074,8 +3296,17 @@ function renderVrfList() {
   openCalcPanelEl = null;
   seriesInfoTexts = [];
 
+  // Той самий прапорець, що й у renderCatalogList() — обов'язково "спожити" тут теж,
+  // інакше після перемикання бренду на екрані VRF він лишиться "застряглим" і помилково
+  // пригнітить stagger при наступному вході в звичайний (не-VRF) список моделей.
+  const animateRows = !catalogRowsSkipStagger;
+  const prevBrandForSlider = brandSliderPrevBrand;
+  catalogRowsSkipStagger = false;
+  brandSliderPrevBrand = null;
+
   const brandToggleHtml = `
-    <div class="brand-toggle">
+    <div class="brand-toggle brand-toggle-sliding">
+      <div class="brand-toggle-slider"></div>
       <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
       <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
     </div>`;
@@ -3088,7 +3319,7 @@ function renderVrfList() {
     const src = VRF_MHI_SOURCES.find(s => s.key === vrfMhiSource);
     items = sheetsData[src.dataKey] || [];
     cartSourceKey = 'vrf_mhi_' + vrfMhiSource;
-    opts = { cartSourceKey, tileLabel: 'Мультизональні VRF', showCalc: false, showShare: false, priceNote: 'роздрібна' };
+    opts = { cartSourceKey, tileLabel: 'Мультизональні VRF', showCalc: false, showShare: false, priceNote: 'роздрібна', stagger: animateRows };
   } else {
     subToggleHtml = `
       <div class="brand-toggle toggle-3way">
@@ -3097,18 +3328,20 @@ function renderVrfList() {
       </div>`;
     items = sheetsData[vrfGalSide === 'outdoor' ? 'vrf_gal_outdoor' : 'vrf_gal_indoor'] || [];
     cartSourceKey = 'vrf_gal_' + vrfGalSide;
-    opts = { cartSourceKey, tileLabel: 'Мультизональні VRF' };
+    opts = { cartSourceKey, tileLabel: 'Мультизональні VRF', stagger: animateRows };
   }
 
   if (items.length === 0) {
     main.innerHTML = brandToggleHtml + subToggleHtml + '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
     attachVrfHandlers(main);
+    positionBrandSlider(main, activeBrand, prevBrandForSlider);
     return;
   }
 
   const rowsHtml = buildSimplePriceRowsHtml(items, opts);
   main.innerHTML = brandToggleHtml + subToggleHtml + '<div class="count">Всього: ' + items.length + '</div>' + rowsHtml;
   attachVrfHandlers(main);
+  positionBrandSlider(main, activeBrand, prevBrandForSlider);
 }
 function attachVrfHandlers(main) {
   attachBrandToggleHandlers(main);
@@ -3284,7 +3517,20 @@ document.getElementById('main').addEventListener('click', function(e) {
 });
 document.getElementById('main').addEventListener('input', handleCalcDelegatedInput);
 document.getElementById('refresh-icon').addEventListener('click', handleRefreshClick);
-document.getElementById('back-btn').addEventListener('click', function() { history.back(); });
+document.getElementById('back-btn').addEventListener('click', function() {
+  // Дзеркальний перехід (стиснення в плитку) — тільки коли йдемо з деталей категорії
+  // каталогу назад (список моделей / VRF / гілка теплових насосів). Історію як завжди
+  // рухає history.back() — той самий popstate-обробник, що й раніше, я не чіпав; просто
+  // граю "leave"-анімацію ПЕРЕД викликом history.back(), а не змінюю саму навігацію.
+  if (currentTab === 'catalog' && activeTile !== null) {
+    playGrowFadeLeave(document.getElementById('back-btn'), () => {
+      catalogMenuSkipEnterAnim = true;
+      history.back();
+    });
+  } else {
+    history.back();
+  }
+});
 
 /* Калькулятор у рядку прайсу сам згортається: дотик поза розкритою формою (в тому числі
    в порожню область того самого рядка), або гортання списку — і панель знову маленька.
@@ -4838,6 +5084,22 @@ async function handleAdminAction(action, id, value) {
 }
 
 /* ---------- Перемикання вкладок нижнього меню ---------- */
+/* Плавно "переїжджає" індикатор активної вкладки під потрібну кнопку (translateX,
+   рахується від позиції кнопки всередині .bottom-nav). Викликається з будь-якого
+   місця, що змінює активну вкладку (клік по нав-бару, кнопка "назад" браузера,
+   старт застосунку) — це просто візуальна синхронізація з currentTab, а не частина
+   логіки навігації. */
+function updateNavIndicator(activeBtn) {
+  const nav = document.querySelector('.bottom-nav');
+  const indicator = document.getElementById('nav-indicator');
+  if (!nav || !indicator || !activeBtn) return;
+  const navRect = nav.getBoundingClientRect();
+  const btnRect = activeBtn.getBoundingClientRect();
+  const x = (btnRect.left - navRect.left) + (btnRect.width - indicator.offsetWidth) / 2;
+  indicator.style.transform = 'translateX(' + Math.round(x) + 'px)';
+}
+window.addEventListener('resize', () => updateNavIndicator(document.querySelector('.nav-btn.active')));
+
 function switchTab(tab, pushHistory) {
   currentTab = tab;
   activeTile = null;
@@ -4846,6 +5108,7 @@ function switchTab(tab, pushHistory) {
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
   });
+  updateNavIndicator(document.querySelector('.nav-btn.active'));
   document.getElementById('back-btn').style.display = 'none';
   document.getElementById('rate-row').style.display = 'none';
   openCalcPanelEl = null;
@@ -4870,13 +5133,35 @@ function renderCurrentTab() {
   else if (currentTab === 'info') renderInfoTab();
 }
 
-document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const tab = btn.getAttribute('data-tab');
-    if (tab === currentTab && activeTile === null) return;
+/* Cross-fade вмісту екрана при перемиканні вкладок нижнього меню (див. словник
+   анімацій у <style>). navFadeToken інвалідовує "застряглий" таймер попереднього
+   перемикання, якщо користувач тисне вкладки швидше, ніж встигає дограти fade —
+   кліки ніколи не блокуються. */
+let navFadeToken = 0;
+
+function animateTabSwitch(tab) {
+  if (tab === currentTab && activeTile === null) return;
+
+  if (prefersReducedMotionQuery.matches) {
     switchTab(tab, true);
     renderCurrentTab();
-  });
+    return;
+  }
+
+  const main = document.getElementById('main');
+  const myToken = ++navFadeToken;
+  main.classList.add('nav-fade-out');
+
+  setTimeout(() => {
+    if (myToken !== navFadeToken) return;
+    switchTab(tab, true);
+    renderCurrentTab();
+    main.classList.remove('nav-fade-out');
+  }, 180);
+}
+
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => animateTabSwitch(btn.getAttribute('data-tab')));
 });
 
 /* ---------- Встановлення на головний екран ---------- */
@@ -5253,6 +5538,7 @@ if ('serviceWorker' in navigator) {
 /* ---------- Старт ---------- */
 history.replaceState({ tab: 'catalog' }, '', '#catalog');
 refreshAccessState().then(function () { if (currentTab === 'catalog' && activeTile) renderCatalogList(); });
+updateNavIndicator(document.querySelector('.nav-btn.active'));
 renderCurrentTab();
 showInstallGate();
 checkPromoBalloon();
