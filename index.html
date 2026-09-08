@@ -1794,9 +1794,9 @@ const CATALOG_TILES = [
     mhi: { key: 'semi_mhi', sheet: 'НАПІВПРОМ', highlight: 'category', baseAdjustPct: 20 },
     gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category' }
   },
-  { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tile-vrf.jpg', custom: 'vrf' },
+  { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.jpg', custom: 'vrf' },
   { id: 'ccb', label: 'Компресорно-конденсаторні блоки' },
-  { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tile-heatpumps.jpg', custom: 'heatpumps' },
+  { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tileheatpumps.jpg', custom: 'heatpumps' },
   { id: 'chillers', label: 'Чиллери' },
   { id: 'ventilation', label: 'Вентиляційне обладнання' },
   { id: 'aircurtains', label: 'Повітряні завіси' },
@@ -3135,9 +3135,9 @@ function attachVrfHandlers(main) {
 // немає єдиної "картинки бренду"), а намальований логотип-напис (SVG), за проханням
 // користувача — "просто красивий текст великими літерами, як малюнок".
 const HEATPUMPS_BRANDS = [
-  { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumps-mhi.jpg' },
-  { key: 'heatguard', label: 'HeatGuard', img: 'tile-images/heatguard-logo.svg' },
-  { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguard-logo.svg' }
+  { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumpsmhi.jpg' },
+  { key: 'heatguard', label: 'HeatGuard', img: 'tile-images/heatguardlogo.svg' },
+  { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguardlogo.svg' }
 ];
 function renderHeatpumpsList() {
   const main = document.getElementById('main');
