@@ -265,10 +265,15 @@ function buildRacRules(wb) {
     });
   }
 
-  // Compatibility for PAC (рядки 30-35, ті самі колонки-заголовки, факти про indoor-код)
+  // Compatibility for PAC (рядки 30-35, ті самі колонки-заголовки, факти про indoor-код).
+  // Мітка в стовпці B — часто ДВА рядки (напр. "SC-BIKN2-E necessity" + окремим рядком
+  // "(For connecting with RC-E3, E4, E5, RC-EX1,...)") — раніше бралась лише перша
+  // (через це дві різні "SC-BIKN2-BL necessity" з різним переліком конекторів виглядали
+  // в застосунку однаково) — тепер обидва рядки об'єднуються в один текст, повний сенс
+  // не губиться.
   for (let r = 29; r <= 34; r++) {
     const row = rows[r] || [];
-    const label = normText(row[1]).split('\n')[0].trim();
+    const label = normText(row[1]).split('\n').map(s => s.trim()).filter(Boolean).join(' ').replace(/\s+\)/g, ')');
     if (!label) continue;
     Object.keys(indoorByCol).forEach(cStr => {
       const c = Number(cStr);
