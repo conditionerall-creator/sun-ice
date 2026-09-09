@@ -943,6 +943,8 @@
   .mhi-compat-fact-row:last-child { border-bottom: none; }
   .mhi-compat-fact-type { color: var(--text-secondary); }
   .mhi-compat-fact-val { color: var(--text); font-weight: 600; text-align: right; }
+  .mhi-result-block { margin-bottom: 16px; }
+  .mhi-result-block:last-child { margin-bottom: 0; }
 
   /* ---------- "Підбірка" (кошик): галочка біля рядка + плаваюча кнопка + панель ---------- */
   .cart-check-btn {
@@ -4716,7 +4718,7 @@ function checkMhiCompatibility(indoorRaw, outdoorRaw, data) {
     hits.push({ rule, indoorMatch: im, outdoorMatch: om });
   });
   if (!hits.length) return { kind: 'no-data' };
-  return { kind: 'found', hits, indoorTypo, outdoorTypo, sheet };
+  return { kind: 'found', hits, indoorTypo, outdoorTypo, sheet, indoorInput };
 }
 
 function renderMhiCompatScreen() {
@@ -4798,42 +4800,53 @@ function renderMhiCompatResultHtml() {
   }
   if (r.kind === 'found') {
     // Прямо з клітинок таблиці, без переформулювання: групуємо знайдені збіги за
-    // статусом (◎ офіційно / 〇 без офіційного підтвердження) і в кожній групі
-    // просто перелічуємо сирий текст маркування зовнішнього й внутрішніх блоків
-    // так, як він написаний у файлі MHI — жодних доданих приміток "від себе".
+    // статусом (◎ офіційно / 〇 без офіційного підтвердження / "-" несумісно), кожна
+    // група — свій колірний бейдж (зелений/жовтий/червоний) вгорі й під ним просто
+    // перелік сирого тексту маркування так, як він написаний у файлі MHI.
     const outdoorRaw = r.hits[0].rule.o;
-    const order = ['recommended', 'conditional'];
-    const groupsHtml = order.map(status => {
-      const inGroup = r.hits.filter(h => h.rule.s === status);
-      if (!inGroup.length) return '';
-      const label = status === 'recommended' ? 'офіційно' : 'без офіційного підтвердження';
-      const itemsHtml = inGroup.map(h => {
+    const STATUS_LABEL = { recommended: 'Сумісно (офіційно)', conditional: 'Сумісно (без офіційного підтвердження)', incompatible: 'Несумісно' };
+    const VERB = { recommended: 'сумісний із', conditional: 'сумісний із', incompatible: 'несумісний із' };
+    function statusBlockHtml(status, items) {
+      if (!items.length) return '';
+      const itemsHtml = items.map(h => {
         const dep = h.rule.d ? ' ☆' : '';
         const fn = h.rule.f && h.rule.f.length ? `<div class="mhi-compat-footnote">${h.rule.f.map(escapeHtml).join('<br>')}</div>` : '';
         return `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(h.rule.i)}${dep}</span></div>${fn}`;
       }).join('');
       return `
-        <div class="mhi-result-section-title">${escapeHtml(outdoorRaw)} сумісний із (${label}):</div>
-        <div class="mhi-compat-facts">${itemsHtml}</div>`;
-    }).join('');
-    // Знайдені клітинки є, але всі — "-" (несумісно): без цього окремого випадку
-    // groupsHtml був би порожнім і застосунок мовчав би, хоча в таблиці МНІ пряма
-    // відповідь ЄСТЬ, просто негативна — показуємо її так само чесно.
+        <div class="mhi-result-block">
+          <div class="mhi-compat-status mhi-compat-status-${status}">${escapeHtml(STATUS_LABEL[status])}</div>
+          <div class="mhi-result-section-title">${escapeHtml(outdoorRaw)} ${VERB[status]}:</div>
+          <div class="mhi-compat-facts">${itemsHtml}</div>
+        </div>`;
+    }
     const hasCompatible = r.hits.some(h => h.rule.s === 'recommended' || h.rule.s === 'conditional');
-    const incompatibleHtml = !hasCompatible
-      ? `<div class="mhi-result mhi-result-empty">${escapeHtml(outdoorRaw)} несумісний із ${escapeHtml(r.hits.map(h => h.rule.i).join(', '))}.</div>`
-      : '';
+    // Якщо серед знайдених клітинок немає жодної сумісної — усі "-" — це теж пряма
+    // відповідь із таблиці (не мовчання), показуємо її червоним блоком.
+    const groupsHtml = hasCompatible
+      ? ['recommended', 'conditional'].map(status => statusBlockHtml(status, r.hits.filter(h => h.rule.s === status))).join('')
+      : statusBlockHtml('incompatible', r.hits);
     const typoHtml = [r.indoorTypo, r.outdoorTypo].filter(Boolean).map(t =>
       `<div class="mhi-compat-note">⚠ У маркуванні виявлено розбіжність літер: введено "${escapeHtml(t.from)}", найближче відоме — "${escapeHtml(t.to)}". Результат нижче — за умови, що малось на увазі "${escapeHtml(t.to)}"; якщо введене маркування вірне як є — підтвердити сумісність не можна.</div>`
     ).join('');
+    const factsHtml = (r.sheet === 'rac') ? renderMhiCompatFactsHtml(r.indoorInput) : '';
     return `
       <div class="mhi-result">
         ${typoHtml}
         ${groupsHtml}
-        ${incompatibleHtml}
+        ${factsHtml}
       </div>`;
   }
   return '';
+}
+
+function renderMhiCompatFactsHtml(indoorInput) {
+  const data = mhiCompatData;
+  if (!data || data === 'loading' || data === 'error') return '';
+  const facts = data.rac_facts.filter(f => mhiCandidateMatches(indoorInput, f._i));
+  if (!facts.length) return '';
+  const rows = facts.map(f => `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(f.t)}</span><span class="mhi-compat-fact-val">${escapeHtml(f.v)}</span></div>`).join('');
+  return `<div class="mhi-result-block"><div class="mhi-result-section-title">Внутрішні блоки: сумісність із аксесуарами</div><div class="mhi-compat-facts">${rows}</div></div>`;
 }
 
 /* ---------- Кабінет ---------- */
