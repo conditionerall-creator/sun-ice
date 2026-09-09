@@ -1939,6 +1939,7 @@
   <button class="nav-btn" data-tab="cabinet"><span class="nav-icon">👤</span>Кабінет</button>
   <button class="nav-btn" data-tab="contacts"><span class="nav-icon">📞</span>Контакти</button>
   <button class="nav-btn" data-tab="info"><span class="nav-icon">ℹ️</span>Інфо</button>
+  <button class="nav-btn" data-tab="installer" id="nav-btn-installer" style="display:none;"><span class="nav-icon">🛠️</span>CRМонтаж</button>
 </nav>
 
 <div class="img-lightbox-overlay" id="img-lightbox-overlay">
@@ -4102,19 +4103,37 @@ async function getCurrentProfileRole() {
 const PRICE_ACCESS_DENIED_STATUSES = ['blocked', 'rejected'];
 let hasFullAccess = false;
 let lastAccessCheckAt = 0;
+let isApprovedInstaller = false; // роль 'installer' + status 'approved' — показує вкладку "CRМонтаж"
 
 async function refreshAccessState() {
   try {
     const { data: sessionData } = await sb.auth.getSession();
     const session = sessionData ? sessionData.session : null;
-    if (!session) { hasFullAccess = false; return hasFullAccess; }
-    const { data: profile } = await sb.from('profiles').select('status').eq('id', session.user.id).single();
-    hasFullAccess = !!profile && !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status);
+    if (!session) {
+      hasFullAccess = false;
+      isApprovedInstaller = false;
+    } else {
+      const { data: profile } = await sb.from('profiles').select('status, role').eq('id', session.user.id).single();
+      hasFullAccess = !!profile && !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status);
+      isApprovedInstaller = !!profile && profile.role === 'installer' && profile.status === 'approved';
+    }
   } catch (e) {
     hasFullAccess = false;
+    isApprovedInstaller = false;
   }
   lastAccessCheckAt = Date.now();
+  updateInstallerNavVisibility();
   return hasFullAccess;
+}
+
+/* Показує/ховає вкладку "CRМонтаж" залежно від isApprovedInstaller (рахує
+   refreshAccessState — той самий виклик, що й для доступу до цін, щоб не робити зайвий
+   запит до БД). Якщо саме зараз відкрита ця вкладка, а доступ щойно зник (напр. адмін
+   заблокував/змінив роль в іншій вкладці) — перекидає на Каталог. */
+function updateInstallerNavVisibility() {
+  const btn = document.getElementById('nav-btn-installer');
+  if (btn) btn.style.display = isApprovedInstaller ? '' : 'none';
+  if (!isApprovedInstaller && currentTab === 'installer') animateTabSwitch('catalog');
 }
 
 /* Спливаюча картка "Зареєструйтесь" — при дотику на заховану ціну/калькулятор. */
@@ -5036,7 +5055,7 @@ function priceTypeLabel(pt) {
   return { regular: 'Стандартна', client: 'Клієнтська', vip: 'VIP' }[pt] || (pt || '—');
 }
 function roleLabel(role) {
-  return { user: 'Користувач', regional_admin: 'Регіональний адмін', super_admin: 'Супер-адмін' }[role] || role;
+  return { user: 'Користувач', regional_admin: 'Регіональний адмін', super_admin: 'Супер-адмін', installer: 'Інсталятор' }[role] || role;
 }
 
 async function renderCabinetTab() {
@@ -5176,6 +5195,10 @@ async function renderRegisterForm() {
       <label>Регіон</label>
       <select id="reg-region">${options}</select>
     </div>
+    <label class="promo-ack-banner">
+      <input type="checkbox" id="reg-is-installer">
+      <span>Я монтажник (інсталятор) — реєструюсь для розділу «CRМонтаж»</span>
+    </label>
     <button class="primary-btn" id="reg-submit-btn">Зареєструватися</button>
     <div id="reg-error"></div>
   `;
@@ -5230,6 +5253,7 @@ async function handleRegister() {
     return;
   }
 
+  const isInstaller = document.getElementById('reg-is-installer').checked;
   const { error: profileError } = await sb.from('profiles').upsert({
     id: userId,
     full_name: name,
@@ -5237,7 +5261,7 @@ async function handleRegister() {
     region_id: parseInt(regionId, 10),
     status: 'pending',
     price_type: 'regular',
-    role: 'user'
+    role: isInstaller ? 'installer' : 'user'
   }, { onConflict: 'id' });
 
   if (profileError) {
@@ -5580,6 +5604,7 @@ async function renderAdminPanel(profile) {
           </select>
           ${isSuper ? `<select data-action="role" data-id="${u.id}">
             <option value="user" ${u.role === 'user' ? 'selected' : ''}>Користувач</option>
+            <option value="installer" ${u.role === 'installer' ? 'selected' : ''}>Інсталятор</option>
             <option value="regional_admin" ${u.role === 'regional_admin' ? 'selected' : ''}>Регіон. адмін</option>
             <option value="super_admin" ${u.role === 'super_admin' ? 'selected' : ''}>Супер-адмін</option>
           </select>` : ''}
@@ -5610,12 +5635,12 @@ async function renderAdminPanel(profile) {
       </div>`;
   }
 
-  // roleFilter: '' (усі), 'user', 'regional_admin', 'super_admin' — точна роль (використовує
-  // super_admin, якому потрібно розрізняти адмінів і супер-адмінів окремо), або 'admin' —
-  // збірне "будь-який адмін" (не user), яким користується спрощений фільтр regional_admin.
+  // roleFilter: '' (усі), 'user', 'installer', 'regional_admin', 'super_admin' — точна
+  // роль, або 'admin' — збірне "будь-який адмін" (лише regional_admin/super_admin, НЕ
+  // installer), яким користується спрощений фільтр regional_admin.
   function passesFilters(u, q, regionId, roleFilter) {
     if (regionId && String(u.region_id) !== regionId) return false;
-    if (roleFilter === 'admin') { if (u.role === 'user') return false; }
+    if (roleFilter === 'admin') { if (u.role !== 'regional_admin' && u.role !== 'super_admin') return false; }
     else if (roleFilter && u.role !== roleFilter) return false;
     if (q && !((u.full_name || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q))) return false;
     return true;
@@ -5653,11 +5678,13 @@ async function renderAdminPanel(profile) {
   const roleOptionsHtml = isSuper
     ? `<option value="">Усі ролі</option>
        <option value="user">Користувачі</option>
+       <option value="installer">Інсталятори</option>
        <option value="regional_admin">Регіональні адміни</option>
        <option value="super_admin">Супер-адміни</option>`
     : `<option value="">Усі ролі</option>
        <option value="admin">Адміністратори</option>
-       <option value="user">Користувачі</option>`;
+       <option value="user">Користувачі</option>
+       <option value="installer">Інсталятори</option>`;
 
   let html = '';
   if (pushState.supported) {
@@ -5784,6 +5811,40 @@ function renderCurrentTab() {
   else if (currentTab === 'cabinet') renderCabinetTab();
   else if (currentTab === 'contacts') renderContactsTab();
   else if (currentTab === 'info') renderInfoTab();
+  else if (currentTab === 'installer') renderInstallerTab();
+}
+
+/* ---------- CRМонтаж (роль "installer") ----------
+   Крок 1 реалізації "CRМонтаж": лише роль + доступ + ця заглушка. Список завдань,
+   нагадування, експорт і прив'язка партнера — окремі майбутні кроки, навмисно НЕ
+   реалізовані тут.
+   Захист повторює патерн renderMhiCompatFolders(): роль/статус перевіряються не лише на
+   рівні кнопки нав-бару (updateInstallerNavVisibility ховає саму кнопку для
+   не-інсталяторів/непідтверджених), а й тут — щоб прямий перехід за хешем (#installer)
+   теж нікуди не пускав. Перевірка йде напряму в БД (role і status разом), а не через
+   getCurrentProfileRole() — та функція повертає лише role, тут потрібен ще й статус. */
+async function renderInstallerTab() {
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('title').textContent = 'CRМонтаж';
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="empty">Завантаження...</div>';
+
+  const { data: sessionData } = await sb.auth.getSession();
+  const session = sessionData ? sessionData.session : null;
+  let profile = null;
+  if (session) {
+    const { data } = await sb.from('profiles').select('role, status').eq('id', session.user.id).single();
+    profile = data || null;
+  }
+  const ok = !!profile && profile.role === 'installer' && profile.status === 'approved';
+
+  if (!ok) {
+    history.replaceState({ tab: 'catalog' }, '', '#catalog');
+    switchTab('catalog', false);
+    renderCurrentTab();
+    return;
+  }
+  main.innerHTML = '<div class="empty">Розділ у розробці.<br>Найближчим часом тут з’явиться список завдань монтажу.</div>';
 }
 
 /* Cross-fade вмісту екрана при перемиканні вкладок нижнього меню (див. словник
