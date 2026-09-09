@@ -1720,6 +1720,108 @@
     color: var(--text);
     font-family: inherit;
   }
+
+  /* Сумісність блоків MHI — таблиця з закріпленими шапкою і першою колонкою (як
+     "заморозка областей" в Excel): гортаєш в обидва боки, шапка і маркування завжди на
+     видноті, а перетин (сумісність) рухається під ними. */
+  .compat-toolbar { padding: 4px 0 8px; }
+  .compat-filter-input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    background: var(--card);
+    color: var(--text);
+    font-family: inherit;
+  }
+  .compat-legend { font-size: 10.5px; color: var(--text-secondary); line-height: 1.5; padding-bottom: 8px; }
+  .compat-table-wrap {
+    overflow: auto;
+    max-height: 66vh;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .compat-table { border-collapse: separate; border-spacing: 0; font-size: 11px; }
+  .compat-table th, .compat-table td {
+    padding: 5px 7px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    white-space: nowrap;
+  }
+  .compat-corner, .compat-colhead, .compat-colhead-group, .compat-colhead-size {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    font-weight: 700;
+    font-size: 10.5px;
+    color: var(--text);
+    z-index: 2;
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-bottom: 2px solid var(--navy);
+  }
+  .compat-table-multi .compat-colhead-group { top: 0; height: 26px; }
+  .compat-table-multi .compat-colhead-size { top: 27px; }
+  .compat-corner { left: 0; z-index: 4; text-align: left; max-width: none; white-space: nowrap; }
+  .compat-table-multi .compat-corner { z-index: 5; }
+  .compat-rowhead {
+    position: sticky;
+    left: 0;
+    background: #FAFAFA;
+    font-weight: 700;
+    font-size: 10.5px;
+    text-align: left;
+    z-index: 1;
+    max-width: 148px;
+    white-space: normal;
+    line-height: 1.3;
+    border-right: 2px solid var(--navy);
+  }
+  .compat-group-row td {
+    background: var(--bg);
+    font-weight: 800;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    text-align: left;
+    color: var(--text-secondary);
+    white-space: normal;
+    border-right: none;
+  }
+  .compat-cell-yes { color: #1E8E3E; font-weight: 700; }
+  .compat-cell-maybe { color: #B8860B; font-weight: 700; }
+  .compat-cell-no2 { color: var(--accent); font-weight: 700; }
+  .compat-cell-no { color: #CBCBCB; }
+  .compat-match { background: #FEF3C7 !important; }
+  .compat-notes-wrap { margin-top: 10px; }
+  .compat-notes-toggle {
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .compat-notes-body {
+    margin-top: 6px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    font-size: 10.5px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+  .compat-notes-body div { margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -1954,8 +2056,19 @@ let calcPanelOpenedAt = 0;
 let seriesInfoTexts = [];
 
 /* Навігація вкладки "Інфо": null = верхнє меню (Каталоги / Технічна інфа) */
-let infoSection = null; // 'catalogs' | 'techinfo' | null
+let infoSection = null; // 'catalogs' | 'techinfo' | 'mhi-compat' | null
 let infoBrand = null;   // 'mhi' | 'galactic' | null
+
+/* "Сумісність блоків MHI" — видима лише regional_admin/super_admin (перевіряється в
+   renderMhiCompatFolders(), а не тільки прихованням пункту меню, щоб пряме посилання-хеш
+   теж не пускало звичайного користувача). Дані — заздалегідь вивантажені з дилерських
+   xlsx-таблиць сумісності MHI в data/mhi-compat-tables.json (самі xlsx НЕ в репозиторії).
+   На відміну від видаленої раніше версії цієї фічі — тут НЕМАЄ жодного розбору/зіставлення
+   маркувань: просто показуємо таблицю з прайсу як є, з закріпленими шапкою і першою
+   колонкою, а користувач сам знаходить потрібний рядок/стовпець і дивиться перетин. */
+let mhiCompatFolder = null; // 'household' | 'semi' | null
+let mhiCompatSheet = 'rac'; // 'rac' | 'racMulti' — актуально лише для folder==='household'
+let mhiCompatData = null;   // null (ще не завантажено) | 'loading' | 'error' | {rac,racMulti,fd}
 
 /* ---------- Допоміжні функції парсингу прайсу ---------- */
 const priceKeywordGroups = [
@@ -3801,12 +3914,17 @@ window.addEventListener('popstate', function(event) {
       heatpumpsBrand = state.hpBrand || null;
       vrfMhiSource = 'outdoor'; vrfGalSide = 'outdoor';
     }
-    if (state.tab === 'info') { infoSection = state.section || null; infoBrand = state.brand || null; }
+    if (state.tab === 'info') {
+      infoSection = state.section || null; infoBrand = state.brand || null;
+      mhiCompatFolder = state.compatFolder || null; mhiCompatSheet = state.compatSheet || 'rac';
+    }
     renderCurrentTab();
   } else {
     activeTile = null;
     infoSection = null;
     infoBrand = null;
+    mhiCompatFolder = null;
+    mhiCompatSheet = 'rac';
     heatpumpsBrand = null;
     vrfMhiSource = 'outdoor'; vrfGalSide = 'outdoor';
     if (currentTab === 'catalog') renderCatalogView();
@@ -4151,7 +4269,12 @@ async function renderContactsTab() {
 const INFO_SECTIONS = [
   { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.jpg' },
   { id: 'mhi-errors', label: 'Коди помилок MHI', img: 'tile-images/tile-error-codes.jpg' },
+  { id: 'mhi-compat', label: 'Сумісність блоків MHI', img: 'tile-images/tilecompat.jpg', adminOnly: true },
   { id: 'techinfo', label: 'Технічна інфа' }
+];
+const MHI_COMPAT_FOLDERS = [
+  { id: 'household', label: 'Побутові та мультиспліти' },
+  { id: 'semi', label: 'Напівпром' }
 ];
 const INFO_BRANDS = [
   { id: 'mhi', label: 'Mitsubishi Heavy', img: 'tile-images/catalog-preview-mhi.jpg' },
@@ -4187,16 +4310,23 @@ function clearCatalogDownloaded(brand) {
   try { localStorage.removeItem(catalogDownloadedKey(brand)); } catch (e) {}
 }
 
-function renderInfoTab() {
+async function renderInfoTab() {
   const backBtn = document.getElementById('back-btn');
   const title = document.getElementById('title');
 
   if (!infoSection) {
     backBtn.style.display = 'none';
     title.textContent = 'Інфо';
-    renderInfoMenu(INFO_SECTIONS, (id) => {
+    // adminOnly-пункти (зараз лише "Сумісність блоків MHI") — не просто приховані, а
+    // взагалі не рендеряться в меню для звичайного користувача.
+    const role = await getCurrentProfileRole();
+    const isAdmin = role === 'regional_admin' || role === 'super_admin';
+    const visibleSections = INFO_SECTIONS.filter(s => !s.adminOnly || isAdmin);
+    renderInfoMenu(visibleSections, (id) => {
       infoSection = id;
       infoBrand = null;
+      mhiCompatFolder = null;
+      mhiCompatSheet = 'rac';
       history.pushState({ tab: 'info', section: id, brand: null }, '', '#info-' + id);
       renderInfoTab();
     });
@@ -4207,6 +4337,12 @@ function renderInfoTab() {
     backBtn.style.display = 'flex';
     title.textContent = 'Коди помилок MHI';
     renderMhiErrorsScreen();
+    return;
+  }
+
+  if (infoSection === 'mhi-compat') {
+    backBtn.style.display = 'flex';
+    await renderMhiCompatFolders();
     return;
   }
 
@@ -4286,6 +4422,216 @@ function renderInfoDetail() {
     main.innerHTML =
       '<div class="empty">Розділ у розробці.<br>Найближчим часом тут з’являться технічні характеристики, інструкції та сертифікати.</div>';
   }
+}
+
+/* ---------- Сумісність блоків MHI (розділ "Інфо", тільки для адмінів) ----------
+   На відміну від видаленої раніше версії — тут НІЯКОГО розбору/зіставлення маркувань.
+   Дані data/mhi-compat-tables.json — це просто вивантажені один-в-один таблиці з
+   дилерських xlsx MHI (кожна колонка/рядок прайсу лишається такою, як у файлі), а
+   інтерфейс — таблиця із закріпленими шапкою і першою колонкою (як "заморозка областей"
+   в Excel), користувач сам гортає і дивиться потрібний перетин. Дані завантажуються
+   (fetch) лише коли адмін відкриває цей розділ, на старт застосунку не впливають. */
+function cleanCompatLabel(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
+
+async function loadMhiCompatTables() {
+  if (mhiCompatData && mhiCompatData !== 'error') return mhiCompatData;
+  mhiCompatData = 'loading';
+  try {
+    const resp = await fetch('data/mhi-compat-tables.json');
+    if (!resp.ok) throw new Error('http ' + resp.status);
+    mhiCompatData = await resp.json();
+  } catch (e) {
+    mhiCompatData = 'error';
+  }
+  return mhiCompatData;
+}
+
+async function renderMhiCompatFolders() {
+  const title = document.getElementById('title');
+  // Захист не лише на рівні пункту меню (renderInfoTab ховає його для звичайних
+  // користувачів), а й тут — щоб пряме посилання-хеш на цей розділ теж нікуди не пускало.
+  const role = await getCurrentProfileRole();
+  if (role !== 'regional_admin' && role !== 'super_admin') {
+    infoSection = null;
+    history.replaceState({ tab: 'info', section: null, brand: null }, '', '#info');
+    renderInfoTab();
+    return;
+  }
+
+  if (!mhiCompatFolder) {
+    title.textContent = 'Сумісність блоків MHI';
+    renderInfoMenu(MHI_COMPAT_FOLDERS, (id) => {
+      mhiCompatFolder = id;
+      mhiCompatSheet = 'rac';
+      history.pushState({ tab: 'info', section: 'mhi-compat', compatFolder: id, compatSheet: 'rac' }, '', '#info-mhi-compat-' + id);
+      renderInfoTab();
+    });
+    return;
+  }
+
+  const folder = MHI_COMPAT_FOLDERS.find(f => f.id === mhiCompatFolder);
+  title.textContent = folder ? folder.label : 'Сумісність блоків MHI';
+  await renderMhiCompatTables();
+}
+
+function compatCellClass(v) {
+  const s = cleanCompatLabel(v);
+  if (!s || s === '-') return 'compat-cell compat-cell-no';
+  if (s.charAt(0) === '◎') return 'compat-cell compat-cell-yes';
+  if (s.charAt(0) === '〇') return 'compat-cell compat-cell-maybe';
+  if (s.charAt(0) === 'X' || s.charAt(0) === '×') return 'compat-cell compat-cell-no2';
+  return 'compat-cell';
+}
+
+const COMPAT_LEGEND_HTML =
+  '<span class="compat-cell-yes">◎</span> — офіційно сумісно&nbsp;&nbsp;·&nbsp;&nbsp;' +
+  '<span class="compat-cell-maybe">〇</span> — технічно сумісно (неофіційна комбінація)&nbsp;&nbsp;·&nbsp;&nbsp;' +
+  '<span class="compat-cell-no2">X</span> / <span class="compat-cell-no">−</span> — несумісно або немає даних';
+
+function renderCompatNotesHtml(notes) {
+  if (!notes || !notes.length) return '';
+  return `
+    <div class="compat-notes-wrap">
+      <button type="button" class="compat-notes-toggle" data-compat-notes-toggle>Примітки виробника, англійською (${notes.length}) ▾</button>
+      <div class="compat-notes-body" data-compat-notes-body hidden>${notes.map(n => `<div>${escapeHtml(n)}</div>`).join('')}</div>
+    </div>`;
+}
+
+/* Проста таблиця (один рядок шапки-колонок) — використовується для RAC і для FD.
+   opts.rowGroupOf(row) повертає текст групи-розділювача для рядка (або '' — без групи). */
+function renderSimpleCompatTableHtml(table, opts) {
+  opts = opts || {};
+  const colsHtml = table.cols.map((c, i) => `<th class="compat-colhead" data-col-idx="${i}">${escapeHtml(cleanCompatLabel(c))}</th>`).join('');
+  let lastGroup = null;
+  const rowsHtml = table.rows.map(r => {
+    const groupLabel = opts.rowGroupOf ? cleanCompatLabel(opts.rowGroupOf(r)) : '';
+    let groupHtml = '';
+    if (groupLabel && groupLabel !== lastGroup) {
+      lastGroup = groupLabel;
+      groupHtml = `<tr class="compat-group-row"><td class="compat-group-cell" colspan="${table.cols.length + 1}">${escapeHtml(groupLabel)}</td></tr>`;
+    } else if (!groupLabel) {
+      lastGroup = null;
+    }
+    const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(cleanCompatLabel(v))}</td>`).join('');
+    return groupHtml + `<tr><td class="compat-rowhead" data-row-idx>${escapeHtml(cleanCompatLabel(r.code))}</td>${cellsHtml}</tr>`;
+  }).join('');
+  return `
+    <div class="compat-toolbar"><input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…"></div>
+    <div class="compat-legend">${COMPAT_LEGEND_HTML}</div>
+    <div class="compat-table-wrap">
+      <table class="compat-table">
+        <thead><tr><th class="compat-corner">Маркування</th>${colsHtml}</tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    ${renderCompatNotesHtml(table.notes)}`;
+}
+
+/* RAC MULTI — двоярусна шапка колонок: верхній ряд — серія внутрішнього блока (з
+   colspan на суміжні стовпці однієї серії), нижній — конкретний типорозмір. */
+function renderMultiCompatTableHtml(table) {
+  const cols = table.cols;
+  const groupRuns = [];
+  cols.forEach(c => {
+    const last = groupRuns[groupRuns.length - 1];
+    if (last && last.group === c.group) last.span++;
+    else groupRuns.push({ group: c.group, span: 1 });
+  });
+  const groupRowHtml = groupRuns.map(g => `<th class="compat-colhead-group" colspan="${g.span}">${escapeHtml(cleanCompatLabel(g.group))}</th>`).join('');
+  const sizeRowHtml = cols.map((c, i) => `<th class="compat-colhead-size" data-col-idx="${i}">${escapeHtml(cleanCompatLabel(c.size))}</th>`).join('');
+  const rowsHtml = table.rows.map(r => {
+    const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(cleanCompatLabel(v))}</td>`).join('');
+    return `<tr><td class="compat-rowhead" data-row-idx>${escapeHtml(cleanCompatLabel(r.code))}</td>${cellsHtml}</tr>`;
+  }).join('');
+  return `
+    <div class="compat-toolbar"><input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…"></div>
+    <div class="compat-legend">${COMPAT_LEGEND_HTML}</div>
+    <div class="compat-table-wrap compat-table-wrap-multi">
+      <table class="compat-table compat-table-multi">
+        <thead>
+          <tr><th class="compat-corner" rowspan="2">Зовнішній блок</th>${groupRowHtml}</tr>
+          <tr>${sizeRowHtml}</tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>`;
+}
+
+/* Пошук — навмисно НЕ розбір/зіставлення маркувань (саме це багатило видалену версію
+   фічі), а звичайний пошук підрядка по тексту заголовків: підсвічує всі рядки/колонки,
+   де знайдено збіг, і прокручує таблицю до першого з них. */
+function attachCompatTableHandlers(main) {
+  main.querySelectorAll('.compat-filter-input').forEach(input => {
+    input.addEventListener('input', () => {
+      const wrap = main.querySelector('.compat-table-wrap');
+      if (!wrap) return;
+      const q = norm(input.value.trim());
+      wrap.querySelectorAll('.compat-match').forEach(el => el.classList.remove('compat-match'));
+      if (!q) return;
+      let firstRow = null, firstCol = null;
+      wrap.querySelectorAll('.compat-rowhead').forEach(el => {
+        if (norm(el.textContent).includes(q)) { el.classList.add('compat-match'); if (!firstRow) firstRow = el; }
+      });
+      wrap.querySelectorAll('.compat-colhead, .compat-colhead-group, .compat-colhead-size').forEach(el => {
+        if (norm(el.textContent).includes(q)) { el.classList.add('compat-match'); if (!firstCol) firstCol = el; }
+      });
+      // Віднімаємо реальний розмір закріплених шапки/першої колонки (не фіксоване число) —
+      // інакше знайдений збіг ховається ПІД закріпленою панеллю замість того, щоб опинитись
+      // одразу після неї.
+      if (firstRow) {
+        const totalHeadH = Array.from(wrap.querySelectorAll('thead tr')).reduce((sum, tr) => sum + tr.getBoundingClientRect().height, 0);
+        wrap.scrollTop = Math.max(0, firstRow.offsetTop - totalHeadH - 6);
+      }
+      if (firstCol) {
+        const rowheadW = wrap.querySelector('.compat-rowhead').getBoundingClientRect().width;
+        wrap.scrollLeft = Math.max(0, firstCol.offsetLeft - rowheadW - 6);
+      }
+    });
+  });
+  main.querySelectorAll('[data-compat-notes-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const body = btn.nextElementSibling;
+      if (!body) return;
+      body.hidden = !body.hidden;
+    });
+  });
+}
+
+async function renderMhiCompatTables() {
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="empty">Завантаження таблиці…</div>';
+  const data = await loadMhiCompatTables();
+  if (data === 'error') {
+    main.innerHTML = '<div class="empty">Не вдалося завантажити таблицю сумісності. Перевірте з’єднання і спробуйте ще раз.</div>';
+    return;
+  }
+
+  if (mhiCompatFolder === 'semi') {
+    main.innerHTML = renderSimpleCompatTableHtml(data.fd, {
+      rowGroupOf: r => r.sub ? (r.group + ' — ' + r.sub) : r.group
+    });
+    attachCompatTableHandlers(main);
+    return;
+  }
+
+  const sheets = [{ key: 'rac', label: 'RAC (спліт)' }, { key: 'racMulti', label: 'RAC MULTI' }];
+  const toggleHtml = `<div class="brand-toggle">${sheets.map(s =>
+    `<button type="button" class="brand-toggle-btn${mhiCompatSheet === s.key ? ' active' : ''}" data-compat-sheet="${s.key}">${escapeHtml(s.label)}</button>`
+  ).join('')}</div>`;
+  const bodyHtml = mhiCompatSheet === 'racMulti'
+    ? renderMultiCompatTableHtml(data.racMulti)
+    : renderSimpleCompatTableHtml(data.rac, { rowGroupOf: r => r.family });
+  main.innerHTML = toggleHtml + bodyHtml;
+  main.querySelectorAll('[data-compat-sheet]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-compat-sheet');
+      if (key === mhiCompatSheet) return;
+      mhiCompatSheet = key;
+      history.replaceState({ tab: 'info', section: 'mhi-compat', compatFolder: mhiCompatFolder, compatSheet: key }, '', '#info-mhi-compat-' + mhiCompatFolder + '-' + key);
+      renderMhiCompatTables();
+    });
+  });
+  attachCompatTableHandlers(main);
 }
 
 /* ---------- Коди помилок Mitsubishi Heavy Industries (розділ "Інфо") ----------
