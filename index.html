@@ -3955,9 +3955,19 @@ document.getElementById('main').addEventListener('change', function(e) {
 
 /* Перерендер Кабінету при зміні стану авторизації (напр., після виходу в іншій вкладці);
    а також перерахунок доступу до цін і перерендер прайсу, якщо він саме зараз відкритий —
-   щоб одразу після входу/реєстрації/виходу ціни з'явились чи зникли без ручного оновлення. */
+   щоб одразу після входу/реєстрації/виходу ціни з'явились чи зникли без ручного оновлення.
+
+   suppressCabinetAutoRerender — захист від гонки станів: sb.auth.signUp()/
+   signInWithPassword() у handleRegister()/handleReregister() встановлюють сесію одразу,
+   тому цей listener спрацьовує НЕГАЙНО (ще до того, як сам handleRegister() встигне
+   записати рядок profiles) і намагається завантажити профіль, якого ще нема — показує
+   хибне "Не вдалося завантажити профіль", перезаписуючи форму реєстрації просто в неї
+   ще не встиг відпрацювати. handleRegister()/handleReregister() самі викликають
+   renderCabinetTab() у потрібний момент (після того, як профіль справді збережено), тому
+   на час свого виконання просять цей listener не втручатись. */
+let suppressCabinetAutoRerender = false;
 sb.auth.onAuthStateChange(function() {
-  if (currentTab === 'cabinet') renderCabinetTab();
+  if (currentTab === 'cabinet' && !suppressCabinetAutoRerender) renderCabinetTab();
   refreshAccessState().then(function () {
     if (currentTab === 'catalog' && activeTile) renderCatalogList();
   });
@@ -5232,6 +5242,12 @@ async function handleRegister() {
   btn.disabled = true;
   btn.textContent = 'Реєстрація...';
 
+  // signUp() встановлює сесію одразу — з цього моменту й до нашого власного
+  // renderCabinetTab() в кінці просимо глобальний onAuthStateChange-listener не
+  // перерендерювати Кабінет самому (інакше він зробить це ДО того, як рядок profiles
+  // взагалі буде записано, і покаже хибне "Не вдалося завантажити профіль").
+  suppressCabinetAutoRerender = true;
+
   const { data: signUpData, error: signUpError } = await sb.auth.signUp({
     email: phoneToEmail(phone),
     password: password
@@ -5242,6 +5258,7 @@ async function handleRegister() {
     errEl.innerHTML = '<div class="error">' + (already ? 'Цей номер телефону вже зареєстровано. Спробуйте увійти.' : 'Не вдалося зареєструватися. Спробуйте ще раз.') + '</div>';
     btn.disabled = false;
     btn.textContent = 'Зареєструватися';
+    suppressCabinetAutoRerender = false;
     return;
   }
 
@@ -5250,6 +5267,7 @@ async function handleRegister() {
     errEl.innerHTML = '<div class="error">Реєстрацію не завершено. Спробуйте увійти або зверніться до адміністратора.</div>';
     btn.disabled = false;
     btn.textContent = 'Зареєструватися';
+    suppressCabinetAutoRerender = false;
     return;
   }
 
@@ -5268,9 +5286,11 @@ async function handleRegister() {
     errEl.innerHTML = '<div class="error">Акаунт створено, але не вдалося зберегти дані профілю. Зверніться до адміністратора.</div>';
     btn.disabled = false;
     btn.textContent = 'Зареєструватися';
+    suppressCabinetAutoRerender = false;
     return;
   }
 
+  suppressCabinetAutoRerender = false;
   renderCabinetTab();
 }
 
@@ -5358,7 +5378,9 @@ async function handleReregister() {
     return;
   }
 
+  suppressCabinetAutoRerender = true;
   const { error: signInError } = await sb.auth.signInWithPassword({ email: phoneToEmail(phone), password: password });
+  suppressCabinetAutoRerender = false;
   if (signInError) {
     errEl.innerHTML = '<div class="error">Заявку створено, але не вдалося увійти автоматично. Спробуйте увійти вручну з новим паролем.</div>';
     btn.disabled = false;
