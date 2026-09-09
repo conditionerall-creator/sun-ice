@@ -1649,6 +1649,24 @@
 
   /* Кнопка "відкрити" — іконка без тексту, розкриває дії/налаштування картки користувача */
   .user-card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  /* Кнопка "додати нагадування в календар" (CRМонтаж, .ics) — той самий розмір, що й
+     user-card-open-btn поруч, але акцентного кольору, щоб не плутати з нейтральною
+     кнопкою "розкрити". */
+  .task-ics-btn {
+    width: 30px; height: 30px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  .task-ics-btn svg { width: 16px; height: 16px; }
+  .task-ics-btn:active { background: var(--accent-bg); }
   .user-card-open-btn {
     width: 30px; height: 30px;
     flex-shrink: 0;
@@ -6050,6 +6068,7 @@ function taskCardHtml(t, d) {
         </div>
         <div class="user-card-top-right">
           <span class="badge badge-${escapeHtml(t.status)}">${escapeHtml(taskStatusLabel(t.status))}</span>
+          <button type="button" class="task-ics-btn" data-task-action="ics" data-task-id="${t.id}" aria-label="Додати нагадування в календар">${TASK_CALENDAR_ICON}</button>
           <button type="button" class="user-card-open-btn" data-task-action="toggle" data-task-id="${t.id}" aria-label="Відкрити">${USER_CARD_OPEN_ICON}</button>
         </div>
       </div>
@@ -6094,6 +6113,74 @@ async function handleTaskAction(action, id, value) {
     if (!error) { await loadInstallerTasks(); renderInstallerTaskList(); }
     return;
   }
+  if (action === 'ics') {
+    const task = installerTasksCache.find(t => String(t.id) === String(id));
+    if (task) downloadTaskIcs(task);
+    return;
+  }
+}
+
+/* ---------- CRМонтаж: нагадування через .ics (Крок 3) ----------
+   Push-сповіщення в PWA мають обмеження на iOS (HANDOFF.md), тому за ТЗ основний спосіб
+   нагадування — календарна подія: монтажник тапає на іконку календаря в картці, файл
+   .ics із подією + вбудованим нагадуванням (VALARM за 30 хв до початку) завантажується
+   на пристрій, а далі системний застосунок календаря (Google Calendar/Apple Calendar/
+   будь-який інший) сам показує нагадування — так само надійно на iOS, як і на Android,
+   бо це вже не відповідальність PWA. Push-сповіщення для Android/десктопу — окремий
+   можливий наступний крок (потребує нового Edge Function + pg_cron, за зразком
+   send-promo-push з розділу Акції), тут навмисно не реалізовано, щоб не ускладнювати
+   цей крок. */
+const TASK_CALENDAR_ICON = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9.5h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+function escapeIcsText(s) {
+  return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+}
+function toIcsUtc(date) {
+  const pad = n => String(n).padStart(2, '0');
+  return date.getUTCFullYear() + pad(date.getUTCMonth() + 1) + pad(date.getUTCDate()) + 'T' +
+    pad(date.getUTCHours()) + pad(date.getUTCMinutes()) + pad(date.getUTCSeconds()) + 'Z';
+}
+function buildTaskIcs(t) {
+  const start = new Date(t.scheduled_at);
+  const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 година за замовчуванням, тривалість монтажу в базі не зберігається
+  const summary = 'Монтаж: ' + (t.equipment_type || '') + (t.is_heat_pump_tt ? ' (ТТ)' : '');
+  const descLines = [];
+  if (t.client_name || t.client_phone) descLines.push('Клієнт: ' + [t.client_name, t.client_phone].filter(Boolean).join(', '));
+  descLines.push('Обладнання: ' + (t.equipment_type || ''));
+  if (t.comment) descLines.push('Коментар: ' + t.comment);
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Sun-ice//CRMontag//UK',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    'UID:sunice-task-' + t.id + '@sun-ice.com.ua',
+    'DTSTAMP:' + toIcsUtc(new Date()),
+    'DTSTART:' + toIcsUtc(start),
+    'DTEND:' + toIcsUtc(end),
+    'SUMMARY:' + escapeIcsText(summary),
+    'DESCRIPTION:' + escapeIcsText(descLines.join('\n')),
+    'LOCATION:' + escapeIcsText(t.address || ''),
+    'BEGIN:VALARM',
+    'TRIGGER:-PT30M',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Нагадування про монтаж',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ];
+  return lines.join('\r\n');
+}
+function downloadTaskIcs(t) {
+  const blob = new Blob([buildTaskIcs(t)], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'montag-' + t.id + '.ics';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 document.getElementById('main').addEventListener('click', function(e) {
