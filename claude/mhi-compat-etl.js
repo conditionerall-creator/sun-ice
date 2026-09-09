@@ -102,10 +102,22 @@ function splitMarkingLines(cellText) {
    відміну від того ж випадку на листі RAC, де "VD"/"VF" — окремі рядки) — кома тут
    насправді розділяє дві альтернативні серії, а не є частиною однієї серії. Якщо
    суфіксу немає взагалі (дефіса після серії не знайдено) і серія містить кому —
-   розбиваємо на кілька окремих варіантів. */
+   розбиваємо на кілька окремих варіантів.
+   КРИТИЧНО: raw для кожного варіанта треба ПЕРЕБУДУВАТИ з нуля (prefix+розмір+нова
+   серія+суфікс), а НЕ дописувати "[VD]" до старого raw — компактний JSON зберігає
+   тільки raw-текст, рантайм повторно розбирає САМЕ його через parseMhiMarking(), а
+   квадратні дужки не частина граматики маркувань: "FDTC25VD,VF [VD]" при повторному
+   розборі дає серію "VD,VF[VD]" замість "VD" — зіставлення з таким текстом ніколи
+   не спрацює (знайдено живцем: FDTC25VD/SCM40ZM-S показувало "немає даних" попри
+   реальний ◎ в таблиці). */
 function expandMarkingAlternates(parsed) {
   if (parsed.error || parsed.suffixVariants !== null || !parsed.series.includes(',')) return [parsed];
-  return parsed.series.split(',').map(s => Object.assign({}, parsed, { series: s.trim(), raw: parsed.raw + ' [' + s.trim() + ']' }));
+  const sizePart = parsed.sizeKind === 'wildcard' ? '' : (parsed.sizeList || []).join(',');
+  return parsed.series.split(',').map(s => {
+    const series = s.trim();
+    const raw = parsed.prefix + sizePart + series + (parsed.hasR32Annotation ? ' (R32)' : '');
+    return Object.assign({}, parsed, { series, raw });
+  });
 }
 
 function parseHeaderCell(cellText, canonSizes) {
