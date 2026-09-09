@@ -313,6 +313,15 @@ function buildMultiRules(wb) {
       const p = parseMarking(line, []);
       if (p.error) { unparsed.push({ where: 'indoor(multi)', raw: line, error: p.error }); return; }
       p.sizeKind = 'list'; p.sizeList = [capNum]; // ін'єктуємо конкретний типорозмір зі строки 7
+      // КРИТИЧНО: сам текст заголовка (рядок 6) типорозміру не містить — він живе
+      // ОКРЕМО в рядку 7 (capRow). Якщо лишити p.raw як є ("SRK-ZM-S"), компактний
+      // експорт JSON (тільки raw-текст i/o) втратить typorozmir — рантайм-парсер,
+      // повторно розбираючи "SRK-ZM-S", знову дасть wildcard-розмір, і всі 4
+      // колонки одного typorazmiru-ряду (20/25/35/50) стануть нерозрізненими
+      // дублікатами з однаковим текстом і РІЗНИМ статусом — матчер тоді вибирає
+      // довільну з них, а не ту, що відповідає введеному розміру. Тому "запікаємо"
+      // типорозмір прямо в текст перед збереженням.
+      p.raw = p.prefix + capNum + p.series + (p.suffixVariants && p.suffixVariants.length ? '-' + p.suffixVariants.join(',') : '') + (p.hasR32Annotation ? ' (R32)' : '');
       expandMarkingAlternates(p).forEach(pp => patterns.push(pp));
     });
     indoorByCol[c] = { patterns, footnoteText };
@@ -404,6 +413,21 @@ function candidateMatches(userInput, template) {
   return sc;
 }
 
+/* Той самий збіг, що й candidateMatches, але БЕЗ перевірки типорозміру — для
+   листа RAC MULTI: один зовнішній блок живить кілька внутрішніх різного розміру
+   одночасно, тому типорозмір, який ввів користувач для внутрішнього блока, не
+   звужує пошук — навпаки, показуємо ВСІ типорозміри цієї серії, сумісні саме з
+   цим зовнішнім блоком. */
+function candidateMatchesIgnoreSize(userInput, template) {
+  if (userInput.prefix !== template.prefix) return null;
+  if (userInput.series !== template.series) return null;
+  const userSuffixText = userInput.suffixVariants ? userInput.suffixVariants[0] : null;
+  const sc = suffixCoreMatch(userSuffixText, template.suffixVariants);
+  if (!sc) return null;
+  if (!sc.noTemplateSuffix && template.suffixFamily && userInput.suffixFamily && template.suffixFamily !== userInput.suffixFamily) return null;
+  return sc;
+}
+
 function checkCompatibility(indoorRaw, outdoorRaw, data) {
   const outdoorProbe = parseMarking(outdoorRaw, RAC_CANON_SIZES);
   const indoorProbe = parseMarking(indoorRaw, RAC_CANON_SIZES);
@@ -425,28 +449,29 @@ function checkCompatibility(indoorRaw, outdoorRaw, data) {
   }
 
   const rules = sheet === 'multi' ? data.multi_rules : data.rac_rules;
+  // На листі RAC внутрішній/зовнішній блок звіряються СУВОРО (включно з типо-
+  // розміром — уже перевірено вище, що вони збігаються). На RAC MULTI типорозмір
+  // внутрішнього блока навмисно ІГНОРУЄТЬСЯ: показуємо ВСІ типорозміри цієї серії,
+  // сумісні саме з цим зовнішнім блоком, а не лише той один, що ввів користувач —
+  // за прямою вимогою користувача: "прераховуєш маркування внутрішніх блоків
+  // [цієї] серії та зовнішній блок. І все" (те, що буквально в клітинці таблиці).
+  const indoorMatcher = sheet === 'multi' ? candidateMatchesIgnoreSize : candidateMatches;
   const hits = [];
   rules.forEach(rule => {
-    const im = candidateMatches(indoorInput, rule.indoor);
-    if (!im) return;
     const om = candidateMatches(outdoorInput, rule.outdoor);
     if (!om) return;
+    const im = indoorMatcher(indoorInput, rule.indoor);
+    if (!im) return;
     hits.push({ rule, indoorMatch: im, outdoorMatch: om });
   });
 
   if (!hits.length) return { kind: 'no-data', typoTried: !!(indoorTypo || outdoorTypo) };
-
-  // серед знайдених — перевага без "зайвих літер" (extra===null) з обох боків
-  hits.sort((a, b) => {
-    const ea = (a.indoorMatch.extra ? 1 : 0) + (a.outdoorMatch.extra ? 1 : 0);
-    const eb = (b.indoorMatch.extra ? 1 : 0) + (b.outdoorMatch.extra ? 1 : 0);
-    return ea - eb;
-  });
-  const best = hits[0];
-  return {
-    kind: 'found', rule: best.rule, indoorMatch: best.indoorMatch, outdoorMatch: best.outdoorMatch,
-    indoorTypo, outdoorTypo, sheet
-  };
+  // Відповідь — це буквально перелік знайдених клітинок (rule.indoor/outdoor.raw),
+  // згрупованих за статусом (◎/〇), без переформулювання чи вибору "найкращої" —
+  // якщо та сама пара трапляється в кількох колонках з різним статусом (рідкісна
+  // неоднозначність у самій таблиці MHI, напр. "FDUM-VF" 50 клас двічі в одному
+  // merge), обидва записи просто потраплять кожен у свою групу.
+  return { kind: 'found', hits, indoorTypo, outdoorTypo, sheet };
 }
 
 function buildAllV2() {
