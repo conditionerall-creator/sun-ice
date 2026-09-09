@@ -4696,7 +4696,18 @@ function checkMhiCompatibility(indoorRaw, outdoorRaw, data) {
   if (!hits.length) return { kind: 'no-data' };
 
   hits.sort((a, b) => ((a.indoorMatch.extra ? 1 : 0) + (a.outdoorMatch.extra ? 1 : 0)) - ((b.indoorMatch.extra ? 1 : 0) + (b.outdoorMatch.extra ? 1 : 0)));
-  const best = hits[0];
+  const minExtra = (hits[0].indoorMatch.extra ? 1 : 0) + (hits[0].outdoorMatch.extra ? 1 : 0);
+  const bestHits = hits.filter(h => ((h.indoorMatch.extra ? 1 : 0) + (h.outdoorMatch.extra ? 1 : 0)) === minExtra);
+  // Рідкісний, але реальний випадок у вихідній таблиці MHI: одна об'єднана клітинка
+  // шапки покриває дві колонки з ОДНАКОВИМ типорозміром, але РІЗНИМ статусом у
+  // конкретному рядку (напр. "FDUM-VF" 50 клас зустрічається двічі в одному merge,
+  // один раз ◎, один раз 〇) — сама таблиця не дає текстової ознаки, яку з двох
+  // колонок мав на увазі користувач. Мовчки брати першу — вводити в оману.
+  const distinctStatuses = [...new Set(bestHits.map(h => h.rule.s))];
+  if (distinctStatuses.length > 1) {
+    return { kind: 'ambiguous', hits: bestHits, indoorTypo, outdoorTypo, sheet, indoorInput };
+  }
+  const best = bestHits[0];
   return { kind: 'found', rule: best.rule, indoorMatch: best.indoorMatch, outdoorMatch: best.outdoorMatch, indoorTypo, outdoorTypo, sheet, indoorInput };
 }
 
@@ -4804,6 +4815,18 @@ function renderMhiCompatResultHtml() {
   }
   if (r.kind === 'no-data') {
     return '<div class="mhi-result mhi-result-empty">Такої пари немає в таблиці сумісності. Це не означає, що блоки несумісні — просто ця комбінація не знайдена в офіційних даних MHI. Уточніть у технічному посібнику MHI або в дилера.</div>';
+  }
+  if (r.kind === 'ambiguous') {
+    const rows = r.hits.map(h => {
+      const statusLabel = MHI_COMPAT_STATUS_LABEL[h.rule.s] || h.rule.sr;
+      return `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(h.rule.i)} × ${escapeHtml(h.rule.o)}</span><span class="mhi-compat-fact-val">${escapeHtml(statusLabel)}</span></div>`;
+    }).join('');
+    return `
+      <div class="mhi-result">
+        <div class="mhi-result mhi-result-empty">У самій таблиці MHI для цього маркування є кілька колонок з однаковим текстом і типорозміром, але РІЗНИМ статусом сумісності (ймовірно, різні модифікації, не розрізнені в тексті шапки таблиці) — однозначно визначити відповідь неможливо:</div>
+        <div class="mhi-compat-facts">${rows}</div>
+        <div class="mhi-compat-note">Уточніть точну модель у технічному посібнику MHI або в дилера.</div>
+      </div>`;
   }
   if (r.kind === 'found') {
     const rule = r.rule;
