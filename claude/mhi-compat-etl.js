@@ -1,120 +1,145 @@
-/* ETL: MHI RAC compatibility xlsx -> structured JSON. Runs in-browser against the two
-   workbooks already loaded as window.wb2019 / window.wb2026 (see inspect.html). */
+/* ETL v2: MHI RAC compatibility — тільки Compatibility of RAC_20260409_Customers.xlsx,
+   тільки листи RAC і RAC MULTI, за скоригованим ТЗ (grammar + матчинг). */
+
+const KNOWN_PREFIXES = ['FDTC', 'FDUM', 'FDEN', 'FDE', 'SRK', 'SRC', 'SRF', 'SRR', 'SKM', 'SCM']
+  .sort((a, b) => b.length - a.length);
+const RAC_CANON_SIZES = [20, 25, 35, 50, 60, 71, 80];
 
 function normText(v) {
   return String(v == null ? '' : v).replace(/\r\n/g, '\n').trim();
 }
 
-/* Parses ONE raw model-code label (already split on \n if it had alternates) into a
-   structured pattern. See grammar notes in mhi_rac_compatibility_TZ.md section 3.1/4. */
-function parseCodePattern(raw) {
-  let s = raw.trim();
-  let refrigerant = null;
-  const r32m = s.match(/\(R\s*32\)/i);
-  if (r32m) {
-    refrigerant = 'R32';
-    s = (s.slice(0, r32m.index) + s.slice(r32m.index + r32m[0].length));
-  }
+/* Розбирає ОДНЕ маркування (без переносів рядка — ті розбиваються раніше, на етапі
+   splitMarkingLines). canonSizes — список типорозмірів для резолву діапазону "20-50";
+   для RAC MULTI діапазони не трапляються, можна передати порожній список. */
+function parseMarking(raw, canonSizes) {
+  canonSizes = canonSizes || RAC_CANON_SIZES;
+  let s = raw;
+  let hasR32Annotation = false;
+  const r32m = s.match(/\(\s*R\s*32\s*\)/i);
+  if (r32m) { hasR32Annotation = true; s = s.slice(0, r32m.index) + s.slice(r32m.index + r32m[0].length); }
   const deprecated = /☆/.test(s);
-  const footnoteMarker = /※/.test(s);
   s = s.replace(/[※☆]/g, '').replace(/\s+/g, '').toUpperCase();
-  // family: leading letters
-  const famM = s.match(/^[A-Z]+/);
-  if (!famM) return { raw, error: 'no-family', refrigerant };
-  const family = famM[0];
-  let rest = s.slice(family.length);
 
-  let capacityKind = 'none';
-  let capacityList = null;
-  let capacityRange = null;
+  const prefix = KNOWN_PREFIXES.find(p => s.startsWith(p));
+  if (!prefix) return { raw, error: 'unknown-prefix', rawPrefixGuess: (s.match(/^[A-Z]+/) || [''])[0], hasR32Annotation, deprecated };
+  let rest = s.slice(prefix.length);
 
+  let sizeKind = 'wildcard', sizeList = null;
   if (/^(\.{2,}|…)\.?/.test(rest)) {
-    // Source spreadsheet is inconsistent: sometimes a real ellipsis char "…", sometimes
-    // 3 literal dots, sometimes 4 (typo), and at least once an ellipsis char PLUS one
-    // extra trailing "." ("SRC ….ZTL-W") — match 2-or-more dots or the ellipsis char,
-    // plus one optional extra dot, or a stray leftover "." corrupts the following series.
-    capacityKind = 'wildcard';
     rest = rest.replace(/^(\.{2,}|…)\.?/, '');
   } else if (rest.startsWith('-') && /^[A-Z]/.test(rest.slice(1))) {
-    // bare hyphen directly followed by a letter (not a digit) = wildcard capacity,
-    // e.g. "SRK-ZSX-S" (confirmed by TZ section 7 fixtures)
-    capacityKind = 'wildcard';
-    rest = rest.slice(1);
+    rest = rest.slice(1); // "-ZT-WF" style — типорозмір відсутній = будь-який
   } else {
-    // "," and "~" both used as list separators in practice, and "." shows up at least
-    // once as an outright typo for "," (e.g. source has "FDEN40.50,60VD" — the other
-    // two lines of that same cell correctly use commas) — accept all three leniently,
-    // a false "list" reading of an intended range is harmless here since 2019-only
-    // codes using "~" are lower-priority archival data anyway (TZ section 6.2).
     const numM = rest.match(/^(\d+(?:[,~.\-]\d+)*)/);
     if (numM) {
       const numStr = numM[0];
       rest = rest.slice(numStr.length);
       if (numStr.includes('-') || numStr.includes('~')) {
         const parts = numStr.split(/[-~]/).map(Number);
-        capacityKind = 'range';
-        capacityRange = { min: Math.min(...parts), max: Math.max(...parts) };
+        const min = Math.min(...parts), max = Math.max(...parts);
+        sizeKind = 'list';
+        sizeList = canonSizes.filter(n => n >= min && n <= max); // діапазон = зріз канонічного списку, НЕ суцільний інтервал
       } else if (numStr.includes(',') || numStr.includes('.')) {
-        capacityKind = 'list';
-        capacityList = numStr.split(/[,.]/).map(Number);
+        sizeKind = 'list';
+        sizeList = numStr.split(/[,.]/).map(Number);
       } else {
-        capacityKind = 'list';
-        capacityList = [Number(numStr)];
+        sizeKind = 'list';
+        sizeList = [Number(numStr)];
       }
     }
+    // якщо чисел немає взагалі (рідкісний випадок) — лишаємо wildcard, як і за "…"
   }
 
-  // remainder: SERIES optionally followed by -SUFFIX(,SUFFIX...)
   const dashIdx = rest.indexOf('-');
   let series, suffixVariants;
-  if (dashIdx === -1) {
-    series = rest;
-    suffixVariants = [];
-  } else {
-    series = rest.slice(0, dashIdx);
-    suffixVariants = rest.slice(dashIdx + 1).split(',').map(x => x.trim()).filter(Boolean);
+  if (dashIdx === -1) { series = rest; suffixVariants = null; } // немає суфіксу фреону в маркуванні взагалі
+  else { series = rest.slice(0, dashIdx); suffixVariants = rest.slice(dashIdx + 1).split(',').map(x => x.trim()).filter(Boolean); }
+  if (!series) return { raw, error: 'no-series', prefix, hasR32Annotation, deprecated };
+
+  // Похідний фреон: W-суфікс (будь-який W...) = R32, S-суфікс (будь-який S...) = R410A.
+  // (R32) в дужках ІГНОРУЄТЬСЯ, якщо суфікс уже це каже (redundant, п.2.4.1); якщо
+  // суфіксу немає взагалі, але є (R32) — це єдине джерело інформації про фреон,
+  // трактуємо як віртуальний W-суфікс (п.2.4.2); якщо немає ні суфіксу, ні (R32) —
+  // фреон для цієї лінійки в маркуванні просто не закодований (п.2.4.3).
+  let suffixFamily = null;
+  if (suffixVariants && suffixVariants.length) {
+    suffixFamily = suffixVariants[0][0] === 'S' ? 'S' : (suffixVariants[0][0] === 'W' ? 'W' : null);
+  } else if (hasR32Annotation) {
+    suffixFamily = 'W';
   }
-  if (!series) return { raw, error: 'no-series', family, refrigerant, deprecated, footnoteMarker };
 
-  return { raw, family, capacityKind, capacityList, capacityRange, series, suffixVariants, refrigerant, deprecated, footnoteMarker };
+  return { raw, prefix, sizeKind, sizeList, series, suffixVariants, suffixFamily, hasR32Annotation, deprecated };
 }
 
-/* One header cell can contain several \n-separated alternative labels, all pointing at
-   the SAME column/row of the matrix (TZ 3.1). Returns array of parsed patterns. */
-function parseHeaderCell(cellText) {
+/* Розбиває вміст ОДНІЄЇ клітинки заголовка на альтернативні маркування (перенос
+   рядка = "або"), АЛЕ відокремлює рядки-виноски (починаються з ※ і є повним
+   реченням, не просто маркером) від реальних альтернативних маркувань — вони
+   повертаються окремо як footnoteText, а не намагаються парситись як маркування. */
+function splitMarkingLines(cellText) {
   const norm = normText(cellText);
-  if (!norm) return [];
+  if (!norm) return { lines: [], footnoteText: null };
   const rawLines = norm.split('\n').map(l => l.trim()).filter(Boolean);
-  // A line that is JUST "(R32)" or "(☆)" is a word-wrapped continuation of the line
-  // above it (confirmed: every such case in both files has exactly one real line
-  // before it), not an independent alternate model — merge it back rather than
-  // parsing alone.
   const lines = [];
+  let footnoteText = null;
   rawLines.forEach(line => {
-    if (/^(\(R\s*32\)|\(☆\))$/i.test(line) && lines.length) {
-      lines[lines.length - 1] = lines[lines.length - 1] + ' ' + line;
-    } else {
-      lines.push(line);
+    if (/^\(R\s*32\)$/i.test(line) || /^\(☆\)$/.test(line)) {
+      // одинокий "(R32)"/"(☆)" — перенесений хвіст попереднього рядка (word-wrap), не окремий рядок
+      if (lines.length) lines[lines.length - 1] += ' ' + line;
+      return;
     }
+    if (line.startsWith('※') && line.length > 3) {
+      // повне речення-виноска всередині клітинки (RAC MULTI: "※15 class is WiFi mode (WF) only.")
+      footnoteText = line.replace(/^※\s*/, '');
+      return;
+    }
+    lines.push(line);
   });
-  return lines.map(parseCodePattern);
+  return { lines, footnoteText };
 }
 
-/* Footnote dictionary: scan a whole sheet's rows for cells matching "(*N) text..." and
-   collect the fullest version of each number's text (some cells repeat just "(*N)"
-   without the text - keep the longest). */
-function collectFootnotes(rows) {
+/* Рідкісний виняток у RAC MULTI: "FDTC-VD,VF" в ОДНОМУ рядку (без переносу, на
+   відміну від того ж випадку на листі RAC, де "VD"/"VF" — окремі рядки) — кома тут
+   насправді розділяє дві альтернативні серії, а не є частиною однієї серії. Якщо
+   суфіксу немає взагалі (дефіса після серії не знайдено) і серія містить кому —
+   розбиваємо на кілька окремих варіантів. */
+function expandMarkingAlternates(parsed) {
+  if (parsed.error || parsed.suffixVariants !== null || !parsed.series.includes(',')) return [parsed];
+  return parsed.series.split(',').map(s => Object.assign({}, parsed, { series: s.trim(), raw: parsed.raw + ' [' + s.trim() + ']' }));
+}
+
+function parseHeaderCell(cellText, canonSizes) {
+  const { lines, footnoteText } = splitMarkingLines(cellText);
+  const patterns = lines.flatMap(l => expandMarkingAlternates(parseMarking(l, canonSizes)));
+  return { patterns, footnoteText };
+}
+
+/* Значення клітинки-результату: звичайний символ АБО комбінація "символ(підмодель)
+   символ(підмодель)..." коли колонка об'єднує кілька альтернативних маркувань
+   (наприклад "〇(VD) ◎(VF)"). Повертає або {kind:'simple', status} або
+   {kind:'bysubmodel', map:{VD:'conditional', VF:'recommended'}}. */
+function parseResultCell(raw) {
+  const t = normText(raw);
+  if (!t) return { kind: 'simple', status: 'incompatible', raw: t };
+  const bracketRe = /([◎〇])\((?!\*)([^)]+)\)/g; // (?!\*) — не плутати з номером виноски "〇(*3)"
+  let m, found = false;
   const map = {};
-  rows.forEach(row => (row || []).forEach(cell => {
-    const t = normText(cell);
-    const m = t.match(/^\(\*(\d+)\)\s*(.*)$/s);
-    if (m) {
-      const n = m[1];
-      const text = m[2].trim();
-      if (text && (!map[n] || text.length > map[n].length)) map[n] = text;
-    }
-  }));
-  return map;
+  while ((m = bracketRe.exec(t))) {
+    found = true;
+    const status = m[1] === '◎' ? 'recommended' : 'conditional';
+    m[2].split(',').map(x => x.trim()).forEach(code => { map[code] = status; });
+  }
+  if (found) return { kind: 'bysubmodel', map, raw: t };
+  return { kind: 'simple', status: symbolToStatus(t), raw: t };
+}
+
+function symbolToStatus(t) {
+  if (!t || t === '-' || /^N\/A$/i.test(t)) return 'incompatible';
+  if (t.includes('◎')) return 'recommended';
+  if (t.includes('〇')) return 'conditional';
+  if (/^Yes\b/i.test(t)) return 'recommended';
+  if (/^No\b/i.test(t)) return 'incompatible';
+  return 'other';
 }
 
 function footnoteNumsIn(text) {
@@ -125,237 +150,310 @@ function footnoteNumsIn(text) {
   return nums;
 }
 
-function symbolToStatus(raw) {
-  const t = normText(raw);
-  // Empty cell and explicit "-" both mean incompatible, per TZ section 8 open
-  // question #2 (they're indistinguishable via data_only xlsx reading anyway, and the
-  // TZ's own default is to treat blank as "-"). Crucially this is a FOUND rule
-  // (incompatible), not "no data" — "no data" only happens when the pair isn't in the
-  // table at all (family/series/suffix genuinely absent from every column/row).
-  if (!t || t === '-') return { statusRaw: t || '-', kind: 'incompatible' };
-  if (/^N\/A$/i.test(t)) return { statusRaw: t, kind: 'na' };
-  if (t.includes('◎')) return { statusRaw: t, kind: 'recommended' }; // ◎
-  if (t.includes('〇')) return { statusRaw: t, kind: 'conditional' }; // 〇
-  if (/^Yes\b/i.test(t)) return { statusRaw: t, kind: /\(\*\d/.test(t) ? 'conditional' : 'recommended' };
-  if (/^No\b/i.test(t)) return { statusRaw: t, kind: 'incompatible' };
-  if (/^OK\b/i.test(t)) return { statusRaw: t, kind: 'recommended' }; // 2019 RAC MULTI convention
-  return { statusRaw: t, kind: 'other' };
+/* Нумеровані виноски (*N) — глобальний скан аркуша (текст може зсунутись при
+   оновленні файлу, координати не хардкодимо). */
+function collectNumberedFootnotes(rows) {
+  const map = {};
+  rows.forEach(row => (row || []).forEach(cell => {
+    const t = normText(cell);
+    const m = t.match(/^\(\*(\d+)\)\s*(.*)$/s);
+    if (m && m[2].trim()) {
+      const n = m[1], text = m[2].trim();
+      if (!map[n] || text.length > map[n].length) map[n] = text;
+    }
+  }));
+  return map;
 }
 
-/* Parses ONE matrix block: headerRowIdx (single row of indoor-column header cells),
-   dataRowStart..dataRowEnd (outdoor rows), indoorColStart (first indoor column index),
-   outdoorLabelCol (column holding the outdoor row's raw label). Emits one rule per
-   (indoor variant x outdoor variant) pair per cell with a non-empty symbol. */
-function parseSimpleBlock(rows, opts) {
-  const { headerRowIdx, dataRowStart, dataRowEnd, indoorColStart, indoorColEnd, outdoorLabelCol, footnotes, meta } = opts;
-  const headerRow = rows[headerRowIdx] || [];
-  const colLimit = indoorColEnd != null ? indoorColEnd + 1 : headerRow.length;
-  const indoorByCol = {};
-  for (let c = indoorColStart; c < colLimit; c++) {
-    const variants = parseHeaderCell(headerRow[c]);
-    if (variants.length) indoorByCol[c] = variants;
+/* Нативні Excel-коментарі до клітинок (SheetJS читає їх сам, без спецопцій, у
+   властивість .c кожної клітинки листа). Повертає мапу "A1"-адреса -> текст. */
+function collectCellComments(sheet) {
+  const map = {};
+  for (const addr in sheet) {
+    if (addr[0] === '!') continue;
+    const cell = sheet[addr];
+    if (cell && cell.c && cell.c.length) {
+      map[addr] = cell.c.map(c => String(c.t || '').replace(/^[^:]*:\s*/, '').trim()).filter(Boolean).join(' ');
+    }
   }
+  return map;
+}
+
+function colToA1(col) { // 0-indexed -> "A","B",..."AA"...
+  let s = '';
+  col += 1;
+  while (col > 0) { const r = (col - 1) % 26; s = String.fromCharCode(65 + r) + s; col = Math.floor((col - 1) / 26); }
+  return s;
+}
+
+function buildRacRules(wb) {
+  const sheetName = 'RAC';
+  const sheetObj = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheetObj, { header: 1, defval: '' });
+  const footnotes = collectNumberedFootnotes(rows);
+  const comments = collectCellComments(sheetObj);
+
+  const headerRowIdx = 5, footnoteRowAbove = 4, dataStart = 6, dataEnd = 28, indoorColStart = 2;
+  const headerRow = rows[headerRowIdx] || [];
+  const aboveRow = rows[footnoteRowAbove] || [];
+
+  const indoorByCol = {};
+  for (let c = indoorColStart; c < headerRow.length; c++) {
+    const parsed = parseHeaderCell(headerRow[c], RAC_CANON_SIZES);
+    if (!parsed.patterns.length) continue;
+    // виноска може бути в самій клітинці (footnoteText) АБО текстом у рядку НАД заголовком
+    // (той самий стовпець) — обидва варіанти зустрічаються в файлі (див. ТЗ 3.3).
+    const aboveText = normText(aboveRow[c]);
+    const aboveFootnote = aboveText.startsWith('※') ? aboveText.replace(/^※\s*/, '') : null;
+    indoorByCol[c] = { patterns: parsed.patterns, footnoteText: parsed.footnoteText || aboveFootnote || null };
+  }
+
   const rules = [];
-  const factRows = []; // for special fact blocks (plural use etc) reuse same shape
-  for (let r = dataRowStart; r <= dataRowEnd; r++) {
+  const facts = [];
+  const unparsed = [];
+
+  for (let r = dataStart; r <= dataEnd; r++) {
     const row = rows[r] || [];
-    const outdoorRaw = normText(row[outdoorLabelCol]);
+    const outdoorRaw = normText(row[1]);
     if (!outdoorRaw) continue;
-    const outdoorVariants = parseHeaderCell(outdoorRaw);
+    const outdoorParsed = parseHeaderCell(outdoorRaw, RAC_CANON_SIZES);
+    if (!outdoorParsed.patterns.length) continue;
+
     Object.keys(indoorByCol).forEach(cStr => {
       const c = Number(cStr);
       const cellRaw = row[c];
-      const st = symbolToStatus(cellRaw);
-      if (!st) return;
+      const resultCell = parseResultCell(cellRaw); // порожня клітинка й "-" обидві дають status:'incompatible' (реальна знайдена пара)
       const nums = footnoteNumsIn(normText(cellRaw));
-      const footnoteTexts = nums.map(n => footnotes[n]).filter(Boolean);
-      outdoorVariants.forEach(outdoorPattern => {
-        indoorByCol[c].forEach(indoorPattern => {
-          rules.push(Object.assign({
-            indoor_pattern: indoorPattern,
-            outdoor_pattern: outdoorPattern,
-            status_raw: st.statusRaw,
-            status_kind: st.kind,
-            footnotes: footnoteTexts.length ? footnoteTexts : null
-          }, meta));
+      const cellFootnotes = nums.map(n => footnotes[n]).filter(Boolean);
+      // +1: аркуш фактично починається зі стовпця B (!ref="B1:AL43"), sheet_to_json
+      // НЕ доповнює пропущений стовпець A — індекс масиву зсунутий на 1 відносно
+      // реальної адреси Excel.
+      const commentAddr = colToA1(c + 1) + String(r + 1);
+      if (comments[commentAddr]) cellFootnotes.push(comments[commentAddr]);
+
+      outdoorParsed.patterns.forEach(outdoorPattern => {
+        if (outdoorPattern.error) { unparsed.push({ where: 'outdoor', raw: outdoorPattern.raw, error: outdoorPattern.error }); return; }
+        indoorByCol[c].patterns.forEach(indoorPattern => {
+          if (indoorPattern.error) { unparsed.push({ where: 'indoor', raw: indoorPattern.raw, error: indoorPattern.error }); return; }
+          let status;
+          if (resultCell.kind === 'bysubmodel') {
+            status = resultCell.map[indoorPattern.series] || null;
+            if (!status) return; // ця конкретна підмодель не згадана в комбінованій клітинці — немає правила
+          } else {
+            status = resultCell.status;
+          }
+          const fnAll = cellFootnotes.slice();
+          if (indoorByCol[c].footnoteText) fnAll.push(indoorByCol[c].footnoteText);
+          rules.push({
+            indoor: indoorPattern, outdoor: outdoorPattern, status, statusRaw: resultCell.raw,
+            footnotes: fnAll.length ? [...new Set(fnAll)] : null
+          });
         });
       });
     });
   }
-  return rules;
-}
 
-/* Fact rows (Plural use / V-multi / SC-BIKN-x necessity): same header row (indoor
-   codes) as the main block, but the row label is NOT an outdoor model — it names the
-   fact itself, and the cell value is a Yes/No/N/A fact about the INDOOR code alone
-   (not an indoor x outdoor pair). Keying by indoor code only, per TZ section 3.4. */
-function parseFactBlock(rows, opts) {
-  const { headerRowIdx, dataRowStart, dataRowEnd, indoorColStart, rowLabelCol, footnotes, meta } = opts;
-  const headerRow = rows[headerRowIdx] || [];
-  const indoorByCol = {};
-  for (let c = indoorColStart; c < headerRow.length; c++) {
-    const variants = parseHeaderCell(headerRow[c]);
-    if (variants.length) indoorByCol[c] = variants;
-  }
-  const facts = [];
-  for (let r = dataRowStart; r <= dataRowEnd; r++) {
+  // Compatibility for PAC (рядки 30-35, ті самі колонки-заголовки, факти про indoor-код)
+  for (let r = 29; r <= 34; r++) {
     const row = rows[r] || [];
-    const labelRaw = normText(row[rowLabelCol]);
-    if (!labelRaw) continue;
-    const factType = labelRaw.split('\n')[0].trim();
+    const label = normText(row[1]).split('\n')[0].trim();
+    if (!label) continue;
     Object.keys(indoorByCol).forEach(cStr => {
       const c = Number(cStr);
-      const cellRaw = normText(row[c]);
-      if (!cellRaw || cellRaw === '-') return;
-      const nums = footnoteNumsIn(cellRaw);
-      const footnoteTexts = nums.map(n => footnotes[n]).filter(Boolean);
-      indoorByCol[c].forEach(indoorPattern => {
-        facts.push(Object.assign({
-          fact_type: factType,
-          indoor_pattern: indoorPattern,
-          value_raw: cellRaw,
-          footnotes: footnoteTexts.length ? footnoteTexts : null
-        }, meta));
+      const v = normText(row[c]);
+      if (!v || v === '-') return;
+      indoorByCol[c].patterns.forEach(indoorPattern => {
+        if (indoorPattern.error) return;
+        facts.push({ type: label, indoor: indoorPattern, value: v });
       });
     });
   }
-  return facts;
+
+  return { rules, facts, unparsed, sheetName };
 }
 
-/* RAC MULTI block: two-row header (model name row, merged; capacity row below),
-   reconstructed via sheet !merges. Outdoor rows are plain (col0=raw concrete model). */
-function parseMultiBlock(sheet, rows, opts) {
-  const { nameRowIdx, capRowIdx, dataRowStart, dataRowEnd, indoorColStart, outdoorLabelCol, footnotes, meta } = opts;
+function buildMultiRules(wb) {
+  const sheetName = 'RAC MULTI';
+  const sheetObj = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheetObj, { header: 1, defval: '' });
+  const nameRowIdx = 5, capRowIdx = 6, dataStart = 7, dataEnd = 30, indoorColStart = 1;
   const nameRow = rows[nameRowIdx] || [];
   const capRow = rows[capRowIdx] || [];
-  const merges = (sheet['!merges'] || []).filter(m => m.s.r === nameRowIdx);
-  // column -> full indoor label text (name forward-filled via merges, then + capacity)
+  const merges = (sheetObj['!merges'] || []).filter(m => m.s.r === nameRowIdx);
   const nameForCol = {};
   for (let c = indoorColStart; c < nameRow.length; c++) nameForCol[c] = normText(nameRow[c]);
   merges.forEach(m => {
-    const label = normText(nameRow[m.s.c]);
+    // Зазвичай текст лежить у лівій верхній (m.s.c) клітинці об'єднання, але в цьому
+    // файлі трапляється виняток (стовпці 9-12, текст фактично в 12-й, а не в 9-й) —
+    // тому скануємо весь діапазон об'єднання й беремо перше НЕпорожнє значення,
+    // а не сліпо довіряємо m.s.c.
+    let label = '';
+    for (let c = m.s.c; c <= m.e.c; c++) { const v = normText(nameRow[c]); if (v) { label = v; break; } }
     for (let c = m.s.c; c <= m.e.c; c++) nameForCol[c] = label;
   });
+
   const indoorByCol = {};
+  const unparsed = [];
   for (let c = indoorColStart; c < nameRow.length; c++) {
     const name = nameForCol[c];
     if (!name) continue;
-    const capRaw = normText(capRow[c]);
-    const capNumM = capRaw.match(/\d+/);
+    const capRawFull = normText(capRow[c]);
+    const capNumM = capRawFull.match(/\d+/);
     if (!capNumM) continue;
-    // Build one concrete pattern per \n-separated alternate model name. Parse the
-    // alternate's OWN text first (correctly resolves its wildcard-hyphen/family/series),
-    // then overwrite the capacity onto the resulting pattern — string-splicing the
-    // number into the raw text first (before parsing) broke on "SRK-ZM-S"-style bare
-    // wildcard hyphens (produced a stray leading "-" before the series).
-    const rawLines = name.split('\n').map(x => x.trim()).filter(Boolean);
     const capNum = Number(capNumM[0]);
-    const variants = [];
+    const { lines, footnoteText } = splitMarkingLines(name);
     let prevLine = null;
-    rawLines.forEach(line => {
-      // Rare 2019-file shorthand: a continuation line starting with "," means "same
-      // family/wildcard-prefix as the line above, different series" (e.g. "FDEN-VD"
-      // then ",-VF" meaning "FDEN-VF") — reconstruct it before parsing.
+    const patterns = [];
+    lines.forEach(line => {
       if (line.startsWith(',') && prevLine) {
         const prefixM = prevLine.match(/^([A-Z]+-?)/i);
         if (prefixM) line = prefixM[1] + line.replace(/^,-?/, '');
       }
       prevLine = line;
-      const pattern = parseCodePattern(line);
-      if (!pattern.error) {
-        pattern.capacityKind = 'list';
-        pattern.capacityList = [capNum];
-        pattern.capacityRange = null;
-      }
-      variants.push(pattern);
+      const p = parseMarking(line, []);
+      if (p.error) { unparsed.push({ where: 'indoor(multi)', raw: line, error: p.error }); return; }
+      p.sizeKind = 'list'; p.sizeList = [capNum]; // ін'єктуємо конкретний типорозмір зі строки 7
+      expandMarkingAlternates(p).forEach(pp => patterns.push(pp));
     });
-    indoorByCol[c] = variants;
+    indoorByCol[c] = { patterns, footnoteText };
   }
+
   const rules = [];
-  for (let r = dataRowStart; r <= dataRowEnd; r++) {
+  for (let r = dataStart; r <= dataEnd; r++) {
     const row = rows[r] || [];
-    const outdoorRaw = normText(row[outdoorLabelCol]);
+    const outdoorRaw = normText(row[0]);
     if (!outdoorRaw) continue;
-    const outdoorPattern = parseCodePattern(outdoorRaw); // MULTI outdoor rows are concrete, single
+    const outdoorPattern = parseMarking(outdoorRaw, []);
+    if (outdoorPattern.error) { unparsed.push({ where: 'outdoor(multi)', raw: outdoorRaw, error: outdoorPattern.error }); continue; }
     Object.keys(indoorByCol).forEach(cStr => {
       const c = Number(cStr);
       const cellRaw = row[c];
-      const st = symbolToStatus(cellRaw);
-      if (!st) return;
-      const nums = footnoteNumsIn(normText(cellRaw));
-      const footnoteTexts = nums.map(n => footnotes[n]).filter(Boolean);
-      indoorByCol[c].forEach(indoorPattern => {
-        rules.push(Object.assign({
-          indoor_pattern: indoorPattern,
-          outdoor_pattern: outdoorPattern,
-          status_raw: st.statusRaw,
-          status_kind: st.kind,
-          footnotes: footnoteTexts.length ? footnoteTexts : null
-        }, meta));
+      const status = symbolToStatus(normText(cellRaw)); // порожня клітинка й "-" обидві -> incompatible, як і на RAC
+      indoorByCol[c].patterns.forEach(indoorPattern => {
+        rules.push({
+          indoor: indoorPattern, outdoor: outdoorPattern, status, statusRaw: normText(cellRaw) || '-',
+          footnotes: indoorByCol[c].footnoteText ? [indoorByCol[c].footnoteText] : null
+        });
       });
     });
   }
-  return rules;
+  return { rules, facts: [], unparsed, sheetName };
 }
 
-function buildAll() {
-  const out = { rules: [], fact_rules: [], legacy_r22_rules: [], meta: {} };
+/* ---------- Matcher (працює і тут для тестів, і буде перенесений у index.html) ---------- */
 
-  // ---------- 2026 file ----------
-  {
-    const racRows = XLSX.utils.sheet_to_json(wb2026.Sheets['RAC'], { header: 1, defval: '' });
-    const fn = collectFootnotes(racRows);
-    const meta = { source_file: 'Compatibility of RAC_20260409_Customers.xlsx', source_sheet: 'RAC', source_last_update: '2026-04-09' };
-    out.rules.push(...parseSimpleBlock(racRows, {
-      headerRowIdx: 5, dataRowStart: 6, dataRowEnd: 28, indoorColStart: 2, outdoorLabelCol: 1, footnotes: fn, meta
-    }));
-    out.fact_rules.push(...parseFactBlock(racRows, {
-      headerRowIdx: 5, dataRowStart: 29, dataRowEnd: 34, indoorColStart: 2, rowLabelCol: 1, footnotes: fn, meta
-    }));
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+  }
+  return dp[m][n];
+}
 
-    const multiSheet = wb2026.Sheets['RAC MULTI'];
-    const multiRows = XLSX.utils.sheet_to_json(multiSheet, { header: 1, defval: '' });
-    const fnM = collectFootnotes(multiRows);
-    const metaM = { source_file: 'Compatibility of RAC_20260409_Customers.xlsx', source_sheet: 'RAC MULTI', source_last_update: '2026-04-09' };
-    out.rules.push(...parseMultiBlock(multiSheet, multiRows, {
-      nameRowIdx: 5, capRowIdx: 6, dataRowStart: 7, dataRowEnd: 30, indoorColStart: 1, outdoorLabelCol: 0, footnotes: fnM, meta: metaM
-    }));
+function closestPrefix(guess, candidates) {
+  let best = null, bestDist = Infinity;
+  candidates.forEach(p => { const d = levenshtein(guess, p); if (d < bestDist) { bestDist = d; best = p; } });
+  return { prefix: best, distance: bestDist };
+}
+
+const INDOOR_PREFIXES = KNOWN_PREFIXES.filter(p => p !== 'SRC' && p !== 'SCM');
+const OUTDOOR_PREFIXES = ['SRC', 'SCM'];
+
+/* Розбирає ввід користувача, з толерантністю до одруківки в префіксі (Левенштейн,
+   якщо точного префіксу серед відомих не знайдено). */
+function parseUserInput(raw, role) {
+  const p = parseMarking(raw, RAC_CANON_SIZES);
+  if (!p.error) return { parsed: p, typo: null };
+  if (p.error === 'unknown-prefix' && p.rawPrefixGuess) {
+    const candidates = role === 'outdoor' ? OUTDOOR_PREFIXES : INDOOR_PREFIXES;
+    const { prefix, distance } = closestPrefix(p.rawPrefixGuess, candidates);
+    if (prefix && distance <= 2) {
+      const corrected = prefix + raw.slice(raw.toUpperCase().indexOf(p.rawPrefixGuess) + p.rawPrefixGuess.length);
+      const p2 = parseMarking(corrected, RAC_CANON_SIZES);
+      if (!p2.error) return { parsed: p2, typo: { from: p.rawPrefixGuess, to: prefix } };
+    }
+  }
+  return { parsed: p, typo: null };
+}
+
+function suffixCoreMatch(userSuffixText, templateVariants) {
+  if (!templateVariants) return { matched: null, extra: userSuffixText || null, noTemplateSuffix: true };
+  if (!userSuffixText) return null;
+  let best = null;
+  templateVariants.forEach(v => { if (userSuffixText.startsWith(v) && (!best || v.length > best.length)) best = v; });
+  if (!best) return null;
+  return { matched: best, extra: userSuffixText.slice(best.length) || null };
+}
+
+function templateAcceptsSize(template, size) {
+  if (template.sizeKind === 'wildcard') return true;
+  if (size == null) return true;
+  return template.sizeList.includes(size);
+}
+
+function candidateMatches(userInput, template) {
+  if (userInput.prefix !== template.prefix) return null;
+  if (userInput.series !== template.series) return null;
+  if (!templateAcceptsSize(template, userInput.sizeList ? userInput.sizeList[0] : null)) return null;
+  const userSuffixText = userInput.suffixVariants ? userInput.suffixVariants[0] : null;
+  const sc = suffixCoreMatch(userSuffixText, template.suffixVariants);
+  if (!sc) return null;
+  if (!sc.noTemplateSuffix && template.suffixFamily && userInput.suffixFamily && template.suffixFamily !== userInput.suffixFamily) return null;
+  return sc;
+}
+
+function checkCompatibility(indoorRaw, outdoorRaw, data) {
+  const outdoorProbe = parseMarking(outdoorRaw, RAC_CANON_SIZES);
+  const indoorProbe = parseMarking(indoorRaw, RAC_CANON_SIZES);
+  const sheet = (outdoorProbe.prefix === 'SCM' || indoorProbe.prefix === 'SCM') ? 'multi' : 'rac';
+
+  const { parsed: indoorInput, typo: indoorTypo } = parseUserInput(indoorRaw, 'indoor');
+  const { parsed: outdoorInput, typo: outdoorTypo } = parseUserInput(outdoorRaw, 'outdoor');
+
+  if (indoorInput.error || outdoorInput.error) {
+    return { kind: 'parse-error', badIndoor: !!indoorInput.error, badOutdoor: !!outdoorInput.error };
   }
 
-  // ---------- 2019 file ----------
-  {
-    const racRows = XLSX.utils.sheet_to_json(wb2019.Sheets['RAC'], { header: 1, defval: '' });
-    const fn = collectFootnotes(racRows);
-    const meta = { source_file: 'compatibility of RAC_20190517.xlsx', source_sheet: 'RAC', source_last_update: '2019-05-17' };
-    // embedded legacy SCM mini-table at top (rows 3-6)
-    out.rules.push(...parseSimpleBlock(racRows, {
-      headerRowIdx: 3, dataRowStart: 4, dataRowEnd: 6, indoorColStart: 2, outdoorLabelCol: 1, footnotes: fn,
-      meta: Object.assign({}, meta, { legacy_2019_scm_block: true })
-    }));
-    // main block
-    out.rules.push(...parseSimpleBlock(racRows, {
-      headerRowIdx: 11, dataRowStart: 12, dataRowEnd: 31, indoorColStart: 2, outdoorLabelCol: 1, footnotes: fn, meta
-    }));
-    out.fact_rules.push(...parseFactBlock(racRows, {
-      headerRowIdx: 11, dataRowStart: 32, dataRowEnd: 35, indoorColStart: 2, rowLabelCol: 1, footnotes: fn, meta
-    }));
-    // legacy R22 tiny block: header row 38 has exactly one real indoor code at col2 —
-    // indoorColEnd caps the scan there, because col7 of that same row carries an
-    // unrelated stray note ("R22 units and R410A units cannot mix.") that would
-    // otherwise get mistaken for a second indoor column.
-    out.legacy_r22_rules.push(...parseSimpleBlock(racRows, {
-      headerRowIdx: 38, dataRowStart: 40, dataRowEnd: 43, indoorColStart: 2, indoorColEnd: 2, outdoorLabelCol: 1, footnotes: fn,
-      meta: Object.assign({}, meta, { legacy_r22: true })
-    }));
-
-    const multiSheet = wb2019.Sheets['RAC MULTI'];
-    const multiRows = XLSX.utils.sheet_to_json(multiSheet, { header: 1, defval: '' });
-    const fnM = collectFootnotes(multiRows);
-    const metaM = { source_file: 'compatibility of RAC_20190517.xlsx', source_sheet: 'RAC MULTI', source_last_update: '2019-05-17' };
-    out.rules.push(...parseMultiBlock(multiSheet, multiRows, {
-      nameRowIdx: 2, capRowIdx: 3, dataRowStart: 4, dataRowEnd: 32, indoorColStart: 1, outdoorLabelCol: 0, footnotes: fnM, meta: metaM
-    }));
+  if (sheet === 'rac') {
+    const iSize = indoorInput.sizeList ? indoorInput.sizeList[0] : null;
+    const oSize = outdoorInput.sizeList ? outdoorInput.sizeList[0] : null;
+    if (iSize != null && oSize != null && iSize !== oSize) {
+      return { kind: 'size-mismatch', indoorSize: iSize, outdoorSize: oSize };
+    }
   }
 
-  return out;
+  const rules = sheet === 'multi' ? data.multi_rules : data.rac_rules;
+  const hits = [];
+  rules.forEach(rule => {
+    const im = candidateMatches(indoorInput, rule.indoor);
+    if (!im) return;
+    const om = candidateMatches(outdoorInput, rule.outdoor);
+    if (!om) return;
+    hits.push({ rule, indoorMatch: im, outdoorMatch: om });
+  });
+
+  if (!hits.length) return { kind: 'no-data', typoTried: !!(indoorTypo || outdoorTypo) };
+
+  // серед знайдених — перевага без "зайвих літер" (extra===null) з обох боків
+  hits.sort((a, b) => {
+    const ea = (a.indoorMatch.extra ? 1 : 0) + (a.outdoorMatch.extra ? 1 : 0);
+    const eb = (b.indoorMatch.extra ? 1 : 0) + (b.outdoorMatch.extra ? 1 : 0);
+    return ea - eb;
+  });
+  const best = hits[0];
+  return {
+    kind: 'found', rule: best.rule, indoorMatch: best.indoorMatch, outdoorMatch: best.outdoorMatch,
+    indoorTypo, outdoorTypo, sheet
+  };
+}
+
+function buildAllV2() {
+  const rac = buildRacRules(wb2026);
+  const multi = buildMultiRules(wb2026);
+  return {
+    rac_rules: rac.rules, rac_facts: rac.facts, rac_unparsed: rac.unparsed,
+    multi_rules: multi.rules, multi_unparsed: multi.unparsed
+  };
 }
