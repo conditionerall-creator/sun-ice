@@ -1444,7 +1444,7 @@
   /* Cabinet */
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
-  .field input, .field select {
+  .field input, .field select, .field textarea {
     width: 100%;
     padding: 11px 12px;
     border: 1px solid var(--border);
@@ -1453,6 +1453,7 @@
     background: var(--bg);
     color: var(--text);
   }
+  .field textarea { resize: vertical; min-height: 70px; font-family: inherit; }
   .primary-btn {
     width: 100%;
     padding: 12px;
@@ -1621,6 +1622,12 @@
   .badge-pending { background: #faeeda; color: #854f0b; }
   .badge-approved { background: var(--accent-bg); color: var(--accent); }
   .badge-rejected, .badge-blocked { background: #fcebeb; color: var(--danger); }
+  /* Статуси монтажів (CRМонтаж) — окремі класи, не змішувати з badge-pending/approved
+     вище (семантика інша, хоч кольори подекуди перегукуються). */
+  .badge-planned { background: #faeeda; color: #854f0b; }
+  .badge-in_progress { background: #dbeafe; color: #1d4ed8; }
+  .badge-done { background: #dcfce7; color: #1e8e3e; }
+  .badge-cancelled { background: #fcebeb; color: var(--danger); }
   .user-card-row { display: flex; gap: 6px; margin-top: 8px; }
   .user-card-row select { flex: 1; font-size: 12px; padding: 7px 6px; }
   .user-card-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
@@ -1964,6 +1971,52 @@
     <div class="info-sheet-body" id="series-info-body"></div>
     <div class="info-sheet-actions" id="series-info-actions" hidden>
       <button type="button" class="info-sheet-action-btn" id="series-info-action-btn"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Форма створення/редагування монтажу (CRМонтаж, роль installer) — той самий bottom-sheet
+     патерн, що й series-info-overlay вище, але з формою в тілі замість тексту. -->
+<div class="info-sheet-overlay" id="task-form-overlay">
+  <div class="info-sheet-backdrop" id="task-form-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title" id="task-form-title">Новий монтаж</div>
+      <button type="button" class="info-sheet-close" id="task-form-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body">
+      <div class="field">
+        <label>Адреса</label>
+        <input type="text" id="task-field-address" placeholder="Вулиця, будинок, квартира">
+      </div>
+      <div class="field">
+        <label>Дата і час</label>
+        <input type="datetime-local" id="task-field-datetime">
+      </div>
+      <div class="field">
+        <label>Ім'я клієнта</label>
+        <input type="text" id="task-field-client-name">
+      </div>
+      <div class="field">
+        <label>Телефон клієнта</label>
+        <input type="text" id="task-field-client-phone" placeholder="+380...">
+      </div>
+      <div class="field">
+        <label>Тип обладнання</label>
+        <select id="task-field-equipment"></select>
+      </div>
+      <label class="promo-ack-banner" id="task-field-tt-wrap" style="display:none;">
+        <input type="checkbox" id="task-field-tt">
+        <span>Монтаж ТТ</span>
+      </label>
+      <div class="field">
+        <label>Коментар</label>
+        <textarea id="task-field-comment" rows="3"></textarea>
+      </div>
+      <div id="task-form-error"></div>
+    </div>
+    <div class="info-sheet-actions">
+      <button type="button" class="info-sheet-action-btn" id="task-form-submit-btn">Зберегти</button>
     </div>
   </div>
 </div>
@@ -5866,8 +5919,285 @@ async function renderInstallerTab() {
     renderCurrentTab();
     return;
   }
-  main.innerHTML = '<div class="empty">Розділ у розробці.<br>Найближчим часом тут з’явиться список завдань монтажу.</div>';
+
+  taskQuickFilter = 'all';
+  main.innerHTML = `
+    <button type="button" class="primary-btn" data-task-action="add" style="margin-bottom:12px;">+ Новий монтаж</button>
+    <div class="admin-filters">
+      <div class="admin-search"><input type="text" id="task-search" placeholder="Пошук за адресою чи клієнтом"></div>
+      <div class="brand-toggle toggle-3way" id="task-quick-filter">
+        <button type="button" class="brand-toggle-btn active" data-quick="all">Усі</button>
+        <button type="button" class="brand-toggle-btn" data-quick="today">Сьогодні</button>
+        <button type="button" class="brand-toggle-btn" data-quick="week">Цей тиждень</button>
+      </div>
+      <div class="admin-filter-row">
+        <div><select id="task-status-filter">
+          <option value="">Усі статуси</option>
+          ${Object.keys(TASK_STATUS_LABELS).map(s => `<option value="${s}">${escapeHtml(TASK_STATUS_LABELS[s])}</option>`).join('')}
+        </select></div>
+        <div><select id="task-equipment-filter">
+          <option value="">Усе обладнання</option>
+          ${taskEquipmentOptionsHtml(null)}
+        </select></div>
+      </div>
+    </div>
+    <div id="installer-tasks-list"><div class="empty">Завантаження...</div></div>
+  `;
+
+  main.querySelectorAll('#task-quick-filter .brand-toggle-btn').forEach(qbtn => {
+    qbtn.addEventListener('click', () => {
+      taskQuickFilter = qbtn.getAttribute('data-quick');
+      main.querySelectorAll('#task-quick-filter .brand-toggle-btn').forEach(b => b.classList.toggle('active', b === qbtn));
+      renderInstallerTaskList();
+    });
+  });
+  document.getElementById('task-search').addEventListener('input', renderInstallerTaskList);
+  document.getElementById('task-status-filter').addEventListener('change', renderInstallerTaskList);
+  document.getElementById('task-equipment-filter').addEventListener('change', renderInstallerTaskList);
+
+  await loadInstallerTasks();
+  renderInstallerTaskList();
 }
+
+/* ---------- CRМонтаж: список монтажів (Крок 2) ----------
+   Персональна таблиця public.installer_tasks, RLS обмежує кожного монтажника лише
+   власними рядками (installer_id = auth.uid()) — regional_admin/super_admin тут нічого не
+   бачать, це особистий інструмент монтажника, не частина адмінки. Нагадування/експорт/
+   напарники — окремі майбутні кроки, тут лише CRUD + фільтри + групування за днями. */
+const TASK_EQUIPMENT_TYPES = ['Спліт-системи', 'Мульти спліт-системи', 'Напівпромислові спліт-системи', 'Мультизональні VRF', 'Теплові насоси', 'Інше'];
+const TASK_STATUS_LABELS = { planned: 'Заплановано', in_progress: 'В процесі', done: 'Виконано', cancelled: 'Скасовано' };
+function taskStatusLabel(s) { return TASK_STATUS_LABELS[s] || s; }
+function taskEquipmentOptionsHtml(selected) {
+  return TASK_EQUIPMENT_TYPES.map(e => `<option value="${escapeHtml(e)}" ${e === selected ? 'selected' : ''}>${escapeHtml(e)}</option>`).join('');
+}
+
+let installerTasksCache = [];
+let editingTaskId = null;
+let taskQuickFilter = 'all'; // 'all' | 'today' | 'week'
+
+async function loadInstallerTasks() {
+  const { data: sessionData } = await sb.auth.getSession();
+  const session = sessionData ? sessionData.session : null;
+  if (!session) { installerTasksCache = []; return; }
+  const { data, error } = await sb.from('installer_tasks').select('*').eq('installer_id', session.user.id).order('scheduled_at');
+  installerTasksCache = error ? [] : (data || []);
+}
+
+function taskPassesFilters(t, q, status, equipment, quick) {
+  if (status && t.status !== status) return false;
+  if (equipment && t.equipment_type !== equipment) return false;
+  if (quick === 'today' || quick === 'week') {
+    const d = new Date(t.scheduled_at);
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfRange = new Date(startOfToday);
+    endOfRange.setDate(endOfRange.getDate() + (quick === 'today' ? 1 : 7));
+    if (d < startOfToday || d >= endOfRange) return false;
+  }
+  if (q) {
+    const hay = norm((t.address || '') + ' ' + (t.client_name || '') + ' ' + (t.client_phone || ''));
+    if (!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+function renderInstallerTaskList() {
+  const listEl = document.getElementById('installer-tasks-list');
+  if (!listEl) return;
+  const searchEl = document.getElementById('task-search');
+  const statusEl = document.getElementById('task-status-filter');
+  const equipEl = document.getElementById('task-equipment-filter');
+  const q = norm(searchEl ? searchEl.value : '');
+  const status = statusEl ? statusEl.value : '';
+  const equipment = equipEl ? equipEl.value : '';
+
+  const filtered = installerTasksCache
+    .filter(t => taskPassesFilters(t, q, status, equipment, taskQuickFilter))
+    .slice()
+    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+
+  if (!filtered.length) {
+    listEl.innerHTML = '<div class="empty">Монтажів не знайдено.</div>';
+    return;
+  }
+
+  let lastDateKey = null;
+  listEl.innerHTML = filtered.map(t => {
+    const d = new Date(t.scheduled_at);
+    const dateKey = d.toDateString();
+    let header = '';
+    if (dateKey !== lastDateKey) {
+      lastDateKey = dateKey;
+      const label = d.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
+      header = `<div class="segment-header">${escapeHtml(label)}</div>`;
+    }
+    return header + taskCardHtml(t, d);
+  }).join('');
+}
+
+function taskCardHtml(t, d) {
+  const timeLabel = d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+  const clientBits = [t.client_name, t.client_phone].filter(Boolean).map(escapeHtml).join(' · ');
+  const equipBits = escapeHtml(t.equipment_type || '') + (t.is_heat_pump_tt ? ' · монтаж ТТ' : '');
+  const statusOptionsHtml = Object.keys(TASK_STATUS_LABELS)
+    .map(s => `<option value="${s}" ${s === t.status ? 'selected' : ''}>${escapeHtml(TASK_STATUS_LABELS[s])}</option>`).join('');
+  return `
+    <div class="user-card" data-task-card-id="${t.id}">
+      <div class="user-card-top">
+        <div>
+          <p class="user-card-name">${escapeHtml(t.address)}</p>
+          <p class="user-card-sub">${timeLabel}${clientBits ? ' · ' + clientBits : ''}</p>
+        </div>
+        <div class="user-card-top-right">
+          <span class="badge badge-${escapeHtml(t.status)}">${escapeHtml(taskStatusLabel(t.status))}</span>
+          <button type="button" class="user-card-open-btn" data-task-action="toggle" data-task-id="${t.id}" aria-label="Відкрити">${USER_CARD_OPEN_ICON}</button>
+        </div>
+      </div>
+      <div class="user-card-expand">
+        <p class="user-card-sub">${equipBits}</p>
+        ${t.comment ? `<p class="user-card-sub">${escapeHtml(t.comment)}</p>` : ''}
+        <div class="user-card-row">
+          <select data-task-action="status" data-task-id="${t.id}">${statusOptionsHtml}</select>
+        </div>
+        <div class="user-card-actions">
+          <button type="button" data-task-action="edit" data-task-id="${t.id}">Редагувати</button>
+          <button type="button" class="reject" data-task-action="delete" data-task-id="${t.id}">Видалити</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* Пошук за адресою/клієнтом/статусом/типом обладнання й підбір монтажу — навмисно НЕ
+   пов'язано з data-action/handleAdminAction (адмінська дія над користувачем) — окремі
+   атрибути data-task-action/data-task-id і окремі делеговані обробники нижче, щоб кнопки
+   картки монтажу випадково не потрапили в handleAdminAction (обидва рендеряться в те саме
+   #main). */
+async function handleTaskAction(action, id, value) {
+  if (action === 'toggle') {
+    const card = document.querySelector(`[data-task-card-id="${id}"]`);
+    if (card) card.classList.toggle('open');
+    return;
+  }
+  if (action === 'edit') {
+    const task = installerTasksCache.find(t => String(t.id) === String(id));
+    if (task) openTaskForm(task);
+    return;
+  }
+  if (action === 'delete') {
+    if (!confirm('Видалити цей монтаж?')) return;
+    const { error } = await sb.from('installer_tasks').delete().eq('id', id);
+    if (!error) { await loadInstallerTasks(); renderInstallerTaskList(); }
+    return;
+  }
+  if (action === 'status') {
+    const { error } = await sb.from('installer_tasks').update({ status: value }).eq('id', id);
+    if (!error) { await loadInstallerTasks(); renderInstallerTaskList(); }
+    return;
+  }
+}
+
+document.getElementById('main').addEventListener('click', function(e) {
+  const target = e.target.closest('[data-task-action]');
+  if (!target || target.tagName === 'SELECT') return;
+  const action = target.getAttribute('data-task-action');
+  if (action === 'add') { openTaskForm(null); return; }
+  const id = target.getAttribute('data-task-id');
+  if (action && id) handleTaskAction(action, id, null);
+});
+document.getElementById('main').addEventListener('change', function(e) {
+  const target = e.target.closest('select[data-task-action]');
+  if (!target) return;
+  const action = target.getAttribute('data-task-action');
+  const id = target.getAttribute('data-task-id');
+  if (action && id) handleTaskAction(action, id, target.value);
+});
+
+function toDatetimeLocalValue(iso) {
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function updateTaskTtVisibility() {
+  const equip = document.getElementById('task-field-equipment').value;
+  document.getElementById('task-field-tt-wrap').style.display = equip === 'Теплові насоси' ? 'flex' : 'none';
+}
+
+function openTaskForm(task) {
+  editingTaskId = task ? task.id : null;
+  document.getElementById('task-form-title').textContent = task ? 'Редагувати монтаж' : 'Новий монтаж';
+  document.getElementById('task-field-address').value = task ? (task.address || '') : '';
+  document.getElementById('task-field-datetime').value = task ? toDatetimeLocalValue(task.scheduled_at) : '';
+  document.getElementById('task-field-client-name').value = task ? (task.client_name || '') : '';
+  document.getElementById('task-field-client-phone').value = task ? (task.client_phone || '') : '';
+  document.getElementById('task-field-equipment').innerHTML = taskEquipmentOptionsHtml(task ? task.equipment_type : TASK_EQUIPMENT_TYPES[0]);
+  document.getElementById('task-field-tt').checked = task ? !!task.is_heat_pump_tt : false;
+  document.getElementById('task-field-comment').value = task ? (task.comment || '') : '';
+  document.getElementById('task-form-error').innerHTML = '';
+  updateTaskTtVisibility();
+  document.getElementById('task-form-overlay').classList.add('show');
+}
+function closeTaskForm() {
+  document.getElementById('task-form-overlay').classList.remove('show');
+}
+document.getElementById('task-form-close').addEventListener('click', closeTaskForm);
+document.getElementById('task-form-backdrop').addEventListener('click', closeTaskForm);
+document.getElementById('task-field-equipment').addEventListener('change', updateTaskTtVisibility);
+
+async function handleTaskFormSubmit() {
+  const errEl = document.getElementById('task-form-error');
+  errEl.innerHTML = '';
+  const address = document.getElementById('task-field-address').value.trim();
+  const dtVal = document.getElementById('task-field-datetime').value;
+  const clientName = document.getElementById('task-field-client-name').value.trim();
+  const clientPhone = document.getElementById('task-field-client-phone').value.trim();
+  const equipment = document.getElementById('task-field-equipment').value;
+  const isTt = document.getElementById('task-field-tt').checked;
+  const comment = document.getElementById('task-field-comment').value.trim();
+
+  if (!address || !dtVal) {
+    errEl.innerHTML = '<div class="error">Заповніть адресу і дату/час.</div>';
+    return;
+  }
+
+  const { data: sessionData } = await sb.auth.getSession();
+  const session = sessionData ? sessionData.session : null;
+  if (!session) {
+    errEl.innerHTML = '<div class="error">Сесія закінчилась. Вийдіть і увійдіть знову.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('task-form-submit-btn');
+  btn.disabled = true;
+
+  const row = {
+    installer_id: session.user.id,
+    address: address,
+    scheduled_at: new Date(dtVal).toISOString(),
+    client_name: clientName || null,
+    client_phone: clientPhone || null,
+    equipment_type: equipment,
+    is_heat_pump_tt: equipment === 'Теплові насоси' ? isTt : false,
+    comment: comment || null
+  };
+
+  let error;
+  if (editingTaskId) {
+    ({ error } = await sb.from('installer_tasks').update(row).eq('id', editingTaskId));
+  } else {
+    ({ error } = await sb.from('installer_tasks').insert(row));
+  }
+
+  btn.disabled = false;
+  if (error) {
+    errEl.innerHTML = '<div class="error">Не вдалося зберегти. Спробуйте ще раз.</div>';
+    return;
+  }
+  closeTaskForm();
+  await loadInstallerTasks();
+  renderInstallerTaskList();
+}
+document.getElementById('task-form-submit-btn').addEventListener('click', handleTaskFormSubmit);
 
 /* Cross-fade вмісту екрана при перемиканні вкладок нижнього меню (див. словник
    анімацій у <style>). navFadeToken інвалідовує "застряглий" таймер попереднього
