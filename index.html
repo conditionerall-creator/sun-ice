@@ -1764,6 +1764,10 @@
     text-overflow: ellipsis;
     border-bottom: 2px solid var(--navy);
   }
+  /* Заголовки колонок/рядків обрізані заради компактності таблиці — тап показує повний
+     текст спливаючим вікном (openSeriesInfo), тому курсор-підказка, що по них можна
+     тапнути. */
+  .compat-colhead, .compat-colhead-group, .compat-colhead-size, .compat-rowhead { cursor: pointer; }
   .compat-table-multi .compat-colhead-group { top: 0; height: 26px; }
   .compat-table-multi .compat-colhead-size { top: 27px; }
   .compat-corner { left: 0; z-index: 4; text-align: left; max-width: none; white-space: nowrap; }
@@ -1776,19 +1780,24 @@
     font-size: 10.5px;
     text-align: left;
     z-index: 1;
-    max-width: 148px;
-    white-space: normal;
+    width: 96px;
+    max-width: 96px;
     line-height: 1.3;
     border-right: 2px solid var(--navy);
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
   .compat-group-row td {
-    background: var(--bg);
+    background: var(--accent-bg);
     font-weight: 800;
-    font-size: 10px;
+    font-size: 10.5px;
     text-transform: uppercase;
     letter-spacing: .04em;
     text-align: left;
-    color: var(--text-secondary);
+    color: var(--accent);
     white-space: normal;
     border-right: none;
   }
@@ -4273,8 +4282,8 @@ const INFO_SECTIONS = [
   { id: 'techinfo', label: 'Технічна інфа' }
 ];
 const MHI_COMPAT_FOLDERS = [
-  { id: 'household', label: 'Побутові та мультиспліти' },
-  { id: 'semi', label: 'Напівпром' }
+  { id: 'household', label: 'Побутові та мультиспліти', img: 'tile-images/tilecompathousehold.jpg' },
+  { id: 'semi', label: 'Напівпром', img: 'tile-images/tilecompatsemi.jpg' }
 ];
 const INFO_BRANDS = [
   { id: 'mhi', label: 'Mitsubishi Heavy', img: 'tile-images/catalog-preview-mhi.jpg' },
@@ -4433,6 +4442,77 @@ function renderInfoDetail() {
    (fetch) лише коли адмін відкриває цей розділ, на старт застосунку не впливають. */
 function cleanCompatLabel(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
 
+/* Переклад — лише текст, який реально читає людина (назви розділів, розгорнуті описи
+   рядків "Compatibility for PAC", значення Yes/No/N/A, примітки виробника). Самі коди
+   моделей (SRK…, RC-E3 тощо) — НЕ чіпаємо, це точні позначення з документації MHI, не
+   слова. */
+const COMPAT_GROUP_UA = {
+  'Wired Remote Controller': 'Проводовий пульт керування',
+  'Outdoor unit': 'Зовнішній блок',
+  'Compatibility for PAC': 'Сумісність для PAC'
+};
+function translateCompatGroup(s) {
+  const clean = cleanCompatLabel(s);
+  return COMPAT_GROUP_UA[clean] || clean;
+}
+const COMPAT_CODE_UA = {
+  'Plural use (twin, triple, double-twin) (same model, same capacity)':
+    'Використання кількох блоків (twin, triple, double-twin) (однакова модель, однакова потужність)',
+  'V-multi use (different model, different capacity )':
+    'Використання V-multi (різна модель, різна потужність)',
+  'SC-BIKN-E necessity (For connecting with RC-E3, E4, E5, RC-EX1)':
+    'Потреба в SC-BIKN-E (для підключення з RC-E3, E4, E5, RC-EX1)',
+  'SC-BIKN2-E necessity (For connecting with RC-E3, E4, E5, RC-EX1,EX1A,EX3,EX3A, EX3D, ES1)':
+    'Потреба в SC-BIKN2-E (для підключення з RC-E3, E4, E5, RC-EX1, EX1A, EX3, EX3A, EX3D, ES1)',
+  'SC-BIKN2-BL necessity (For connecting with RC-E3, E4, E5, RC-EX1)':
+    'Потреба в SC-BIKN2-BL (для підключення з RC-E3, E4, E5, RC-EX1)',
+  'SC-BIKN2-BL necessity (For connecting with RC-E3, E4, E5, RC-EX1,EX1A,EX3,EX3A, EX3D, ES1)':
+    'Потреба в SC-BIKN2-BL (для підключення з RC-E3, E4, E5, RC-EX1, EX1A, EX3, EX3A, EX3D, ES1)'
+};
+function translateCompatCode(s) {
+  const clean = cleanCompatLabel(s);
+  return COMPAT_CODE_UA[clean] || clean;
+}
+const COMPAT_YESNO_UA = { 'Yes': 'Так', 'No': 'Ні', 'N/A': 'Н/Д' };
+function translateCompatCell(v) {
+  const s = cleanCompatLabel(v);
+  const m = s.match(/^(Yes|No|N\/A)\b(.*)$/);
+  return m ? COMPAT_YESNO_UA[m[1]] + m[2] : s;
+}
+const COMPAT_NOTES_UA = {
+  '- Mixing old and new model indoor units in one system is prohibited. (Twin, Triple, Double twin, V-multi)':
+    '- Змішувати старі та нові моделі внутрішніх блоків в одній системі заборонено. (Twin, Triple, Double twin, V-multi)',
+  '- Capacity must be coincident between IU and OU.':
+    '- Потужність внутрішнього (IU) і зовнішнього (OU) блоків повинна збігатися.',
+  '*1： SC-BIKN-E is necessary for the use of wired remote controller.':
+    '*1: для використання проводового пульта керування необхідний SC-BIKN-E.',
+  '*2: Only SRK100ZR-S will be connectable with FDC200VSA. SC-BIKN-E is necessary for the use of wired remote controller.':
+    '*2: з FDC200VSA можна з’єднати лише SRK100ZR-S. Для використання проводового пульта керування необхідний SC-BIKN-E.',
+  '*3: No technical data. It may have risk of dew drop, or insufficient cooling/heating.':
+    '*3: немає технічних даних. Можливий ризик випадання конденсату або недостатнього охолодження/обігріву.',
+  '*R1 : Some new functions by RC-EX3 is not available.':
+    '*R1: деякі нові функції RC-EX3 недоступні.',
+  '*R2 : Some new functions by RC-EX3A or RC-ES1 (App ver 1.0.0) is not available.':
+    '*R2: деякі нові функції RC-EX3A або RC-ES1 (версія застосунку 1.0.0) недоступні.',
+  '*R3 : Draft prevention panel, motion sensor cannot be operated.':
+    '*R3: панель захисту від протягів і датчик руху не можуть керуватись.',
+  '*R4 : RC-EXZ3A can be used with only FDUM/FDU**VH/A model':
+    '*R4: RC-EXZ3A можна використовувати лише з моделями FDUM/FDU**VH/A.',
+  'FDUM/FDU**VH/A model can be used with below out door unit.':
+    'Моделі FDUM/FDU**VH/A можна використовувати із зовнішніми блоками, переліченими нижче:',
+  '*R5 : Some function for refrigerant leakage is not available.':
+    '*R5: деякі функції для витоку хладагенту недоступні.',
+  '*R6 : (For WF MODELS) compatabilityNot official but technically compatible':
+    '*R6: для моделей WF сумісність неофіційна, але технічно можлива.',
+  '*Note:For SRK71ZR-WF AND SRK100ZR-WF Wifi enabled models it is needed to':
+    '*Примітка: для моделей SRK71ZR-WF і SRK100ZR-WF з увімкненим Wi-Fi потрібно відключити',
+  'take off the Wifi connection to connect the wired remote controller.':
+    'Wi-Fi-з’єднання, щоб підключити проводовий пульт керування.',
+  '*R7 : Some new functions by RC-EX3D is not available.':
+    '*R7: деякі нові функції RC-EX3D недоступні.'
+};
+function translateCompatNote(s) { return COMPAT_NOTES_UA[s] || s; }
+
 async function loadMhiCompatTables() {
   if (mhiCompatData && mhiCompatData !== 'error') return mhiCompatData;
   mhiCompatData = 'loading';
@@ -4492,8 +4572,8 @@ function renderCompatNotesHtml(notes) {
   if (!notes || !notes.length) return '';
   return `
     <div class="compat-notes-wrap">
-      <button type="button" class="compat-notes-toggle" data-compat-notes-toggle>Примітки виробника, англійською (${notes.length}) ▾</button>
-      <div class="compat-notes-body" data-compat-notes-body hidden>${notes.map(n => `<div>${escapeHtml(n)}</div>`).join('')}</div>
+      <button type="button" class="compat-notes-toggle" data-compat-notes-toggle>Примітки виробника (${notes.length}) ▾</button>
+      <div class="compat-notes-body" data-compat-notes-body hidden>${notes.map(n => `<div>${escapeHtml(translateCompatNote(n))}</div>`).join('')}</div>
     </div>`;
 }
 
@@ -4512,8 +4592,8 @@ function renderSimpleCompatTableHtml(table, opts) {
     } else if (!groupLabel) {
       lastGroup = null;
     }
-    const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(cleanCompatLabel(v))}</td>`).join('');
-    return groupHtml + `<tr><td class="compat-rowhead" data-row-idx>${escapeHtml(cleanCompatLabel(r.code))}</td>${cellsHtml}</tr>`;
+    const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(translateCompatCell(v))}</td>`).join('');
+    return groupHtml + `<tr><td class="compat-rowhead">${escapeHtml(translateCompatCode(r.code))}</td>${cellsHtml}</tr>`;
   }).join('');
   return `
     <div class="compat-toolbar"><input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…"></div>
@@ -4540,8 +4620,8 @@ function renderMultiCompatTableHtml(table) {
   const groupRowHtml = groupRuns.map(g => `<th class="compat-colhead-group" colspan="${g.span}">${escapeHtml(cleanCompatLabel(g.group))}</th>`).join('');
   const sizeRowHtml = cols.map((c, i) => `<th class="compat-colhead-size" data-col-idx="${i}">${escapeHtml(cleanCompatLabel(c.size))}</th>`).join('');
   const rowsHtml = table.rows.map(r => {
-    const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(cleanCompatLabel(v))}</td>`).join('');
-    return `<tr><td class="compat-rowhead" data-row-idx>${escapeHtml(cleanCompatLabel(r.code))}</td>${cellsHtml}</tr>`;
+    const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(translateCompatCell(v))}</td>`).join('');
+    return `<tr><td class="compat-rowhead">${escapeHtml(cleanCompatLabel(r.code))}</td>${cellsHtml}</tr>`;
   }).join('');
   return `
     <div class="compat-toolbar"><input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…"></div>
@@ -4595,6 +4675,11 @@ function attachCompatTableHandlers(main) {
       body.hidden = !body.hidden;
     });
   });
+  // Заголовки колонок і перша колонка обрізані (щоб таблиця лишалась компактною) —
+  // тап показує повний текст у вже наявному спливаючому вікні "детальніше".
+  main.querySelectorAll('.compat-rowhead, .compat-colhead, .compat-colhead-group, .compat-colhead-size').forEach(el => {
+    el.addEventListener('click', () => openSeriesInfo('Маркування', el.textContent.trim()));
+  });
 }
 
 async function renderMhiCompatTables() {
@@ -4608,7 +4693,7 @@ async function renderMhiCompatTables() {
 
   if (mhiCompatFolder === 'semi') {
     main.innerHTML = renderSimpleCompatTableHtml(data.fd, {
-      rowGroupOf: r => r.sub ? (r.group + ' — ' + r.sub) : r.group
+      rowGroupOf: r => r.sub ? (translateCompatGroup(r.group) + ' — ' + r.sub) : translateCompatGroup(r.group)
     });
     attachCompatTableHandlers(main);
     return;
@@ -4620,7 +4705,7 @@ async function renderMhiCompatTables() {
   ).join('')}</div>`;
   const bodyHtml = mhiCompatSheet === 'racMulti'
     ? renderMultiCompatTableHtml(data.racMulti)
-    : renderSimpleCompatTableHtml(data.rac, { rowGroupOf: r => r.family });
+    : renderSimpleCompatTableHtml(data.rac, { rowGroupOf: r => translateCompatGroup(r.family) });
   main.innerHTML = toggleHtml + bodyHtml;
   main.querySelectorAll('[data-compat-sheet]').forEach(btn => {
     btn.addEventListener('click', () => {
