@@ -4639,6 +4639,22 @@ function mhiCandidateMatches(userInput, template) {
   return sc;
 }
 
+/* Той самий збіг, що й mhiCandidateMatches, але БЕЗ перевірки типорозміру — для
+   листа RAC MULTI: один зовнішній блок живить кілька внутрішніх різного розміру
+   одночасно, тому типорозмір, який ввів користувач для внутрішнього блока, не
+   звужує пошук — навпаки, показуємо ВСІ типорозміри цієї серії, сумісні саме з
+   цим зовнішнім блоком (кожен розмір після фіксу типорозмірів RAC MULTI — окремий
+   рядок у rules, зі своїм власним "запеченим" у текст маркуванням). */
+function mhiCandidateMatchesIgnoreSize(userInput, template) {
+  if (userInput.prefix !== template.prefix) return null;
+  if (userInput.series !== template.series) return null;
+  const userSuffixText = userInput.suffixVariants ? userInput.suffixVariants[0] : null;
+  const sc = mhiSuffixCoreMatch(userSuffixText, template.suffixVariants);
+  if (!sc) return null;
+  if (!sc.noTemplateSuffix && template.suffixFamily && userInput.suffixFamily && template.suffixFamily !== userInput.suffixFamily) return null;
+  return sc;
+}
+
 async function loadMhiCompatData() {
   if (mhiCompatData && mhiCompatData !== 'error') return mhiCompatData;
   mhiCompatData = 'loading';
@@ -4685,37 +4701,23 @@ function checkMhiCompatibility(indoorRaw, outdoorRaw, data) {
   }
 
   const rules = sheet === 'multi' ? data.multi_rules : data.rac_rules;
+  // На листі RAC внутрішній і зовнішній блок звіряються СУВОРО (включно з
+  // типорозміром — уже перевірили вище, що вони збігаються) — там одна колонка
+  // зазвичай і так одна конкретна клітинка. На RAC MULTI типорозмір внутрішнього
+  // блока навмисно ІГНОРУЄТЬСЯ — знаходимо ВСІ типорозміри цієї серії, сумісні
+  // саме з цим зовнішнім блоком, а не лише той один, що ввів користувач.
+  const indoorMatcher = sheet === 'multi' ? mhiCandidateMatchesIgnoreSize : mhiCandidateMatches;
   const hits = [];
   rules.forEach(rule => {
-    const im = mhiCandidateMatches(indoorInput, rule._i);
-    if (!im) return;
     const om = mhiCandidateMatches(outdoorInput, rule._o);
     if (!om) return;
+    const im = indoorMatcher(indoorInput, rule._i);
+    if (!im) return;
     hits.push({ rule, indoorMatch: im, outdoorMatch: om });
   });
   if (!hits.length) return { kind: 'no-data' };
-
-  hits.sort((a, b) => ((a.indoorMatch.extra ? 1 : 0) + (a.outdoorMatch.extra ? 1 : 0)) - ((b.indoorMatch.extra ? 1 : 0) + (b.outdoorMatch.extra ? 1 : 0)));
-  const minExtra = (hits[0].indoorMatch.extra ? 1 : 0) + (hits[0].outdoorMatch.extra ? 1 : 0);
-  const bestHits = hits.filter(h => ((h.indoorMatch.extra ? 1 : 0) + (h.outdoorMatch.extra ? 1 : 0)) === minExtra);
-  // Рідкісний, але реальний випадок у вихідній таблиці MHI: одна об'єднана клітинка
-  // шапки покриває дві колонки з ОДНАКОВИМ типорозміром, але РІЗНИМ статусом у
-  // конкретному рядку (напр. "FDUM-VF" 50 клас зустрічається двічі в одному merge,
-  // один раз ◎, один раз 〇) — сама таблиця не дає текстової ознаки, яку з двох
-  // колонок мав на увазі користувач. Мовчки брати першу — вводити в оману.
-  const distinctStatuses = [...new Set(bestHits.map(h => h.rule.s))];
-  if (distinctStatuses.length > 1) {
-    return { kind: 'ambiguous', hits: bestHits, indoorTypo, outdoorTypo, sheet, indoorInput };
-  }
-  const best = bestHits[0];
-  return { kind: 'found', rule: best.rule, indoorMatch: best.indoorMatch, outdoorMatch: best.outdoorMatch, indoorTypo, outdoorTypo, sheet, indoorInput };
+  return { kind: 'found', hits, indoorTypo, outdoorTypo, sheet };
 }
-
-const MHI_COMPAT_STATUS_LABEL = {
-  recommended: 'Сумісно (офіційно)',
-  conditional: 'Сумісно (без офіційного підтвердження)',
-  incompatible: 'Несумісно'
-};
 
 function renderMhiCompatScreen() {
   const main = document.getElementById('main');
@@ -4772,28 +4774,6 @@ async function checkMhiCompat() {
   if (slot) slot.innerHTML = renderMhiCompatResultHtml();
 }
 
-function renderMhiCompatFactsHtml(indoorInput) {
-  const data = mhiCompatData;
-  if (!data || data === 'loading' || data === 'error') return '';
-  const facts = data.rac_facts.filter(f => mhiCandidateMatches(indoorInput, f._i));
-  if (!facts.length) return '';
-  const rows = facts.map(f => `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(f.t)}</span><span class="mhi-compat-fact-val">${escapeHtml(f.v)}</span></div>`).join('');
-  return `<div class="mhi-result-section-title">Додатково (за внутрішнім блоком)</div><div class="mhi-compat-facts">${rows}</div>`;
-}
-
-/* Розбіжність між тим, що ввів користувач, і знайденим еталонним маркуванням з
-   таблиці — окремим текстовим рядком на кожну сторону (тільки якщо є що показати). */
-function renderMhiCompatDiscrepancyHtml(side, label, match) {
-  if (!match) return '';
-  if (match.noTemplateSuffix && match.extra) {
-    return `<div class="mhi-compat-note">${escapeHtml(label)}: офіційне маркування цієї лінійки не містить суфікса — введене "${escapeHtml(match.extra)}" не враховувалось при зіставленні.</div>`;
-  }
-  if (match.extra) {
-    return `<div class="mhi-compat-note">${escapeHtml(label)}: розпізнано базове маркування з суфіксом "${escapeHtml(match.matched)}", а введені символи "${escapeHtml(match.extra)}" — додаткові, в офіційній таблиці не значаться.</div>`;
-  }
-  return '';
-}
-
 function renderMhiCompatResultHtml() {
   const r = mhiCompatResult;
   if (r === 'needinput') {
@@ -4816,41 +4796,41 @@ function renderMhiCompatResultHtml() {
   if (r.kind === 'no-data') {
     return '<div class="mhi-result mhi-result-empty">Такої пари немає в таблиці сумісності. Це не означає, що блоки несумісні — просто ця комбінація не знайдена в офіційних даних MHI. Уточніть у технічному посібнику MHI або в дилера.</div>';
   }
-  if (r.kind === 'ambiguous') {
-    const rows = r.hits.map(h => {
-      const statusLabel = MHI_COMPAT_STATUS_LABEL[h.rule.s] || h.rule.sr;
-      return `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(h.rule.i)} × ${escapeHtml(h.rule.o)}</span><span class="mhi-compat-fact-val">${escapeHtml(statusLabel)}</span></div>`;
-    }).join('');
-    return `
-      <div class="mhi-result">
-        <div class="mhi-result mhi-result-empty">У самій таблиці MHI для цього маркування є кілька колонок з однаковим текстом і типорозміром, але РІЗНИМ статусом сумісності (ймовірно, різні модифікації, не розрізнені в тексті шапки таблиці) — однозначно визначити відповідь неможливо:</div>
-        <div class="mhi-compat-facts">${rows}</div>
-        <div class="mhi-compat-note">Уточніть точну модель у технічному посібнику MHI або в дилера.</div>
-      </div>`;
-  }
   if (r.kind === 'found') {
-    const rule = r.rule;
-    const statusClass = 'mhi-compat-status-' + rule.s;
-    const statusLabel = MHI_COMPAT_STATUS_LABEL[rule.s] || rule.sr;
-    const refHtml = `<div class="mhi-compat-note">Зіставлено з офіційним маркуванням: внутрішній — ${escapeHtml(rule.i)}, зовнішній — ${escapeHtml(rule.o)}.</div>`;
-    const footnoteHtml = rule.f && rule.f.length
-      ? `<div class="mhi-compat-footnote">${rule.f.map(escapeHtml).join('<br>')}</div>` : '';
+    // Прямо з клітинок таблиці, без переформулювання: групуємо знайдені збіги за
+    // статусом (◎ офіційно / 〇 без офіційного підтвердження) і в кожній групі
+    // просто перелічуємо сирий текст маркування зовнішнього й внутрішніх блоків
+    // так, як він написаний у файлі MHI — жодних доданих приміток "від себе".
+    const outdoorRaw = r.hits[0].rule.o;
+    const order = ['recommended', 'conditional'];
+    const groupsHtml = order.map(status => {
+      const inGroup = r.hits.filter(h => h.rule.s === status);
+      if (!inGroup.length) return '';
+      const label = status === 'recommended' ? 'офіційно' : 'без офіційного підтвердження';
+      const itemsHtml = inGroup.map(h => {
+        const dep = h.rule.d ? ' ☆' : '';
+        const fn = h.rule.f && h.rule.f.length ? `<div class="mhi-compat-footnote">${h.rule.f.map(escapeHtml).join('<br>')}</div>` : '';
+        return `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(h.rule.i)}${dep}</span></div>${fn}`;
+      }).join('');
+      return `
+        <div class="mhi-result-section-title">${escapeHtml(outdoorRaw)} сумісний із (${label}):</div>
+        <div class="mhi-compat-facts">${itemsHtml}</div>`;
+    }).join('');
+    // Знайдені клітинки є, але всі — "-" (несумісно): без цього окремого випадку
+    // groupsHtml був би порожнім і застосунок мовчав би, хоча в таблиці МНІ пряма
+    // відповідь ЄСТЬ, просто негативна — показуємо її так само чесно.
+    const hasCompatible = r.hits.some(h => h.rule.s === 'recommended' || h.rule.s === 'conditional');
+    const incompatibleHtml = !hasCompatible
+      ? `<div class="mhi-result mhi-result-empty">${escapeHtml(outdoorRaw)} несумісний із ${escapeHtml(r.hits.map(h => h.rule.i).join(', '))}.</div>`
+      : '';
     const typoHtml = [r.indoorTypo, r.outdoorTypo].filter(Boolean).map(t =>
       `<div class="mhi-compat-note">⚠ У маркуванні виявлено розбіжність літер: введено "${escapeHtml(t.from)}", найближче відоме — "${escapeHtml(t.to)}". Результат нижче — за умови, що малось на увазі "${escapeHtml(t.to)}"; якщо введене маркування вірне як є — підтвердити сумісність не можна.</div>`
     ).join('');
-    const discrepancyHtml = renderMhiCompatDiscrepancyHtml('indoor', 'Внутрішній блок', r.indoorMatch) + renderMhiCompatDiscrepancyHtml('outdoor', 'Зовнішній блок', r.outdoorMatch);
-    const deprecatedHtml = rule.d
-      ? '<div class="mhi-compat-note">Одна з моделей позначена як така, що знімається з виробництва (☆) — на статус сумісності це не впливає.</div>' : '';
-    const factsHtml = (r.sheet === 'rac') ? renderMhiCompatFactsHtml(r.indoorInput) : '';
     return `
       <div class="mhi-result">
-        <div class="mhi-compat-status ${statusClass}">${escapeHtml(statusLabel)}</div>
         ${typoHtml}
-        ${refHtml}
-        ${footnoteHtml}
-        ${discrepancyHtml}
-        ${deprecatedHtml}
-        ${factsHtml}
+        ${groupsHtml}
+        ${incompatibleHtml}
       </div>`;
   }
   return '';
