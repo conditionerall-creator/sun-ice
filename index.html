@@ -941,10 +941,11 @@
     border-bottom: 1px solid var(--border);
   }
   .mhi-compat-fact-row:last-child { border-bottom: none; }
-  .mhi-compat-fact-type { color: var(--text-secondary); }
-  .mhi-compat-fact-val { color: var(--text); font-weight: 600; text-align: right; }
+  .mhi-compat-fact-type { color: var(--text-secondary); flex: 1 1 auto; min-width: 0; }
+  .mhi-compat-fact-val { color: var(--text); font-weight: 600; text-align: right; flex: 0 0 auto; white-space: nowrap; }
   .mhi-result-block { margin-bottom: 16px; }
   .mhi-result-block:last-child { margin-bottom: 0; }
+  .mhi-result-block-divider { margin-top: 6px; padding-top: 20px; border-top: 1px dashed var(--border); }
 
   /* ---------- "Підбірка" (кошик): галочка біля рядка + плаваюча кнопка + панель ---------- */
   .cart-check-btn {
@@ -4721,12 +4722,51 @@ function checkMhiCompatibility(indoorRaw, outdoorRaw, data) {
   return { kind: 'found', hits, indoorTypo, outdoorTypo, sheet, indoorInput };
 }
 
+/* Заповнене лише ОДНЕ поле (внутрішній АБО зовнішній блок) — показуємо повний
+   перелік усього, з чим цей конкретний блок сумісний (офіційно й неофіційно), по
+   обох листах одразу. Для зовнішнього блока лист однозначно визначається префіксом
+   (SCM → multi, інакше rac); для внутрішнього — той самий префікс (напр. SRK)
+   трапляється на ОБОХ листах з різними наборами сумісних зовнішніх блоків (SRC на
+   RAC, SCM на RAC MULTI), тому шукаємо одразу в обох. Типорозмір введеного блока
+   тут звіряється СУВОРО (mhiCandidateMatches, не ігнорує розмір) — на відміну від
+   парного запиту для RAC MULTI, тут немає фіксованого зовнішнього блока, під
+   типорозмір якого можна було б "розширювати" список. */
+function checkMhiCompatibilitySingle(raw, role, data) {
+  const up = raw.toUpperCase();
+  if (MHI_VRF_HINT_PREFIXES.some(p => up.startsWith(p))) {
+    return { kind: 'vrf-out-of-scope' };
+  }
+  const { parsed: input, typo } = mhiParseUserInput(raw, role);
+  if (input.error) return { kind: 'parse-error-single', role };
+
+  const hits = [];
+  if (role === 'outdoor') {
+    const sheet = input.prefix === 'SCM' ? 'multi' : 'rac';
+    const rules = sheet === 'multi' ? data.multi_rules : data.rac_rules;
+    rules.forEach(rule => {
+      const m = mhiCandidateMatches(input, rule._o);
+      if (m) hits.push({ rule, match: m });
+    });
+  } else {
+    data.rac_rules.forEach(rule => {
+      const m = mhiCandidateMatches(input, rule._i);
+      if (m) hits.push({ rule, match: m });
+    });
+    data.multi_rules.forEach(rule => {
+      const m = mhiCandidateMatches(input, rule._i);
+      if (m) hits.push({ rule, match: m });
+    });
+  }
+  if (!hits.length) return { kind: 'no-data' };
+  return { kind: 'found-single', role, hits, typo, input };
+}
+
 function renderMhiCompatScreen() {
   const main = document.getElementById('main');
   main.innerHTML = `
     <div class="mhi-block">
       <div class="mhi-block-title">Перевірка сумісності</div>
-      <div class="mhi-hint">Введіть маркування внутрішнього і зовнішнього блоків MHI (Спліт-системи та Мульти спліт-системи серій RAC/SCM) — так, як вони написані на блоці чи в прайсі, наприклад SRK50ZSX-W або SRC50ZMX-S.</div>
+      <div class="mhi-hint">Введіть маркування внутрішнього і зовнішнього блоків MHI (Спліт-системи та Мульти спліт-системи серій RAC/SCM) — так, як вони написані на блоці чи в прайсі, наприклад SRK50ZSX-W або SRC50ZMX-S. Можна заповнити лише одне поле — покажемо повний перелік усього, з чим цей блок сумісний.</div>
       <div class="mhi-field">
         <label class="mhi-label">Внутрішній блок</label>
         <input type="text" class="mhi-code-input" id="mhi-compat-indoor" placeholder="Наприклад: SRK50ZSX-W">
@@ -4760,7 +4800,7 @@ async function checkMhiCompat() {
   const indoor = indoorEl ? indoorEl.value.trim() : '';
   const outdoor = outdoorEl ? outdoorEl.value.trim() : '';
   const slot = document.getElementById('mhi-compat-result-slot');
-  if (!indoor || !outdoor) {
+  if (!indoor && !outdoor) {
     mhiCompatResult = 'needinput';
     if (slot) slot.innerHTML = renderMhiCompatResultHtml();
     return;
@@ -4772,14 +4812,18 @@ async function checkMhiCompat() {
     if (slot) slot.innerHTML = renderMhiCompatResultHtml();
     return;
   }
-  mhiCompatResult = checkMhiCompatibility(indoor, outdoor, data);
+  // Заповнені обидва поля — точна пара; лише одне — повний перелік усього, з чим
+  // сумісний саме цей блок (по обох листах одразу).
+  mhiCompatResult = (indoor && outdoor)
+    ? checkMhiCompatibility(indoor, outdoor, data)
+    : checkMhiCompatibilitySingle(indoor || outdoor, indoor ? 'indoor' : 'outdoor', data);
   if (slot) slot.innerHTML = renderMhiCompatResultHtml();
 }
 
 function renderMhiCompatResultHtml() {
   const r = mhiCompatResult;
   if (r === 'needinput') {
-    return '<div class="mhi-result mhi-result-empty">Заповніть обидва поля — внутрішній і зовнішній блок.</div>';
+    return '<div class="mhi-result mhi-result-empty">Заповніть хоча б одне поле — внутрішній або зовнішній блок. Можна ввести лише один із них, щоб побачити повний перелік усього, з чим він сумісний.</div>';
   }
   if (!r) return '';
   if (r.kind === 'load-error') {
@@ -4787,6 +4831,10 @@ function renderMhiCompatResultHtml() {
   }
   if (r.kind === 'parse-error') {
     const which = r.badIndoor && r.badOutdoor ? 'обидва маркування' : (r.badIndoor ? 'маркування внутрішнього блока' : 'маркування зовнішнього блока');
+    return `<div class="mhi-result mhi-result-empty">Не вдалося розпізнати ${escapeHtml(which)}. Перевірте, чи правильно введено маркування (має починатись з літер серії, напр. SRK, SRC, SCM).</div>`;
+  }
+  if (r.kind === 'parse-error-single') {
+    const which = r.role === 'indoor' ? 'маркування внутрішнього блока' : 'маркування зовнішнього блока';
     return `<div class="mhi-result mhi-result-empty">Не вдалося розпізнати ${escapeHtml(which)}. Перевірте, чи правильно введено маркування (має починатись з літер серії, напр. SRK, SRC, SCM).</div>`;
   }
   if (r.kind === 'vrf-out-of-scope') {
@@ -4798,12 +4846,22 @@ function renderMhiCompatResultHtml() {
   if (r.kind === 'no-data') {
     return '<div class="mhi-result mhi-result-empty">Такої пари немає в таблиці сумісності. Це не означає, що блоки несумісні — просто ця комбінація не знайдена в офіційних даних MHI. Уточніть у технічному посібнику MHI або в дилера.</div>';
   }
-  if (r.kind === 'found') {
+  if (r.kind === 'found' || r.kind === 'found-single') {
     // Прямо з клітинок таблиці, без переформулювання: групуємо знайдені збіги за
     // статусом (◎ офіційно / 〇 без офіційного підтвердження / "-" несумісно), кожна
     // група — свій колірний бейдж (зелений/жовтий/червоний) вгорі й під ним просто
-    // перелік сирого тексту маркування так, як він написаний у файлі MHI.
-    const outdoorRaw = r.hits[0].rule.o;
+    // перелік сирого тексту маркування так, як він написаний у файлі MHI. Для
+    // парного запиту "суб'єкт" — завжди зовнішній блок (він точно один, той, що
+    // ввів користувач); для одиничного запиту "суб'єкт" — те єдине поле, яке
+    // заповнив користувач, а перелік — протилежне поле з кожного знайденого збігу
+    // (може бути з обох листів одразу, якщо шукали за внутрішнім блоком).
+    const single = r.kind === 'found-single';
+    const otherOf = single
+      ? (h => r.role === 'outdoor' ? h.rule.i : h.rule.o)
+      : (h => h.rule.i);
+    const subjectRaw = single
+      ? (r.role === 'outdoor' ? r.hits[0].rule.o : r.hits[0].rule.i)
+      : r.hits[0].rule.o;
     const STATUS_LABEL = { recommended: 'Сумісно (офіційно)', conditional: 'Сумісно (без офіційного підтвердження)', incompatible: 'Несумісно' };
     const VERB = { recommended: 'сумісний із', conditional: 'сумісний із', incompatible: 'несумісний із' };
     function statusBlockHtml(status, items) {
@@ -4811,12 +4869,12 @@ function renderMhiCompatResultHtml() {
       const itemsHtml = items.map(h => {
         const dep = h.rule.d ? ' ☆' : '';
         const fn = h.rule.f && h.rule.f.length ? `<div class="mhi-compat-footnote">${h.rule.f.map(escapeHtml).join('<br>')}</div>` : '';
-        return `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(h.rule.i)}${dep}</span></div>${fn}`;
+        return `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(otherOf(h))}${dep}</span></div>${fn}`;
       }).join('');
       return `
         <div class="mhi-result-block">
           <div class="mhi-compat-status mhi-compat-status-${status}">${escapeHtml(STATUS_LABEL[status])}</div>
-          <div class="mhi-result-section-title">${escapeHtml(outdoorRaw)} ${VERB[status]}:</div>
+          <div class="mhi-result-section-title">${escapeHtml(subjectRaw)} ${VERB[status]}:</div>
           <div class="mhi-compat-facts">${itemsHtml}</div>
         </div>`;
     }
@@ -4826,10 +4884,12 @@ function renderMhiCompatResultHtml() {
     const groupsHtml = hasCompatible
       ? ['recommended', 'conditional'].map(status => statusBlockHtml(status, r.hits.filter(h => h.rule.s === status))).join('')
       : statusBlockHtml('incompatible', r.hits);
-    const typoHtml = [r.indoorTypo, r.outdoorTypo].filter(Boolean).map(t =>
+    const typoList = single ? [r.typo] : [r.indoorTypo, r.outdoorTypo];
+    const typoHtml = typoList.filter(Boolean).map(t =>
       `<div class="mhi-compat-note">⚠ У маркуванні виявлено розбіжність літер: введено "${escapeHtml(t.from)}", найближче відоме — "${escapeHtml(t.to)}". Результат нижче — за умови, що малось на увазі "${escapeHtml(t.to)}"; якщо введене маркування вірне як є — підтвердити сумісність не можна.</div>`
     ).join('');
-    const factsHtml = (r.sheet === 'rac') ? renderMhiCompatFactsHtml(r.indoorInput) : '';
+    const indoorInputForFacts = single ? (r.role === 'indoor' ? r.input : null) : (r.sheet === 'rac' ? r.indoorInput : null);
+    const factsHtml = indoorInputForFacts ? renderMhiCompatFactsHtml(indoorInputForFacts) : '';
     return `
       <div class="mhi-result">
         ${typoHtml}
@@ -4840,13 +4900,31 @@ function renderMhiCompatResultHtml() {
   return '';
 }
 
+/* Мітки фактів у таблиці MHI — англійською, повним текстом (з поясненням у дужках,
+   напр. "SC-BIKN2-E necessity (For connecting with RC-E3, E4, E5, RC-EX1,...)").
+   Перекладаємо структуру речення українською, але коди/абревіатури/моделі (RC-E3,
+   SC-BIKN2-E, twin/triple/double-twin тощо) лишаємо як є — це не слова, а точні
+   позначення з документації MHI, перекладати їх не можна. Регулярка для SC-BIKN*
+   охоплює всі варіанти одразу (E/2-E/2-BL, різні переліки конекторів), решта —
+   окремо для двох унікальних рядків. */
+function translateMhiFactType(t) {
+  const s = String(t || '').replace(/\s+/g, ' ').trim();
+  const bikn = s.match(/^(SC-BIKN2?-(?:E|BL))\s*necessity\s*\(For connecting with (.+)\)$/i);
+  if (bikn) return `Потреба в ${bikn[1]} (для підключення з ${bikn[2]})`;
+  const plural = s.match(/^Plural use \(([^)]+)\)\s*\(([^)]+)\)$/i);
+  if (plural) return `Використання кількох внутрішніх блоків (${plural[1]}) (та сама модель, та сама потужність)`;
+  const vmulti = s.match(/^V-multi use\s*\(([^)]+)\)$/i);
+  if (vmulti) return `Використання V-multi (різна модель, різна потужність)`;
+  return t;
+}
+
 function renderMhiCompatFactsHtml(indoorInput) {
   const data = mhiCompatData;
   if (!data || data === 'loading' || data === 'error') return '';
   const facts = data.rac_facts.filter(f => mhiCandidateMatches(indoorInput, f._i));
   if (!facts.length) return '';
-  const rows = facts.map(f => `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(f.t)}</span><span class="mhi-compat-fact-val">${escapeHtml(f.v)}</span></div>`).join('');
-  return `<div class="mhi-result-block"><div class="mhi-result-section-title">Внутрішні блоки: сумісність із аксесуарами</div><div class="mhi-compat-facts">${rows}</div></div>`;
+  const rows = facts.map(f => `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(translateMhiFactType(f.t))}</span><span class="mhi-compat-fact-val">${escapeHtml(f.v)}</span></div>`).join('');
+  return `<div class="mhi-result-block mhi-result-block-divider"><div class="mhi-result-section-title">Внутрішні блоки: сумісність із аксесуарами</div><div class="mhi-compat-facts">${rows}</div></div>`;
 }
 
 /* ---------- Кабінет ---------- */
