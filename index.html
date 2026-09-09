@@ -680,7 +680,7 @@
   }
   .calc-toggle svg { width: 17px; height: 17px; display: block; }
   .calc-toggle:active { background: var(--accent-bg); }
-  .share-btn {
+  .share-btn, .task-share-btn {
     width: 28px; height: 28px;
     border-radius: 8px;
     border: 1px solid var(--border);
@@ -692,8 +692,8 @@
     flex-shrink: 0;
     padding: 0;
   }
-  .share-btn svg { width: 16px; height: 16px; display: block; }
-  .share-btn:active { background: var(--accent-bg); color: var(--accent); }
+  .share-btn svg, .task-share-btn svg { width: 16px; height: 16px; display: block; }
+  .share-btn:active, .task-share-btn:active { background: var(--accent-bg); color: var(--accent); }
   /* Плавний перехід стану галочки "в підбірку" — тільки opacity/колір, без стрибків
      розміру; tap-феєдбек (scale) для всіх трьох іконок рядка — у словнику анімацій. */
   .cart-check-btn { transition: opacity 200ms ease, background-color 200ms ease, border-color 200ms ease; }
@@ -2056,11 +2056,38 @@
         <label>Коментар</label>
         <textarea id="task-field-comment" rows="3"></textarea>
       </div>
+      <div class="field" id="task-field-share-wrap" style="display:none;">
+        <label class="promo-ack-banner">
+          <input type="checkbox" id="task-field-shared">
+          <span>Спільний монтаж (бачить напарник)</span>
+        </label>
+        <div id="task-field-assignee-wrap" style="display:none; margin-top:8px;">
+          <label>Призначено</label>
+          <select id="task-field-assignee">
+            <option value="me">Я</option>
+            <option value="partner">Напарник</option>
+            <option value="both">Обидва</option>
+          </select>
+        </div>
+      </div>
       <div id="task-form-error"></div>
     </div>
     <div class="info-sheet-actions">
       <button type="button" class="info-sheet-action-btn" id="task-form-submit-btn">Зберегти</button>
     </div>
+  </div>
+</div>
+
+<!-- Зв'язок з напарником (CRМонтаж, Крок 5) — той самий bottom-sheet патерн, тіло
+     наповнюється динамічно через renderPartnerOverlayBody() залежно від стану зв'язку. -->
+<div class="info-sheet-overlay" id="partner-overlay">
+  <div class="info-sheet-backdrop" id="partner-overlay-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title">Напарник</div>
+      <button type="button" class="info-sheet-close" id="partner-overlay-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body" id="partner-overlay-body"></div>
   </div>
 </div>
 
@@ -5967,8 +5994,9 @@ async function renderInstallerTab() {
   main.innerHTML = `
     <button type="button" class="primary-btn no-print" data-task-action="add" style="margin-bottom:12px;">+ Новий монтаж</button>
     <div class="task-toolbar-row no-print">
-      <button type="button" data-task-action="print">🖨 Друк списку</button>
+      <button type="button" data-task-action="print">🖨 Друк</button>
       <button type="button" data-task-action="export-xlsx">📊 Excel</button>
+      <button type="button" data-task-action="partner">🤝 Напарник</button>
     </div>
     <div class="admin-filters no-print">
       <div class="admin-search"><input type="text" id="task-search" placeholder="Пошук за адресою чи клієнтом"></div>
@@ -6021,13 +6049,20 @@ function taskEquipmentOptionsHtml(selected) {
 let installerTasksCache = [];
 let editingTaskId = null;
 let taskQuickFilter = 'all'; // 'all' | 'today' | 'week'
+let myInstallerId = null;
+let partnerLinkCache = null; // null | {id, status, requester_id, partner_id, otherId, otherName, iAmRequester}
 
 async function loadInstallerTasks() {
   const { data: sessionData } = await sb.auth.getSession();
   const session = sessionData ? sessionData.session : null;
-  if (!session) { installerTasksCache = []; return; }
-  const { data, error } = await sb.from('installer_tasks').select('*').eq('installer_id', session.user.id).order('scheduled_at');
+  if (!session) { installerTasksCache = []; myInstallerId = null; partnerLinkCache = null; return; }
+  myInstallerId = session.user.id;
+  /* Без .eq('installer_id', ...) — RLS сама повертає об'єднання "свої монтажі" +
+     "спільні монтажі напарника" (Крок 5, адитивна installer_tasks_partner_select),
+     для інсталятора без напарника це прозоро звужується назад до лише власних рядків. */
+  const { data, error } = await sb.from('installer_tasks').select('*').order('scheduled_at');
   installerTasksCache = error ? [] : (data || []);
+  await loadPartnerLink();
 }
 
 function taskPassesFilters(t, q, status, equipment, quick) {
@@ -6094,15 +6129,29 @@ function taskCardHtml(t, d) {
   const equipBits = escapeHtml(t.equipment_type || '') + (t.is_heat_pump_tt ? ' · монтаж ТТ' : '');
   const statusOptionsHtml = Object.keys(TASK_STATUS_LABELS)
     .map(s => `<option value="${s}" ${s === t.status ? 'selected' : ''}>${escapeHtml(TASK_STATUS_LABELS[s])}</option>`).join('');
+  const isOwner = t.installer_id === myInstallerId;
+  const sharedLabel = !isOwner
+    ? `<p class="user-card-sub">👥 Спільний · ${escapeHtml(partnerLinkCache ? (partnerLinkCache.otherName || '') : '')}</p>`
+    : '';
   return `
     <div class="user-card" data-task-card-id="${t.id}">
       <div class="user-card-top">
         <div>
           <p class="user-card-name">${escapeHtml(t.address)}</p>
           <p class="user-card-sub">${timeLabel}${clientBits ? ' · ' + clientBits : ''}</p>
+          ${sharedLabel}
         </div>
         <div class="user-card-top-right">
           <span class="badge badge-${escapeHtml(t.status)}">${escapeHtml(taskStatusLabel(t.status))}</span>
+          <button type="button" class="task-share-btn no-print" data-task-action="share" data-task-id="${t.id}" aria-label="Поділитися в месенджер">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/>
+              <line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
+              <circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
+              <circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
+            </svg>
+          </button>
           <button type="button" class="task-ics-btn no-print" data-task-action="ics" data-task-id="${t.id}" aria-label="Додати нагадування в календар">${TASK_CALENDAR_ICON}</button>
           <button type="button" class="user-card-open-btn no-print" data-task-action="toggle" data-task-id="${t.id}" aria-label="Відкрити">${USER_CARD_OPEN_ICON}</button>
         </div>
@@ -6115,7 +6164,7 @@ function taskCardHtml(t, d) {
         </div>
         <div class="user-card-actions no-print">
           <button type="button" data-task-action="edit" data-task-id="${t.id}">Редагувати</button>
-          <button type="button" class="reject" data-task-action="delete" data-task-id="${t.id}">Видалити</button>
+          ${isOwner ? `<button type="button" class="reject" data-task-action="delete" data-task-id="${t.id}">Видалити</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -6151,6 +6200,11 @@ async function handleTaskAction(action, id, value) {
   if (action === 'ics') {
     const task = installerTasksCache.find(t => String(t.id) === String(id));
     if (task) downloadTaskIcs(task);
+    return;
+  }
+  if (action === 'share') {
+    const task = installerTasksCache.find(t => String(t.id) === String(id));
+    if (task) shareTaskInfo(task, id);
     return;
   }
 }
@@ -6218,6 +6272,37 @@ function downloadTaskIcs(t) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+/* ---------- CRМонтаж: відправка в месенджери (ТЗ 3.4) ----------
+   Той самий патерн, що й кнопка "Поділитися" в прайсі/кошику (navigator.share, з
+   резервним копіюванням у буфер) — на телефоні відкриває системне вікно "Поділитися"
+   зі списком месенджерів (Telegram/Viber/WhatsApp/будь-що ще встановлене), користувач
+   сам обирає й підтверджує відправку в обраному месенджері. Окремий клас
+   .task-share-btn (не .share-btn) навмисно — щоб не потрапити під делегований
+   обробник .share-btn у прайсі (index.html:3866), розрахований на іншу структуру DOM. */
+function shareTaskInfo(t, btnId) {
+  const d = new Date(t.scheduled_at);
+  const dateLabel = d.toLocaleDateString('uk-UA') + ' ' + d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
+  const lines = [
+    'Монтаж: ' + t.address,
+    'Дата/час: ' + dateLabel,
+    (t.client_name || t.client_phone) ? 'Клієнт: ' + [t.client_name, t.client_phone].filter(Boolean).join(', ') : null,
+    'Обладнання: ' + t.equipment_type + (t.is_heat_pump_tt ? ' (монтаж ТТ)' : '')
+  ].filter(Boolean);
+  const shareText = lines.join('\n');
+  if (navigator.share) {
+    navigator.share({ text: shareText }).catch(() => {});
+  } else if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(shareText).then(() => {
+      const btn = document.querySelector(`.task-share-btn[data-task-id="${btnId}"]`);
+      if (btn) {
+        const oldHTML = btn.innerHTML;
+        btn.innerHTML = '✓';
+        setTimeout(() => { btn.innerHTML = oldHTML; }, 1200);
+      }
+    }).catch(() => {});
+  }
+}
+
 /* ---------- CRМонтаж: вивантаження списку (Крок 4) ----------
    ТЗ 3.3: експорт у PDF або Excel + можливість швидко переглянути/роздрукувати список на
    день перед виїздом. Excel — через xlsx.js, ту саму бібліотеку, що й так уже підключена
@@ -6254,6 +6339,137 @@ function exportInstallerTasksToExcel() {
   XLSX.writeFile(wb, 'montag-' + new Date().toISOString().slice(0, 10) + '.xlsx');
 }
 
+/* ---------- CRМонтаж: напарник (Крок 5, фінальний) ----------
+   Зв'язок підтверджується з обох сторін (запит → підтвердження), не обов'язковий —
+   без напарника решта CRМонтаж працює як і раніше (Кроки 1-4 не зачіпаються). Пошук
+   напарника за телефоном — через SQL-функцію find_installer_by_phone (SECURITY
+   DEFINER, claude/sql/2026-09-10-installer-partner-links.sql), бо звичайний
+   sb.from('profiles').select() чужий рядок за телефоном не бачить (RLS обмежена
+   власним id). Overlay поза #main — власні addEventListener на кожен стан, той самий
+   підхід, що й #task-form-overlay. */
+
+async function loadPartnerLink() {
+  if (!myInstallerId) { partnerLinkCache = null; return; }
+  const { data, error } = await sb.from('installer_partner_links')
+    .select('*')
+    .or(`requester_id.eq.${myInstallerId},partner_id.eq.${myInstallerId}`)
+    .order('created_at', { ascending: false })
+    .limit(1);
+  if (error || !data || !data.length) { partnerLinkCache = null; return; }
+  const link = data[0];
+  const iAmRequester = link.requester_id === myInstallerId;
+  const otherId = iAmRequester ? link.partner_id : link.requester_id;
+  let otherName = '';
+  const { data: prof } = await sb.from('profiles').select('full_name').eq('id', otherId).maybeSingle();
+  if (prof) otherName = prof.full_name || '';
+  partnerLinkCache = { ...link, otherId, otherName, iAmRequester };
+}
+
+function openPartnerOverlay() {
+  renderPartnerOverlayBody();
+  document.getElementById('partner-overlay').classList.add('show');
+}
+function closePartnerOverlay() {
+  document.getElementById('partner-overlay').classList.remove('show');
+}
+document.getElementById('partner-overlay-close').addEventListener('click', closePartnerOverlay);
+document.getElementById('partner-overlay-backdrop').addEventListener('click', closePartnerOverlay);
+
+function renderPartnerOverlayBody() {
+  const body = document.getElementById('partner-overlay-body');
+
+  if (!partnerLinkCache) {
+    body.innerHTML = `
+      <p class="user-card-sub">Працюйте в парі з напарником — спільні монтажі, спільне
+      редагування, синхронні статуси виконання.</p>
+      <div class="field">
+        <label>Номер телефону напарника</label>
+        <div class="phone-input-row">
+          <span class="phone-prefix">+38</span>
+          <input type="tel" id="partner-invite-phone" placeholder="0501234567" maxlength="10" inputmode="numeric">
+        </div>
+      </div>
+      <div id="partner-invite-error"></div>
+      <button type="button" class="primary-btn" id="partner-invite-btn">Запросити</button>
+    `;
+    attachDigitsOnlyFilter(document.getElementById('partner-invite-phone'));
+    document.getElementById('partner-invite-btn').addEventListener('click', handlePartnerInvite);
+    return;
+  }
+
+  if (partnerLinkCache.status === 'pending' && partnerLinkCache.iAmRequester) {
+    body.innerHTML = `
+      <p class="user-card-sub">Запит надіслано${partnerLinkCache.otherName ? ' — ' + escapeHtml(partnerLinkCache.otherName) : ''}. Очікує підтвердження.</p>
+      <button type="button" class="reject" id="partner-cancel-btn">Скасувати запит</button>
+    `;
+    document.getElementById('partner-cancel-btn').addEventListener('click', () => handlePartnerRemove('Скасувати запит напарнику?'));
+    return;
+  }
+
+  if (partnerLinkCache.status === 'pending' && !partnerLinkCache.iAmRequester) {
+    body.innerHTML = `
+      <p class="user-card-sub">${escapeHtml(partnerLinkCache.otherName || 'Інсталятор')} запрошує вас у напарники.</p>
+      <div class="user-card-actions">
+        <button type="button" class="approve" id="partner-accept-btn">Підтвердити</button>
+        <button type="button" class="reject" id="partner-reject-btn">Відхилити</button>
+      </div>
+    `;
+    document.getElementById('partner-accept-btn').addEventListener('click', handlePartnerAccept);
+    document.getElementById('partner-reject-btn').addEventListener('click', () => handlePartnerRemove('Відхилити запит?'));
+    return;
+  }
+
+  body.innerHTML = `
+    <p class="user-card-sub">Напарник: ${escapeHtml(partnerLinkCache.otherName || '')}</p>
+    <p class="user-card-sub">Спільні монтажі бачите й редагуєте обидва, статуси синхронізуються.</p>
+    <button type="button" class="reject" id="partner-unlink-btn">Розірвати зв'язок</button>
+  `;
+  document.getElementById('partner-unlink-btn').addEventListener('click', () => handlePartnerRemove('Розірвати зв\'язок з напарником?'));
+}
+
+async function handlePartnerInvite() {
+  const errEl = document.getElementById('partner-invite-error');
+  errEl.innerHTML = '';
+  const phone = fullPhoneFromLocalInput('partner-invite-phone');
+  const btn = document.getElementById('partner-invite-btn');
+  btn.disabled = true;
+  const { data, error } = await sb.rpc('find_installer_by_phone', { p_phone: phone });
+  btn.disabled = false;
+  const found = Array.isArray(data) ? data[0] : data;
+  if (error || !found) {
+    errEl.innerHTML = '<div class="error">Інсталятора з таким номером не знайдено серед підтверджених.</div>';
+    return;
+  }
+  const { error: insErr } = await sb.from('installer_partner_links').insert({ requester_id: myInstallerId, partner_id: found.id });
+  if (insErr) {
+    errEl.innerHTML = '<div class="error">Не вдалося надіслати запит. Спробуйте ще раз.</div>';
+    return;
+  }
+  await loadPartnerLink();
+  renderPartnerOverlayBody();
+}
+
+async function handlePartnerAccept() {
+  if (!partnerLinkCache) return;
+  await sb.from('installer_partner_links')
+    .update({ status: 'accepted', responded_at: new Date().toISOString() })
+    .eq('id', partnerLinkCache.id);
+  await loadPartnerLink();
+  renderPartnerOverlayBody();
+  await loadInstallerTasks();
+  renderInstallerTaskList();
+}
+
+async function handlePartnerRemove(confirmMsg) {
+  if (!partnerLinkCache) return;
+  if (!confirm(confirmMsg)) return;
+  await sb.from('installer_partner_links').delete().eq('id', partnerLinkCache.id);
+  await loadPartnerLink();
+  renderPartnerOverlayBody();
+  await loadInstallerTasks();
+  renderInstallerTaskList();
+}
+
 document.getElementById('main').addEventListener('click', function(e) {
   const target = e.target.closest('[data-task-action]');
   if (!target || target.tagName === 'SELECT') return;
@@ -6261,6 +6477,7 @@ document.getElementById('main').addEventListener('click', function(e) {
   if (action === 'add') { openTaskForm(null); return; }
   if (action === 'print') { window.print(); return; }
   if (action === 'export-xlsx') { exportInstallerTasksToExcel(); return; }
+  if (action === 'partner') { openPartnerOverlay(); return; }
   const id = target.getAttribute('data-task-id');
   if (action && id) handleTaskAction(action, id, null);
 });
@@ -6283,6 +6500,11 @@ function updateTaskTtVisibility() {
   document.getElementById('task-field-tt-wrap').style.display = equip === 'Теплові насоси' ? 'flex' : 'none';
 }
 
+function updateTaskShareVisibility() {
+  const checked = document.getElementById('task-field-shared').checked;
+  document.getElementById('task-field-assignee-wrap').style.display = checked ? 'block' : 'none';
+}
+
 function openTaskForm(task) {
   editingTaskId = task ? task.id : null;
   document.getElementById('task-form-title').textContent = task ? 'Редагувати монтаж' : 'Новий монтаж';
@@ -6294,6 +6516,26 @@ function openTaskForm(task) {
   document.getElementById('task-field-tt').checked = task ? !!task.is_heat_pump_tt : false;
   document.getElementById('task-field-comment').value = task ? (task.comment || '') : '';
   document.getElementById('task-form-error').innerHTML = '';
+
+  /* Керування "спільністю"/призначенням бачить лише ВЛАСНИК монтажу (новий монтаж —
+     завжди власник — або редагування власного): напарник, що редагує чужий спільний
+     монтаж, цього блоку не бачить — RLS (installer_tasks_partner_update, WITH CHECK
+     partner_visible=true) все одно не дав би йому зняти позначку "спільний". */
+  const isOwnerContext = !task || task.installer_id === myInstallerId;
+  const shareWrap = document.getElementById('task-field-share-wrap');
+  const showShareWrap = isOwnerContext && !!partnerLinkCache && partnerLinkCache.status === 'accepted';
+  shareWrap.style.display = showShareWrap ? 'block' : 'none';
+  if (showShareWrap) {
+    document.getElementById('task-field-shared').checked = task ? !!task.partner_visible : false;
+    const assigneeSelect = document.getElementById('task-field-assignee');
+    if (task && task.partner_visible) {
+      assigneeSelect.value = task.assigned_to === myInstallerId ? 'me' : (task.assigned_to === partnerLinkCache.otherId ? 'partner' : 'both');
+    } else {
+      assigneeSelect.value = 'both';
+    }
+    updateTaskShareVisibility();
+  }
+
   updateTaskTtVisibility();
   document.getElementById('task-form-overlay').classList.add('show');
 }
@@ -6303,6 +6545,7 @@ function closeTaskForm() {
 document.getElementById('task-form-close').addEventListener('click', closeTaskForm);
 document.getElementById('task-form-backdrop').addEventListener('click', closeTaskForm);
 document.getElementById('task-field-equipment').addEventListener('change', updateTaskTtVisibility);
+document.getElementById('task-field-shared').addEventListener('change', updateTaskShareVisibility);
 
 async function handleTaskFormSubmit() {
   const errEl = document.getElementById('task-form-error');
@@ -6331,7 +6574,6 @@ async function handleTaskFormSubmit() {
   btn.disabled = true;
 
   const row = {
-    installer_id: session.user.id,
     address: address,
     scheduled_at: new Date(dtVal).toISOString(),
     client_name: clientName || null,
@@ -6340,6 +6582,26 @@ async function handleTaskFormSubmit() {
     is_heat_pump_tt: equipment === 'Теплові насоси' ? isTt : false,
     comment: comment || null
   };
+
+  /* installer_id іде в row лише при СТВОРЕННІ нового монтажу (власник — завжди я).
+     При РЕДАГУВАННІ це поле навмисно не чіпається: якщо напарник редагує спільний
+     монтаж, перезапис installer_id на напарника відібрав би монтаж у справжнього
+     власника (installer_tasks_own_select більше не пропустив би його). */
+  if (!editingTaskId) {
+    row.installer_id = session.user.id;
+  }
+
+  const shareWrapVisible = document.getElementById('task-field-share-wrap').style.display !== 'none';
+  if (shareWrapVisible) {
+    const shared = document.getElementById('task-field-shared').checked;
+    row.partner_visible = shared;
+    if (shared) {
+      const assignee = document.getElementById('task-field-assignee').value;
+      row.assigned_to = assignee === 'me' ? myInstallerId : (assignee === 'partner' ? partnerLinkCache.otherId : null);
+    } else {
+      row.assigned_to = null;
+    }
+  }
 
   let error;
   if (editingTaskId) {
