@@ -1667,6 +1667,31 @@
   }
   .task-ics-btn svg { width: 16px; height: 16px; }
   .task-ics-btn:active { background: var(--accent-bg); }
+
+  /* Тулбар "Друк"/"Excel" (CRМонтаж, Крок 4 — вивантаження) — той самий рядок кнопок, що
+     й .admin-filter-row, тільки для кнопок замість select. */
+  .task-toolbar-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .task-toolbar-row button {
+    flex: 1;
+    padding: 9px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* Друк списку монтажів — прибираємо все інтерактивне/навігаційне, лишаємо тільки
+     адресу/час/клієнта/обладнання/статус кожної картки. .no-print — спільний клас для
+     будь-якого елемента, який не має сенсу на папері (використовується і поза CRМонтаж,
+     напр. .bottom-nav). */
+  @media print {
+    .no-print { display: none !important; }
+    .user-card-expand { display: block !important; }
+  }
   .user-card-open-btn {
     width: 30px; height: 30px;
     flex-shrink: 0;
@@ -1957,7 +1982,7 @@
   </main>
 </div>
 
-<nav class="bottom-nav">
+<nav class="bottom-nav no-print">
   <div class="nav-indicator" id="nav-indicator"></div>
   <button class="nav-btn active" data-tab="catalog"><span class="nav-icon">🏠</span>Каталог</button>
   <button class="nav-btn" data-tab="promotions"><span class="nav-icon">🔥</span>Акції</button>
@@ -5940,8 +5965,12 @@ async function renderInstallerTab() {
 
   taskQuickFilter = 'all';
   main.innerHTML = `
-    <button type="button" class="primary-btn" data-task-action="add" style="margin-bottom:12px;">+ Новий монтаж</button>
-    <div class="admin-filters">
+    <button type="button" class="primary-btn no-print" data-task-action="add" style="margin-bottom:12px;">+ Новий монтаж</button>
+    <div class="task-toolbar-row no-print">
+      <button type="button" data-task-action="print">🖨 Друк списку</button>
+      <button type="button" data-task-action="export-xlsx">📊 Excel</button>
+    </div>
+    <div class="admin-filters no-print">
       <div class="admin-search"><input type="text" id="task-search" placeholder="Пошук за адресою чи клієнтом"></div>
       <div class="brand-toggle toggle-3way" id="task-quick-filter">
         <button type="button" class="brand-toggle-btn active" data-quick="all">Усі</button>
@@ -6019,20 +6048,26 @@ function taskPassesFilters(t, q, status, equipment, quick) {
   return true;
 }
 
-function renderInstallerTaskList() {
-  const listEl = document.getElementById('installer-tasks-list');
-  if (!listEl) return;
+/* Той самий набір фільтрів (пошук/статус/обладнання/сьогодні-тиждень-усі), відсортований за
+   часом — і для показу списку, і для друку/експорту в Excel (Крок 4), щоб обидва завжди
+   показували ОДНЕ й те саме, без дублювання логіки фільтрації в двох місцях. */
+function getFilteredInstallerTasks() {
   const searchEl = document.getElementById('task-search');
   const statusEl = document.getElementById('task-status-filter');
   const equipEl = document.getElementById('task-equipment-filter');
   const q = norm(searchEl ? searchEl.value : '');
   const status = statusEl ? statusEl.value : '';
   const equipment = equipEl ? equipEl.value : '';
-
-  const filtered = installerTasksCache
+  return installerTasksCache
     .filter(t => taskPassesFilters(t, q, status, equipment, taskQuickFilter))
     .slice()
     .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
+}
+
+function renderInstallerTaskList() {
+  const listEl = document.getElementById('installer-tasks-list');
+  if (!listEl) return;
+  const filtered = getFilteredInstallerTasks();
 
   if (!filtered.length) {
     listEl.innerHTML = '<div class="empty">Монтажів не знайдено.</div>';
@@ -6068,17 +6103,17 @@ function taskCardHtml(t, d) {
         </div>
         <div class="user-card-top-right">
           <span class="badge badge-${escapeHtml(t.status)}">${escapeHtml(taskStatusLabel(t.status))}</span>
-          <button type="button" class="task-ics-btn" data-task-action="ics" data-task-id="${t.id}" aria-label="Додати нагадування в календар">${TASK_CALENDAR_ICON}</button>
-          <button type="button" class="user-card-open-btn" data-task-action="toggle" data-task-id="${t.id}" aria-label="Відкрити">${USER_CARD_OPEN_ICON}</button>
+          <button type="button" class="task-ics-btn no-print" data-task-action="ics" data-task-id="${t.id}" aria-label="Додати нагадування в календар">${TASK_CALENDAR_ICON}</button>
+          <button type="button" class="user-card-open-btn no-print" data-task-action="toggle" data-task-id="${t.id}" aria-label="Відкрити">${USER_CARD_OPEN_ICON}</button>
         </div>
       </div>
       <div class="user-card-expand">
         <p class="user-card-sub">${equipBits}</p>
         ${t.comment ? `<p class="user-card-sub">${escapeHtml(t.comment)}</p>` : ''}
-        <div class="user-card-row">
+        <div class="user-card-row no-print">
           <select data-task-action="status" data-task-id="${t.id}">${statusOptionsHtml}</select>
         </div>
-        <div class="user-card-actions">
+        <div class="user-card-actions no-print">
           <button type="button" data-task-action="edit" data-task-id="${t.id}">Редагувати</button>
           <button type="button" class="reject" data-task-action="delete" data-task-id="${t.id}">Видалити</button>
         </div>
@@ -6183,11 +6218,49 @@ function downloadTaskIcs(t) {
   setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
+/* ---------- CRМонтаж: вивантаження списку (Крок 4) ----------
+   ТЗ 3.3: експорт у PDF або Excel + можливість швидко переглянути/роздрукувати список на
+   день перед виїздом. Excel — через xlsx.js, ту саму бібліотеку, що й так уже підключена
+   для розбору price.xlsx (жодної нової залежності). Друк — window.print() з CSS-правилом
+   .no-print (вище в <style>), що ховає все інтерактивне/навігаційне й розгортає кожну
+   картку повністю — саме це і є "швидко роздрукувати список на день", якщо перед друком
+   увімкнути швидкий фільтр "Сьогодні". PDF окремою бібліотекою свідомо не додавав — це
+   нова залежність заради того самого результату, який print() дає безкоштовно. Обидві дії
+   працюють з тим самим відфільтрованим списком, що й на екрані (getFilteredInstallerTasks),
+   тобто експортується/друкується рівно те, що зараз видно. */
+function exportInstallerTasksToExcel() {
+  const tasks = getFilteredInstallerTasks();
+  if (!tasks.length) {
+    alert('Немає монтажів для експорту за поточними фільтрами.');
+    return;
+  }
+  const rows = tasks.map(t => {
+    const d = new Date(t.scheduled_at);
+    return {
+      'Дата': d.toLocaleDateString('uk-UA'),
+      'Час': d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
+      'Адреса': t.address,
+      "Ім'я клієнта": t.client_name || '',
+      'Телефон клієнта': t.client_phone || '',
+      'Тип обладнання': t.equipment_type,
+      'Монтаж ТТ': t.is_heat_pump_tt ? 'Так' : '',
+      'Статус': taskStatusLabel(t.status),
+      'Коментар': t.comment || ''
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Монтажі');
+  XLSX.writeFile(wb, 'montag-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+}
+
 document.getElementById('main').addEventListener('click', function(e) {
   const target = e.target.closest('[data-task-action]');
   if (!target || target.tagName === 'SELECT') return;
   const action = target.getAttribute('data-task-action');
   if (action === 'add') { openTaskForm(null); return; }
+  if (action === 'print') { window.print(); return; }
+  if (action === 'export-xlsx') { exportInstallerTasksToExcel(); return; }
   const id = target.getAttribute('data-task-id');
   if (action && id) handleTaskAction(action, id, null);
 });
