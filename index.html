@@ -641,6 +641,21 @@
     color: var(--text);
     white-space: pre-wrap;
   }
+  .info-sheet-actions {
+    padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+  }
+  .info-sheet-action-btn {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+  }
   .row-info { min-width: 0; flex: 1; }
   .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; position: relative; z-index: 0; }
   .row-click-zone:active ~ .row-info .row-name, .row-info-zone:active ~ .row-info .row-name { opacity: 0.6; }
@@ -1724,9 +1739,22 @@
   /* Сумісність блоків MHI — таблиця з закріпленими шапкою і першою колонкою (як
      "заморозка областей" в Excel): гортаєш в обидва боки, шапка і маркування завжди на
      видноті, а перетин (сумісність) рухається під ними. */
-  .compat-toolbar { padding: 4px 0 8px; }
+  .compat-toolbar { padding: 4px 0 8px; display: flex; gap: 8px; }
+  .compat-clear-btn {
+    flex-shrink: 0;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
   .compat-filter-input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 9px 12px;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -1806,6 +1834,11 @@
   .compat-cell-no2 { color: var(--accent); font-weight: 700; }
   .compat-cell-no { color: #CBCBCB; }
   .compat-match { background: #FEF3C7 !important; }
+  /* Незалежне підсвічування рядка/стовпчика (кнопка "Виділити" у спливаючому вікні) —
+     жовтий (.compat-match) зайнятий пошуком, тому тут синій; клітинка на перетині двох
+     підсвічених осей — обидва класи разом — темніша, щоб одразу впадала в очі. */
+  .compat-row-highlight, .compat-col-highlight { background: #DBEAFE !important; }
+  .compat-row-highlight.compat-col-highlight { background: #93C5FD !important; }
   .compat-notes-wrap { margin-top: 10px; }
   .compat-notes-toggle {
     width: 100%;
@@ -1928,6 +1961,9 @@
       <button type="button" class="info-sheet-close" id="series-info-close" aria-label="Закрити">✕</button>
     </div>
     <div class="info-sheet-body" id="series-info-body"></div>
+    <div class="info-sheet-actions" id="series-info-actions" hidden>
+      <button type="button" class="info-sheet-action-btn" id="series-info-action-btn"></button>
+    </div>
   </div>
 </div>
 
@@ -3635,9 +3671,22 @@ function renderHeatpumpsList() {
   main.innerHTML = '<div class="count">Всього: ' + items.length + '</div>' + rowsHtml;
 }
 
-function openSeriesInfo(title, text) {
+/* opts.actionLabel/opts.onAction — необов'язкова кнопка-дія під текстом (використовує
+   таблиця сумісності MHI для "Виділити рядок/стовпчик" — див. attachCompatTableHandlers);
+   решта викликів (описи серій у прайсі) її не передають, кнопка лишається прихованою. */
+function openSeriesInfo(title, text, opts) {
   document.getElementById('series-info-title').textContent = title;
   document.getElementById('series-info-body').textContent = text;
+  const actionsEl = document.getElementById('series-info-actions');
+  const actionBtn = document.getElementById('series-info-action-btn');
+  if (opts && opts.actionLabel && opts.onAction) {
+    actionBtn.textContent = opts.actionLabel;
+    actionBtn.onclick = () => { opts.onAction(); closeSeriesInfo(); };
+    actionsEl.hidden = false;
+  } else {
+    actionsEl.hidden = true;
+    actionBtn.onclick = null;
+  }
   document.getElementById('series-info-overlay').classList.add('show');
 }
 function closeSeriesInfo() {
@@ -4596,7 +4645,10 @@ function renderSimpleCompatTableHtml(table, opts) {
     return groupHtml + `<tr><td class="compat-rowhead">${escapeHtml(translateCompatCode(r.code))}</td>${cellsHtml}</tr>`;
   }).join('');
   return `
-    <div class="compat-toolbar"><input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…"></div>
+    <div class="compat-toolbar">
+      <input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…">
+      <button type="button" class="compat-clear-btn" data-compat-clear>Очистити</button>
+    </div>
     <div class="compat-legend">${COMPAT_LEGEND_HTML}</div>
     <div class="compat-table-wrap">
       <table class="compat-table">
@@ -4615,16 +4667,19 @@ function renderMultiCompatTableHtml(table) {
   cols.forEach(c => {
     const last = groupRuns[groupRuns.length - 1];
     if (last && last.group === c.group) last.span++;
-    else groupRuns.push({ group: c.group, span: 1 });
+    else groupRuns.push({ group: c.group, span: 1, start: groupRuns.length ? groupRuns[groupRuns.length - 1].start + groupRuns[groupRuns.length - 1].span : 0 });
   });
-  const groupRowHtml = groupRuns.map(g => `<th class="compat-colhead-group" colspan="${g.span}">${escapeHtml(cleanCompatLabel(g.group))}</th>`).join('');
+  const groupRowHtml = groupRuns.map(g => `<th class="compat-colhead-group" colspan="${g.span}" data-col-start="${g.start}" data-col-span="${g.span}">${escapeHtml(cleanCompatLabel(g.group))}</th>`).join('');
   const sizeRowHtml = cols.map((c, i) => `<th class="compat-colhead-size" data-col-idx="${i}">${escapeHtml(cleanCompatLabel(c.size))}</th>`).join('');
   const rowsHtml = table.rows.map(r => {
     const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(translateCompatCell(v))}</td>`).join('');
     return `<tr><td class="compat-rowhead">${escapeHtml(cleanCompatLabel(r.code))}</td>${cellsHtml}</tr>`;
   }).join('');
   return `
-    <div class="compat-toolbar"><input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…"></div>
+    <div class="compat-toolbar">
+      <input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…">
+      <button type="button" class="compat-clear-btn" data-compat-clear>Очистити</button>
+    </div>
     <div class="compat-legend">${COMPAT_LEGEND_HTML}</div>
     <div class="compat-table-wrap compat-table-wrap-multi">
       <table class="compat-table compat-table-multi">
@@ -4635,6 +4690,34 @@ function renderMultiCompatTableHtml(table) {
         <tbody>${rowsHtml}</tbody>
       </table>
     </div>`;
+}
+
+/* "Виділити рядок/стовпчик" — кнопка у спливаючому вікні повної назви (openSeriesInfo).
+   Рядок і стовпчик підсвічуються НЕЗАЛЕЖНО один від одного (виділення другої осі не
+   скидає першу) — саме так користувач бачить перетин двох підсвічених смуг як "відповідь",
+   не гортаючи весь час туди-сюди між закріпленими шапкою і колонкою. */
+function highlightCompatRow(main, rowheadEl) {
+  main.querySelectorAll('.compat-row-highlight').forEach(el => el.classList.remove('compat-row-highlight'));
+  const tr = rowheadEl.closest('tr');
+  if (!tr) return;
+  Array.from(tr.children).forEach(td => td.classList.add('compat-row-highlight'));
+}
+function highlightCompatCol(main, startIdx, span) {
+  const wrap = main.querySelector('.compat-table-wrap');
+  if (!wrap) return;
+  wrap.querySelectorAll('.compat-col-highlight').forEach(el => el.classList.remove('compat-col-highlight'));
+  for (let i = startIdx; i < startIdx + span; i++) {
+    wrap.querySelectorAll(`[data-col-idx="${i}"]`).forEach(el => el.classList.add('compat-col-highlight'));
+    wrap.querySelectorAll('tbody tr:not(.compat-group-row)').forEach(tr => {
+      const td = tr.children[i + 1];
+      if (td) td.classList.add('compat-col-highlight');
+    });
+  }
+}
+function clearCompatHighlights(main) {
+  main.querySelectorAll('.compat-row-highlight, .compat-col-highlight').forEach(el => {
+    el.classList.remove('compat-row-highlight', 'compat-col-highlight');
+  });
 }
 
 /* Пошук — навмисно НЕ розбір/зіставлення маркувань (саме це багатило видалену версію
@@ -4675,10 +4758,42 @@ function attachCompatTableHandlers(main) {
       body.hidden = !body.hidden;
     });
   });
-  // Заголовки колонок і перша колонка обрізані (щоб таблиця лишалась компактною) —
-  // тап показує повний текст у вже наявному спливаючому вікні "детальніше".
-  main.querySelectorAll('.compat-rowhead, .compat-colhead, .compat-colhead-group, .compat-colhead-size').forEach(el => {
-    el.addEventListener('click', () => openSeriesInfo('Маркування', el.textContent.trim()));
+  main.querySelectorAll('[data-compat-clear]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      main.querySelectorAll('.compat-filter-input').forEach(input => { input.value = ''; });
+      main.querySelectorAll('.compat-match').forEach(el => el.classList.remove('compat-match'));
+      clearCompatHighlights(main);
+    });
+  });
+  // Заголовки колонок і перша колонка обрізані (щоб таблиця лишалась компактною) — тап
+  // показує повний текст у вже наявному спливаючому вікні "детальніше", з кнопкою
+  // "Виділити", яка підсвічує весь рядок/стовпчик — щоб легше знайти перетин.
+  main.querySelectorAll('.compat-rowhead').forEach(el => {
+    el.addEventListener('click', () => {
+      openSeriesInfo('Маркування', el.textContent.trim(), {
+        actionLabel: 'Виділити рядок',
+        onAction: () => highlightCompatRow(main, el)
+      });
+    });
+  });
+  main.querySelectorAll('.compat-colhead, .compat-colhead-size').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.getAttribute('data-col-idx'), 10);
+      openSeriesInfo('Маркування', el.textContent.trim(), {
+        actionLabel: 'Виділити стовпчик',
+        onAction: () => highlightCompatCol(main, idx, 1)
+      });
+    });
+  });
+  main.querySelectorAll('.compat-colhead-group').forEach(el => {
+    el.addEventListener('click', () => {
+      const start = parseInt(el.getAttribute('data-col-start'), 10);
+      const span = parseInt(el.getAttribute('data-col-span'), 10) || 1;
+      openSeriesInfo('Маркування', el.textContent.trim(), {
+        actionLabel: 'Виділити стовпчики',
+        onAction: () => highlightCompatCol(main, start, span)
+      });
+    });
   });
 }
 
