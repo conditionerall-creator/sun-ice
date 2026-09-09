@@ -4514,33 +4514,41 @@ async function searchMhiByCode() {
 }
 
 /* ---------- Сумісність блоків MHI (розділ "Інфо") ----------
-   Дані — заздалегідь розібраний офлайн (ETL) result з двох дилерських xlsx-таблиць
-   сумісності MHI (Compatibility of RAC, версії 2019 та 2026), у файлі
-   data/mhi-compat.json. Самі xlsx НЕ в репозиторії (внутрішні документи MHI, не
-   публічна документація) — тільки похідний JSON + метадані походження в його ж
-   полі meta. Файл підвантажується (fetch) лише коли користувач відкриває цей розділ,
-   а не при старті застосунку — на розмір/швидкість завантаження застосунку не впливає.
-   Логіка розбору маркувань (parseMhiCode/matchMhiPattern) — той самий алгоритм, що і
-   в офлайн ETL-скрипті, який згенерував сам файл (щоб не розсинхронитись). */
+   Дані — заздалегідь розібраний офлайн (ETL) result з дилерської таблиці сумісності
+   MHI (Compatibility of RAC_20260409_Customers.xlsx, листи RAC + RAC MULTI), у файлі
+   data/mhi-compat.json — сам xlsx НЕ в репозиторії (внутрішній документ MHI, не
+   публічна документація). Правила розбору маркувань — claude/mhi-compat-etl.js
+   (ТЗ "Розшифровка совместимости блоков RAC (MHI)"); parseMarking/checkCompatibility
+   тут — той самий алгоритм, продубльований під рантайм (ETL working with the table,
+   тут — з вводом користувача), щоб не розсинхронитись. Файл підвантажується (fetch)
+   лише коли користувач відкриває цей розділ — на старт застосунку не впливає. */
 let mhiCompatData = null;   // null (ще не завантажено) | 'loading' | 'error' | розібраний об'єкт
 let mhiCompatResult = null; // null | 'needinput' | {kind:...}
 
-function parseMhiCode(raw) {
+const MHI_KNOWN_PREFIXES = ['FDTC', 'FDUM', 'FDEN', 'FDE', 'SRK', 'SRC', 'SRF', 'SRR', 'SKM', 'SCM']
+  .sort((a, b) => b.length - a.length);
+const MHI_INDOOR_PREFIXES = MHI_KNOWN_PREFIXES.filter(p => p !== 'SRC' && p !== 'SCM');
+const MHI_OUTDOOR_PREFIXES = ['SRC', 'SCM'];
+const MHI_RAC_CANON_SIZES = [20, 25, 35, 50, 60, 71, 80];
+const MHI_VRF_HINT_PREFIXES = ['FDC', 'KXZE', 'KXZ', 'KX'];
+
+function parseMhiMarking(raw, canonSizes) {
+  canonSizes = canonSizes || MHI_RAC_CANON_SIZES;
   let s = String(raw || '').trim();
-  let refrigerant = null;
-  const r32m = s.match(/\(R\s*32\)/i);
-  if (r32m) { refrigerant = 'R32'; s = s.slice(0, r32m.index) + s.slice(r32m.index + r32m[0].length); }
+  let hasR32Annotation = false;
+  const r32m = s.match(/\(\s*R\s*32\s*\)/i);
+  if (r32m) { hasR32Annotation = true; s = s.slice(0, r32m.index) + s.slice(r32m.index + r32m[0].length); }
+  const deprecated = /☆/.test(s);
   s = s.replace(/[※☆]/g, '').replace(/\s+/g, '').toUpperCase();
-  const famM = s.match(/^[A-Z]+/);
-  if (!famM) return { raw, error: 'no-family', refrigerant };
-  const family = famM[0];
-  let rest = s.slice(family.length);
-  let capacityKind = 'none', capacityList = null, capacityRange = null;
+
+  const prefix = MHI_KNOWN_PREFIXES.find(p => s.startsWith(p));
+  if (!prefix) return { raw, error: 'unknown-prefix', rawPrefixGuess: (s.match(/^[A-Z]+/) || [''])[0], hasR32Annotation, deprecated };
+  let rest = s.slice(prefix.length);
+
+  let sizeKind = 'wildcard', sizeList = null;
   if (/^(\.{2,}|…)\.?/.test(rest)) {
-    capacityKind = 'wildcard';
     rest = rest.replace(/^(\.{2,}|…)\.?/, '');
   } else if (rest.startsWith('-') && /^[A-Z]/.test(rest.slice(1))) {
-    capacityKind = 'wildcard';
     rest = rest.slice(1);
   } else {
     const numM = rest.match(/^(\d+(?:[,~.\-]\d+)*)/);
@@ -4549,45 +4557,87 @@ function parseMhiCode(raw) {
       rest = rest.slice(numStr.length);
       if (numStr.includes('-') || numStr.includes('~')) {
         const parts = numStr.split(/[-~]/).map(Number);
-        capacityKind = 'range';
-        capacityRange = { min: Math.min(...parts), max: Math.max(...parts) };
+        const min = Math.min(...parts), max = Math.max(...parts);
+        sizeKind = 'list';
+        sizeList = canonSizes.filter(n => n >= min && n <= max);
       } else if (numStr.includes(',') || numStr.includes('.')) {
-        capacityKind = 'list';
-        capacityList = numStr.split(/[,.]/).map(Number);
+        sizeKind = 'list';
+        sizeList = numStr.split(/[,.]/).map(Number);
       } else {
-        capacityKind = 'list';
-        capacityList = [Number(numStr)];
+        sizeKind = 'list';
+        sizeList = [Number(numStr)];
       }
     }
   }
+
   const dashIdx = rest.indexOf('-');
   let series, suffixVariants;
-  if (dashIdx === -1) { series = rest; suffixVariants = []; }
+  if (dashIdx === -1) { series = rest; suffixVariants = null; }
   else { series = rest.slice(0, dashIdx); suffixVariants = rest.slice(dashIdx + 1).split(',').map(x => x.trim()).filter(Boolean); }
-  if (!series) return { raw, error: 'no-series', family, refrigerant };
-  return { raw, family, capacityKind, capacityList, capacityRange, series, suffixVariants, refrigerant };
+  if (!series) return { raw, error: 'no-series', prefix, hasR32Annotation, deprecated };
+
+  let suffixFamily = null;
+  if (suffixVariants && suffixVariants.length) {
+    suffixFamily = suffixVariants[0][0] === 'S' ? 'S' : (suffixVariants[0][0] === 'W' ? 'W' : null);
+  } else if (hasR32Annotation) {
+    suffixFamily = 'W';
+  }
+
+  return { raw, prefix, sizeKind, sizeList, series, suffixVariants, suffixFamily, hasR32Annotation, deprecated };
 }
 
-/* input — розібраний ввід користувача (завжди конкретний: без wildcard/range/list);
-   stored — розібраний рядок/стовпець з таблиці (може мати wildcard/range/list). */
-function matchMhiPattern(input, stored) {
-  if (input.error || stored.error) return false;
-  if (input.family !== stored.family) return false;
-  if ((input.refrigerant || null) !== (stored.refrigerant || null)) return false;
-  if (input.series !== stored.series) return false;
-  const sSuffixes = stored.suffixVariants || [];
-  const iSuffix = (input.suffixVariants && input.suffixVariants[0]) || '';
-  if (sSuffixes.length === 0) { if (iSuffix !== '') return false; }
-  else if (!sSuffixes.includes(iSuffix)) return false;
-  if (stored.capacityKind === 'wildcard' || stored.capacityKind === 'none') return true;
-  const cap = (input.capacityList && input.capacityList[0]) || null;
-  if (cap == null) return true; // користувач не вказав ємність — не можемо виключити збіг
-  if (stored.capacityKind === 'list') return stored.capacityList.includes(cap);
-  if (stored.capacityKind === 'range') return cap >= stored.capacityRange.min && cap <= stored.capacityRange.max;
-  return false;
+function mhiLevenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+  }
+  return dp[m][n];
 }
 
-const MHI_COMPAT_VRF_FAMILIES = ['FDC', 'KXZ', 'KXZE', 'KX'];
+function mhiParseUserInput(raw, role) {
+  const p = parseMhiMarking(raw);
+  if (!p.error) return { parsed: p, typo: null };
+  if (p.error === 'unknown-prefix' && p.rawPrefixGuess) {
+    const candidates = role === 'outdoor' ? MHI_OUTDOOR_PREFIXES : MHI_INDOOR_PREFIXES;
+    let best = null, bestDist = Infinity;
+    candidates.forEach(c => { const d = mhiLevenshtein(p.rawPrefixGuess, c); if (d < bestDist) { bestDist = d; best = c; } });
+    if (best && bestDist <= 2) {
+      const idx = raw.toUpperCase().indexOf(p.rawPrefixGuess);
+      const corrected = best + raw.slice(idx + p.rawPrefixGuess.length);
+      const p2 = parseMhiMarking(corrected);
+      if (!p2.error) return { parsed: p2, typo: { from: p.rawPrefixGuess, to: best } };
+    }
+  }
+  return { parsed: p, typo: null };
+}
+
+/* template — розібраний рядок/стовпець з таблиці (може мати wildcard/список/суфікси-
+   варіанти); userInput — конкретний ввід користувача. Повертає null (не збіглось) або
+   {matched, extra, noTemplateSuffix} з розділу "ядро суфікса + зайвий хвіст". */
+function mhiSuffixCoreMatch(userSuffixText, templateVariants) {
+  if (!templateVariants) return { matched: null, extra: userSuffixText || null, noTemplateSuffix: true };
+  if (!userSuffixText) return null;
+  let best = null;
+  templateVariants.forEach(v => { if (userSuffixText.startsWith(v) && (!best || v.length > best.length)) best = v; });
+  if (!best) return null;
+  return { matched: best, extra: userSuffixText.slice(best.length) || null };
+}
+
+function mhiCandidateMatches(userInput, template) {
+  if (userInput.prefix !== template.prefix) return null;
+  if (userInput.series !== template.series) return null;
+  if (template.sizeKind !== 'wildcard') {
+    const uSize = userInput.sizeList ? userInput.sizeList[0] : null;
+    if (uSize != null && !template.sizeList.includes(uSize)) return null;
+  }
+  const userSuffixText = userInput.suffixVariants ? userInput.suffixVariants[0] : null;
+  const sc = mhiSuffixCoreMatch(userSuffixText, template.suffixVariants);
+  if (!sc) return null;
+  if (!sc.noTemplateSuffix && template.suffixFamily && userInput.suffixFamily && template.suffixFamily !== userInput.suffixFamily) return null;
+  return sc;
+}
 
 async function loadMhiCompatData() {
   if (mhiCompatData && mhiCompatData !== 'error') return mhiCompatData;
@@ -4598,9 +4648,9 @@ async function loadMhiCompatData() {
     const json = await resp.json();
     // пре-парсимо всі рядки/стовпці один раз одразу після завантаження — сам пошук
     // після цього миттєвий, повторний парсинг на кожен тап не потрібен.
-    json.rules.forEach(r => { r._i = parseMhiCode(r.i); r._o = parseMhiCode(r.o); });
-    json.fact_rules.forEach(r => { r._i = parseMhiCode(r.i); });
-    json.legacy_r22_rules.forEach(r => { r._i = parseMhiCode(r.i); r._o = parseMhiCode(r.o); });
+    json.rac_rules.forEach(r => { r._i = parseMhiMarking(r.i); r._o = parseMhiMarking(r.o); });
+    json.rac_facts.forEach(r => { r._i = parseMhiMarking(r.i); });
+    json.multi_rules.forEach(r => { r._i = parseMhiMarking(r.i, []); r._o = parseMhiMarking(r.o, []); });
     mhiCompatData = json;
   } catch (e) {
     mhiCompatData = 'error';
@@ -4608,37 +4658,52 @@ async function loadMhiCompatData() {
   return mhiCompatData;
 }
 
-function lookupMhiCompat(indoorRaw, outdoorRaw) {
-  const data = mhiCompatData;
-  const inIndoor = parseMhiCode(indoorRaw);
-  const inOutdoor = parseMhiCode(outdoorRaw);
-  // VRF/PAC (FDC + KX-серії) — свідомо поза межами цього довідника (тільки RAC/RAC
-  // MULTI), тому кажемо про це прямо, а не мовчки видаємо "немає даних" як для одруку.
-  // Перевіряємо ДО гейту "не вдалося розпізнати" — родину (family) parseMhiCode
-  // встигає визначити навіть коли решта коду не збирається в звичну для RAC схему
-  // (у VRF-кодів на кшталт KXZE1-W інша граматика, яку цей довідник не описує).
-  if (MHI_COMPAT_VRF_FAMILIES.includes(inIndoor.family) || MHI_COMPAT_VRF_FAMILIES.includes(inOutdoor.family)) {
+function checkMhiCompatibility(indoorRaw, outdoorRaw, data) {
+  // VRF/PAC (FDC/KX-серії) — поза межами цього довідника (тільки RAC/RAC MULTI),
+  // перевіряємо ДО парсингу за повною граматикою (у VRF інша схема маркування,
+  // якою цей довідник не займається, тож "не вдалося розпізнати" тут ввело б в оману).
+  const upIndoor = indoorRaw.toUpperCase(), upOutdoor = outdoorRaw.toUpperCase();
+  if (MHI_VRF_HINT_PREFIXES.some(p => upIndoor.startsWith(p) || upOutdoor.startsWith(p))) {
     return { kind: 'vrf-out-of-scope' };
   }
-  if (inIndoor.error || inOutdoor.error) {
-    return { kind: 'parse-error', badIndoor: !!inIndoor.error, badOutdoor: !!inOutdoor.error };
+
+  const outdoorProbe = parseMhiMarking(outdoorRaw);
+  const sheet = outdoorProbe.prefix === 'SCM' ? 'multi' : 'rac';
+
+  const { parsed: indoorInput, typo: indoorTypo } = mhiParseUserInput(indoorRaw, 'indoor');
+  const { parsed: outdoorInput, typo: outdoorTypo } = mhiParseUserInput(outdoorRaw, 'outdoor');
+  if (indoorInput.error || outdoorInput.error) {
+    return { kind: 'parse-error', badIndoor: !!indoorInput.error, badOutdoor: !!outdoorInput.error };
   }
-  const findIn = (rules) => rules.find(r => matchMhiPattern(inIndoor, r._i) && matchMhiPattern(inOutdoor, r._o));
-  const rules2026 = data.rules.filter(r => r.src.startsWith('R2026'));
-  let hit = findIn(rules2026);
-  if (hit) return { kind: 'found', rule: hit, archival: false, indoorPattern: inIndoor };
-  const rules2019 = data.rules.filter(r => r.src.startsWith('R2019'));
-  hit = findIn(rules2019);
-  if (hit) return { kind: 'found', rule: hit, archival: true, indoorPattern: inIndoor };
-  return { kind: 'no-data' };
+
+  if (sheet === 'rac') {
+    const iSize = indoorInput.sizeList ? indoorInput.sizeList[0] : null;
+    const oSize = outdoorInput.sizeList ? outdoorInput.sizeList[0] : null;
+    if (iSize != null && oSize != null && iSize !== oSize) {
+      return { kind: 'size-mismatch', indoorSize: iSize, outdoorSize: oSize };
+    }
+  }
+
+  const rules = sheet === 'multi' ? data.multi_rules : data.rac_rules;
+  const hits = [];
+  rules.forEach(rule => {
+    const im = mhiCandidateMatches(indoorInput, rule._i);
+    if (!im) return;
+    const om = mhiCandidateMatches(outdoorInput, rule._o);
+    if (!om) return;
+    hits.push({ rule, indoorMatch: im, outdoorMatch: om });
+  });
+  if (!hits.length) return { kind: 'no-data' };
+
+  hits.sort((a, b) => ((a.indoorMatch.extra ? 1 : 0) + (a.outdoorMatch.extra ? 1 : 0)) - ((b.indoorMatch.extra ? 1 : 0) + (b.outdoorMatch.extra ? 1 : 0)));
+  const best = hits[0];
+  return { kind: 'found', rule: best.rule, indoorMatch: best.indoorMatch, outdoorMatch: best.outdoorMatch, indoorTypo, outdoorTypo, sheet, indoorInput };
 }
 
 const MHI_COMPAT_STATUS_LABEL = {
-  recommended: 'Сумісно (рекомендовано)',
-  conditional: 'Сумісно (умовно/неофіційно)',
-  incompatible: 'Несумісно',
-  na: 'Не застосовується',
-  other: 'Див. позначку'
+  recommended: 'Сумісно (офіційно)',
+  conditional: 'Сумісно (без офіційного підтвердження)',
+  incompatible: 'Несумісно'
 };
 
 function renderMhiCompatScreen() {
@@ -4692,17 +4757,30 @@ async function checkMhiCompat() {
     if (slot) slot.innerHTML = renderMhiCompatResultHtml();
     return;
   }
-  mhiCompatResult = lookupMhiCompat(indoor, outdoor);
+  mhiCompatResult = checkMhiCompatibility(indoor, outdoor, data);
   if (slot) slot.innerHTML = renderMhiCompatResultHtml();
 }
 
-function renderMhiCompatFactsHtml(indoorPattern) {
+function renderMhiCompatFactsHtml(indoorInput) {
   const data = mhiCompatData;
   if (!data || data === 'loading' || data === 'error') return '';
-  const facts = data.fact_rules.filter(f => f.src === '2026' && matchMhiPattern(indoorPattern, f._i));
+  const facts = data.rac_facts.filter(f => mhiCandidateMatches(indoorInput, f._i));
   if (!facts.length) return '';
   const rows = facts.map(f => `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(f.t)}</span><span class="mhi-compat-fact-val">${escapeHtml(f.v)}</span></div>`).join('');
   return `<div class="mhi-result-section-title">Додатково (за внутрішнім блоком)</div><div class="mhi-compat-facts">${rows}</div>`;
+}
+
+/* Розбіжність між тим, що ввів користувач, і знайденим еталонним маркуванням з
+   таблиці — окремим текстовим рядком на кожну сторону (тільки якщо є що показати). */
+function renderMhiCompatDiscrepancyHtml(side, label, match) {
+  if (!match) return '';
+  if (match.noTemplateSuffix && match.extra) {
+    return `<div class="mhi-compat-note">${escapeHtml(label)}: офіційне маркування цієї лінійки не містить суфікса — введене "${escapeHtml(match.extra)}" не враховувалось при зіставленні.</div>`;
+  }
+  if (match.extra) {
+    return `<div class="mhi-compat-note">${escapeHtml(label)}: розпізнано базове маркування з суфіксом "${escapeHtml(match.matched)}", а введені символи "${escapeHtml(match.extra)}" — додаткові, в офіційній таблиці не значаться.</div>`;
+  }
+  return '';
 }
 
 function renderMhiCompatResultHtml() {
@@ -4721,25 +4799,33 @@ function renderMhiCompatResultHtml() {
   if (r.kind === 'vrf-out-of-scope') {
     return '<div class="mhi-result mhi-result-empty">Це схоже на маркування серії VRF/PAC (FDC/KX) — цей довідник охоплює лише побутові RAC і Мульти спліт-системи SCM. Для VRF зверніться до офіційного технічного посібника MHI або на вкладку "Мультизональні VRF" каталогу.</div>';
   }
+  if (r.kind === 'size-mismatch') {
+    return `<div class="mhi-result mhi-result-empty">Типорозміри відрізняються: внутрішній блок — ${r.indoorSize}, зовнішній — ${r.outdoorSize}. Блоки різної потужності поєднати не можна (окрім Мульти спліт-систем SCM, де це нормально) — перевірте маркування.</div>`;
+  }
   if (r.kind === 'no-data') {
-    return '<div class="mhi-result mhi-result-empty">Немає даних для цієї пари в жодній з версій довідника. Це не означає, що блоки несумісні — просто ця комбінація не знайдена в таблицях MHI. Уточніть у офіційному технічному посібнику MHI або в дилера.</div>';
+    return '<div class="mhi-result mhi-result-empty">Такої пари немає в таблиці сумісності. Це не означає, що блоки несумісні — просто ця комбінація не знайдена в офіційних даних MHI. Уточніть у технічному посібнику MHI або в дилера.</div>';
   }
   if (r.kind === 'found') {
     const rule = r.rule;
     const statusClass = 'mhi-compat-status-' + rule.s;
     const statusLabel = MHI_COMPAT_STATUS_LABEL[rule.s] || rule.sr;
+    const refHtml = `<div class="mhi-compat-note">Зіставлено з офіційним маркуванням: внутрішній — ${escapeHtml(rule.i)}, зовнішній — ${escapeHtml(rule.o)}.</div>`;
     const footnoteHtml = rule.f && rule.f.length
       ? `<div class="mhi-compat-footnote">${rule.f.map(escapeHtml).join('<br>')}</div>` : '';
-    const archivalHtml = r.archival
-      ? '<div class="mhi-compat-note">Знайдено лише в архівній версії довідника (2019 рік) — актуальність не гарантована, уточніть у дилера.</div>' : '';
+    const typoHtml = [r.indoorTypo, r.outdoorTypo].filter(Boolean).map(t =>
+      `<div class="mhi-compat-note">⚠ У маркуванні виявлено розбіжність літер: введено "${escapeHtml(t.from)}", найближче відоме — "${escapeHtml(t.to)}". Результат нижче — за умови, що малось на увазі "${escapeHtml(t.to)}"; якщо введене маркування вірне як є — підтвердити сумісність не можна.</div>`
+    ).join('');
+    const discrepancyHtml = renderMhiCompatDiscrepancyHtml('indoor', 'Внутрішній блок', r.indoorMatch) + renderMhiCompatDiscrepancyHtml('outdoor', 'Зовнішній блок', r.outdoorMatch);
     const deprecatedHtml = rule.d
       ? '<div class="mhi-compat-note">Одна з моделей позначена як така, що знімається з виробництва (☆) — на статус сумісності це не впливає.</div>' : '';
-    const factsHtml = !r.archival ? renderMhiCompatFactsHtml(r.indoorPattern) : '';
+    const factsHtml = (r.sheet === 'rac') ? renderMhiCompatFactsHtml(r.indoorInput) : '';
     return `
       <div class="mhi-result">
         <div class="mhi-compat-status ${statusClass}">${escapeHtml(statusLabel)}</div>
+        ${typoHtml}
+        ${refHtml}
         ${footnoteHtml}
-        ${archivalHtml}
+        ${discrepancyHtml}
         ${deprecatedHtml}
         ${factsHtml}
       </div>`;
