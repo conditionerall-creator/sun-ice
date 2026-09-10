@@ -1452,6 +1452,15 @@
      видимі порожні рядки (саме це й було "величезними білими полями" на скріні). */
   .task-form-body { white-space: normal; }
   .task-form-body .field { margin-bottom: 10px; }
+  /* Блок додавання постачальника губився під списком — користувач довго шукав його
+     очима, тому виділено кольоровим боксом (той самий accent-bg, що й .status-card). */
+  .supplier-add-box {
+    background: var(--accent-bg);
+    border-radius: 14px;
+    padding: 14px 14px 4px;
+    margin-top: 16px;
+  }
+  .supplier-add-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
   .field input, .field select, .field textarea {
     width: 100%;
     padding: 11px 12px;
@@ -2063,8 +2072,8 @@
         </div>
       </div>
       <div class="field">
-        <label>Борг клієнта, грн</label>
-        <input type="number" id="task-field-client-debt" placeholder="0" step="0.01" inputmode="decimal">
+        <label>Борг клієнта</label>
+        <input type="text" id="task-field-client-debt" placeholder="напр. 1500 або текстом">
       </div>
       <div class="field">
         <label>Коментар</label>
@@ -2091,22 +2100,25 @@
     <div class="info-sheet-body task-form-body">
       <div id="suppliers-total" class="user-card-sub" style="margin-bottom:10px;"></div>
       <div id="suppliers-list"></div>
-      <div class="field-row">
-        <div class="field">
-          <label>Новий постачальник</label>
-          <input type="text" id="supplier-new-name" placeholder="Назва">
+      <div class="supplier-add-box">
+        <div class="supplier-add-title">➕ Додати постачальника</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Назва</label>
+            <input type="text" id="supplier-new-name" placeholder="Назва постачальника">
+          </div>
+          <div class="field">
+            <label>Борг</label>
+            <input type="text" id="supplier-new-amount" placeholder="напр. 1500 або текстом">
+          </div>
         </div>
         <div class="field">
-          <label>Борг, грн</label>
-          <input type="number" id="supplier-new-amount" placeholder="0" step="0.01" inputmode="decimal">
+          <label>Коментар</label>
+          <input type="text" id="supplier-new-note" placeholder="необов'язково">
         </div>
+        <button type="button" class="primary-btn" id="supplier-add-btn">+ Додати постачальника</button>
+        <div id="supplier-form-error"></div>
       </div>
-      <div class="field">
-        <label>Коментар</label>
-        <input type="text" id="supplier-new-note" placeholder="необов'язково">
-      </div>
-      <button type="button" class="primary-btn" id="supplier-add-btn">+ Додати постачальника</button>
-      <div id="supplier-form-error"></div>
     </div>
   </div>
 </div>
@@ -6038,9 +6050,20 @@ function taskStatusLabel(s) { return TASK_STATUS_LABELS[s] || s; }
 function taskEquipmentOptionsHtml(selected) {
   return TASK_EQUIPMENT_TYPES.map(e => `<option value="${escapeHtml(e)}" ${e === selected ? 'selected' : ''}>${escapeHtml(e)}</option>`).join('');
 }
-function taskMoney(n) {
-  const v = Number(n);
-  return v ? v.toLocaleString('uk-UA', { maximumFractionDigits: 2 }) + ' грн' : '';
+/* Борг тепер вводиться вільним текстом (за проханням користувача — щоб можна було
+   писати не лише суму, а й "1500 + доставка" тощо), а не лише числом. Якщо введене —
+   чисте число, форматуємо як гроші; інакше показуємо текст як є. */
+function taskMoney(v) {
+  if (v === null || v === undefined || v === '') return '';
+  const s = String(v).trim();
+  const n = Number(s.replace(',', '.'));
+  return s !== '' && Number.isFinite(n) ? n.toLocaleString('uk-UA', { maximumFractionDigits: 2 }) + ' грн' : s;
+}
+/* Найкраще наближення суми з вільного тексту (для сумарного боргу постачальникам) —
+   бере число з початку рядка, якщо є, інакше 0. */
+function parseMoneyLead(v) {
+  const n = parseFloat(String(v == null ? '' : v).replace(',', '.'));
+  return Number.isFinite(n) ? n : 0;
 }
 
 let installerTasksCache = [];
@@ -6391,7 +6414,7 @@ async function handleTaskFormSubmit() {
   const clientName = document.getElementById('task-field-client-name').value.trim();
   const clientPhone = document.getElementById('task-field-client-phone').value.trim();
   const equipment = document.getElementById('task-field-equipment').value;
-  const clientDebt = document.getElementById('task-field-client-debt').value;
+  const clientDebt = document.getElementById('task-field-client-debt').value.trim();
   const comment = document.getElementById('task-field-comment').value.trim();
 
   if (!address || !dtVal) {
@@ -6416,7 +6439,7 @@ async function handleTaskFormSubmit() {
     client_name: clientName || null,
     client_phone: clientPhone || null,
     equipment_type: equipment,
-    client_debt_amount: clientDebt ? Number(clientDebt) : null,
+    client_debt_amount: clientDebt || null,
     comment: comment || null
   };
 
@@ -6467,8 +6490,8 @@ function supplierRowHtml(s) {
         </div>
       </div>
       <div class="field" style="margin-top:8px;">
-        <label>Борг, грн</label>
-        <input type="number" step="0.01" inputmode="decimal" value="${s.debt_amount || 0}" data-supplier-action="amount" data-supplier-id="${s.id}">
+        <label>Борг</label>
+        <input type="text" value="${escapeHtml(s.debt_amount == null ? '' : s.debt_amount)}" placeholder="напр. 1500 або текстом" data-supplier-action="amount" data-supplier-id="${s.id}">
       </div>
     </div>`;
 }
@@ -6482,7 +6505,7 @@ function renderSuppliersList() {
   } else {
     listEl.innerHTML = installerSuppliersCache.map(supplierRowHtml).join('');
   }
-  const total = installerSuppliersCache.reduce((sum, s) => sum + (Number(s.debt_amount) || 0), 0);
+  const total = installerSuppliersCache.reduce((sum, s) => sum + parseMoneyLead(s.debt_amount), 0);
   totalEl.textContent = 'Разом винен постачальникам: ' + (total ? taskMoney(total) : '0 грн');
 }
 
@@ -6521,7 +6544,7 @@ document.getElementById('supplier-add-btn').addEventListener('click', async () =
   const { error } = await sb.from('installer_suppliers').insert({
     installer_id: session.user.id,
     name: name,
-    debt_amount: amount ? Number(amount) : 0,
+    debt_amount: amount.trim() || null,
     note: note || null
   });
   if (error) {
@@ -6548,7 +6571,7 @@ document.getElementById('suppliers-list').addEventListener('change', async (e) =
   const input = e.target.closest('input[data-supplier-action="amount"]');
   if (!input) return;
   const id = input.getAttribute('data-supplier-id');
-  const value = input.value ? Number(input.value) : 0;
+  const value = input.value.trim() || null;
   const { error } = await sb.from('installer_suppliers').update({ debt_amount: value }).eq('id', id);
   if (!error) { await loadSuppliers(); renderSuppliersList(); }
 });
