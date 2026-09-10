@@ -1989,7 +1989,7 @@
   <button class="nav-btn" data-tab="cabinet"><span class="nav-icon">👤</span>Кабінет</button>
   <button class="nav-btn" data-tab="contacts"><span class="nav-icon">📞</span>Контакти</button>
   <button class="nav-btn" data-tab="info"><span class="nav-icon">ℹ️</span>Інфо</button>
-  <button class="nav-btn" data-tab="installer" id="nav-btn-installer" style="display:none;"><span class="nav-icon">🛠️</span>CRМонтаж</button>
+  <button class="nav-btn" data-tab="installer"><span class="nav-icon">🛠️</span>CRМонтаж</button>
 </nav>
 
 <div class="img-lightbox-overlay" id="img-lightbox-overlay">
@@ -2018,7 +2018,7 @@
   </div>
 </div>
 
-<!-- Форма створення/редагування монтажу (CRМонтаж, роль installer) — той самий bottom-sheet
+<!-- Форма створення/редагування монтажу (CRМонтаж) — той самий bottom-sheet
      патерн, що й series-info-overlay вище, але з формою в тілі замість тексту. -->
 <div class="info-sheet-overlay" id="task-form-overlay">
   <div class="info-sheet-backdrop" id="task-form-backdrop"></div>
@@ -2056,38 +2056,11 @@
         <label>Коментар</label>
         <textarea id="task-field-comment" rows="3"></textarea>
       </div>
-      <div class="field" id="task-field-share-wrap" style="display:none;">
-        <label class="promo-ack-banner">
-          <input type="checkbox" id="task-field-shared">
-          <span>Спільний монтаж (бачить напарник)</span>
-        </label>
-        <div id="task-field-assignee-wrap" style="display:none; margin-top:8px;">
-          <label>Призначено</label>
-          <select id="task-field-assignee">
-            <option value="me">Я</option>
-            <option value="partner">Напарник</option>
-            <option value="both">Обидва</option>
-          </select>
-        </div>
-      </div>
       <div id="task-form-error"></div>
     </div>
     <div class="info-sheet-actions">
       <button type="button" class="info-sheet-action-btn" id="task-form-submit-btn">Зберегти</button>
     </div>
-  </div>
-</div>
-
-<!-- Зв'язок з напарником (CRМонтаж, Крок 5) — той самий bottom-sheet патерн, тіло
-     наповнюється динамічно через renderPartnerOverlayBody() залежно від стану зв'язку. -->
-<div class="info-sheet-overlay" id="partner-overlay">
-  <div class="info-sheet-backdrop" id="partner-overlay-backdrop"></div>
-  <div class="info-sheet-panel">
-    <div class="info-sheet-header">
-      <div class="info-sheet-title">Напарник</div>
-      <button type="button" class="info-sheet-close" id="partner-overlay-close" aria-label="Закрити">✕</button>
-    </div>
-    <div class="info-sheet-body" id="partner-overlay-body"></div>
   </div>
 </div>
 
@@ -4236,7 +4209,6 @@ async function getCurrentProfileRole() {
 const PRICE_ACCESS_DENIED_STATUSES = ['blocked', 'rejected'];
 let hasFullAccess = false;
 let lastAccessCheckAt = 0;
-let isApprovedInstaller = false; // роль 'installer' + status 'approved' — показує вкладку "CRМонтаж"
 
 async function refreshAccessState() {
   try {
@@ -4244,29 +4216,15 @@ async function refreshAccessState() {
     const session = sessionData ? sessionData.session : null;
     if (!session) {
       hasFullAccess = false;
-      isApprovedInstaller = false;
     } else {
-      const { data: profile } = await sb.from('profiles').select('status, role').eq('id', session.user.id).single();
+      const { data: profile } = await sb.from('profiles').select('status').eq('id', session.user.id).single();
       hasFullAccess = !!profile && !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status);
-      isApprovedInstaller = !!profile && profile.role === 'installer' && profile.status === 'approved';
     }
   } catch (e) {
     hasFullAccess = false;
-    isApprovedInstaller = false;
   }
   lastAccessCheckAt = Date.now();
-  updateInstallerNavVisibility();
   return hasFullAccess;
-}
-
-/* Показує/ховає вкладку "CRМонтаж" залежно від isApprovedInstaller (рахує
-   refreshAccessState — той самий виклик, що й для доступу до цін, щоб не робити зайвий
-   запит до БД). Якщо саме зараз відкрита ця вкладка, а доступ щойно зник (напр. адмін
-   заблокував/змінив роль в іншій вкладці) — перекидає на Каталог. */
-function updateInstallerNavVisibility() {
-  const btn = document.getElementById('nav-btn-installer');
-  if (btn) btn.style.display = isApprovedInstaller ? '' : 'none';
-  if (!isApprovedInstaller && currentTab === 'installer') animateTabSwitch('catalog');
 }
 
 /* Спливаюча картка "Зареєструйтесь" — при дотику на заховану ціну/калькулятор. */
@@ -5188,7 +5146,7 @@ function priceTypeLabel(pt) {
   return { regular: 'Стандартна', client: 'Клієнтська', vip: 'VIP' }[pt] || (pt || '—');
 }
 function roleLabel(role) {
-  return { user: 'Користувач', regional_admin: 'Регіональний адмін', super_admin: 'Супер-адмін', installer: 'Інсталятор' }[role] || role;
+  return { user: 'Користувач', regional_admin: 'Регіональний адмін', super_admin: 'Супер-адмін' }[role] || role;
 }
 
 async function renderCabinetTab() {
@@ -5328,10 +5286,6 @@ async function renderRegisterForm() {
       <label>Регіон</label>
       <select id="reg-region">${options}</select>
     </div>
-    <label class="promo-ack-banner">
-      <input type="checkbox" id="reg-is-installer">
-      <span>Я монтажник (інсталятор) — реєструюсь для розділу «CRМонтаж»</span>
-    </label>
     <button class="primary-btn" id="reg-submit-btn">Зареєструватися</button>
     <div id="reg-error"></div>
   `;
@@ -5394,7 +5348,6 @@ async function handleRegister() {
     return;
   }
 
-  const isInstaller = document.getElementById('reg-is-installer').checked;
   const { error: profileError } = await sb.from('profiles').upsert({
     id: userId,
     full_name: name,
@@ -5402,7 +5355,7 @@ async function handleRegister() {
     region_id: parseInt(regionId, 10),
     status: 'pending',
     price_type: 'regular',
-    role: isInstaller ? 'installer' : 'user'
+    role: 'user'
   }, { onConflict: 'id' });
 
   if (profileError) {
@@ -5749,7 +5702,6 @@ async function renderAdminPanel(profile) {
           </select>
           ${isSuper ? `<select data-action="role" data-id="${u.id}">
             <option value="user" ${u.role === 'user' ? 'selected' : ''}>Користувач</option>
-            <option value="installer" ${u.role === 'installer' ? 'selected' : ''}>Інсталятор</option>
             <option value="regional_admin" ${u.role === 'regional_admin' ? 'selected' : ''}>Регіон. адмін</option>
             <option value="super_admin" ${u.role === 'super_admin' ? 'selected' : ''}>Супер-адмін</option>
           </select>` : ''}
@@ -5780,9 +5732,9 @@ async function renderAdminPanel(profile) {
       </div>`;
   }
 
-  // roleFilter: '' (усі), 'user', 'installer', 'regional_admin', 'super_admin' — точна
-  // роль, або 'admin' — збірне "будь-який адмін" (лише regional_admin/super_admin, НЕ
-  // installer), яким користується спрощений фільтр regional_admin.
+  // roleFilter: '' (усі), 'user', 'regional_admin', 'super_admin' — точна роль, або
+  // 'admin' — збірне "будь-який адмін" (лише regional_admin/super_admin), яким
+  // користується спрощений фільтр regional_admin.
   function passesFilters(u, q, regionId, roleFilter) {
     if (regionId && String(u.region_id) !== regionId) return false;
     if (roleFilter === 'admin') { if (u.role !== 'regional_admin' && u.role !== 'super_admin') return false; }
@@ -5823,13 +5775,11 @@ async function renderAdminPanel(profile) {
   const roleOptionsHtml = isSuper
     ? `<option value="">Усі ролі</option>
        <option value="user">Користувачі</option>
-       <option value="installer">Інсталятори</option>
        <option value="regional_admin">Регіональні адміни</option>
        <option value="super_admin">Супер-адміни</option>`
     : `<option value="">Усі ролі</option>
        <option value="admin">Адміністратори</option>
-       <option value="user">Користувачі</option>
-       <option value="installer">Інсталятори</option>`;
+       <option value="user">Користувачі</option>`;
 
   let html = '';
   if (pushState.supported) {
@@ -5959,15 +5909,13 @@ function renderCurrentTab() {
   else if (currentTab === 'installer') renderInstallerTab();
 }
 
-/* ---------- CRМонтаж (роль "installer") ----------
-   Крок 1 реалізації "CRМонтаж": лише роль + доступ + ця заглушка. Список завдань,
-   нагадування, експорт і прив'язка партнера — окремі майбутні кроки, навмисно НЕ
-   реалізовані тут.
-   Захист повторює патерн renderMhiCompatFolders(): роль/статус перевіряються не лише на
-   рівні кнопки нав-бару (updateInstallerNavVisibility ховає саму кнопку для
-   не-інсталяторів/непідтверджених), а й тут — щоб прямий перехід за хешем (#installer)
-   теж нікуди не пускав. Перевірка йде напряму в БД (role і status разом), а не через
-   getCurrentProfileRole() — та функція повертає лише role, тут потрібен ще й статус. */
+/* ---------- CRМонтаж ----------
+   Стаціонарний розділ для будь-якої ролі й будь-якого залогіненого користувача — раніше
+   був окремою роллю "installer" (+ фіча "напарник"), обидві прибрані: розмежування за
+   роллю не мало сенсу для інструменту, яким кожен веде свій особистий список монтажів.
+   Єдина умова доступу — активна сесія (перевіряється тут напряму, а не лише переходом за
+   вкладкою нав-бару, щоб прямий перехід за хешем #installer теж не пропускав гостя). Без
+   сесії — перекидає на Кабінет, щоб увійти/зареєструватись. */
 async function renderInstallerTab() {
   document.getElementById('back-btn').style.display = 'none';
   document.getElementById('title').textContent = 'CRМонтаж';
@@ -5976,16 +5924,10 @@ async function renderInstallerTab() {
 
   const { data: sessionData } = await sb.auth.getSession();
   const session = sessionData ? sessionData.session : null;
-  let profile = null;
-  if (session) {
-    const { data } = await sb.from('profiles').select('role, status').eq('id', session.user.id).single();
-    profile = data || null;
-  }
-  const ok = !!profile && profile.role === 'installer' && profile.status === 'approved';
 
-  if (!ok) {
-    history.replaceState({ tab: 'catalog' }, '', '#catalog');
-    switchTab('catalog', false);
+  if (!session) {
+    history.replaceState({ tab: 'cabinet' }, '', '#cabinet');
+    switchTab('cabinet', false);
     renderCurrentTab();
     return;
   }
@@ -5996,7 +5938,6 @@ async function renderInstallerTab() {
     <div class="task-toolbar-row no-print">
       <button type="button" data-task-action="print">🖨 Друк</button>
       <button type="button" data-task-action="export-xlsx">📊 Excel</button>
-      <button type="button" data-task-action="partner">🤝 Напарник</button>
     </div>
     <div class="admin-filters no-print">
       <div class="admin-search"><input type="text" id="task-search" placeholder="Пошук за адресою чи клієнтом"></div>
@@ -6034,11 +5975,10 @@ async function renderInstallerTab() {
   renderInstallerTaskList();
 }
 
-/* ---------- CRМонтаж: список монтажів (Крок 2) ----------
-   Персональна таблиця public.installer_tasks, RLS обмежує кожного монтажника лише
-   власними рядками (installer_id = auth.uid()) — regional_admin/super_admin тут нічого не
-   бачать, це особистий інструмент монтажника, не частина адмінки. Нагадування/експорт/
-   напарники — окремі майбутні кроки, тут лише CRUD + фільтри + групування за днями. */
+/* ---------- CRМонтаж: список монтажів ----------
+   Персональна таблиця public.installer_tasks, RLS обмежує кожного користувача лише
+   власними рядками (installer_id = auth.uid()) — особистий список, не частина адмінки,
+   доступний однаково будь-якій ролі. */
 const TASK_EQUIPMENT_TYPES = ['Спліт-системи', 'Мульти спліт-системи', 'Напівпромислові спліт-системи', 'Мультизональні VRF', 'Теплові насоси', 'Інше'];
 const TASK_STATUS_LABELS = { planned: 'Заплановано', in_progress: 'В процесі', done: 'Виконано', cancelled: 'Скасовано' };
 function taskStatusLabel(s) { return TASK_STATUS_LABELS[s] || s; }
@@ -6049,20 +5989,13 @@ function taskEquipmentOptionsHtml(selected) {
 let installerTasksCache = [];
 let editingTaskId = null;
 let taskQuickFilter = 'all'; // 'all' | 'today' | 'week'
-let myInstallerId = null;
-let partnerLinkCache = null; // null | {id, status, requester_id, partner_id, otherId, otherName, iAmRequester}
 
 async function loadInstallerTasks() {
   const { data: sessionData } = await sb.auth.getSession();
   const session = sessionData ? sessionData.session : null;
-  if (!session) { installerTasksCache = []; myInstallerId = null; partnerLinkCache = null; return; }
-  myInstallerId = session.user.id;
-  /* Без .eq('installer_id', ...) — RLS сама повертає об'єднання "свої монтажі" +
-     "спільні монтажі напарника" (Крок 5, адитивна installer_tasks_partner_select),
-     для інсталятора без напарника це прозоро звужується назад до лише власних рядків. */
-  const { data, error } = await sb.from('installer_tasks').select('*').order('scheduled_at');
+  if (!session) { installerTasksCache = []; return; }
+  const { data, error } = await sb.from('installer_tasks').select('*').eq('installer_id', session.user.id).order('scheduled_at');
   installerTasksCache = error ? [] : (data || []);
-  await loadPartnerLink();
 }
 
 function taskPassesFilters(t, q, status, equipment, quick) {
@@ -6129,17 +6062,12 @@ function taskCardHtml(t, d) {
   const equipBits = escapeHtml(t.equipment_type || '') + (t.is_heat_pump_tt ? ' · монтаж ТТ' : '');
   const statusOptionsHtml = Object.keys(TASK_STATUS_LABELS)
     .map(s => `<option value="${s}" ${s === t.status ? 'selected' : ''}>${escapeHtml(TASK_STATUS_LABELS[s])}</option>`).join('');
-  const isOwner = t.installer_id === myInstallerId;
-  const sharedLabel = !isOwner
-    ? `<p class="user-card-sub">👥 Спільний · ${escapeHtml(partnerLinkCache ? (partnerLinkCache.otherName || '') : '')}</p>`
-    : '';
   return `
     <div class="user-card" data-task-card-id="${t.id}">
       <div class="user-card-top">
         <div>
           <p class="user-card-name">${escapeHtml(t.address)}</p>
           <p class="user-card-sub">${timeLabel}${clientBits ? ' · ' + clientBits : ''}</p>
-          ${sharedLabel}
         </div>
         <div class="user-card-top-right">
           <span class="badge badge-${escapeHtml(t.status)}">${escapeHtml(taskStatusLabel(t.status))}</span>
@@ -6164,7 +6092,7 @@ function taskCardHtml(t, d) {
         </div>
         <div class="user-card-actions no-print">
           <button type="button" data-task-action="edit" data-task-id="${t.id}">Редагувати</button>
-          ${isOwner ? `<button type="button" class="reject" data-task-action="delete" data-task-id="${t.id}">Видалити</button>` : ''}
+          <button type="button" class="reject" data-task-action="delete" data-task-id="${t.id}">Видалити</button>
         </div>
       </div>
     </div>`;
@@ -6339,137 +6267,6 @@ function exportInstallerTasksToExcel() {
   XLSX.writeFile(wb, 'montag-' + new Date().toISOString().slice(0, 10) + '.xlsx');
 }
 
-/* ---------- CRМонтаж: напарник (Крок 5, фінальний) ----------
-   Зв'язок підтверджується з обох сторін (запит → підтвердження), не обов'язковий —
-   без напарника решта CRМонтаж працює як і раніше (Кроки 1-4 не зачіпаються). Пошук
-   напарника за телефоном — через SQL-функцію find_installer_by_phone (SECURITY
-   DEFINER, claude/sql/2026-09-10-installer-partner-links.sql), бо звичайний
-   sb.from('profiles').select() чужий рядок за телефоном не бачить (RLS обмежена
-   власним id). Overlay поза #main — власні addEventListener на кожен стан, той самий
-   підхід, що й #task-form-overlay. */
-
-async function loadPartnerLink() {
-  if (!myInstallerId) { partnerLinkCache = null; return; }
-  const { data, error } = await sb.from('installer_partner_links')
-    .select('*')
-    .or(`requester_id.eq.${myInstallerId},partner_id.eq.${myInstallerId}`)
-    .order('created_at', { ascending: false })
-    .limit(1);
-  if (error || !data || !data.length) { partnerLinkCache = null; return; }
-  const link = data[0];
-  const iAmRequester = link.requester_id === myInstallerId;
-  const otherId = iAmRequester ? link.partner_id : link.requester_id;
-  let otherName = '';
-  const { data: prof } = await sb.from('profiles').select('full_name').eq('id', otherId).maybeSingle();
-  if (prof) otherName = prof.full_name || '';
-  partnerLinkCache = { ...link, otherId, otherName, iAmRequester };
-}
-
-function openPartnerOverlay() {
-  renderPartnerOverlayBody();
-  document.getElementById('partner-overlay').classList.add('show');
-}
-function closePartnerOverlay() {
-  document.getElementById('partner-overlay').classList.remove('show');
-}
-document.getElementById('partner-overlay-close').addEventListener('click', closePartnerOverlay);
-document.getElementById('partner-overlay-backdrop').addEventListener('click', closePartnerOverlay);
-
-function renderPartnerOverlayBody() {
-  const body = document.getElementById('partner-overlay-body');
-
-  if (!partnerLinkCache) {
-    body.innerHTML = `
-      <p class="user-card-sub">Працюйте в парі з напарником — спільні монтажі, спільне
-      редагування, синхронні статуси виконання.</p>
-      <div class="field">
-        <label>Номер телефону напарника</label>
-        <div class="phone-input-row">
-          <span class="phone-prefix">+38</span>
-          <input type="tel" id="partner-invite-phone" placeholder="0501234567" maxlength="10" inputmode="numeric">
-        </div>
-      </div>
-      <div id="partner-invite-error"></div>
-      <button type="button" class="primary-btn" id="partner-invite-btn">Запросити</button>
-    `;
-    attachDigitsOnlyFilter(document.getElementById('partner-invite-phone'));
-    document.getElementById('partner-invite-btn').addEventListener('click', handlePartnerInvite);
-    return;
-  }
-
-  if (partnerLinkCache.status === 'pending' && partnerLinkCache.iAmRequester) {
-    body.innerHTML = `
-      <p class="user-card-sub">Запит надіслано${partnerLinkCache.otherName ? ' — ' + escapeHtml(partnerLinkCache.otherName) : ''}. Очікує підтвердження.</p>
-      <button type="button" class="reject" id="partner-cancel-btn">Скасувати запит</button>
-    `;
-    document.getElementById('partner-cancel-btn').addEventListener('click', () => handlePartnerRemove('Скасувати запит напарнику?'));
-    return;
-  }
-
-  if (partnerLinkCache.status === 'pending' && !partnerLinkCache.iAmRequester) {
-    body.innerHTML = `
-      <p class="user-card-sub">${escapeHtml(partnerLinkCache.otherName || 'Інсталятор')} запрошує вас у напарники.</p>
-      <div class="user-card-actions">
-        <button type="button" class="approve" id="partner-accept-btn">Підтвердити</button>
-        <button type="button" class="reject" id="partner-reject-btn">Відхилити</button>
-      </div>
-    `;
-    document.getElementById('partner-accept-btn').addEventListener('click', handlePartnerAccept);
-    document.getElementById('partner-reject-btn').addEventListener('click', () => handlePartnerRemove('Відхилити запит?'));
-    return;
-  }
-
-  body.innerHTML = `
-    <p class="user-card-sub">Напарник: ${escapeHtml(partnerLinkCache.otherName || '')}</p>
-    <p class="user-card-sub">Спільні монтажі бачите й редагуєте обидва, статуси синхронізуються.</p>
-    <button type="button" class="reject" id="partner-unlink-btn">Розірвати зв'язок</button>
-  `;
-  document.getElementById('partner-unlink-btn').addEventListener('click', () => handlePartnerRemove('Розірвати зв\'язок з напарником?'));
-}
-
-async function handlePartnerInvite() {
-  const errEl = document.getElementById('partner-invite-error');
-  errEl.innerHTML = '';
-  const phone = fullPhoneFromLocalInput('partner-invite-phone');
-  const btn = document.getElementById('partner-invite-btn');
-  btn.disabled = true;
-  const { data, error } = await sb.rpc('find_installer_by_phone', { p_phone: phone });
-  btn.disabled = false;
-  const found = Array.isArray(data) ? data[0] : data;
-  if (error || !found) {
-    errEl.innerHTML = '<div class="error">Інсталятора з таким номером не знайдено серед підтверджених.</div>';
-    return;
-  }
-  const { error: insErr } = await sb.from('installer_partner_links').insert({ requester_id: myInstallerId, partner_id: found.id });
-  if (insErr) {
-    errEl.innerHTML = '<div class="error">Не вдалося надіслати запит. Спробуйте ще раз.</div>';
-    return;
-  }
-  await loadPartnerLink();
-  renderPartnerOverlayBody();
-}
-
-async function handlePartnerAccept() {
-  if (!partnerLinkCache) return;
-  await sb.from('installer_partner_links')
-    .update({ status: 'accepted', responded_at: new Date().toISOString() })
-    .eq('id', partnerLinkCache.id);
-  await loadPartnerLink();
-  renderPartnerOverlayBody();
-  await loadInstallerTasks();
-  renderInstallerTaskList();
-}
-
-async function handlePartnerRemove(confirmMsg) {
-  if (!partnerLinkCache) return;
-  if (!confirm(confirmMsg)) return;
-  await sb.from('installer_partner_links').delete().eq('id', partnerLinkCache.id);
-  await loadPartnerLink();
-  renderPartnerOverlayBody();
-  await loadInstallerTasks();
-  renderInstallerTaskList();
-}
-
 document.getElementById('main').addEventListener('click', function(e) {
   const target = e.target.closest('[data-task-action]');
   if (!target || target.tagName === 'SELECT') return;
@@ -6477,7 +6274,6 @@ document.getElementById('main').addEventListener('click', function(e) {
   if (action === 'add') { openTaskForm(null); return; }
   if (action === 'print') { window.print(); return; }
   if (action === 'export-xlsx') { exportInstallerTasksToExcel(); return; }
-  if (action === 'partner') { openPartnerOverlay(); return; }
   const id = target.getAttribute('data-task-id');
   if (action && id) handleTaskAction(action, id, null);
 });
@@ -6500,11 +6296,6 @@ function updateTaskTtVisibility() {
   document.getElementById('task-field-tt-wrap').style.display = equip === 'Теплові насоси' ? 'flex' : 'none';
 }
 
-function updateTaskShareVisibility() {
-  const checked = document.getElementById('task-field-shared').checked;
-  document.getElementById('task-field-assignee-wrap').style.display = checked ? 'block' : 'none';
-}
-
 function openTaskForm(task) {
   editingTaskId = task ? task.id : null;
   document.getElementById('task-form-title').textContent = task ? 'Редагувати монтаж' : 'Новий монтаж';
@@ -6516,26 +6307,6 @@ function openTaskForm(task) {
   document.getElementById('task-field-tt').checked = task ? !!task.is_heat_pump_tt : false;
   document.getElementById('task-field-comment').value = task ? (task.comment || '') : '';
   document.getElementById('task-form-error').innerHTML = '';
-
-  /* Керування "спільністю"/призначенням бачить лише ВЛАСНИК монтажу (новий монтаж —
-     завжди власник — або редагування власного): напарник, що редагує чужий спільний
-     монтаж, цього блоку не бачить — RLS (installer_tasks_partner_update, WITH CHECK
-     partner_visible=true) все одно не дав би йому зняти позначку "спільний". */
-  const isOwnerContext = !task || task.installer_id === myInstallerId;
-  const shareWrap = document.getElementById('task-field-share-wrap');
-  const showShareWrap = isOwnerContext && !!partnerLinkCache && partnerLinkCache.status === 'accepted';
-  shareWrap.style.display = showShareWrap ? 'block' : 'none';
-  if (showShareWrap) {
-    document.getElementById('task-field-shared').checked = task ? !!task.partner_visible : false;
-    const assigneeSelect = document.getElementById('task-field-assignee');
-    if (task && task.partner_visible) {
-      assigneeSelect.value = task.assigned_to === myInstallerId ? 'me' : (task.assigned_to === partnerLinkCache.otherId ? 'partner' : 'both');
-    } else {
-      assigneeSelect.value = 'both';
-    }
-    updateTaskShareVisibility();
-  }
-
   updateTaskTtVisibility();
   document.getElementById('task-form-overlay').classList.add('show');
 }
@@ -6545,7 +6316,6 @@ function closeTaskForm() {
 document.getElementById('task-form-close').addEventListener('click', closeTaskForm);
 document.getElementById('task-form-backdrop').addEventListener('click', closeTaskForm);
 document.getElementById('task-field-equipment').addEventListener('change', updateTaskTtVisibility);
-document.getElementById('task-field-shared').addEventListener('change', updateTaskShareVisibility);
 
 async function handleTaskFormSubmit() {
   const errEl = document.getElementById('task-form-error');
@@ -6574,6 +6344,7 @@ async function handleTaskFormSubmit() {
   btn.disabled = true;
 
   const row = {
+    installer_id: session.user.id,
     address: address,
     scheduled_at: new Date(dtVal).toISOString(),
     client_name: clientName || null,
@@ -6582,26 +6353,6 @@ async function handleTaskFormSubmit() {
     is_heat_pump_tt: equipment === 'Теплові насоси' ? isTt : false,
     comment: comment || null
   };
-
-  /* installer_id іде в row лише при СТВОРЕННІ нового монтажу (власник — завжди я).
-     При РЕДАГУВАННІ це поле навмисно не чіпається: якщо напарник редагує спільний
-     монтаж, перезапис installer_id на напарника відібрав би монтаж у справжнього
-     власника (installer_tasks_own_select більше не пропустив би його). */
-  if (!editingTaskId) {
-    row.installer_id = session.user.id;
-  }
-
-  const shareWrapVisible = document.getElementById('task-field-share-wrap').style.display !== 'none';
-  if (shareWrapVisible) {
-    const shared = document.getElementById('task-field-shared').checked;
-    row.partner_visible = shared;
-    if (shared) {
-      const assignee = document.getElementById('task-field-assignee').value;
-      row.assigned_to = assignee === 'me' ? myInstallerId : (assignee === 'partner' ? partnerLinkCache.otherId : null);
-    } else {
-      row.assigned_to = null;
-    }
-  }
 
   let error;
   if (editingTaskId) {
