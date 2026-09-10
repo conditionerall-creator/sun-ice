@@ -1444,6 +1444,14 @@
   /* Cabinet */
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; min-width: 0; }
+  /* .info-sheet-body успадковано ставить white-space: pre-wrap (потрібно для звичайних
+     текстових інфо-панелей типу series-info-body) — але тут тіло не голий текст, а
+     розмічений HTML-формою, тож відступи/переноси рядків у розмітці рендерились як
+     видимі порожні рядки (саме це й було "величезними білими полями" на скріні). */
+  .task-form-body { white-space: normal; }
+  .task-form-body .field { margin-bottom: 10px; }
   .field input, .field select, .field textarea {
     width: 100%;
     padding: 11px 12px;
@@ -1628,8 +1636,10 @@
   .badge-in_progress { background: #dbeafe; color: #1d4ed8; }
   .badge-done { background: #dcfce7; color: #1e8e3e; }
   .badge-cancelled { background: #fcebeb; color: var(--danger); }
-  .user-card-row { display: flex; gap: 6px; margin-top: 8px; }
+  .user-card-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
   .user-card-row select { flex: 1; font-size: 12px; padding: 7px 6px; }
+  .task-done-check { display: flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; cursor: pointer; }
+  .task-done-check input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
   .user-card-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .user-card-actions button {
     flex: 1;
@@ -2027,39 +2037,76 @@
       <div class="info-sheet-title" id="task-form-title">Новий монтаж</div>
       <button type="button" class="info-sheet-close" id="task-form-close" aria-label="Закрити">✕</button>
     </div>
-    <div class="info-sheet-body">
+    <div class="info-sheet-body task-form-body">
       <div class="field">
         <label>Адреса</label>
         <input type="text" id="task-field-address" placeholder="Вулиця, будинок, квартира">
       </div>
-      <div class="field">
-        <label>Дата і час</label>
-        <input type="datetime-local" id="task-field-datetime">
+      <div class="field-row">
+        <div class="field">
+          <label>Дата і час</label>
+          <input type="datetime-local" id="task-field-datetime">
+        </div>
+        <div class="field">
+          <label>Вид робіт</label>
+          <select id="task-field-equipment"></select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Ім'я клієнта</label>
+          <input type="text" id="task-field-client-name">
+        </div>
+        <div class="field">
+          <label>Телефон клієнта</label>
+          <input type="text" id="task-field-client-phone" placeholder="+380...">
+        </div>
       </div>
       <div class="field">
-        <label>Ім'я клієнта</label>
-        <input type="text" id="task-field-client-name">
+        <label>Борг клієнта, грн</label>
+        <input type="number" id="task-field-client-debt" placeholder="0" step="0.01" inputmode="decimal">
       </div>
-      <div class="field">
-        <label>Телефон клієнта</label>
-        <input type="text" id="task-field-client-phone" placeholder="+380...">
-      </div>
-      <div class="field">
-        <label>Тип обладнання</label>
-        <select id="task-field-equipment"></select>
-      </div>
-      <label class="promo-ack-banner" id="task-field-tt-wrap" style="display:none;">
-        <input type="checkbox" id="task-field-tt">
-        <span>Монтаж ТТ</span>
-      </label>
       <div class="field">
         <label>Коментар</label>
-        <textarea id="task-field-comment" rows="3"></textarea>
+        <textarea id="task-field-comment" rows="2"></textarea>
       </div>
       <div id="task-form-error"></div>
     </div>
     <div class="info-sheet-actions">
       <button type="button" class="info-sheet-action-btn" id="task-form-submit-btn">Зберегти</button>
+    </div>
+  </div>
+</div>
+
+<!-- Постачальники (CRМонтаж) — окремий від монтажів список: скільки монтажник винен
+     кожному постачальнику. Проста поточна сума на постачальника (без журналу операцій),
+     як попросив користувач. Той самий bottom-sheet патерн. -->
+<div class="info-sheet-overlay" id="suppliers-overlay">
+  <div class="info-sheet-backdrop" id="suppliers-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title">Постачальники — мій борг</div>
+      <button type="button" class="info-sheet-close" id="suppliers-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body task-form-body">
+      <div id="suppliers-total" class="user-card-sub" style="margin-bottom:10px;"></div>
+      <div id="suppliers-list"></div>
+      <div class="field-row">
+        <div class="field">
+          <label>Новий постачальник</label>
+          <input type="text" id="supplier-new-name" placeholder="Назва">
+        </div>
+        <div class="field">
+          <label>Борг, грн</label>
+          <input type="number" id="supplier-new-amount" placeholder="0" step="0.01" inputmode="decimal">
+        </div>
+      </div>
+      <div class="field">
+        <label>Коментар</label>
+        <input type="text" id="supplier-new-note" placeholder="необов'язково">
+      </div>
+      <button type="button" class="primary-btn" id="supplier-add-btn">+ Додати постачальника</button>
+      <div id="supplier-form-error"></div>
     </div>
   </div>
 </div>
@@ -5938,6 +5985,7 @@ async function renderInstallerTab() {
     <div class="task-toolbar-row no-print">
       <button type="button" data-task-action="print">🖨 Друк</button>
       <button type="button" data-task-action="export-xlsx">📊 Excel</button>
+      <button type="button" data-task-action="suppliers">🏭 Постачальники</button>
     </div>
     <div class="admin-filters no-print">
       <div class="admin-search"><input type="text" id="task-search" placeholder="Пошук за адресою чи клієнтом"></div>
@@ -5952,7 +6000,7 @@ async function renderInstallerTab() {
           ${Object.keys(TASK_STATUS_LABELS).map(s => `<option value="${s}">${escapeHtml(TASK_STATUS_LABELS[s])}</option>`).join('')}
         </select></div>
         <div><select id="task-equipment-filter">
-          <option value="">Усе обладнання</option>
+          <option value="">Усі види робіт</option>
           ${taskEquipmentOptionsHtml(null)}
         </select></div>
       </div>
@@ -5979,11 +6027,20 @@ async function renderInstallerTab() {
    Персональна таблиця public.installer_tasks, RLS обмежує кожного користувача лише
    власними рядками (installer_id = auth.uid()) — особистий список, не частина адмінки,
    доступний однаково будь-якій ролі. */
-const TASK_EQUIPMENT_TYPES = ['Спліт-системи', 'Мульти спліт-системи', 'Напівпромислові спліт-системи', 'Мультизональні VRF', 'Теплові насоси', 'Інше'];
+/* Було "тип обладнання" (Спліт-системи/Мульти спліт-системи/...) — на прохання
+   користувача замінено на вид робіт (2026-09-10, CHANGELOG). Значення зберігаються
+   в тій самій колонці equipment_type (без нової міграції), старі рядки з попередніми
+   значеннями просто не збігаються з новим списком — при редагуванні підставиться
+   перший пункт нового списку. */
+const TASK_EQUIPMENT_TYPES = ['Монтаж', 'Демонтаж', 'Закладка', 'Навіска', 'Чистка', 'Сервіс'];
 const TASK_STATUS_LABELS = { planned: 'Заплановано', in_progress: 'В процесі', done: 'Виконано', cancelled: 'Скасовано' };
 function taskStatusLabel(s) { return TASK_STATUS_LABELS[s] || s; }
 function taskEquipmentOptionsHtml(selected) {
   return TASK_EQUIPMENT_TYPES.map(e => `<option value="${escapeHtml(e)}" ${e === selected ? 'selected' : ''}>${escapeHtml(e)}</option>`).join('');
+}
+function taskMoney(n) {
+  const v = Number(n);
+  return v ? v.toLocaleString('uk-UA', { maximumFractionDigits: 2 }) + ' грн' : '';
 }
 
 let installerTasksCache = [];
@@ -6059,7 +6116,8 @@ function renderInstallerTaskList() {
 function taskCardHtml(t, d) {
   const timeLabel = d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
   const clientBits = [t.client_name, t.client_phone].filter(Boolean).map(escapeHtml).join(' · ');
-  const equipBits = escapeHtml(t.equipment_type || '') + (t.is_heat_pump_tt ? ' · монтаж ТТ' : '');
+  const equipBits = escapeHtml(t.equipment_type || '');
+  const moneyBits = t.client_debt_amount ? 'Борг клієнта: ' + taskMoney(t.client_debt_amount) : '';
   const statusOptionsHtml = Object.keys(TASK_STATUS_LABELS)
     .map(s => `<option value="${s}" ${s === t.status ? 'selected' : ''}>${escapeHtml(TASK_STATUS_LABELS[s])}</option>`).join('');
   return `
@@ -6086,9 +6144,14 @@ function taskCardHtml(t, d) {
       </div>
       <div class="user-card-expand">
         <p class="user-card-sub">${equipBits}</p>
+        ${moneyBits ? `<p class="user-card-sub">${moneyBits}</p>` : ''}
         ${t.comment ? `<p class="user-card-sub">${escapeHtml(t.comment)}</p>` : ''}
         <div class="user-card-row no-print">
           <select data-task-action="status" data-task-id="${t.id}">${statusOptionsHtml}</select>
+          <label class="task-done-check">
+            <input type="checkbox" data-task-action="done-toggle" data-task-id="${t.id}" ${t.status === 'done' ? 'checked' : ''}>
+            Виконано
+          </label>
         </div>
         <div class="user-card-actions no-print">
           <button type="button" data-task-action="edit" data-task-id="${t.id}">Редагувати</button>
@@ -6160,10 +6223,11 @@ function toIcsUtc(date) {
 function buildTaskIcs(t) {
   const start = new Date(t.scheduled_at);
   const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 година за замовчуванням, тривалість монтажу в базі не зберігається
-  const summary = 'Монтаж: ' + (t.equipment_type || '') + (t.is_heat_pump_tt ? ' (ТТ)' : '');
+  const summary = 'Монтаж: ' + (t.equipment_type || '');
   const descLines = [];
   if (t.client_name || t.client_phone) descLines.push('Клієнт: ' + [t.client_name, t.client_phone].filter(Boolean).join(', '));
-  descLines.push('Обладнання: ' + (t.equipment_type || ''));
+  descLines.push('Вид робіт: ' + (t.equipment_type || ''));
+  if (t.client_debt_amount) descLines.push('Борг клієнта: ' + taskMoney(t.client_debt_amount));
   if (t.comment) descLines.push('Коментар: ' + t.comment);
   const lines = [
     'BEGIN:VCALENDAR',
@@ -6214,7 +6278,8 @@ function shareTaskInfo(t, btnId) {
     'Монтаж: ' + t.address,
     'Дата/час: ' + dateLabel,
     (t.client_name || t.client_phone) ? 'Клієнт: ' + [t.client_name, t.client_phone].filter(Boolean).join(', ') : null,
-    'Обладнання: ' + t.equipment_type + (t.is_heat_pump_tt ? ' (монтаж ТТ)' : '')
+    'Вид робіт: ' + t.equipment_type,
+    t.client_debt_amount ? 'Борг клієнта: ' + taskMoney(t.client_debt_amount) : null
   ].filter(Boolean);
   const shareText = lines.join('\n');
   if (navigator.share) {
@@ -6255,8 +6320,8 @@ function exportInstallerTasksToExcel() {
       'Адреса': t.address,
       "Ім'я клієнта": t.client_name || '',
       'Телефон клієнта': t.client_phone || '',
-      'Тип обладнання': t.equipment_type,
-      'Монтаж ТТ': t.is_heat_pump_tt ? 'Так' : '',
+      'Вид робіт': t.equipment_type,
+      'Борг клієнта': t.client_debt_amount || '',
       'Статус': taskStatusLabel(t.status),
       'Коментар': t.comment || ''
     };
@@ -6274,26 +6339,29 @@ document.getElementById('main').addEventListener('click', function(e) {
   if (action === 'add') { openTaskForm(null); return; }
   if (action === 'print') { window.print(); return; }
   if (action === 'export-xlsx') { exportInstallerTasksToExcel(); return; }
+  if (action === 'suppliers') { openSuppliersPanel(); return; }
   const id = target.getAttribute('data-task-id');
   if (action && id) handleTaskAction(action, id, null);
 });
 document.getElementById('main').addEventListener('change', function(e) {
-  const target = e.target.closest('select[data-task-action]');
-  if (!target) return;
-  const action = target.getAttribute('data-task-action');
-  const id = target.getAttribute('data-task-id');
-  if (action && id) handleTaskAction(action, id, target.value);
+  const select = e.target.closest('select[data-task-action]');
+  if (select) {
+    const action = select.getAttribute('data-task-action');
+    const id = select.getAttribute('data-task-id');
+    if (action && id) handleTaskAction(action, id, select.value);
+    return;
+  }
+  const checkbox = e.target.closest('input[type="checkbox"][data-task-action="done-toggle"]');
+  if (checkbox) {
+    const id = checkbox.getAttribute('data-task-id');
+    if (id) handleTaskAction('status', id, checkbox.checked ? 'done' : 'planned');
+  }
 });
 
 function toDatetimeLocalValue(iso) {
   const d = new Date(iso);
   const pad = n => String(n).padStart(2, '0');
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-}
-
-function updateTaskTtVisibility() {
-  const equip = document.getElementById('task-field-equipment').value;
-  document.getElementById('task-field-tt-wrap').style.display = equip === 'Теплові насоси' ? 'flex' : 'none';
 }
 
 function openTaskForm(task) {
@@ -6304,10 +6372,9 @@ function openTaskForm(task) {
   document.getElementById('task-field-client-name').value = task ? (task.client_name || '') : '';
   document.getElementById('task-field-client-phone').value = task ? (task.client_phone || '') : '';
   document.getElementById('task-field-equipment').innerHTML = taskEquipmentOptionsHtml(task ? task.equipment_type : TASK_EQUIPMENT_TYPES[0]);
-  document.getElementById('task-field-tt').checked = task ? !!task.is_heat_pump_tt : false;
+  document.getElementById('task-field-client-debt').value = task && task.client_debt_amount ? task.client_debt_amount : '';
   document.getElementById('task-field-comment').value = task ? (task.comment || '') : '';
   document.getElementById('task-form-error').innerHTML = '';
-  updateTaskTtVisibility();
   document.getElementById('task-form-overlay').classList.add('show');
 }
 function closeTaskForm() {
@@ -6315,7 +6382,6 @@ function closeTaskForm() {
 }
 document.getElementById('task-form-close').addEventListener('click', closeTaskForm);
 document.getElementById('task-form-backdrop').addEventListener('click', closeTaskForm);
-document.getElementById('task-field-equipment').addEventListener('change', updateTaskTtVisibility);
 
 async function handleTaskFormSubmit() {
   const errEl = document.getElementById('task-form-error');
@@ -6325,7 +6391,7 @@ async function handleTaskFormSubmit() {
   const clientName = document.getElementById('task-field-client-name').value.trim();
   const clientPhone = document.getElementById('task-field-client-phone').value.trim();
   const equipment = document.getElementById('task-field-equipment').value;
-  const isTt = document.getElementById('task-field-tt').checked;
+  const clientDebt = document.getElementById('task-field-client-debt').value;
   const comment = document.getElementById('task-field-comment').value.trim();
 
   if (!address || !dtVal) {
@@ -6350,7 +6416,7 @@ async function handleTaskFormSubmit() {
     client_name: clientName || null,
     client_phone: clientPhone || null,
     equipment_type: equipment,
-    is_heat_pump_tt: equipment === 'Теплові насоси' ? isTt : false,
+    client_debt_amount: clientDebt ? Number(clientDebt) : null,
     comment: comment || null
   };
 
@@ -6371,6 +6437,121 @@ async function handleTaskFormSubmit() {
   renderInstallerTaskList();
 }
 document.getElementById('task-form-submit-btn').addEventListener('click', handleTaskFormSubmit);
+
+/* ---------- CRМонтаж: постачальники (скільки монтажник сам винен) ----------
+   Окремо від монтажів — персональний список постачальників (public.installer_suppliers,
+   та сама RLS-модель installer_id = auth.uid()), проста поточна сума боргу на кожного,
+   без журналу операцій (за явним проханням користувача — простіше в реалізації й
+   використанні). Борг клієнта — окрема річ, лишається полем у самому монтажі
+   (task-field-client-debt), сюди не потрапляє. */
+let installerSuppliersCache = [];
+
+async function loadSuppliers() {
+  const { data: sessionData } = await sb.auth.getSession();
+  const session = sessionData ? sessionData.session : null;
+  if (!session) { installerSuppliersCache = []; return; }
+  const { data, error } = await sb.from('installer_suppliers').select('*').eq('installer_id', session.user.id).order('name');
+  installerSuppliersCache = error ? [] : (data || []);
+}
+
+function supplierRowHtml(s) {
+  return `
+    <div class="user-card" data-supplier-card-id="${s.id}">
+      <div class="user-card-top">
+        <div>
+          <p class="user-card-name">${escapeHtml(s.name)}</p>
+          ${s.note ? `<p class="user-card-sub">${escapeHtml(s.note)}</p>` : ''}
+        </div>
+        <div class="user-card-top-right">
+          <button type="button" class="reject" data-supplier-action="delete" data-supplier-id="${s.id}">Видалити</button>
+        </div>
+      </div>
+      <div class="field" style="margin-top:8px;">
+        <label>Борг, грн</label>
+        <input type="number" step="0.01" inputmode="decimal" value="${s.debt_amount || 0}" data-supplier-action="amount" data-supplier-id="${s.id}">
+      </div>
+    </div>`;
+}
+
+function renderSuppliersList() {
+  const listEl = document.getElementById('suppliers-list');
+  const totalEl = document.getElementById('suppliers-total');
+  if (!listEl) return;
+  if (!installerSuppliersCache.length) {
+    listEl.innerHTML = '<div class="empty">Постачальників ще нема.</div>';
+  } else {
+    listEl.innerHTML = installerSuppliersCache.map(supplierRowHtml).join('');
+  }
+  const total = installerSuppliersCache.reduce((sum, s) => sum + (Number(s.debt_amount) || 0), 0);
+  totalEl.textContent = 'Разом винен постачальникам: ' + (total ? taskMoney(total) : '0 грн');
+}
+
+async function openSuppliersPanel() {
+  document.getElementById('suppliers-overlay').classList.add('show');
+  document.getElementById('suppliers-list').innerHTML = '<div class="empty">Завантаження...</div>';
+  document.getElementById('supplier-form-error').innerHTML = '';
+  document.getElementById('supplier-new-name').value = '';
+  document.getElementById('supplier-new-amount').value = '';
+  document.getElementById('supplier-new-note').value = '';
+  await loadSuppliers();
+  renderSuppliersList();
+}
+function closeSuppliersPanel() {
+  document.getElementById('suppliers-overlay').classList.remove('show');
+}
+document.getElementById('suppliers-close').addEventListener('click', closeSuppliersPanel);
+document.getElementById('suppliers-backdrop').addEventListener('click', closeSuppliersPanel);
+
+document.getElementById('supplier-add-btn').addEventListener('click', async () => {
+  const errEl = document.getElementById('supplier-form-error');
+  errEl.innerHTML = '';
+  const name = document.getElementById('supplier-new-name').value.trim();
+  const amount = document.getElementById('supplier-new-amount').value;
+  const note = document.getElementById('supplier-new-note').value.trim();
+  if (!name) {
+    errEl.innerHTML = '<div class="error">Вкажіть назву постачальника.</div>';
+    return;
+  }
+  const { data: sessionData } = await sb.auth.getSession();
+  const session = sessionData ? sessionData.session : null;
+  if (!session) {
+    errEl.innerHTML = '<div class="error">Сесія закінчилась. Вийдіть і увійдіть знову.</div>';
+    return;
+  }
+  const { error } = await sb.from('installer_suppliers').insert({
+    installer_id: session.user.id,
+    name: name,
+    debt_amount: amount ? Number(amount) : 0,
+    note: note || null
+  });
+  if (error) {
+    errEl.innerHTML = '<div class="error">Не вдалося зберегти. Спробуйте ще раз.</div>';
+    return;
+  }
+  document.getElementById('supplier-new-name').value = '';
+  document.getElementById('supplier-new-amount').value = '';
+  document.getElementById('supplier-new-note').value = '';
+  await loadSuppliers();
+  renderSuppliersList();
+});
+
+document.getElementById('suppliers-list').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-supplier-action="delete"]');
+  if (!btn) return;
+  const id = btn.getAttribute('data-supplier-id');
+  if (!confirm('Видалити цього постачальника?')) return;
+  const { error } = await sb.from('installer_suppliers').delete().eq('id', id);
+  if (!error) { await loadSuppliers(); renderSuppliersList(); }
+});
+
+document.getElementById('suppliers-list').addEventListener('change', async (e) => {
+  const input = e.target.closest('input[data-supplier-action="amount"]');
+  if (!input) return;
+  const id = input.getAttribute('data-supplier-id');
+  const value = input.value ? Number(input.value) : 0;
+  const { error } = await sb.from('installer_suppliers').update({ debt_amount: value }).eq('id', id);
+  if (!error) { await loadSuppliers(); renderSuppliersList(); }
+});
 
 /* Cross-fade вмісту екрана при перемиканні вкладок нижнього меню (див. словник
    анімацій у <style>). navFadeToken інвалідовує "застряглий" таймер попереднього
