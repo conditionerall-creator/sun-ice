@@ -1606,6 +1606,25 @@
   }
   .field .phone-input-row input:focus { outline: none; }
 
+  /* Поле "Борг клієнта" у формі монтажу — окрема кнопка "OK" поруч з полем, щоб було
+     видно позначку, що введене підтверджено (сама форма й так зберігається лише разом,
+     по кнопці "Зберегти" — це чисто візуальне підтвердження для користувача). */
+  .debt-input-row { display: flex; gap: 8px; align-items: center; }
+  .debt-input-row input { flex: 1; }
+  .debt-input-row input.input-confirmed { border-color: #16a34a; }
+  .debt-ok-btn {
+    flex-shrink: 0;
+    padding: 11px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .debt-ok-btn.confirmed { background: #16a34a; border-color: #16a34a; color: #fff; }
+
   /* Admin panel */
   .admin-section-title {
     font-size: 12px;
@@ -2053,13 +2072,17 @@
       </div>
       <div class="field-row">
         <div class="field">
-          <label>Дата і час</label>
-          <input type="datetime-local" id="task-field-datetime">
+          <label>Дата</label>
+          <input type="date" id="task-field-date">
         </div>
         <div class="field">
-          <label>Вид робіт</label>
-          <select id="task-field-equipment"></select>
+          <label>Час</label>
+          <input type="text" id="task-field-time" inputmode="numeric" placeholder="ГГ:ХХ" maxlength="5">
         </div>
+      </div>
+      <div class="field">
+        <label>Вид робіт</label>
+        <select id="task-field-equipment"></select>
       </div>
       <div class="field-row">
         <div class="field">
@@ -2068,12 +2091,15 @@
         </div>
         <div class="field">
           <label>Телефон клієнта</label>
-          <input type="text" id="task-field-client-phone" placeholder="+380...">
+          <input type="tel" id="task-field-client-phone" inputmode="numeric" maxlength="10" placeholder="0501234567">
         </div>
       </div>
       <div class="field">
         <label>Борг клієнта</label>
-        <input type="text" id="task-field-client-debt" placeholder="напр. 1500 або текстом">
+        <div class="debt-input-row">
+          <input type="text" id="task-field-client-debt" placeholder="напр. 1500 або текстом">
+          <button type="button" class="debt-ok-btn" id="task-field-client-debt-ok">OK</button>
+        </div>
       </div>
       <div class="field">
         <label>Коментар</label>
@@ -6381,21 +6407,68 @@ document.getElementById('main').addEventListener('change', function(e) {
   }
 });
 
-function toDatetimeLocalValue(iso) {
+function toDateValue(iso) {
   const d = new Date(iso);
   const pad = n => String(n).padStart(2, '0');
-  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 }
+function toTimeValue(iso) {
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2, '0');
+  return pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+/* Ручний ввід часу цифрами замість системного бігунка-пікера: користувач набирає
+   4 цифри, після другої сам вставляється ":", по blur — округлення до валідних меж
+   (23 год / 59 хв), щоб не піти в БД зі сміттям на кшталт "99:99". */
+function attachTimeInputFormatter(input) {
+  input.addEventListener('input', () => {
+    const digits = input.value.replace(/\D/g, '').slice(0, 4);
+    input.value = digits.length > 2 ? digits.slice(0, 2) + ':' + digits.slice(2) : digits;
+  });
+  input.addEventListener('blur', () => {
+    const m = input.value.match(/^(\d{1,2}):(\d{1,2})$/);
+    if (!m) { input.value = ''; return; }
+    const hh = Math.min(23, parseInt(m[1], 10));
+    const mm = Math.min(59, parseInt(m[2], 10));
+    input.value = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+  });
+}
+attachTimeInputFormatter(document.getElementById('task-field-time'));
+attachDigitsOnlyFilter(document.getElementById('task-field-client-phone'));
+
+/* "Борг клієнта" — кнопка OK поруч з полем: суто візуальне підтвердження, що введене
+   не загубиться (сама форма зберігається разом з рештою полів по кнопці "Зберегти"). */
+(function () {
+  const debtInput = document.getElementById('task-field-client-debt');
+  const debtOkBtn = document.getElementById('task-field-client-debt-ok');
+  debtOkBtn.addEventListener('click', () => {
+    if (!debtInput.value.trim()) return;
+    debtInput.classList.add('input-confirmed');
+    debtOkBtn.textContent = '✓';
+    debtOkBtn.classList.add('confirmed');
+  });
+  debtInput.addEventListener('input', () => {
+    debtInput.classList.remove('input-confirmed');
+    debtOkBtn.textContent = 'OK';
+    debtOkBtn.classList.remove('confirmed');
+  });
+})();
 
 function openTaskForm(task) {
   editingTaskId = task ? task.id : null;
   document.getElementById('task-form-title').textContent = task ? 'Редагувати монтаж' : 'Новий монтаж';
   document.getElementById('task-field-address').value = task ? (task.address || '') : '';
-  document.getElementById('task-field-datetime').value = task ? toDatetimeLocalValue(task.scheduled_at) : '';
+  document.getElementById('task-field-date').value = task ? toDateValue(task.scheduled_at) : '';
+  document.getElementById('task-field-time').value = task ? toTimeValue(task.scheduled_at) : '';
   document.getElementById('task-field-client-name').value = task ? (task.client_name || '') : '';
   document.getElementById('task-field-client-phone').value = task ? (task.client_phone || '') : '';
   document.getElementById('task-field-equipment').innerHTML = taskEquipmentOptionsHtml(task ? task.equipment_type : TASK_EQUIPMENT_TYPES[0]);
-  document.getElementById('task-field-client-debt').value = task && task.client_debt_amount ? task.client_debt_amount : '';
+  const debtInputEl = document.getElementById('task-field-client-debt');
+  debtInputEl.value = task && task.client_debt_amount ? task.client_debt_amount : '';
+  debtInputEl.classList.remove('input-confirmed');
+  const debtOkBtnEl = document.getElementById('task-field-client-debt-ok');
+  debtOkBtnEl.textContent = 'OK';
+  debtOkBtnEl.classList.remove('confirmed');
   document.getElementById('task-field-comment').value = task ? (task.comment || '') : '';
   document.getElementById('task-form-error').innerHTML = '';
   document.getElementById('task-form-overlay').classList.add('show');
@@ -6410,15 +6483,16 @@ async function handleTaskFormSubmit() {
   const errEl = document.getElementById('task-form-error');
   errEl.innerHTML = '';
   const address = document.getElementById('task-field-address').value.trim();
-  const dtVal = document.getElementById('task-field-datetime').value;
+  const dateVal = document.getElementById('task-field-date').value;
+  const timeVal = document.getElementById('task-field-time').value;
   const clientName = document.getElementById('task-field-client-name').value.trim();
   const clientPhone = document.getElementById('task-field-client-phone').value.trim();
   const equipment = document.getElementById('task-field-equipment').value;
   const clientDebt = document.getElementById('task-field-client-debt').value.trim();
   const comment = document.getElementById('task-field-comment').value.trim();
 
-  if (!address || !dtVal) {
-    errEl.innerHTML = '<div class="error">Заповніть адресу і дату/час.</div>';
+  if (!address || !dateVal || !/^\d{2}:\d{2}$/.test(timeVal)) {
+    errEl.innerHTML = '<div class="error">Заповніть адресу, дату і час (ГГ:ХХ).</div>';
     return;
   }
 
@@ -6435,7 +6509,7 @@ async function handleTaskFormSubmit() {
   const row = {
     installer_id: session.user.id,
     address: address,
-    scheduled_at: new Date(dtVal).toISOString(),
+    scheduled_at: new Date(dateVal + 'T' + timeVal).toISOString(),
     client_name: clientName || null,
     client_phone: clientPhone || null,
     equipment_type: equipment,
