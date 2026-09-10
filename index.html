@@ -434,19 +434,35 @@
     color: var(--text-secondary);
     border: 1px solid var(--border);
   }
-  /* Плитки з фото (замість буквеної іконки) — фото зверху (contain, на білому тлі, щоб
-     не обрізати логотипи/підписи на різних за пропорціями зображеннях), назва знизу. */
-  .menu-tile-photo { padding: 8px; gap: 6px; }
+  /* Плитки з фото (замість буквеної іконки) — сіра студійна підложка (той самий
+     діагональний градієнт, що й на офіційних фото MHI — узятий піпеткою з наявних
+     tilecompathousehold.jpg/tilecompatsemi.jpg) на весь розмір плитки, без внутрішньої
+     рамки-бокса навколо фото: фото лежить прямо на підложці через mix-blend-mode:
+     multiply (білий фон товарного фото стає прозорим і показує градієнт, сам товар
+     лишається чітким) — так само працює і для фото, де градієнт уже "запечений" в
+     самому знімку. Назва — поверх тієї самої підложки знизу, без лінії-розділювача. */
+  .menu-tile-photo {
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+    border-color: transparent;
+    background: linear-gradient(135deg, #eaeef1 0%, #c3cbd3 60%, #a5b1bd 100%);
+  }
   .menu-tile-photo-wrap {
     width: 100%;
     aspect-ratio: 4 / 3;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #fff;
-    border: 1px solid var(--border);
   }
-  .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .menu-tile-photo .menu-tile-title { padding: 0 2px; }
+  .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; mix-blend-mode: multiply; }
+  .menu-tile-photo .menu-tile-title { padding: 8px 10px 10px; }
+  /* Модифікатор для зображень, які НЕ є товарним фото на білому/сірому тлі — стилізовані
+     написи-логотипи (HeatGuard/WineGuard, навмисно яскраві на прохання користувача) і
+     декоративні/кольорові обкладинки (іконка стосу книг, обкладинки PDF-каталогів) —
+     сіра фотопідложка й multiply їм не личать (приглушили б навмисно яскраві кольори чи
+     власну прозорість картинки), тож лишається старий вигляд: біла картка-рамка. */
+  .menu-tile-photo-plain { background: var(--card); border-color: var(--border); padding: 8px; gap: 6px; }
+  .menu-tile-photo-plain .menu-tile-photo-wrap { border-radius: 6px; overflow: hidden; background: #fff; border: 1px solid var(--border); }
+  .menu-tile-photo-plain .menu-tile-photo-wrap img { mix-blend-mode: normal; }
+  .menu-tile-photo-plain .menu-tile-title { padding: 0 2px; }
 
   /* ---------- Словник анімацій (тільки transform+opacity, ніколи width/height/top/
      left/margin/padding). Усе всередині prefers-reduced-motion: no-preference — при
@@ -3718,13 +3734,15 @@ function attachVrfHandlers(main) {
 }
 
 /* ---------- "Теплові насоси" ---------- */
-// MHI — фото реального теплового насоса MHI; HeatGuard/WineGuard — не фото товару (у прайсі
-// немає єдиної "картинки бренду"), а намальований логотип-напис (SVG), за проханням
-// користувача — "просто красивий текст великими літерами, як малюнок".
+// MHI — атмосферне лайфстайл-фото реального теплового насоса MHI (темне тло, рослини —
+// не білий/сірий предметний фон, тож plain: true); HeatGuard/WineGuard — не фото товару
+// (у прайсі немає єдиної "картинки бренду"), а намальований логотип-напис (SVG), за
+// проханням користувача — "просто красивий текст великими літерами, як малюнок", теж
+// plain: true (сіра підложка/multiply приглушили б навмисно яскраві кольори).
 const HEATPUMPS_BRANDS = [
-  { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumpsmhi.jpg' },
-  { key: 'heatguard', label: 'HeatGuard', img: 'tile-images/heatguardlogo.svg' },
-  { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguardlogo.svg' }
+  { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumpsmhi.jpg', plain: true },
+  { key: 'heatguard', label: 'HeatGuard', img: 'tile-images/heatguardlogo.svg', plain: true },
+  { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguardlogo.svg', plain: true }
 ];
 function renderHeatpumpsList() {
   const main = document.getElementById('main');
@@ -3733,7 +3751,7 @@ function renderHeatpumpsList() {
 
   if (!heatpumpsBrand) {
     const tilesHtml = HEATPUMPS_BRANDS.map(b => `
-      <div class="menu-tile menu-tile-photo" data-heatpumps-brand="${b.key}">
+      <div class="menu-tile menu-tile-photo${b.plain ? ' menu-tile-photo-plain' : ''}" data-heatpumps-brand="${b.key}">
         <div class="menu-tile-photo-wrap"><img src="${escapeHtml(b.img)}" alt="" loading="lazy"></div>
         <div class="menu-tile-title">${escapeHtml(b.label)}</div>
       </div>`).join('');
@@ -4435,7 +4453,7 @@ async function renderContactsTab() {
 
 /* ---------- Тех. інформація ---------- */
 const INFO_SECTIONS = [
-  { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.jpg' },
+  { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.jpg', plain: true },
   { id: 'mhi-errors', label: 'Коди помилок MHI', img: 'tile-images/tile-error-codes.jpg' },
   { id: 'mhi-compat', label: 'Сумісність блоків MHI', img: 'tile-images/tilecompat.jpg', adminOnly: true },
   { id: 'techinfo', label: 'Технічна інфа' }
@@ -4444,9 +4462,11 @@ const MHI_COMPAT_FOLDERS = [
   { id: 'household', label: 'Побутові та мультиспліти', img: 'tile-images/tilecompathousehold.jpg' },
   { id: 'semi', label: 'Напівпром', img: 'tile-images/tilecompatsemi.jpg' }
 ];
+/* Обкладинки PDF-каталогів (колірні, з інтер'єрним фото й лого) — не товарне фото на
+   білому тлі, тож plain: true (без сірої підложки/multiply, див. .menu-tile-photo-plain). */
 const INFO_BRANDS = [
-  { id: 'mhi', label: 'Mitsubishi Heavy', img: 'tile-images/catalog-preview-mhi.jpg' },
-  { id: 'galactic', label: 'GALACTIC', img: 'tile-images/catalog-preview-galactic.jpg' }
+  { id: 'mhi', label: 'Mitsubishi Heavy', img: 'tile-images/catalog-preview-mhi.jpg', plain: true },
+  { id: 'galactic', label: 'GALACTIC', img: 'tile-images/catalog-preview-galactic.jpg', plain: true }
 ];
 /* Посилання на офіційні PDF-каталоги виробників (розділ Інфо → Каталоги) */
 const INFO_CATALOG_DOCS = {
@@ -4538,7 +4558,7 @@ function renderInfoMenu(items, onSelect) {
   const tiles = items.map(item => {
     if (item.img) {
       return `
-        <div class="menu-tile menu-tile-photo" data-info-id="${escapeHtml(item.id)}">
+        <div class="menu-tile menu-tile-photo${item.plain ? ' menu-tile-photo-plain' : ''}" data-info-id="${escapeHtml(item.id)}">
           <div class="menu-tile-photo-wrap"><img src="${escapeHtml(item.img)}" alt="" loading="lazy"></div>
           <div class="menu-tile-title">${escapeHtml(item.label)}</div>
         </div>`;
