@@ -448,6 +448,28 @@
   }
   .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .menu-tile-photo .menu-tile-title { padding: 0 2px; }
+  /* Плитка з двома фото (напр. "Спліт-системи" — MHI/Galactic), що самі час від часу
+     перегортаються, як "живі" плитки Windows — тільки CSS 3D-transform на одному
+     елементі, вмикається/вимикається одним таймером у JS (startSplitFlip/stopSplitFlip),
+     ніякого постійного навантаження. Зупиняється по кліку — щоб не заважала переходу
+     growFadeEnter в категорію. */
+  .menu-tile-flip { perspective: 1000px; }
+  .menu-tile-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.7s cubic-bezier(.4, .2, .2, 1);
+    transform-style: preserve-3d;
+  }
+  .menu-tile-flip.flipped .menu-tile-flip-inner { transform: rotateY(180deg); }
+  .menu-tile-flip-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  .menu-tile-flip-face img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .menu-tile-flip-back { transform: rotateY(180deg); }
 
   /* ---------- Словник анімацій (тільки transform+opacity, ніколи width/height/top/
      left/margin/padding). Усе всередині prefers-reduced-motion: no-preference — при
@@ -2274,6 +2296,7 @@ const SPLIT_MHI_LABELS = [
 const CATALOG_TILES = [
   {
     id: 'split', label: 'Спліт-системи', img: 'tile-images/tile-split.jpg',
+    flipImg: 'tile-images/tile-split-galactic.jpg',
     mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series', labelSequence: SPLIT_MHI_LABELS },
     gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before', seriesLabelMode: 'first-sentence' }
   },
@@ -3622,7 +3645,28 @@ function triggerSoonFeedback(tileEl) {
   tip.classList.add('soon-tip-show');
 }
 
+/* "Жива" плитка з двома гранями (напр. Спліт-системи MHI/Galactic) — самостійно
+   перегортається раз на 5-7 сек (випадково в цьому діапазоні, щоб не виглядало
+   механічно), поки видно каталог. Один самопланований setTimeout, а не setInterval —
+   легко зупинити (stopSplitFlip) без зайвого стану, і не продовжує рахувати, поки
+   вкладка неактивна. Зупиняється по кліку на плитку, перш ніж запуститься перехід у
+   категорію (growFadeEnter), щоб transform плитки не "змагався" з transform переходу. */
+let splitFlipTimer = null;
+function stopSplitFlip() {
+  if (splitFlipTimer) { clearTimeout(splitFlipTimer); splitFlipTimer = null; }
+}
+function startSplitFlip(flipEl) {
+  stopSplitFlip();
+  const tick = () => {
+    if (!document.body.contains(flipEl)) { splitFlipTimer = null; return; }
+    flipEl.classList.toggle('flipped');
+    splitFlipTimer = setTimeout(tick, 5000 + Math.random() * 2000);
+  };
+  splitFlipTimer = setTimeout(tick, 5000 + Math.random() * 2000);
+}
+
 function renderCatalogMenu() {
+  stopSplitFlip();
   const main = document.getElementById('main');
   const hasData = Object.keys(sheetsData).length > 0;
   if (!hasData) {
@@ -3646,6 +3690,18 @@ function renderCatalogMenu() {
           <div class="menu-tile-soon-tip">Дані ще уточнюються</div>
         </div>`;
     }
+    if (tile.img && tile.flipImg) {
+      return `
+        <div class="menu-tile menu-tile-photo${enterAttr}" data-tile="${escapeHtml(tile.id)}">
+          <div class="menu-tile-photo-wrap menu-tile-flip" data-flip-tile>
+            <div class="menu-tile-flip-inner">
+              <div class="menu-tile-flip-face menu-tile-flip-front"><img src="${escapeHtml(tile.img)}" alt="" loading="lazy"></div>
+              <div class="menu-tile-flip-face menu-tile-flip-back"><img src="${escapeHtml(tile.flipImg)}" alt="" loading="lazy"></div>
+            </div>
+          </div>
+          <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
+        </div>`;
+    }
     if (tile.img) {
       return `
         <div class="menu-tile menu-tile-photo${enterAttr}" data-tile="${escapeHtml(tile.id)}">
@@ -3662,8 +3718,11 @@ function renderCatalogMenu() {
       </div>`;
   }).join('');
   main.innerHTML = '<div class="menu-grid">' + tiles + '</div>';
+  const flipTileEl = main.querySelector('[data-flip-tile]');
+  if (flipTileEl) startSplitFlip(flipTileEl);
   main.querySelectorAll('.menu-tile[data-tile]').forEach(el => {
     el.addEventListener('click', () => {
+      stopSplitFlip();
       const tileId = el.getAttribute('data-tile');
       history.pushState({ tab: 'catalog', tile: tileId }, '', '#' + encodeURIComponent(tileId));
       activeTile = tileId;
