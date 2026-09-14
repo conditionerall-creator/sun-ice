@@ -451,7 +451,7 @@
   /* Плитки з двома фото (MHI/Galactic чи інша пара — див. flipImg у CATALOG_TILES), що
      самі час від часу перегортаються, як "живі" плитки Windows — тільки CSS
      3D-transform на кожному елементі окремо, вмикається/вимикається в JS
-     (startFlip/stopAllFlips), ніякого постійного навантаження. Зупиняється по кліку —
+     (startFlipRotation/stopAllFlips), ніякого постійного навантаження. Зупиняється по кліку —
      щоб не заважала переходу growFadeEnter в категорію. */
   .menu-tile-flip { perspective: 1000px; }
   .menu-tile-flip-inner {
@@ -3647,29 +3647,45 @@ function triggerSoonFeedback(tileEl) {
   tip.classList.add('soon-tip-show');
 }
 
-/* "Живі" плитки з двома гранями (напр. Спліт-системи MHI/Galactic) — кожна самостійно
-   перегортається раз на 5-7 сек (випадково в цьому діапазоні, щоб не виглядало
-   механічно, і незалежно від інших плиток — не хором), поки видно каталог. Один
-   самопланований setTimeout на плитку, а не setInterval — легко зупинити все разом
-   (stopAllFlips) без зайвого стану, і не продовжує рахувати, поки вкладка неактивна.
-   Зупиняється по кліку на будь-яку плитку каталогу, перш ніж запуститься перехід у
-   категорію (growFadeEnter), щоб transform плитки не "змагався" з transform переходу. */
-let flipTimers = new Set();
+/* "Живі" плитки з двома гранями (напр. Спліт-системи MHI/Galactic) — по черзі, одна за
+   одною (не хором — незалежні таймери на кожній плитці раніше іноді збігались у часі й
+   усе миготіло одразу). Одна спільна черга (flipOrder) і один самопланований setTimeout
+   (не setInterval — легко зупинити stopAllFlips, не продовжує рахувати, поки вкладка
+   неактивна). Порядок перемішаний (не зліва-направо як у сітці) — щоб виглядало
+   хаотично. Одразу після відкриття каталогу — перша плитка перегортається миттєво,
+   кожна наступна через 2 сек після попередньої, щоб одразу було видно, що плитки
+   "живі". А вже після першого повного проходу — значно рідше (4-6 сек між ПЕРЕГОРТАННЯМ
+   ОДНІЄЇ плитки, завжди лише однієї за раз, випадково в цьому діапазоні). Зупиняється по
+   кліку на будь-яку плитку каталогу, перш ніж запуститься перехід у категорію
+   (growFadeEnter), щоб transform плитки не "змагався" з transform переходу. */
+let flipTimer = null;
+let flipOrder = [];
 function stopAllFlips() {
-  flipTimers.forEach(t => clearTimeout(t));
-  flipTimers.clear();
+  if (flipTimer) { clearTimeout(flipTimer); flipTimer = null; }
+  flipOrder = [];
 }
-function startFlip(flipEl) {
-  let current = null;
-  const tick = () => {
-    flipTimers.delete(current);
-    if (!document.body.contains(flipEl)) return;
-    flipEl.classList.toggle('flipped');
-    current = setTimeout(tick, 5000 + Math.random() * 2000);
-    flipTimers.add(current);
+function startFlipRotation(flipEls) {
+  stopAllFlips();
+  flipOrder = Array.from(flipEls);
+  if (!flipOrder.length) return;
+  // Порядок навмисно перетасований (не зліва-направо/зверху-вниз, як у сітці) — щоб
+  // перегортання виглядало хаотично, а не "по черзі як по списку". Нова випадкова
+  // черга щоразу при вході в каталог (Fisher-Yates).
+  for (let k = flipOrder.length - 1; k > 0; k--) {
+    const j = Math.floor(Math.random() * (k + 1));
+    [flipOrder[k], flipOrder[j]] = [flipOrder[j], flipOrder[k]];
+  }
+  let i = 0;
+  const step = (delay) => {
+    flipTimer = setTimeout(() => {
+      const el = flipOrder[i % flipOrder.length];
+      if (document.body.contains(el)) el.classList.toggle('flipped');
+      i++;
+      const firstPass = i < flipOrder.length;
+      step(firstPass ? 2000 : 4000 + Math.random() * 2000);
+    }, delay);
   };
-  current = setTimeout(tick, 5000 + Math.random() * 2000);
-  flipTimers.add(current);
+  step(0);
 }
 
 function renderCatalogMenu() {
@@ -3725,7 +3741,7 @@ function renderCatalogMenu() {
       </div>`;
   }).join('');
   main.innerHTML = '<div class="menu-grid">' + tiles + '</div>';
-  main.querySelectorAll('[data-flip-tile]').forEach(startFlip);
+  startFlipRotation(main.querySelectorAll('[data-flip-tile]'));
   main.querySelectorAll('.menu-tile[data-tile]').forEach(el => {
     el.addEventListener('click', () => {
       stopAllFlips();
