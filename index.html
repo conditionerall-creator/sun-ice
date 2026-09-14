@@ -676,10 +676,15 @@
     object-fit: contain;
   }
   .row-info { min-width: 0; flex: 1; }
-  .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; position: relative; z-index: 0; }
+  .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: normal; overflow-wrap: break-word; position: relative; z-index: 0; }
   .row-click-zone:active ~ .row-info .row-name, .row-info-zone:active ~ .row-info .row-name { opacity: 0.6; }
   .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 1px; }
   .row-price { font-size: 16px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* Примітка типу "роздрібна" (Systemair/FRICO/VRF/теплові насоси) — окремим рядком під
+     ціною, а не в одному нерозривному рядку з нею: інакше довгий "XXXX EUR · роздрібна"
+     забирав забагато горизонтального місця й стискав назву товару до кількох символів
+     (артикул переносився посеред себе, напр. "AR210E0" / "9"). */
+  .row-price-note { display: block; font-size: 11px; font-weight: 400; white-space: nowrap; color: var(--text-secondary); }
   /* Ціна для незареєстрованих/заблокованих: цифри видно, що вони там є, але розібрати їх
      неможливо — розмиття, а не приховування, щоб рядок виглядав так само, як і зазвичай. */
   .row-price-locked { filter: blur(4.5px); user-select: none; cursor: pointer; }
@@ -2393,21 +2398,46 @@ const PALETTE = ['#2563EB', '#059669', '#B45309', '#BE185D', '#7C3AED', '#C2410C
 
 function norm(v) { return String(v == null ? '' : v).toLowerCase().trim(); }
 /* Пошук у Systemair/Повітряні завіси: не має значення, чи введено маркування з пробілами
-   чи без ("K100M" = "K 100 M"), і не має значення, яка розкладка клавіатури була активна
-   (укр./англ.) — символ на тій самій фізичній клавіші рахується однаково. Стандартна
-   розкладка ЙЦУКЕН (Windows, укр.) на тих самих клавішах, що й QWERTY — переводимо
-   кирилицю в її латинський відповідник за позицією клавіші, і порівнюємо вже в одному
-   "канонічному" вигляді (латиниця), бо самі маркування завжди латиницею. */
-const UA_LAYOUT_TO_LATIN = {
-  'й':'q','ц':'w','у':'e','к':'r','е':'t','н':'y','г':'u','ш':'i','щ':'o','з':'p','х':'[','ї':']',
-  'ф':'a','і':'s','в':'d','а':'f','п':'g','р':'h','о':'j','л':'k','д':'l','ж':';','є':"'",
-  'я':'z','ч':'x','с':'c','м':'v','и':'b','т':'n','ь':'m','б':',','ю':'.'
+   чи без ("K100M" = "K 100 M"), і не має значення, чи забули перемкнути розкладку на
+   англійську — користувач читає код (напр. "K315L") і тисне кириличні літери, що
+   ВИГЛЯДАЮТЬ як потрібні латинські (кирилична "к" на очах як "K" тощо), а не ту
+   кирилицю, що технічно сидить на тій самій фізичній клавіші QWERTY (перша спроба такого
+   мапування була саме за позицією клавіші — не спрацювало на практиці: "к31" не знаходив
+   "K315L", бо йшло в "r31"). Для частини літер візуальна і фонетична відповідність
+   розходяться (кирилична "р" виглядає як "P", але звучить як "R") — для них у мапі
+   ОБИДВА варіанти, пошук пробує кожен через символьний клас регулярного виразу, а не
+   лише один. Однакова мапа для рос. і укр. розкладок (спільні літери). */
+const CYRILLIC_TO_LATIN_VARIANTS = {
+  'а':'a', 'е':'e', 'к':'k', 'м':'m', 'о':'o', 'т':'t', 'і':'i', 'х':'x',
+  'в':'bv', 'н':'hn', 'р':'pr', 'с':'cs', 'у':'yu',
+  'й':'i', 'ц':'c', 'ш':'sh', 'щ':'sch', 'з':'z', 'ї':'i', 'ф':'f', 'п':'p', 'л':'l', 'д':'d',
+  'ж':'zh', 'є':'e', 'я':'ya', 'ч':'ch', 'ю':'yu', 'и':'y', 'б':'b', 'ь':'', 'ъ':'', 'ы':'y',
+  'э':'e', 'ё':'e', 'г':'g', 'ґ':'g'
 };
 function normalizeSearchKey(v) {
-  return String(v == null ? '' : v)
-    .toLowerCase()
-    .replace(/[а-яіїєґ]/g, ch => UA_LAYOUT_TO_LATIN[ch] || ch)
-    .replace(/\s+/g, '');
+  return String(v == null ? '' : v).toLowerCase().replace(/\s+/g, '');
+}
+/* Перетворює введений користувачем пошуковий рядок на джерело регулярного виразу:
+   кожна неоднозначна кирилична літера ("р","с","в","н","у") стає символьним класом
+   з обома латинськими варіантами, решта символів (цифри, латиниця, однозначна кирилиця)
+   — як є, з екрануванням спецсимволів регулярних виразів. */
+function buildSearchPattern(query) {
+  const cleaned = normalizeSearchKey(query);
+  const escaped = cleaned.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(/[а-яіїєґ]/g, ch => {
+    const variants = CYRILLIC_TO_LATIN_VARIANTS[ch] || '';
+    if (!variants) return '';
+    return variants.length > 1 ? '[' + variants + ']' : variants;
+  });
+}
+function matchesSearchQuery(target, query) {
+  const pattern = buildSearchPattern(query);
+  if (!pattern) return true;
+  try {
+    return new RegExp(pattern).test(normalizeSearchKey(target));
+  } catch (e) {
+    return normalizeSearchKey(target).includes(normalizeSearchKey(query));
+  }
 }
 function cellContainsAny(v, keywords) {
   const s = norm(v);
@@ -4131,7 +4161,7 @@ function buildSimplePriceRowsHtml(items, opts) {
         : `<button type="button" class="price-request-btn">За запитом</button>`;
     } else {
       let priceStr = Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '');
-      if (opts.priceNote) priceStr += ' · ' + opts.priceNote;
+      if (opts.priceNote) priceStr += `<span class="row-price-note">${escapeHtml(opts.priceNote)}</span>`;
       const cartKey = cartSourceKey + '|' + it.model;
       const cartQty = showCart ? cartQtyFor(cartKey) : 0;
       const cartBtnHtml = showCart ? `<button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tileLabel)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>` : '';
@@ -4400,7 +4430,7 @@ function renderVentilationList() {
   const allItems = sheetsData.systemair || [];
   const q = normalizeSearchKey(systemairSearchQuery);
   const filtered = q.length >= 2
-    ? allItems.filter(it => normalizeSearchKey(it.model).includes(q) || normalizeSearchKey(it.article).includes(q))
+    ? allItems.filter(it => matchesSearchQuery(it.model, q) || matchesSearchQuery(it.article, q))
     : allItems;
   const visibleCount = Math.min(systemairRenderCount, filtered.length);
   const visible = filtered.slice(0, visibleCount);
@@ -4476,7 +4506,7 @@ function renderAirCurtainsList() {
   const cartSourceKey = activeBrand === 'mhi' ? 'frico' : 'remak_curtains';
   const q = normalizeSearchKey(aircurtainsSearchQuery);
   const filtered = q.length >= 2
-    ? allItems.filter(it => normalizeSearchKey(it.model).includes(q) || normalizeSearchKey(it.article).includes(q))
+    ? allItems.filter(it => matchesSearchQuery(it.model, q) || matchesSearchQuery(it.article, q))
     : allItems;
 
   const searchHtml = `<div class="sticky-search"><div class="admin-search"><input type="text" id="aircurtains-search-input" placeholder="Пошук за маркуванням або артикулом..." value="${escapeHtml(aircurtainsSearchQuery)}"></div></div>`;
