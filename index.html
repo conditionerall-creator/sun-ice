@@ -17,6 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root {
     /* Преміум-палітра 2026-09-08: нейтральний чорно-білий + акцентний червоний (той самий
@@ -641,20 +642,23 @@
     color: var(--text);
     white-space: pre-wrap;
   }
-  .info-sheet-actions {
-    padding: 0 16px calc(16px + env(safe-area-inset-bottom));
+  /* Фото серії/блоку у спливаючому вікні "детальніше" — вбудовані в Excel картинки
+     (extractSeriesImages). Горизонтальна стрічка на випадок кількох фото (ККБ GAL —
+     "фото блоків", може бути більше одного). */
+  .info-sheet-images {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 14px 16px 0;
   }
-  .info-sheet-action-btn {
-    width: 100%;
-    padding: 11px;
-    border: none;
+  .info-sheet-images img {
+    max-height: 150px;
+    max-width: 220px;
+    flex-shrink: 0;
     border-radius: 10px;
-    background: var(--accent);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
+    border: 1px solid var(--border);
+    background: #fff;
+    object-fit: contain;
   }
   .row-info { min-width: 0; flex: 1; }
   .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: break-word; position: relative; z-index: 0; }
@@ -680,7 +684,7 @@
   }
   .calc-toggle svg { width: 17px; height: 17px; display: block; }
   .calc-toggle:active { background: var(--accent-bg); }
-  .share-btn, .task-share-btn {
+  .share-btn {
     width: 28px; height: 28px;
     border-radius: 8px;
     border: 1px solid var(--border);
@@ -692,8 +696,8 @@
     flex-shrink: 0;
     padding: 0;
   }
-  .share-btn svg, .task-share-btn svg { width: 16px; height: 16px; display: block; }
-  .share-btn:active, .task-share-btn:active { background: var(--accent-bg); color: var(--accent); }
+  .share-btn svg { width: 16px; height: 16px; display: block; }
+  .share-btn:active { background: var(--accent-bg); color: var(--accent); }
   /* Плавний перехід стану галочки "в підбірку" — тільки opacity/колір, без стрибків
      розміру; tap-феєдбек (scale) для всіх трьох іконок рядка — у словнику анімацій. */
   .cart-check-btn { transition: opacity 200ms ease, background-color 200ms ease, border-color 200ms ease; }
@@ -784,6 +788,18 @@
 
   /* Теплові насоси / VRF: додатковий рядок під назвою (потужність тощо) */
   .row-sub { font-size: 12px; color: var(--text-secondary); margin: 2px 0 0; }
+  .row-article-link {
+    display: block;
+    margin: 2px 0 0;
+    padding: 0;
+    border: none;
+    background: none;
+    font-size: 12px;
+    color: #1E5A96;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
   /* ⓘ "детальніше" біля товару (склад комплекту "Теплові насоси", примітка VRF) — та сама
      іконка-кнопка, що й .calc-toggle/.share-btn, щоб не заходити в ліву чверть рядка
      (.row-click-zone), яка перекриває саме цю частину — див. застереження в 12.6 хендоффу. */
@@ -917,6 +933,50 @@
   .mhi-result-equip { font-size: 13.5px; color: var(--text); }
   .mhi-result-source { font-size: 11px; color: var(--text-secondary); margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
 
+  /* Сумісність блоків MHI — картка результату (той самий .mhi-result, що й коди помилок) */
+  .mhi-compat-status {
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .mhi-compat-status-recommended { background: #1E8E3E; }
+  .mhi-compat-status-conditional { background: #B8860B; }
+  .mhi-compat-status-incompatible { background: var(--accent); }
+  .mhi-compat-status-na, .mhi-compat-status-other { background: var(--text-secondary); }
+  .mhi-compat-footnote {
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .mhi-compat-note {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+  .mhi-compat-facts { display: flex; flex-direction: column; gap: 6px; }
+  .mhi-compat-fact-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 13px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .mhi-compat-fact-row:last-child { border-bottom: none; }
+  .mhi-compat-fact-type { color: var(--text-secondary); flex: 1 1 auto; min-width: 0; }
+  .mhi-compat-fact-val { color: var(--text); font-weight: 600; text-align: right; flex: 0 0 auto; white-space: nowrap; }
+  .mhi-result-block { margin-bottom: 16px; }
+  .mhi-result-block:last-child { margin-bottom: 0; }
+  .mhi-result-block-divider { margin-top: 6px; padding-top: 20px; border-top: 1px dashed var(--border); }
 
   /* ---------- "Підбірка" (кошик): галочка біля рядка + плаваюча кнопка + панель ---------- */
   .cart-check-btn {
@@ -1444,24 +1504,7 @@
   /* Cabinet */
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
-  .field-row { display: flex; gap: 10px; }
-  .field-row .field { flex: 1; min-width: 0; }
-  /* .info-sheet-body успадковано ставить white-space: pre-wrap (потрібно для звичайних
-     текстових інфо-панелей типу series-info-body) — але тут тіло не голий текст, а
-     розмічений HTML-формою, тож відступи/переноси рядків у розмітці рендерились як
-     видимі порожні рядки (саме це й було "величезними білими полями" на скріні). */
-  .task-form-body { white-space: normal; }
-  .task-form-body .field { margin-bottom: 10px; }
-  /* Блок додавання постачальника губився під списком — користувач довго шукав його
-     очима, тому виділено кольоровим боксом (той самий accent-bg, що й .status-card). */
-  .supplier-add-box {
-    background: var(--accent-bg);
-    border-radius: 14px;
-    padding: 14px 14px 4px;
-    margin-top: 16px;
-  }
-  .supplier-add-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
-  .field input, .field select, .field textarea {
+  .field input, .field select {
     width: 100%;
     padding: 11px 12px;
     border: 1px solid var(--border);
@@ -1470,7 +1513,6 @@
     background: var(--bg);
     color: var(--text);
   }
-  .field textarea { resize: vertical; min-height: 70px; font-family: inherit; }
   .primary-btn {
     width: 100%;
     padding: 12px;
@@ -1606,25 +1648,6 @@
   }
   .field .phone-input-row input:focus { outline: none; }
 
-  /* Поле "Борг клієнта" у формі монтажу — окрема кнопка "OK" поруч з полем, щоб було
-     видно позначку, що введене підтверджено (сама форма й так зберігається лише разом,
-     по кнопці "Зберегти" — це чисто візуальне підтвердження для користувача). */
-  .debt-input-row { display: flex; gap: 8px; align-items: center; }
-  .debt-input-row input { flex: 1; }
-  .debt-input-row input.input-confirmed { border-color: #16a34a; }
-  .debt-ok-btn {
-    flex-shrink: 0;
-    padding: 11px 16px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--bg);
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .debt-ok-btn.confirmed { background: #16a34a; border-color: #16a34a; color: #fff; }
-
   /* Admin panel */
   .admin-section-title {
     font-size: 12px;
@@ -1658,16 +1681,8 @@
   .badge-pending { background: #faeeda; color: #854f0b; }
   .badge-approved { background: var(--accent-bg); color: var(--accent); }
   .badge-rejected, .badge-blocked { background: #fcebeb; color: var(--danger); }
-  /* Статуси монтажів (CRМонтаж) — окремі класи, не змішувати з badge-pending/approved
-     вище (семантика інша, хоч кольори подекуди перегукуються). */
-  .badge-planned { background: #faeeda; color: #854f0b; }
-  .badge-in_progress { background: #dbeafe; color: #1d4ed8; }
-  .badge-done { background: #dcfce7; color: #1e8e3e; }
-  .badge-cancelled { background: #fcebeb; color: var(--danger); }
-  .user-card-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .user-card-row { display: flex; gap: 6px; margin-top: 8px; }
   .user-card-row select { flex: 1; font-size: 12px; padding: 7px 6px; }
-  .task-done-check { display: flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; cursor: pointer; }
-  .task-done-check input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
   .user-card-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
   .user-card-actions button {
     flex: 1;
@@ -1687,49 +1702,6 @@
 
   /* Кнопка "відкрити" — іконка без тексту, розкриває дії/налаштування картки користувача */
   .user-card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-  /* Кнопка "додати нагадування в календар" (CRМонтаж, .ics) — той самий розмір, що й
-     user-card-open-btn поруч, але акцентного кольору, щоб не плутати з нейтральною
-     кнопкою "розкрити". */
-  .task-ics-btn {
-    width: 30px; height: 30px;
-    flex-shrink: 0;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--accent);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-  }
-  .task-ics-btn svg { width: 16px; height: 16px; }
-  .task-ics-btn:active { background: var(--accent-bg); }
-
-  /* Тулбар "Друк"/"Excel" (CRМонтаж, Крок 4 — вивантаження) — той самий рядок кнопок, що
-     й .admin-filter-row, тільки для кнопок замість select. */
-  .task-toolbar-row { display: flex; gap: 8px; margin-bottom: 12px; }
-  .task-toolbar-row button {
-    flex: 1;
-    padding: 9px 0;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--card);
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-  }
-
-  /* Друк списку монтажів — прибираємо все інтерактивне/навігаційне, лишаємо тільки
-     адресу/час/клієнта/обладнання/статус кожної картки. .no-print — спільний клас для
-     будь-якого елемента, який не має сенсу на папері (використовується і поза CRМонтаж,
-     напр. .bottom-nav). */
-  @media print {
-    .no-print { display: none !important; }
-    .user-card-expand { display: block !important; }
-  }
   .user-card-open-btn {
     width: 30px; height: 30px;
     flex-shrink: 0;
@@ -1823,135 +1795,6 @@
     color: var(--text);
     font-family: inherit;
   }
-
-  /* Сумісність блоків MHI — таблиця з закріпленими шапкою і першою колонкою (як
-     "заморозка областей" в Excel): гортаєш в обидва боки, шапка і маркування завжди на
-     видноті, а перетин (сумісність) рухається під ними. */
-  .compat-toolbar { padding: 4px 0 8px; display: flex; gap: 8px; }
-  .compat-clear-btn {
-    flex-shrink: 0;
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--card);
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .compat-filter-input {
-    flex: 1;
-    min-width: 0;
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 13px;
-    background: var(--card);
-    color: var(--text);
-    font-family: inherit;
-  }
-  .compat-legend { font-size: 10.5px; color: var(--text-secondary); line-height: 1.5; padding-bottom: 8px; }
-  .compat-table-wrap {
-    overflow: auto;
-    max-height: 66vh;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .compat-table { border-collapse: separate; border-spacing: 0; font-size: 11px; }
-  .compat-table th, .compat-table td {
-    padding: 5px 7px;
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    text-align: center;
-    white-space: nowrap;
-  }
-  .compat-corner, .compat-colhead, .compat-colhead-group, .compat-colhead-size {
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    font-weight: 700;
-    font-size: 10.5px;
-    color: var(--text);
-    z-index: 2;
-    max-width: 92px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    border-bottom: 2px solid var(--navy);
-  }
-  /* Заголовки колонок/рядків обрізані заради компактності таблиці — тап показує повний
-     текст спливаючим вікном (openSeriesInfo), тому курсор-підказка, що по них можна
-     тапнути. */
-  .compat-colhead, .compat-colhead-group, .compat-colhead-size, .compat-rowhead { cursor: pointer; }
-  .compat-table-multi .compat-colhead-group { top: 0; height: 26px; }
-  .compat-table-multi .compat-colhead-size { top: 27px; }
-  .compat-corner { left: 0; z-index: 4; text-align: left; max-width: none; white-space: nowrap; }
-  .compat-table-multi .compat-corner { z-index: 5; }
-  .compat-rowhead {
-    position: sticky;
-    left: 0;
-    background: #FAFAFA;
-    font-weight: 700;
-    font-size: 10.5px;
-    text-align: left;
-    z-index: 1;
-    width: 96px;
-    max-width: 96px;
-    line-height: 1.3;
-    border-right: 2px solid var(--navy);
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-  }
-  .compat-group-row td {
-    background: var(--accent-bg);
-    font-weight: 800;
-    font-size: 10.5px;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-    text-align: left;
-    color: var(--accent);
-    white-space: normal;
-    border-right: none;
-  }
-  .compat-cell-yes { color: #1E8E3E; font-weight: 700; }
-  .compat-cell-maybe { color: #B8860B; font-weight: 700; }
-  .compat-cell-no2 { color: var(--accent); font-weight: 700; }
-  .compat-cell-no { color: #CBCBCB; }
-  .compat-match { background: #FEF3C7 !important; }
-  /* Незалежне підсвічування рядка/стовпчика (кнопка "Виділити" у спливаючому вікні) —
-     жовтий (.compat-match) зайнятий пошуком, тому тут синій; клітинка на перетині двох
-     підсвічених осей — обидва класи разом — темніша, щоб одразу впадала в очі. */
-  .compat-row-highlight, .compat-col-highlight { background: #DBEAFE !important; }
-  .compat-row-highlight.compat-col-highlight { background: #93C5FD !important; }
-  .compat-notes-wrap { margin-top: 10px; }
-  .compat-notes-toggle {
-    width: 100%;
-    text-align: left;
-    padding: 9px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--card);
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .compat-notes-body {
-    margin-top: 6px;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    background: var(--bg);
-    font-size: 10.5px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-  }
-  .compat-notes-body div { margin-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -2020,14 +1863,13 @@
   </main>
 </div>
 
-<nav class="bottom-nav no-print">
+<nav class="bottom-nav">
   <div class="nav-indicator" id="nav-indicator"></div>
   <button class="nav-btn active" data-tab="catalog"><span class="nav-icon">🏠</span>Каталог</button>
   <button class="nav-btn" data-tab="promotions"><span class="nav-icon">🔥</span>Акції</button>
   <button class="nav-btn" data-tab="cabinet"><span class="nav-icon">👤</span>Кабінет</button>
   <button class="nav-btn" data-tab="contacts"><span class="nav-icon">📞</span>Контакти</button>
   <button class="nav-btn" data-tab="info"><span class="nav-icon">ℹ️</span>Інфо</button>
-  <button class="nav-btn" data-tab="installer"><span class="nav-icon">🛠️</span>CRМонтаж</button>
 </nav>
 
 <div class="img-lightbox-overlay" id="img-lightbox-overlay">
@@ -2049,103 +1891,8 @@
       <div class="info-sheet-title" id="series-info-title"></div>
       <button type="button" class="info-sheet-close" id="series-info-close" aria-label="Закрити">✕</button>
     </div>
+    <div class="info-sheet-images" id="series-info-images" hidden></div>
     <div class="info-sheet-body" id="series-info-body"></div>
-    <div class="info-sheet-actions" id="series-info-actions" hidden>
-      <button type="button" class="info-sheet-action-btn" id="series-info-action-btn"></button>
-    </div>
-  </div>
-</div>
-
-<!-- Форма створення/редагування монтажу (CRМонтаж) — той самий bottom-sheet
-     патерн, що й series-info-overlay вище, але з формою в тілі замість тексту. -->
-<div class="info-sheet-overlay" id="task-form-overlay">
-  <div class="info-sheet-backdrop" id="task-form-backdrop"></div>
-  <div class="info-sheet-panel">
-    <div class="info-sheet-header">
-      <div class="info-sheet-title" id="task-form-title">Новий монтаж</div>
-      <button type="button" class="info-sheet-close" id="task-form-close" aria-label="Закрити">✕</button>
-    </div>
-    <div class="info-sheet-body task-form-body">
-      <div class="field">
-        <label>Адреса</label>
-        <input type="text" id="task-field-address" placeholder="Вулиця, будинок, квартира">
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Дата</label>
-          <input type="date" id="task-field-date">
-        </div>
-        <div class="field">
-          <label>Час</label>
-          <input type="text" id="task-field-time" inputmode="numeric" placeholder="ГГ:ХХ" maxlength="5">
-        </div>
-      </div>
-      <div class="field">
-        <label>Вид робіт</label>
-        <select id="task-field-equipment"></select>
-      </div>
-      <div class="field-row">
-        <div class="field">
-          <label>Ім'я клієнта</label>
-          <input type="text" id="task-field-client-name">
-        </div>
-        <div class="field">
-          <label>Телефон клієнта</label>
-          <input type="tel" id="task-field-client-phone" inputmode="numeric" maxlength="10" placeholder="0501234567">
-        </div>
-      </div>
-      <div class="field">
-        <label>Борг клієнта</label>
-        <div class="debt-input-row">
-          <input type="text" id="task-field-client-debt" placeholder="напр. 1500 або текстом">
-          <button type="button" class="debt-ok-btn" id="task-field-client-debt-ok">OK</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Коментар</label>
-        <textarea id="task-field-comment" rows="2"></textarea>
-      </div>
-      <div id="task-form-error"></div>
-    </div>
-    <div class="info-sheet-actions">
-      <button type="button" class="info-sheet-action-btn" id="task-form-submit-btn">Зберегти</button>
-    </div>
-  </div>
-</div>
-
-<!-- Постачальники (CRМонтаж) — окремий від монтажів список: скільки монтажник винен
-     кожному постачальнику. Проста поточна сума на постачальника (без журналу операцій),
-     як попросив користувач. Той самий bottom-sheet патерн. -->
-<div class="info-sheet-overlay" id="suppliers-overlay">
-  <div class="info-sheet-backdrop" id="suppliers-backdrop"></div>
-  <div class="info-sheet-panel">
-    <div class="info-sheet-header">
-      <div class="info-sheet-title">Постачальники — мій борг</div>
-      <button type="button" class="info-sheet-close" id="suppliers-close" aria-label="Закрити">✕</button>
-    </div>
-    <div class="info-sheet-body task-form-body">
-      <div id="suppliers-total" class="user-card-sub" style="margin-bottom:10px;"></div>
-      <div id="suppliers-list"></div>
-      <div class="supplier-add-box">
-        <div class="supplier-add-title">➕ Додати постачальника</div>
-        <div class="field-row">
-          <div class="field">
-            <label>Назва</label>
-            <input type="text" id="supplier-new-name" placeholder="Назва постачальника">
-          </div>
-          <div class="field">
-            <label>Борг</label>
-            <input type="text" id="supplier-new-amount" placeholder="напр. 1500 або текстом">
-          </div>
-        </div>
-        <div class="field">
-          <label>Коментар</label>
-          <input type="text" id="supplier-new-note" placeholder="необов'язково">
-        </div>
-        <button type="button" class="primary-btn" id="supplier-add-btn">+ Додати постачальника</button>
-        <div id="supplier-form-error"></div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -2226,11 +1973,11 @@ const CATALOG_TILES = [
     gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category' }
   },
   { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.jpg', custom: 'vrf' },
-  { id: 'ccb', label: 'Компресорно-конденсаторні блоки' },
+  { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.png', custom: 'kkb' },
   { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tileheatpumps.jpg', custom: 'heatpumps' },
   { id: 'chillers', label: 'Чиллери' },
-  { id: 'ventilation', label: 'Вентиляційне обладнання' },
-  { id: 'aircurtains', label: 'Повітряні завіси' },
+  { id: 'ventilation', label: 'Вентиляційне обладнання', img: 'tile-images/tile-ventilation.jpg', custom: 'ventilation' },
+  { id: 'aircurtains', label: 'Повітряні завіси', img: 'tile-images/tile-aircurtains.jpg', custom: 'aircurtains' },
   { id: 'convectors', label: 'Конвектори та обігрівачі' }
 ];
 
@@ -2253,12 +2000,28 @@ const prefersReducedMotionQuery = window.matchMedia('(prefers-reduced-motion: re
 
 let currentTab = 'catalog';
 let sheetsData = {};
+/* rowGroupMap (з parseSheet) для кожного tile-key, що використовує highlightMode 'series'/
+   'category' — потрібен лише extractSeriesImages() для прив'язки вбудованих у Excel
+   картинок серій до правильної групи (рядок картинки → яка серія "діяла" на цьому рядку
+   аркуша). Перебудовується заново при кожному розборі прайсу (buildSheetsData). */
+let seriesRowGroupMaps = {};
+/* Сирий ArrayBuffer щойно завантаженого price.xlsx — тримаємо в пам'яті (не тільки розібраний
+   sheetsData), щоб extractSeriesImages() міг дістати вбудовані картинки серій без повторного
+   якання файлу. Може бути null, якщо каталог відкрився з локального кешу (без мережевого
+   завантаження цієї сесії) — ensurePriceRawBuffer() тоді довантажує сам файл лише в момент,
+   коли користувач реально відкриває картинку (лінива, не при вході в застосунок). */
+let priceRawBuffer = null;
+/* Map<sheetName, Promise<Map<groupLabel, blobUrl>>> — розбір drawings/media одного аркуша
+   (unzip + XML) робиться один раз за сесію й кешується тут, а не при кожному тапі. */
+let seriesImageCache = {};
 let activeTile = null; // null = меню категорій каталогу
 let activeBrand = 'mhi'; // 'mhi' | 'gal' — активний бренд у плитці з перемикачем
 /* Плитка "Теплові насоси": null = меню з 3 плиток (MHI/HeatGuard/WineGuard) — див.
    renderHeatpumpsList(). Перемикання між плитками — через history.pushState (як і в "Інфо"),
    щоб апаратна/шапкова кнопка "назад" повертала саме до цього меню. */
 let heatpumpsBrand = null;
+let ventilationBrand = null; // null = меню (поки лише Systemair)
+let systemairSearchQuery = '';
 /* Плитка "Мультизональні VRF": для MHI — 3 перемикачі за вкладками прайсу (як activeBrand,
    без history.pushState), для GAL — 2 перемикачі (зовнішні/внутрішні). */
 let vrfMhiSource = 'outdoor'; // 'outdoor' | 'indoor_r410a' | 'indoor_kxze1w'
@@ -2283,19 +2046,8 @@ let calcPanelOpenedAt = 0;
 let seriesInfoTexts = [];
 
 /* Навігація вкладки "Інфо": null = верхнє меню (Каталоги / Технічна інфа) */
-let infoSection = null; // 'catalogs' | 'techinfo' | 'mhi-compat' | null
+let infoSection = null; // 'catalogs' | 'techinfo' | null
 let infoBrand = null;   // 'mhi' | 'galactic' | null
-
-/* "Сумісність блоків MHI" — видима лише regional_admin/super_admin (перевіряється в
-   renderMhiCompatFolders(), а не тільки прихованням пункту меню, щоб пряме посилання-хеш
-   теж не пускало звичайного користувача). Дані — заздалегідь вивантажені з дилерських
-   xlsx-таблиць сумісності MHI в data/mhi-compat-tables.json (самі xlsx НЕ в репозиторії).
-   На відміну від видаленої раніше версії цієї фічі — тут НЕМАЄ жодного розбору/зіставлення
-   маркувань: просто показуємо таблицю з прайсу як є, з закріпленими шапкою і першою
-   колонкою, а користувач сам знаходить потрібний рядок/стовпець і дивиться перетин. */
-let mhiCompatFolder = null; // 'household' | 'semi' | null
-let mhiCompatSheet = 'rac'; // 'rac' | 'racMulti' — актуально лише для folder==='household'
-let mhiCompatData = null;   // null (ще не завантажено) | 'loading' | 'error' | {rac,racMulti,fd}
 
 /* ---------- Допоміжні функції парсингу прайсу ---------- */
 const priceKeywordGroups = [
@@ -2410,6 +2162,15 @@ function parseSheet(rows, highlightMode, opts) {
   const blockNameCol = unitTypeCol !== -1 ? findColumnInRow(headerRow, blockNameKeywords) : -1;
   const currency = detectCurrency(priceHeader.text);
   const items = [];
+  // rowGroupMap[r] — "ефективний" підпис серії/категорії, що діяв на рядку r аркуша (той
+  // самий effectiveKey, що йде в segment-header). Потрібен лише для прив'язки вбудованих
+  // у Excel картинок серій до правильної групи (extractSeriesImages) — сам рендер прайсу
+  // цим не користується. Для MHI (labelMap) підпис "спрацьовує" аж на рядку моделі, що
+  // збігається з ключем SPLIT_MHI_LABELS, а не на рядку опису серії над ним, тому картинка,
+  // яка в Excel стоїть НАД моделями (на рядку опису), лишалась би без пари — backward-fill
+  // нижче після цикла закриває цей розрив, підтягуючи підпис ІЗ наступного визначеного
+  // рядка назад.
+  const rowGroupMap = [];
   let currentCategory = null;
   let currentSeriesLabel = null;
   let currentFullText = null; // повний опис серії з прайсу — для спливаючого вікна "детальніше"
@@ -2525,7 +2286,16 @@ function parseSheet(rows, highlightMode, opts) {
         item.productivityHeating = nextRowForProductivity[blockNameCol + 1];
       }
     }
+    if (highlightMode === 'series') rowGroupMap[r] = item.groupLabel || item.groupKey || undefined;
+    else if (highlightMode === 'category') rowGroupMap[r] = item.groupKey || undefined;
     items.push(item);
+  }
+  // Backward-fill: рядок опису серії йде ФІЗИЧНО НАД своїми моделями, але для MHI підпис
+  // (currentSeriesLabel) виставляється лише на рядку моделі — тому "тягнемо" визначений
+  // підпис назад на попередні ще не визначені рядки (картинка, вбудована в Excel над
+  // моделями, потрапляє саме в цей розрив).
+  for (let r = rows.length - 2; r >= dataStart; r--) {
+    if (rowGroupMap[r] === undefined && rowGroupMap[r + 1] !== undefined) rowGroupMap[r] = rowGroupMap[r + 1];
   }
 
   if (highlightMode) {
@@ -2537,7 +2307,7 @@ function parseSheet(rows, highlightMode, opts) {
     });
   }
 
-  return { items, error: items.length === 0 ? 'Не знайдено рядків з маркуванням і ціною' : null };
+  return { items, error: items.length === 0 ? 'Не знайдено рядків з маркуванням і ціною' : null, rowGroupMap };
 }
 
 function sliceBySplitMarker(rows, marker, side) {
@@ -2573,7 +2343,7 @@ function sheetRows(wb, sheetName) {
    (B=модель, C=опис, E=ціна), без "Разом". Модель товару в застосунку = сам опис насоса
    (моделі окремих компонентів комплекту в назву не виносимо — їх видно у "детальніше"). */
 function parseHeatpumpsMhiSheet(wb) {
-  const rows = sheetRows(wb, 'Теплові насоси');
+  const rows = sheetRows(wb, 'ТН MHI Hydrolution');
   if (!rows) return [];
   // Аркуш без колонки A (у файлі вона порожня по всій вкладці) — SheetJS обрізає діапазон
   // до першої фактично використаної колонки, тому позиції стовпчиків "Комплект/Найменування/
@@ -2705,6 +2475,112 @@ function parseWineGuardSheet(wb) {
   return assignGroupColors(items);
 }
 
+/* ---------- "Теплові насоси" — TH MHI EZY та Q-ton (нова плитка) ----------
+   Два зональних формати колонок в одному аркуші: основне обладнання (зовнішні/внутрішні
+   блоки) — B=маркування, C=опис, D=ціна, A=лише заголовок групи; баки/аксесуари/Q-ton —
+   A=маркування, B=опис, D=ціна (C там не використовується). Той самий "зсув на одну
+   колонку між основним обладнанням і плоским списком аксесуарів", що вже є у старому
+   аркуші "ТН MHI Hydrolution" — тут просто ще одна пара таких зон (EZY + Q-ton).
+   rowGroupMap кешується в thEzyRowGroupMapCache — для extractSeriesImages() (фото
+   зовнішнього блока EZY R290 і внутрішніх блоків, вбудовані в Excel над відповідними
+   рядками). */
+// Групи, де діє "зсунутий" формат колонок (A=модель, B=опис) — визначається заголовком
+// групи, а НЕ вмістом самого рядка (колонка B заповнена в ОБОХ форматах — і як опис у
+// зсунутому, і як маркування в основному, тому судити по "чи є текст у B" не можна).
+const TH_EZY_SHIFTED_HEADERS = ['баки для гарячої води', 'аксесуари', 'зовнішній блок q-ton co2'];
+let thEzyRowGroupMapCache = null;
+function parseThMhiEzyQtonSheet(wb) {
+  const rows = sheetRows(wb, 'TH MHI – EZY та Qton');
+  if (!rows) { thEzyRowGroupMapCache = []; return []; }
+  const items = [];
+  const rowGroupMap = [];
+  let currentGroup = null;
+  let isShifted = false;
+  let accessoriesCount = 0; // "АКСЕСУАРИ" зустрічається двічі (EZY і окремо Q-ton) — розрізняємо в підписі
+  for (let r = 8; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const colA = String(row[0] || '').trim();
+    const colB = String(row[1] || '').trim();
+    const colC = String(row[2] || '').trim();
+    const price = parseNumber(row[3]);
+    if (price === null) {
+      if (colA) {
+        isShifted = TH_EZY_SHIFTED_HEADERS.includes(norm(colA));
+        currentGroup = norm(colA) === 'аксесуари'
+          ? (++accessoriesCount === 1 ? 'АКСЕСУАРИ (EZY)' : 'АКСЕСУАРИ (Q-ton)')
+          : colA;
+      }
+      continue; // заголовок групи (лише colA) або порожній/непарний рядок-продовження опису
+    }
+    const model = isShifted ? colA : colB;
+    if (!model) continue; // рідкісний "осиротілий" рядок з ціною другого варіанта без власної назви (напр. EMK500M) — опис і так видно в тексті першого рядка, друга ціна тут свідомо не вгадується
+    items.push({ model, price, currency: '$', groupKey: currentGroup, groupLabel: currentGroup });
+    rowGroupMap[r] = currentGroup || undefined;
+  }
+  thEzyRowGroupMapCache = rowGroupMap;
+  return assignGroupColors(items);
+}
+async function getThEzyRowGroupMap() {
+  if (thEzyRowGroupMapCache) return thEzyRowGroupMapCache;
+  const buf = await ensurePriceRawBuffer();
+  if (!buf) return [];
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+  parseThMhiEzyQtonSheet(wb); // побічний ефект — заповнює thEzyRowGroupMapCache
+  return thEzyRowGroupMapCache || [];
+}
+
+/* ---------- "Вентиляційне обладнання" — Systemair ----------
+   Аркуш ~14000 рядків (весь європейський каталог) — без групування, простий плоский
+   список: Артикул (A), Назва (B), Роздрібна ціна EUR (D). Рендериться лише за пошуком
+   (renderVentilationList) — 14000 DOM-рядків одразу заморозили б мобільний браузер. */
+function parseSystemairSheet(wb) {
+  const rows = sheetRows(wb, 'SYSTEMAIR');
+  if (!rows) return [];
+  const items = [];
+  for (let r = 8; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const article = String(row[0] || '').trim();
+    const model = String(row[1] || '').trim();
+    const price = parseNumber(row[3]);
+    if (!model || price === null) continue;
+    items.push({ model, article, price, currency: 'EUR' });
+  }
+  return items;
+}
+
+/* ---------- "Повітряні завіси" — FRICO ----------
+   Назва (B) = маркування, Артикул (A), Роздрібна ціна EUR (D). articleLink: true — тап на
+   артикул шукає товар за цим SKU через живий пошуковий API офіційного сайту Systemair і
+   відкриває знайдену сторінку (openFricoProductPage) — тільки за ТОЧНИМ збігом номера,
+   без здогадок, якщо не знайдено. */
+function parseFricoSheet(wb) {
+  const rows = sheetRows(wb, 'FRICO');
+  if (!rows) return [];
+  const items = [];
+  for (let r = 8; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const article = String(row[0] || '').trim();
+    const model = String(row[1] || '').trim();
+    const price = parseNumber(row[3]);
+    if (!model || price === null) continue;
+    items.push({ model, article, articleLink: true, price, currency: 'EUR' });
+  }
+  return items;
+}
+async function openFricoProductPage(sku) {
+  try {
+    const res = await fetch('https://www.systemair.com/api/uk-ua/search?id=93290740&query=' + encodeURIComponent(sku) + '&type=skus&discontinued=false&maxHits=20');
+    if (!res.ok) return;
+    const data = await res.json();
+    const match = (data.skus || []).find(s => String(s.number) === String(sku));
+    if (match && match.url) {
+      window.open(match.url.replace(/^systemair-uk-ua\//, 'https://www.systemair.com/uk-ua/'), '_blank');
+    }
+  } catch (e) {
+    // Тихо ігноруємо — це збагачення (посилання на офіційний сайт), не критична функція.
+  }
+}
+
 /* ---------- "Мультизональні VRF" — MHI (3 вкладки прайсу, одна логіка) ----------
    Спільна форма для "VRF Зовнішні блоки", "VRF Внутрішні R410A" і "VRF Внутрішні
    KXZE1-W R32": модель завжди у стовпчику C, ціна завжди у стовпчику G. Рядок без ціни —
@@ -2772,6 +2648,51 @@ function parseGalVrfOutdoorSheet(wb) {
   }
   return assignGroupColors(items);
 }
+/* Обгортка для кастомних (не-generic) вкладок — та сама самодіагностика (price_issues),
+   що вже є для звичайних CATALOG_TILES-вкладок нижче в buildSheetsData(), тепер і тут:
+   раніше ці 8 джерел (теплові насоси MHI/HeatGuard/WineGuard, 5 VRF-джерел) були лише
+   в try/catch, що мовчки повертав [] — перейменування вкладки в новому прайсі
+   ("Теплові насоси" → "ТН MHI Hydrolution") пройшло непоміченим і самодіагностика
+   показала "Проблем не виявлено", хоча дані зникли. */
+function parseCustomTileSheet(wb, sheetName, tileLabel, brandTag, parseFn, problems, issues) {
+  if (!wb.SheetNames.includes(sheetName)) {
+    const msg = 'Вкладку "' + sheetName + '" не знайдено у файлі прайсу';
+    problems.push(tileLabel + ' / ' + brandTag.toUpperCase() + ' (вкладку "' + sheetName + '" не знайдено у файлі)');
+    issues.push({ tile: tileLabel, brand: brandTag, kind: 'error', message: msg });
+    return [];
+  }
+  try {
+    const items = parseFn(wb) || [];
+    if (items.length === 0) {
+      const msg = 'Не знайдено жодної позиції з ціною';
+      problems.push(tileLabel + ' / ' + brandTag.toUpperCase() + ' (' + msg + ')');
+      issues.push({ tile: tileLabel, brand: brandTag, kind: 'error', message: msg });
+    }
+    return items;
+  } catch (e) {
+    const msg = 'Помилка розбору: ' + e.message;
+    problems.push(tileLabel + ' / ' + brandTag.toUpperCase() + ' (' + msg + ')');
+    issues.push({ tile: tileLabel, brand: brandTag, kind: 'error', message: msg });
+    return [];
+  }
+}
+/* Спільний список для buildSheetsData() (розбір) і reportPriceDiagnostics() (автогасіння
+   виправлених проблем) — щоб не дублювати одні й ті самі tile/brand/sheet у двох місцях. */
+const CUSTOM_SHEET_DIAG = [
+  { key: 'heatpumps_mhi', sheet: 'ТН MHI Hydrolution', tile: 'Теплові насоси', brand: 'mhi', parse: parseHeatpumpsMhiSheet },
+  { key: 'heatguard', sheet: 'HeatGuard', tile: 'Теплові насоси', brand: 'heatguard', parse: parseHeatGuardSheet },
+  { key: 'wineguard', sheet: 'WineGuard', tile: 'Теплові насоси', brand: 'wineguard', parse: parseWineGuardSheet },
+  { key: 'th_ezy_qton', sheet: 'TH MHI – EZY та Qton', tile: 'Теплові насоси', brand: 'ezyqton', parse: parseThMhiEzyQtonSheet },
+  { key: 'vrf_mhi_outdoor', sheet: 'VRF Зовнішні блоки', tile: 'Мультизональні VRF', brand: 'mhi-outdoor', parse: wb => parseVrfTypeSheet(wb, 'VRF Зовнішні блоки') },
+  { key: 'vrf_mhi_indoor_r410a', sheet: 'VRF Внутрішні R410A', tile: 'Мультизональні VRF', brand: 'mhi-indoor-r410a', parse: wb => parseVrfTypeSheet(wb, 'VRF Внутрішні R410A') },
+  { key: 'vrf_mhi_indoor_kxze1w', sheet: 'VRF Внутрішні KXZE1-W R32', tile: 'Мультизональні VRF', brand: 'mhi-indoor-kxze1w', parse: wb => parseVrfTypeSheet(wb, 'VRF Внутрішні KXZE1-W R32') },
+  { key: 'vrf_gal_outdoor', sheet: 'Galactic VRF', tile: 'Мультизональні VRF', brand: 'gal-outdoor', parse: parseGalVrfOutdoorSheet },
+  { key: 'vrf_gal_indoor', sheet: 'Galactic VRF', tile: 'Мультизональні VRF', brand: 'gal-indoor', parse: parseGalVrfIndoorSheet },
+  { key: 'kkb_gal', sheet: 'Galactic ККБ', tile: 'Компресорно-конденсаторні блоки (ККБ)', brand: 'gal', parse: parseKkbGalSheet },
+  { key: 'kkb_mhi', sheet: 'ККБ MHI', tile: 'Компресорно-конденсаторні блоки (ККБ)', brand: 'mhi', parse: parseKkbMhiSheet },
+  { key: 'systemair', sheet: 'SYSTEMAIR', tile: 'Вентиляційне обладнання', brand: 'systemair', parse: parseSystemairSheet },
+  { key: 'frico', sheet: 'FRICO', tile: 'Повітряні завіси', brand: 'frico', parse: parseFricoSheet }
+];
 function parseGalVrfIndoorSheet(wb) {
   const rows = sheetRows(wb, 'Galactic VRF');
   if (!rows) return [];
@@ -2794,11 +2715,68 @@ function parseGalVrfIndoorSheet(wb) {
   return assignGroupColors(items);
 }
 
+/* ---------- "Компресорно-конденсаторні блоки (ККБ)" ---------- */
+// "Все, що в маркуванні одразу після цифри потужності — серія" (той самий прийом, що й
+// parseGalVrfOutdoorSheet вище, напр. GUC-76Z-H → серія "Z-H").
+function extractGucSeries(model) {
+  const m = String(model).match(/^([A-ZА-ЯІЇЄ]+)-(\d+)(.+)$/i);
+  return m ? m[3].toUpperCase().trim() : null;
+}
+function parseKkbGalSheet(wb) {
+  const rows = sheetRows(wb, 'Galactic ККБ');
+  if (!rows) return [];
+  const description = String((rows[3] || [])[1] || '').trim(); // B4 — один опис на всі серії
+  const items = [];
+  for (let r = 5; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const model = String(row[2] || '').trim(); // C — маркування
+    if (!model) break; // далі "Належність"/AHU Kits — інша структура, нею не просили
+    const cooling = row[4], heating = row[5]; // E/F — продуктивність, кВт
+    const power = (cooling !== '' && cooling != null && heating !== '' && heating != null)
+      ? String(cooling).replace('.', ',') + '/' + String(heating).replace('.', ',') + ' кВт' : '';
+    const series = extractGucSeries(model);
+    items.push({
+      model, price: null, currency: '', onRequest: true, power,
+      groupKey: series, groupLabel: series, groupFullText: description || null
+    });
+  }
+  return assignGroupColors(items);
+}
+// Аркуш "ККБ MHI": лише перші два розділи (ККБ RAC інвертор / ККБ VRF інвертор, рядки 6-26
+// у самому Excel, 0-based 5-25) — усі з ціною "За запитом", саме про них просив користувач.
+// Далі в тому самому аркуші йде зовсім інша таблиця (EEV KIT з реальними цінами по кожній
+// конкретній моделі внутр./зовн. блоку) — вона не про ККБ-серії й свідомо не береться.
+// Колонка A — назва серії (Excel-merge на кілька рядків, тому в SheetJS порожня на всіх,
+// крім першого рядка групи — переносимо вперед), колонка B — маркування, колонка F —
+// "За запитом". Три "шапки" на всю ширину (лише колонка A, порожні B/F) — заголовки
+// категорій (RAC / VRF 1 контур / VRF 2 контури), скидають "серію" й самі позицією не є.
+function parseKkbMhiSheet(wb) {
+  const rows = sheetRows(wb, 'ККБ MHI');
+  if (!rows) return [];
+  const items = [];
+  let currentCategory = null;
+  let currentSeries = null;
+  for (let r = 5; r <= 25 && r < rows.length; r++) {
+    const row = rows[r] || [];
+    const colA = String(row[0] || '').trim();
+    const colB = String(row[1] || '').trim().replace(/\s+/g, ' ');
+    if (!colB) {
+      if (colA) { currentCategory = colA; currentSeries = null; }
+      continue;
+    }
+    if (colA) currentSeries = colA;
+    const groupKey = currentSeries || currentCategory;
+    items.push({ model: colB, price: null, currency: '', onRequest: true, groupKey, groupLabel: groupKey });
+  }
+  return assignGroupColors(items);
+}
+
 // previousData — попередньо завантажений sheetsData (з кешу чи попередньої версії),
 // потрібен лише для м'якого попередження "різко зменшилась кількість позицій" (issues,
 // нижче) — на сам розбір поточного файлу ніяк не впливає.
 function buildSheetsData(wb, previousData) {
   const data = {};
+  seriesRowGroupMaps = {};
   const problems = [];
   // issues — те саме, що й problems, але структуровано (для самодіагностики прайсу,
   // report_price_issue — див. reportPriceDiagnostics) і з додатковими "м'якими"
@@ -2819,6 +2797,7 @@ function buildSheetsData(wb, previousData) {
       let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (cfg.splitMarker) rows = sliceBySplitMarker(rows, cfg.splitMarker, cfg.splitSide);
       const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence, multisplitSections: cfg.multisplitSections, blockGrouping: cfg.blockGrouping });
+      seriesRowGroupMaps[cfg.key] = result.rowGroupMap;
       if (result.items.length > 0) {
         if (cfg.baseAdjustPct) {
           const factor = 1 - cfg.baseAdjustPct / 100;
@@ -2848,17 +2827,12 @@ function buildSheetsData(wb, previousData) {
   // Кастомні розділи "Теплові насоси" і "Мультизональні VRF" — нестандартна структура
   // аркушів (вкладені комплекти, кілька вкладок прайсу в одній вкладці застосунку), тому
   // не проходять через generic CATALOG_TILES.forEach/parseSheet вище, а розбираються
-  // окремими функціями. Загорнуто в try/catch — помилка тут не повинна ламати решту
-  // каталогу; не підключено до самодіагностики price_issues (issues[]) — це можна додати
-  // пізніше, якщо знадобиться.
-  try { data.heatpumps_mhi = parseHeatpumpsMhiSheet(wb); } catch (e) { data.heatpumps_mhi = []; }
-  try { data.heatguard = parseHeatGuardSheet(wb); } catch (e) { data.heatguard = []; }
-  try { data.wineguard = parseWineGuardSheet(wb); } catch (e) { data.wineguard = []; }
-  try { data.vrf_mhi_outdoor = parseVrfTypeSheet(wb, 'VRF Зовнішні блоки'); } catch (e) { data.vrf_mhi_outdoor = []; }
-  try { data.vrf_mhi_indoor_r410a = parseVrfTypeSheet(wb, 'VRF Внутрішні R410A'); } catch (e) { data.vrf_mhi_indoor_r410a = []; }
-  try { data.vrf_mhi_indoor_kxze1w = parseVrfTypeSheet(wb, 'VRF Внутрішні KXZE1-W R32'); } catch (e) { data.vrf_mhi_indoor_kxze1w = []; }
-  try { data.vrf_gal_outdoor = parseGalVrfOutdoorSheet(wb); } catch (e) { data.vrf_gal_outdoor = []; }
-  try { data.vrf_gal_indoor = parseGalVrfIndoorSheet(wb); } catch (e) { data.vrf_gal_indoor = []; }
+  // окремими функціями (див. CUSTOM_SHEET_DIAG) — але тепер через ту саму обгортку
+  // parseCustomTileSheet(), що й звичайні вкладки: відсутня вкладка чи 0 позицій так само
+  // потрапляють у problems/issues (самодіагностика price_issues).
+  CUSTOM_SHEET_DIAG.forEach(entry => {
+    data[entry.key] = parseCustomTileSheet(wb, entry.sheet, entry.tile, entry.brand, entry.parse, problems, issues);
+  });
 
   return { data, problems, issues };
 }
@@ -2871,7 +2845,7 @@ function buildSheetsData(wb, previousData) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 8;
+const PARSER_VERSION = 9;
 
 function loadProcessedCache() {
   try {
@@ -2912,6 +2886,8 @@ async function downloadAndParsePrice(newVersion) {
   const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const buf = await res.arrayBuffer();
+  priceRawBuffer = buf; // для extractSeriesImages() — той самий буфер, без повторного качання
+  seriesImageCache = {}; // новий файл прайсу — стара прив'язка картинок до серій більше не валідна
   const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
   const previousData = sheetsData;
   const { data, problems, issues } = buildSheetsData(wb, previousData);
@@ -2955,6 +2931,12 @@ async function reportPriceDiagnostics(issues, newVersion) {
           sb.rpc('resolve_price_issue_if_ok', { p_tile_label: tile.label, p_brand: brand }).catch(function () {});
         }
       });
+    });
+    CUSTOM_SHEET_DIAG.forEach(entry => {
+      const key = entry.tile + '|' + entry.brand;
+      if (!seen.has(key) && sheetsData[entry.key] && sheetsData[entry.key].length > 0) {
+        sb.rpc('resolve_price_issue_if_ok', { p_tile_label: entry.tile, p_brand: entry.brand }).catch(function () {});
+      }
     });
   } catch (e) {
     // Тиха відмова — самодіагностика ніколи не повинна заважати звичайному перегляду каталогу.
@@ -3044,12 +3026,17 @@ async function handleRefreshClick() {
 /* ---------- Відображення каталогу ---------- */
 function tileHasAnyData(tile) {
   if (tile.custom === 'heatpumps') {
-    return !!((sheetsData.heatpumps_mhi && sheetsData.heatpumps_mhi.length) || (sheetsData.heatguard && sheetsData.heatguard.length) || (sheetsData.wineguard && sheetsData.wineguard.length));
+    return !!((sheetsData.heatpumps_mhi && sheetsData.heatpumps_mhi.length) || (sheetsData.heatguard && sheetsData.heatguard.length) || (sheetsData.wineguard && sheetsData.wineguard.length) || (sheetsData.th_ezy_qton && sheetsData.th_ezy_qton.length));
   }
   if (tile.custom === 'vrf') {
     return !!((sheetsData.vrf_mhi_outdoor && sheetsData.vrf_mhi_outdoor.length) || (sheetsData.vrf_mhi_indoor_r410a && sheetsData.vrf_mhi_indoor_r410a.length) ||
       (sheetsData.vrf_mhi_indoor_kxze1w && sheetsData.vrf_mhi_indoor_kxze1w.length) || (sheetsData.vrf_gal_outdoor && sheetsData.vrf_gal_outdoor.length) || (sheetsData.vrf_gal_indoor && sheetsData.vrf_gal_indoor.length));
   }
+  if (tile.custom === 'kkb') {
+    return !!((sheetsData.kkb_mhi && sheetsData.kkb_mhi.length) || (sheetsData.kkb_gal && sheetsData.kkb_gal.length));
+  }
+  if (tile.custom === 'ventilation') return !!(sheetsData.systemair && sheetsData.systemair.length);
+  if (tile.custom === 'aircurtains') return !!(sheetsData.frico && sheetsData.frico.length);
   return (tile.mhi && sheetsData[tile.mhi.key]) || (tile.gal && sheetsData[tile.gal.key]);
 }
 function tileActiveCfg(tile) {
@@ -3223,6 +3210,8 @@ function renderCatalogMenu() {
       activeTile = tileId;
       activeBrand = 'mhi';
       heatpumpsBrand = null;
+      ventilationBrand = null;
+      systemairSearchQuery = '';
       vrfMhiSource = 'outdoor';
       vrfGalSide = 'outdoor';
       renderCatalogView();
@@ -3488,6 +3477,9 @@ function renderCatalogList() {
   const tileForDispatch = CATALOG_TILES.find(t => t.id === activeTile);
   if (tileForDispatch && tileForDispatch.custom === 'heatpumps') { renderHeatpumpsList(); return; }
   if (tileForDispatch && tileForDispatch.custom === 'vrf') { renderVrfList(); return; }
+  if (tileForDispatch && tileForDispatch.custom === 'kkb') { renderKkbList(); return; }
+  if (tileForDispatch && tileForDispatch.custom === 'ventilation') { renderVentilationList(); return; }
+  if (tileForDispatch && tileForDispatch.custom === 'aircurtains') { renderAirCurtainsList(); return; }
 
   const main = document.getElementById('main');
   openCalcPanelEl = null; // старі вузли DOM зараз буде замінено — посилання все одно застаріє
@@ -3557,7 +3549,20 @@ function renderCatalogList() {
       const hasMoreInfo = it.groupFullText && it.groupFullText.trim().length > effectiveKey.length + 15;
       if (hasMoreInfo) {
         const idx = seriesInfoTexts.length;
-        seriesInfoTexts.push({ title: effectiveKey, text: it.groupFullText.trim() });
+        const infoEntry = { title: effectiveKey, text: it.groupFullText.trim() };
+        // Фото серії (кондиціонера) — тільки для Спліт-систем (MHI/GAL), за проханням
+        // користувача; для Мульти спліт (той самий 'series' режим на GAL) не чіпаємо.
+        if (activeTile === 'split') {
+          const brandAtPush = activeBrand;
+          const sheetAtPush = brandAtPush === 'mhi' ? 'ПОБУТОВІ' : 'GALACTIC';
+          infoEntry.getImages = async () => {
+            const rowGroupMap = await getRowGroupMapForSplitTile(brandAtPush);
+            const map = await extractSeriesImages(sheetAtPush, row => rowGroupMap[row]);
+            const url = map.get(effectiveKey);
+            return url ? [url] : [];
+          };
+        }
+        seriesInfoTexts.push(infoEntry);
         header = `<div class="segment-header segment-header-info" data-info-idx="${idx}" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}<span class="segment-header-info-icon">ⓘ</span></div>`;
       } else {
         header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}</div>`;
@@ -3662,7 +3667,17 @@ function buildSimplePriceRowsHtml(items, opts) {
       // заголовком групи однаково (напр. умови вимірювання потужності WineGuard), щоб не
       // повторювати його в кожному рядку товару.
       const noteHtml = opts.headerNote ? `<div class="segment-header-note">${escapeHtml(opts.headerNote)}</div>` : '';
-      header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}${noteHtml}</div>`;
+      // groupHeaderInfo — той самий "клікабельний заголовок з описом(+фото)", що й у
+      // renderCatalogList() для Спліт-систем, тільки параметризований (ККБ GAL: спільний
+      // опис у B4 + фото блоків за серією).
+      const groupInfo = opts.groupHeaderInfo ? opts.groupHeaderInfo(effectiveKey, it) : null;
+      if (groupInfo) {
+        const idx = seriesInfoTexts.length;
+        seriesInfoTexts.push({ title: effectiveKey, text: groupInfo.text, getImages: groupInfo.getImages });
+        header = `<div class="segment-header segment-header-info" data-info-idx="${idx}" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}<span class="segment-header-info-icon">ⓘ</span>${noteHtml}</div>`;
+      } else {
+        header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}${noteHtml}</div>`;
+      }
     } else if (!effectiveKey) {
       lastKey = null;
     }
@@ -3703,6 +3718,13 @@ function buildSimplePriceRowsHtml(items, opts) {
     }
 
     const powerHtml = it.power ? `<p class="row-sub">${escapeHtml(it.power)}</p>` : '';
+    // Артикул (SYSTEMAIR/FRICO): просто текст, або — коли articleLink — кнопка, що шукає
+    // товар за цим SKU на офіційному сайті Systemair (openFricoProductPage).
+    const articleHtml = it.article
+      ? (it.articleLink
+          ? `<button type="button" class="row-article-link" data-sku="${escapeHtml(it.article)}">Артикул: ${escapeHtml(it.article)}</button>`
+          : `<p class="row-sub">Артикул: ${escapeHtml(it.article)}</p>`)
+      : '';
     const calcSlotHtml = (showCalc && !it.onRequest && !rowLocked)
       ? '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '')) + '</div>'
       : '';
@@ -3715,6 +3737,7 @@ function buildSimplePriceRowsHtml(items, opts) {
           <div class="row-info">
             <p class="row-name">${escapeHtml(it.model)}</p>
             ${powerHtml}
+            ${articleHtml}
           </div>
           <div class="row-right">${rightHtml}</div>
         </div>
@@ -3802,6 +3825,166 @@ function attachVrfHandlers(main) {
   });
 }
 
+/* ---------- "Компресорно-конденсаторні блоки (ККБ)" ---------- */
+// Сирі рядки аркуша "Galactic ККБ" (для прив'язки фото блоків до серії за regex прямо з
+// маркування рядка-анкера — тут не треба stateful rowGroupMap, як для Спліт-систем, бо
+// серія й так рахується напряму з тексту кожного рядка). Кешується так само, як priceRawBuffer.
+let kkbGalRawRowsCache = null;
+async function getKkbGalRawRows() {
+  if (kkbGalRawRowsCache) return kkbGalRawRowsCache;
+  const buf = await ensurePriceRawBuffer();
+  if (!buf) return null;
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+  const sheet = wb.Sheets['Galactic ККБ'];
+  if (!sheet) return null;
+  kkbGalRawRowsCache = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+  return kkbGalRawRowsCache;
+}
+function renderKkbList() {
+  const main = document.getElementById('main');
+  openCalcPanelEl = null;
+  seriesInfoTexts = [];
+
+  const animateRows = !catalogRowsSkipStagger;
+  const prevBrandForSlider = brandSliderPrevBrand;
+  catalogRowsSkipStagger = false;
+  brandSliderPrevBrand = null;
+
+  const brandToggleHtml = `
+    <div class="brand-toggle brand-toggle-sliding">
+      <div class="brand-toggle-slider"></div>
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
+    </div>`;
+
+  let items, opts;
+  if (activeBrand === 'mhi') {
+    items = sheetsData.kkb_mhi || [];
+    opts = { cartSourceKey: 'kkb_mhi', tileLabel: 'Компресорно-конденсаторні блоки (ККБ)', showCalc: false, showCart: false, stagger: animateRows };
+  } else {
+    items = sheetsData.kkb_gal || [];
+    opts = {
+      cartSourceKey: 'kkb_gal', tileLabel: 'Компресорно-конденсаторні блоки (ККБ)', showCalc: false, showCart: false, stagger: animateRows,
+      // Клікабельний заголовок серії — фото блоків (extractSeriesImages, "Фото" лівіше
+      // маркування) + спільний опис із B4 (однаковий для всіх серій).
+      groupHeaderInfo: (effectiveKey, it) => {
+        if (!it.groupFullText) return null;
+        return {
+          text: it.groupFullText,
+          getImages: async () => {
+            const rawRows = await getKkbGalRawRows();
+            const map = await extractSeriesImages('Galactic ККБ', row => {
+              const m = rawRows && rawRows[row] ? String(rawRows[row][2] || '').trim() : '';
+              return m ? extractGucSeries(m) : null;
+            });
+            const url = map.get(effectiveKey);
+            return url ? [url] : [];
+          }
+        };
+      }
+    };
+  }
+
+  if (items.length === 0) {
+    main.innerHTML = brandToggleHtml + '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+    attachBrandToggleHandlers(main);
+    positionBrandSlider(main, activeBrand, prevBrandForSlider);
+    return;
+  }
+
+  const rowsHtml = buildSimplePriceRowsHtml(items, opts);
+  main.innerHTML = brandToggleHtml + '<div class="count">Всього: ' + items.length + '</div>' + rowsHtml;
+  attachBrandToggleHandlers(main);
+  positionBrandSlider(main, activeBrand, prevBrandForSlider);
+}
+
+/* ---------- "Вентиляційне обладнання" ---------- */
+const VENTILATION_BRANDS = [
+  { key: 'systemair', label: 'Systemair', img: 'tile-images/tile-systemair.jpg' }
+];
+function renderVentilationList() {
+  const main = document.getElementById('main');
+  openCalcPanelEl = null;
+  seriesInfoTexts = [];
+
+  if (!ventilationBrand) {
+    const tilesHtml = VENTILATION_BRANDS.map(b => `
+      <div class="menu-tile menu-tile-photo" data-ventilation-brand="${b.key}">
+        <div class="menu-tile-photo-wrap"><img src="${escapeHtml(b.img)}" alt="" loading="lazy"></div>
+        <div class="menu-tile-title">${escapeHtml(b.label)}</div>
+      </div>`).join('');
+    main.innerHTML = '<div class="menu-grid">' + tilesHtml + '</div>';
+    main.querySelectorAll('[data-ventilation-brand]').forEach(el => {
+      el.addEventListener('click', () => {
+        const key = el.getAttribute('data-ventilation-brand');
+        history.pushState({ tab: 'catalog', tile: 'ventilation', vBrand: key }, '', '#ventilation-' + key);
+        ventilationBrand = key;
+        systemairSearchQuery = '';
+        renderVentilationList();
+      });
+    });
+    return;
+  }
+
+  // SYSTEMAIR — ~14000 позицій одним плоским списком (весь європейський каталог), без
+  // групування за серіями. Малювати все одразу — ~14000 DOM-рядків — заморозило б
+  // мобільний браузер, тому список з'являється лише за пошуком (маркування чи артикул),
+  // і навіть тоді обрізається до MAX_RESULTS, щоб не намалювати забагато за раз.
+  const allItems = sheetsData.systemair || [];
+  const q = norm(systemairSearchQuery);
+  const MAX_RESULTS = 150;
+  const matched = [];
+  if (q.length >= 2) {
+    for (let i = 0; i < allItems.length && matched.length < MAX_RESULTS; i++) {
+      const it = allItems[i];
+      if (norm(it.model).includes(q) || norm(it.article).includes(q)) matched.push(it);
+    }
+  }
+  const searchHtml = `<div class="admin-search"><input type="text" id="systemair-search-input" placeholder="Пошук за маркуванням або артикулом..." value="${escapeHtml(systemairSearchQuery)}"></div>`;
+  let bodyHtml;
+  if (allItems.length === 0) {
+    bodyHtml = '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+  } else if (q.length < 2) {
+    bodyHtml = '<div class="empty">Введіть маркування або артикул (від 2 символів)</div>';
+  } else if (matched.length === 0) {
+    bodyHtml = '<div class="empty">Нічого не знайдено</div>';
+  } else {
+    const opts = { cartSourceKey: 'systemair', tileLabel: 'Вентиляційне обладнання', stagger: false };
+    const countHtml = matched.length === MAX_RESULTS
+      ? `<div class="count">Показано перші ${MAX_RESULTS} збігів — уточніть пошук</div>`
+      : `<div class="count">Знайдено: ${matched.length}</div>`;
+    bodyHtml = countHtml + buildSimplePriceRowsHtml(matched, opts);
+  }
+  main.innerHTML = searchHtml + bodyHtml;
+  const input = document.getElementById('systemair-search-input');
+  if (input) {
+    input.addEventListener('input', () => {
+      systemairSearchQuery = input.value;
+      const caret = input.selectionStart;
+      renderVentilationList();
+      const newInput = document.getElementById('systemair-search-input');
+      if (newInput) { newInput.focus(); newInput.setSelectionRange(caret, caret); }
+    });
+  }
+}
+
+/* ---------- "Повітряні завіси" — FRICO ---------- */
+function renderAirCurtainsList() {
+  const main = document.getElementById('main');
+  openCalcPanelEl = null;
+  seriesInfoTexts = [];
+  const items = sheetsData.frico || [];
+  if (items.length === 0) {
+    main.innerHTML = '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+    return;
+  }
+  // Калькулятор по рядку не просили для цієї плитки — лише загальний (checkbox
+  // "підбірка"), за спільним правилом "де є ціна (роздрібна теж) — загальний калькулятор
+  // додаємо". stagger:false — ~1000 позицій, послідовна анімація виглядала б як гальма.
+  const opts = { cartSourceKey: 'frico', tileLabel: 'Повітряні завіси', showCalc: false, priceNote: 'роздрібна', stagger: false };
+  main.innerHTML = '<div class="count">Всього: ' + items.length + '</div>' + buildSimplePriceRowsHtml(items, opts);
+}
+
 /* ---------- "Теплові насоси" ---------- */
 // MHI — фото реального теплового насоса MHI; HeatGuard/WineGuard — не фото товару (у прайсі
 // немає єдиної "картинки бренду"), а намальований логотип-напис (SVG), за проханням
@@ -3809,7 +3992,8 @@ function attachVrfHandlers(main) {
 const HEATPUMPS_BRANDS = [
   { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumpsmhi.jpg' },
   { key: 'heatguard', label: 'HeatGuard', img: 'tile-images/heatguardlogo.svg' },
-  { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguardlogo.svg' }
+  { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguardlogo.svg' },
+  { key: 'ezyqton', label: 'MHI EZY / Q-ton', img: 'tile-images/heatpumps-ezyqton.png' }
 ];
 function renderHeatpumpsList() {
   const main = document.getElementById('main');
@@ -3841,11 +4025,32 @@ function renderHeatpumpsList() {
   } else if (heatpumpsBrand === 'heatguard') {
     items = sheetsData.heatguard || [];
     opts = { cartSourceKey: 'heatguard', tileLabel: 'Теплові насоси', showCalc: false, showCart: false, onRequestLink: false };
-  } else {
+  } else if (heatpumpsBrand === 'wineguard') {
     items = sheetsData.wineguard || [];
     opts = {
       cartSourceKey: 'wineguard', tileLabel: 'Теплові насоси',
       priceNote: 'роздрібна', headerNote: 'Потужність вказана при tвн.+10°C, tзов.+35°C'
+    };
+  } else {
+    items = sheetsData.th_ezy_qton || [];
+    // Фото зовнішнього блока EZY R290 і внутрішніх блоків — ті самі вбудовані в Excel
+    // картинки (extractSeriesImages), що й у Спліт-систем/ККБ, тільки клікабельні лише
+    // для цих двох груп (для решти — Q-ton, баки, аксесуари — фото в файлі просто нема).
+    const groupsWithPhoto = ['Зовнішній блок теплового насоса EZY повітря-вода R290', 'Внутрішні блоки'];
+    opts = {
+      cartSourceKey: 'th_ezy_qton', tileLabel: 'Теплові насоси', showCalc: false, priceNote: 'роздрібна',
+      groupHeaderInfo: (effectiveKey) => {
+        if (!groupsWithPhoto.includes(effectiveKey)) return null;
+        return {
+          text: '',
+          getImages: async () => {
+            const rowGroupMap = await getThEzyRowGroupMap();
+            const map = await extractSeriesImages('TH MHI – EZY та Qton', row => rowGroupMap[row]);
+            const url = map.get(effectiveKey);
+            return url ? [url] : [];
+          }
+        };
+      }
     };
   }
 
@@ -3853,21 +4058,160 @@ function renderHeatpumpsList() {
   main.innerHTML = '<div class="count">Всього: ' + items.length + '</div>' + rowsHtml;
 }
 
-/* opts.actionLabel/opts.onAction — необов'язкова кнопка-дія під текстом (використовує
-   таблиця сумісності MHI для "Виділити рядок/стовпчик" — див. attachCompatTableHandlers);
-   решта викликів (описи серій у прайсі) її не передають, кнопка лишається прихованою. */
-function openSeriesInfo(title, text, opts) {
+/* ---------- Фото серій/блоків із вбудованих в Excel картинок (ПОБУТОВІ/GALACTIC/Galactic
+   ККБ) ---------- */
+async function ensurePriceRawBuffer() {
+  if (priceRawBuffer) return priceRawBuffer;
+  try {
+    const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
+    if (!res.ok) return null;
+    priceRawBuffer = await res.arrayBuffer();
+    return priceRawBuffer;
+  } catch (e) {
+    return null;
+  }
+}
+const IMAGE_EXT_MIME = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' };
+async function xmlFromZip(zip, path) {
+  const entry = zip.file(path);
+  if (!entry) return null;
+  const text = await entry.async('string');
+  return new DOMParser().parseFromString(text, 'text/xml');
+}
+/* Повертає Map<groupLabel, blobUrl> для аркуша sheetName — розбір drawings/media робиться
+   один раз за сесію (кеш seriesImageCache), reuse вже завантаженого price.xlsx.
+   rowToGroup(row0based) — яка серія/група "діяла" на цьому рядку аркуша (те саме, що бачить
+   користувач у segment-header при звичайному рендері прайсу) — приходить іззовні, бо для
+   різних аркушів рахується по-різному (parseSheet-стан з rowGroupMap чи прямий regex по
+   моделі, див. виклики нижче). */
+async function extractSeriesImages(sheetName, rowToGroup) {
+  if (seriesImageCache[sheetName]) return seriesImageCache[sheetName];
+  const promise = (async () => {
+    try {
+      const buf = await ensurePriceRawBuffer();
+      if (!buf) return new Map();
+      const zip = await JSZip.loadAsync(buf);
+
+      const wbXml = await xmlFromZip(zip, 'xl/workbook.xml');
+      if (!wbXml) return new Map();
+      const sheetEls = wbXml.getElementsByTagName('sheet');
+      let rid = null;
+      for (let i = 0; i < sheetEls.length; i++) {
+        if (sheetEls[i].getAttribute('name') === sheetName) { rid = sheetEls[i].getAttribute('r:id'); break; }
+      }
+      if (!rid) return new Map();
+
+      const wbRelsXml = await xmlFromZip(zip, 'xl/_rels/workbook.xml.rels');
+      if (!wbRelsXml) return new Map();
+      const relEls = wbRelsXml.getElementsByTagName('Relationship');
+      let sheetTarget = null;
+      for (let i = 0; i < relEls.length; i++) {
+        if (relEls[i].getAttribute('Id') === rid) { sheetTarget = relEls[i].getAttribute('Target'); break; }
+      }
+      if (!sheetTarget) return new Map();
+      const sheetFileName = sheetTarget.split('/').pop();
+
+      const sheetRelsXml = await xmlFromZip(zip, 'xl/worksheets/_rels/' + sheetFileName + '.rels');
+      if (!sheetRelsXml) return new Map();
+      const sheetRelEls = sheetRelsXml.getElementsByTagName('Relationship');
+      let drawingTarget = null;
+      for (let i = 0; i < sheetRelEls.length; i++) {
+        const type = sheetRelEls[i].getAttribute('Type') || '';
+        if (type.indexOf('drawing') !== -1) { drawingTarget = sheetRelEls[i].getAttribute('Target'); break; }
+      }
+      if (!drawingTarget) return new Map();
+      const drawingFileName = drawingTarget.split('/').pop();
+
+      const drawingXml = await xmlFromZip(zip, 'xl/drawings/' + drawingFileName);
+      if (!drawingXml) return new Map();
+      const anchors = [];
+      ['xdr:twoCellAnchor', 'xdr:oneCellAnchor'].forEach(tag => {
+        const els = drawingXml.getElementsByTagName(tag);
+        for (let i = 0; i < els.length; i++) {
+          const anchor = els[i];
+          const from = anchor.getElementsByTagName('xdr:from')[0];
+          if (!from) continue;
+          const rowEl = from.getElementsByTagName('xdr:row')[0];
+          const row = rowEl ? parseInt(rowEl.textContent, 10) : null;
+          const blip = anchor.getElementsByTagName('a:blip')[0];
+          const embedId = blip ? blip.getAttribute('r:embed') : null;
+          if (row !== null && embedId) anchors.push({ row, embedId });
+        }
+      });
+      if (!anchors.length) return new Map();
+
+      const drawingRelsXml = await xmlFromZip(zip, 'xl/drawings/_rels/' + drawingFileName + '.rels');
+      if (!drawingRelsXml) return new Map();
+      const drawRelEls = drawingRelsXml.getElementsByTagName('Relationship');
+      const idToImage = {};
+      for (let i = 0; i < drawRelEls.length; i++) {
+        idToImage[drawRelEls[i].getAttribute('Id')] = drawRelEls[i].getAttribute('Target').split('/').pop();
+      }
+
+      // Рядок 0 у всіх трьох аркушах — логотипи/декоративні шапки, не стосуються жодної
+      // конкретної серії, тому свідомо відкидаємо. Анкери йдуть за зростанням рядка, тому
+      // при збігу групи в Map лишається образ з БЛИЖЧОГО (пізнішого) анкера — саме він
+      // зазвичай і є "справжнім" фото серії, а не випадковий банер над нею.
+      anchors.sort((a, b) => a.row - b.row);
+      const result = new Map();
+      for (const a of anchors) {
+        if (a.row === 0) continue;
+        const imgFile = idToImage[a.embedId];
+        if (!imgFile) continue;
+        const ext = (imgFile.split('.').pop() || '').toLowerCase();
+        const mime = IMAGE_EXT_MIME[ext];
+        if (!mime) continue; // напр. .emf — браузер не вміє показати
+        const group = rowToGroup(a.row);
+        if (!group) continue;
+        const entry = zip.file('xl/media/' + imgFile);
+        if (!entry) continue;
+        const bytes = await entry.async('arraybuffer');
+        const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+        result.set(group, url);
+      }
+      return result;
+    } catch (e) {
+      return new Map();
+    }
+  })();
+  seriesImageCache[sheetName] = promise;
+  return promise;
+}
+
+/* rowGroupMap для Спліт-систем — на "теплому" вході (прайс узятий з localStorage-кешу,
+   без мережевого buildSheetsData() цієї сесії) seriesRowGroupMaps лишається порожнім, бо
+   кеш зберігає лише вже розібраний sheetsData, а не цю службову мапу. Тому рахуємо її тут
+   самостійно (той самий parseSheet(), ті самі опції з CATALOG_TILES) з сирого буфера
+   price.xlsx — незалежно від того, чи був цієї сесії мережевий розбір прайсу. Кешується
+   в тому самому seriesRowGroupMaps, тож рахується щонайбільше раз за сесію на бренд. */
+async function getRowGroupMapForSplitTile(brand) {
+  const cacheKey = 'split_' + brand;
+  if (seriesRowGroupMaps[cacheKey]) return seriesRowGroupMaps[cacheKey];
+  const buf = await ensurePriceRawBuffer();
+  if (!buf) return [];
+  const tile = CATALOG_TILES.find(t => t.id === 'split');
+  const cfg = tile && tile[brand];
+  if (!cfg) return [];
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+  const sheet = wb.Sheets[cfg.sheet];
+  if (!sheet) return [];
+  let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+  if (cfg.splitMarker) rows = sliceBySplitMarker(rows, cfg.splitMarker, cfg.splitSide);
+  const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence });
+  seriesRowGroupMaps[cacheKey] = result.rowGroupMap;
+  return result.rowGroupMap;
+}
+
+function openSeriesInfo(title, text, images) {
   document.getElementById('series-info-title').textContent = title;
   document.getElementById('series-info-body').textContent = text;
-  const actionsEl = document.getElementById('series-info-actions');
-  const actionBtn = document.getElementById('series-info-action-btn');
-  if (opts && opts.actionLabel && opts.onAction) {
-    actionBtn.textContent = opts.actionLabel;
-    actionBtn.onclick = () => { opts.onAction(); closeSeriesInfo(); };
-    actionsEl.hidden = false;
+  const imagesEl = document.getElementById('series-info-images');
+  if (images && images.length) {
+    imagesEl.innerHTML = images.map(src => `<img src="${escapeHtml(src)}" alt="">`).join('');
+    imagesEl.hidden = false;
   } else {
-    actionsEl.hidden = true;
-    actionBtn.onclick = null;
+    imagesEl.innerHTML = '';
+    imagesEl.hidden = true;
   }
   document.getElementById('series-info-overlay').classList.add('show');
 }
@@ -3898,7 +4242,18 @@ document.getElementById('main').addEventListener('click', function(e) {
   const infoHeader = e.target.closest('.segment-header-info');
   if (infoHeader) {
     const info = seriesInfoTexts[Number(infoHeader.getAttribute('data-info-idx'))];
-    if (info) openSeriesInfo(info.title, info.text);
+    if (info) {
+      openSeriesInfo(info.title, info.text); // текст одразу; фото (якщо є) домалюється нижче
+      if (info.getImages) {
+        info.getImages().then(images => {
+          // Overlay могли встигнути закрити чи відкрити на іншій серії, поки фото
+          // вантажилось (unzip — не миттєвий) — домальовуємо, лише якщо це та сама серія.
+          if (images.length && document.getElementById('series-info-title').textContent === info.title) {
+            openSeriesInfo(info.title, info.text, images);
+          }
+        });
+      }
+    }
     return;
   }
   // ⓘ біля рядка "Теплові насоси"/VRF — той самий спливаючий блок "детальніше", що й для
@@ -3927,6 +4282,12 @@ document.getElementById('main').addEventListener('click', function(e) {
   if (zoneEl) {
     const model = zoneEl.getAttribute('data-model');
     if (model) window.open('https://www.google.com/search?q=' + encodeURIComponent(model), '_blank');
+    return;
+  }
+  const articleLinkBtn = e.target.closest('.row-article-link');
+  if (articleLinkBtn) {
+    const sku = articleLinkBtn.getAttribute('data-sku');
+    if (sku) openFricoProductPage(sku);
     return;
   }
   const toggleBtn = e.target.closest('.calc-toggle');
@@ -4136,19 +4497,9 @@ document.getElementById('main').addEventListener('change', function(e) {
 
 /* Перерендер Кабінету при зміні стану авторизації (напр., після виходу в іншій вкладці);
    а також перерахунок доступу до цін і перерендер прайсу, якщо він саме зараз відкритий —
-   щоб одразу після входу/реєстрації/виходу ціни з'явились чи зникли без ручного оновлення.
-
-   suppressCabinetAutoRerender — захист від гонки станів: sb.auth.signUp()/
-   signInWithPassword() у handleRegister()/handleReregister() встановлюють сесію одразу,
-   тому цей listener спрацьовує НЕГАЙНО (ще до того, як сам handleRegister() встигне
-   записати рядок profiles) і намагається завантажити профіль, якого ще нема — показує
-   хибне "Не вдалося завантажити профіль", перезаписуючи форму реєстрації просто в неї
-   ще не встиг відпрацювати. handleRegister()/handleReregister() самі викликають
-   renderCabinetTab() у потрібний момент (після того, як профіль справді збережено), тому
-   на час свого виконання просять цей listener не втручатись. */
-let suppressCabinetAutoRerender = false;
+   щоб одразу після входу/реєстрації/виходу ціни з'явились чи зникли без ручного оновлення. */
 sb.auth.onAuthStateChange(function() {
-  if (currentTab === 'cabinet' && !suppressCabinetAutoRerender) renderCabinetTab();
+  if (currentTab === 'cabinet') renderCabinetTab();
   refreshAccessState().then(function () {
     if (currentTab === 'catalog' && activeTile) renderCatalogList();
   });
@@ -4162,20 +4513,17 @@ window.addEventListener('popstate', function(event) {
     if (state.tab === 'catalog') {
       activeTile = state.tile || null; activeBrand = 'mhi';
       heatpumpsBrand = state.hpBrand || null;
+      ventilationBrand = state.vBrand || null;
       vrfMhiSource = 'outdoor'; vrfGalSide = 'outdoor';
     }
-    if (state.tab === 'info') {
-      infoSection = state.section || null; infoBrand = state.brand || null;
-      mhiCompatFolder = state.compatFolder || null; mhiCompatSheet = state.compatSheet || 'rac';
-    }
+    if (state.tab === 'info') { infoSection = state.section || null; infoBrand = state.brand || null; }
     renderCurrentTab();
   } else {
     activeTile = null;
     infoSection = null;
     infoBrand = null;
-    mhiCompatFolder = null;
-    mhiCompatSheet = 'rac';
     heatpumpsBrand = null;
+    ventilationBrand = null;
     vrfMhiSource = 'outdoor'; vrfGalSide = 'outdoor';
     if (currentTab === 'catalog') renderCatalogView();
     else if (currentTab === 'info') renderInfoTab();
@@ -4299,12 +4647,9 @@ async function refreshAccessState() {
   try {
     const { data: sessionData } = await sb.auth.getSession();
     const session = sessionData ? sessionData.session : null;
-    if (!session) {
-      hasFullAccess = false;
-    } else {
-      const { data: profile } = await sb.from('profiles').select('status').eq('id', session.user.id).single();
-      hasFullAccess = !!profile && !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status);
-    }
+    if (!session) { hasFullAccess = false; return hasFullAccess; }
+    const { data: profile } = await sb.from('profiles').select('status').eq('id', session.user.id).single();
+    hasFullAccess = !!profile && !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status);
   } catch (e) {
     hasFullAccess = false;
   }
@@ -4522,12 +4867,8 @@ async function renderContactsTab() {
 const INFO_SECTIONS = [
   { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.jpg' },
   { id: 'mhi-errors', label: 'Коди помилок MHI', img: 'tile-images/tile-error-codes.jpg' },
-  { id: 'mhi-compat', label: 'Сумісність блоків MHI', img: 'tile-images/tilecompat.jpg', adminOnly: true },
+  { id: 'mhi-compat', label: 'Сумісність блоків MHI' },
   { id: 'techinfo', label: 'Технічна інфа' }
-];
-const MHI_COMPAT_FOLDERS = [
-  { id: 'household', label: 'Побутові та мультиспліти', img: 'tile-images/tilecompathousehold.jpg' },
-  { id: 'semi', label: 'Напівпром', img: 'tile-images/tilecompatsemi.jpg' }
 ];
 const INFO_BRANDS = [
   { id: 'mhi', label: 'Mitsubishi Heavy', img: 'tile-images/catalog-preview-mhi.jpg' },
@@ -4563,23 +4904,16 @@ function clearCatalogDownloaded(brand) {
   try { localStorage.removeItem(catalogDownloadedKey(brand)); } catch (e) {}
 }
 
-async function renderInfoTab() {
+function renderInfoTab() {
   const backBtn = document.getElementById('back-btn');
   const title = document.getElementById('title');
 
   if (!infoSection) {
     backBtn.style.display = 'none';
     title.textContent = 'Інфо';
-    // adminOnly-пункти (зараз лише "Сумісність блоків MHI") — не просто приховані, а
-    // взагалі не рендеряться в меню для звичайного користувача.
-    const role = await getCurrentProfileRole();
-    const isAdmin = role === 'regional_admin' || role === 'super_admin';
-    const visibleSections = INFO_SECTIONS.filter(s => !s.adminOnly || isAdmin);
-    renderInfoMenu(visibleSections, (id) => {
+    renderInfoMenu(INFO_SECTIONS, (id) => {
       infoSection = id;
       infoBrand = null;
-      mhiCompatFolder = null;
-      mhiCompatSheet = 'rac';
       history.pushState({ tab: 'info', section: id, brand: null }, '', '#info-' + id);
       renderInfoTab();
     });
@@ -4595,7 +4929,8 @@ async function renderInfoTab() {
 
   if (infoSection === 'mhi-compat') {
     backBtn.style.display = 'flex';
-    await renderMhiCompatFolders();
+    title.textContent = 'Сумісність блоків MHI';
+    renderMhiCompatScreen();
     return;
   }
 
@@ -4675,358 +5010,6 @@ function renderInfoDetail() {
     main.innerHTML =
       '<div class="empty">Розділ у розробці.<br>Найближчим часом тут з’являться технічні характеристики, інструкції та сертифікати.</div>';
   }
-}
-
-/* ---------- Сумісність блоків MHI (розділ "Інфо", тільки для адмінів) ----------
-   На відміну від видаленої раніше версії — тут НІЯКОГО розбору/зіставлення маркувань.
-   Дані data/mhi-compat-tables.json — це просто вивантажені один-в-один таблиці з
-   дилерських xlsx MHI (кожна колонка/рядок прайсу лишається такою, як у файлі), а
-   інтерфейс — таблиця із закріпленими шапкою і першою колонкою (як "заморозка областей"
-   в Excel), користувач сам гортає і дивиться потрібний перетин. Дані завантажуються
-   (fetch) лише коли адмін відкриває цей розділ, на старт застосунку не впливають. */
-function cleanCompatLabel(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
-
-/* Переклад — лише текст, який реально читає людина (назви розділів, розгорнуті описи
-   рядків "Compatibility for PAC", значення Yes/No/N/A, примітки виробника). Самі коди
-   моделей (SRK…, RC-E3 тощо) — НЕ чіпаємо, це точні позначення з документації MHI, не
-   слова. */
-const COMPAT_GROUP_UA = {
-  'Wired Remote Controller': 'Проводовий пульт керування',
-  'Outdoor unit': 'Зовнішній блок',
-  'Compatibility for PAC': 'Сумісність для PAC'
-};
-function translateCompatGroup(s) {
-  const clean = cleanCompatLabel(s);
-  return COMPAT_GROUP_UA[clean] || clean;
-}
-const COMPAT_CODE_UA = {
-  'Plural use (twin, triple, double-twin) (same model, same capacity)':
-    'Використання кількох блоків (twin, triple, double-twin) (однакова модель, однакова потужність)',
-  'V-multi use (different model, different capacity )':
-    'Використання V-multi (різна модель, різна потужність)',
-  'SC-BIKN-E necessity (For connecting with RC-E3, E4, E5, RC-EX1)':
-    'Потреба в SC-BIKN-E (для підключення з RC-E3, E4, E5, RC-EX1)',
-  'SC-BIKN2-E necessity (For connecting with RC-E3, E4, E5, RC-EX1,EX1A,EX3,EX3A, EX3D, ES1)':
-    'Потреба в SC-BIKN2-E (для підключення з RC-E3, E4, E5, RC-EX1, EX1A, EX3, EX3A, EX3D, ES1)',
-  'SC-BIKN2-BL necessity (For connecting with RC-E3, E4, E5, RC-EX1)':
-    'Потреба в SC-BIKN2-BL (для підключення з RC-E3, E4, E5, RC-EX1)',
-  'SC-BIKN2-BL necessity (For connecting with RC-E3, E4, E5, RC-EX1,EX1A,EX3,EX3A, EX3D, ES1)':
-    'Потреба в SC-BIKN2-BL (для підключення з RC-E3, E4, E5, RC-EX1, EX1A, EX3, EX3A, EX3D, ES1)'
-};
-function translateCompatCode(s) {
-  const clean = cleanCompatLabel(s);
-  return COMPAT_CODE_UA[clean] || clean;
-}
-const COMPAT_YESNO_UA = { 'Yes': 'Так', 'No': 'Ні', 'N/A': 'Н/Д' };
-function translateCompatCell(v) {
-  const s = cleanCompatLabel(v);
-  const m = s.match(/^(Yes|No|N\/A)\b(.*)$/);
-  return m ? COMPAT_YESNO_UA[m[1]] + m[2] : s;
-}
-const COMPAT_NOTES_UA = {
-  '- Mixing old and new model indoor units in one system is prohibited. (Twin, Triple, Double twin, V-multi)':
-    '- Змішувати старі та нові моделі внутрішніх блоків в одній системі заборонено. (Twin, Triple, Double twin, V-multi)',
-  '- Capacity must be coincident between IU and OU.':
-    '- Потужність внутрішнього (IU) і зовнішнього (OU) блоків повинна збігатися.',
-  '*1： SC-BIKN-E is necessary for the use of wired remote controller.':
-    '*1: для використання проводового пульта керування необхідний SC-BIKN-E.',
-  '*2: Only SRK100ZR-S will be connectable with FDC200VSA. SC-BIKN-E is necessary for the use of wired remote controller.':
-    '*2: з FDC200VSA можна з’єднати лише SRK100ZR-S. Для використання проводового пульта керування необхідний SC-BIKN-E.',
-  '*3: No technical data. It may have risk of dew drop, or insufficient cooling/heating.':
-    '*3: немає технічних даних. Можливий ризик випадання конденсату або недостатнього охолодження/обігріву.',
-  '*R1 : Some new functions by RC-EX3 is not available.':
-    '*R1: деякі нові функції RC-EX3 недоступні.',
-  '*R2 : Some new functions by RC-EX3A or RC-ES1 (App ver 1.0.0) is not available.':
-    '*R2: деякі нові функції RC-EX3A або RC-ES1 (версія застосунку 1.0.0) недоступні.',
-  '*R3 : Draft prevention panel, motion sensor cannot be operated.':
-    '*R3: панель захисту від протягів і датчик руху не можуть керуватись.',
-  '*R4 : RC-EXZ3A can be used with only FDUM/FDU**VH/A model':
-    '*R4: RC-EXZ3A можна використовувати лише з моделями FDUM/FDU**VH/A.',
-  'FDUM/FDU**VH/A model can be used with below out door unit.':
-    'Моделі FDUM/FDU**VH/A можна використовувати із зовнішніми блоками, переліченими нижче:',
-  '*R5 : Some function for refrigerant leakage is not available.':
-    '*R5: деякі функції для витоку хладагенту недоступні.',
-  '*R6 : (For WF MODELS) compatabilityNot official but technically compatible':
-    '*R6: для моделей WF сумісність неофіційна, але технічно можлива.',
-  '*Note:For SRK71ZR-WF AND SRK100ZR-WF Wifi enabled models it is needed to':
-    '*Примітка: для моделей SRK71ZR-WF і SRK100ZR-WF з увімкненим Wi-Fi потрібно відключити',
-  'take off the Wifi connection to connect the wired remote controller.':
-    'Wi-Fi-з’єднання, щоб підключити проводовий пульт керування.',
-  '*R7 : Some new functions by RC-EX3D is not available.':
-    '*R7: деякі нові функції RC-EX3D недоступні.'
-};
-function translateCompatNote(s) { return COMPAT_NOTES_UA[s] || s; }
-
-async function loadMhiCompatTables() {
-  if (mhiCompatData && mhiCompatData !== 'error') return mhiCompatData;
-  mhiCompatData = 'loading';
-  try {
-    const resp = await fetch('data/mhi-compat-tables.json');
-    if (!resp.ok) throw new Error('http ' + resp.status);
-    mhiCompatData = await resp.json();
-  } catch (e) {
-    mhiCompatData = 'error';
-  }
-  return mhiCompatData;
-}
-
-async function renderMhiCompatFolders() {
-  const title = document.getElementById('title');
-  // Захист не лише на рівні пункту меню (renderInfoTab ховає його для звичайних
-  // користувачів), а й тут — щоб пряме посилання-хеш на цей розділ теж нікуди не пускало.
-  const role = await getCurrentProfileRole();
-  if (role !== 'regional_admin' && role !== 'super_admin') {
-    infoSection = null;
-    history.replaceState({ tab: 'info', section: null, brand: null }, '', '#info');
-    renderInfoTab();
-    return;
-  }
-
-  if (!mhiCompatFolder) {
-    title.textContent = 'Сумісність блоків MHI';
-    renderInfoMenu(MHI_COMPAT_FOLDERS, (id) => {
-      mhiCompatFolder = id;
-      mhiCompatSheet = 'rac';
-      history.pushState({ tab: 'info', section: 'mhi-compat', compatFolder: id, compatSheet: 'rac' }, '', '#info-mhi-compat-' + id);
-      renderInfoTab();
-    });
-    return;
-  }
-
-  const folder = MHI_COMPAT_FOLDERS.find(f => f.id === mhiCompatFolder);
-  title.textContent = folder ? folder.label : 'Сумісність блоків MHI';
-  await renderMhiCompatTables();
-}
-
-function compatCellClass(v) {
-  const s = cleanCompatLabel(v);
-  if (!s || s === '-') return 'compat-cell compat-cell-no';
-  if (s.charAt(0) === '◎') return 'compat-cell compat-cell-yes';
-  if (s.charAt(0) === '〇') return 'compat-cell compat-cell-maybe';
-  if (s.charAt(0) === 'X' || s.charAt(0) === '×') return 'compat-cell compat-cell-no2';
-  return 'compat-cell';
-}
-
-const COMPAT_LEGEND_HTML =
-  '<span class="compat-cell-yes">◎</span> — офіційно сумісно&nbsp;&nbsp;·&nbsp;&nbsp;' +
-  '<span class="compat-cell-maybe">〇</span> — технічно сумісно (неофіційна комбінація)&nbsp;&nbsp;·&nbsp;&nbsp;' +
-  '<span class="compat-cell-no2">X</span> / <span class="compat-cell-no">−</span> — несумісно або немає даних';
-
-function renderCompatNotesHtml(notes) {
-  if (!notes || !notes.length) return '';
-  return `
-    <div class="compat-notes-wrap">
-      <button type="button" class="compat-notes-toggle" data-compat-notes-toggle>Примітки виробника (${notes.length}) ▾</button>
-      <div class="compat-notes-body" data-compat-notes-body hidden>${notes.map(n => `<div>${escapeHtml(translateCompatNote(n))}</div>`).join('')}</div>
-    </div>`;
-}
-
-/* Проста таблиця (один рядок шапки-колонок) — використовується для RAC і для FD.
-   opts.rowGroupOf(row) повертає текст групи-розділювача для рядка (або '' — без групи). */
-function renderSimpleCompatTableHtml(table, opts) {
-  opts = opts || {};
-  const colsHtml = table.cols.map((c, i) => `<th class="compat-colhead" data-col-idx="${i}">${escapeHtml(cleanCompatLabel(c))}</th>`).join('');
-  let lastGroup = null;
-  const rowsHtml = table.rows.map(r => {
-    const groupLabel = opts.rowGroupOf ? cleanCompatLabel(opts.rowGroupOf(r)) : '';
-    let groupHtml = '';
-    if (groupLabel && groupLabel !== lastGroup) {
-      lastGroup = groupLabel;
-      groupHtml = `<tr class="compat-group-row"><td class="compat-group-cell" colspan="${table.cols.length + 1}">${escapeHtml(groupLabel)}</td></tr>`;
-    } else if (!groupLabel) {
-      lastGroup = null;
-    }
-    const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(translateCompatCell(v))}</td>`).join('');
-    return groupHtml + `<tr><td class="compat-rowhead">${escapeHtml(translateCompatCode(r.code))}</td>${cellsHtml}</tr>`;
-  }).join('');
-  return `
-    <div class="compat-toolbar">
-      <input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…">
-      <button type="button" class="compat-clear-btn" data-compat-clear>Очистити</button>
-    </div>
-    <div class="compat-legend">${COMPAT_LEGEND_HTML}</div>
-    <div class="compat-table-wrap">
-      <table class="compat-table">
-        <thead><tr><th class="compat-corner">Маркування</th>${colsHtml}</tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-    </div>
-    ${renderCompatNotesHtml(table.notes)}`;
-}
-
-/* RAC MULTI — двоярусна шапка колонок: верхній ряд — серія внутрішнього блока (з
-   colspan на суміжні стовпці однієї серії), нижній — конкретний типорозмір. */
-function renderMultiCompatTableHtml(table) {
-  const cols = table.cols;
-  const groupRuns = [];
-  cols.forEach(c => {
-    const last = groupRuns[groupRuns.length - 1];
-    if (last && last.group === c.group) last.span++;
-    else groupRuns.push({ group: c.group, span: 1, start: groupRuns.length ? groupRuns[groupRuns.length - 1].start + groupRuns[groupRuns.length - 1].span : 0 });
-  });
-  const groupRowHtml = groupRuns.map(g => `<th class="compat-colhead-group" colspan="${g.span}" data-col-start="${g.start}" data-col-span="${g.span}">${escapeHtml(cleanCompatLabel(g.group))}</th>`).join('');
-  const sizeRowHtml = cols.map((c, i) => `<th class="compat-colhead-size" data-col-idx="${i}">${escapeHtml(cleanCompatLabel(c.size))}</th>`).join('');
-  const rowsHtml = table.rows.map(r => {
-    const cellsHtml = r.cells.map(v => `<td class="${compatCellClass(v)}">${escapeHtml(translateCompatCell(v))}</td>`).join('');
-    return `<tr><td class="compat-rowhead">${escapeHtml(cleanCompatLabel(r.code))}</td>${cellsHtml}</tr>`;
-  }).join('');
-  return `
-    <div class="compat-toolbar">
-      <input type="text" class="compat-filter-input" placeholder="Пошук за маркуванням…">
-      <button type="button" class="compat-clear-btn" data-compat-clear>Очистити</button>
-    </div>
-    <div class="compat-legend">${COMPAT_LEGEND_HTML}</div>
-    <div class="compat-table-wrap compat-table-wrap-multi">
-      <table class="compat-table compat-table-multi">
-        <thead>
-          <tr><th class="compat-corner" rowspan="2">Зовнішній блок</th>${groupRowHtml}</tr>
-          <tr>${sizeRowHtml}</tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-    </div>`;
-}
-
-/* "Виділити рядок/стовпчик" — кнопка у спливаючому вікні повної назви (openSeriesInfo).
-   Рядок і стовпчик підсвічуються НЕЗАЛЕЖНО один від одного (виділення другої осі не
-   скидає першу) — саме так користувач бачить перетин двох підсвічених смуг як "відповідь",
-   не гортаючи весь час туди-сюди між закріпленими шапкою і колонкою. */
-function highlightCompatRow(main, rowheadEl) {
-  main.querySelectorAll('.compat-row-highlight').forEach(el => el.classList.remove('compat-row-highlight'));
-  const tr = rowheadEl.closest('tr');
-  if (!tr) return;
-  Array.from(tr.children).forEach(td => td.classList.add('compat-row-highlight'));
-}
-function highlightCompatCol(main, startIdx, span) {
-  const wrap = main.querySelector('.compat-table-wrap');
-  if (!wrap) return;
-  wrap.querySelectorAll('.compat-col-highlight').forEach(el => el.classList.remove('compat-col-highlight'));
-  for (let i = startIdx; i < startIdx + span; i++) {
-    wrap.querySelectorAll(`[data-col-idx="${i}"]`).forEach(el => el.classList.add('compat-col-highlight'));
-    wrap.querySelectorAll('tbody tr:not(.compat-group-row)').forEach(tr => {
-      const td = tr.children[i + 1];
-      if (td) td.classList.add('compat-col-highlight');
-    });
-  }
-}
-function clearCompatHighlights(main) {
-  main.querySelectorAll('.compat-row-highlight, .compat-col-highlight').forEach(el => {
-    el.classList.remove('compat-row-highlight', 'compat-col-highlight');
-  });
-}
-
-/* Пошук — навмисно НЕ розбір/зіставлення маркувань (саме це багатило видалену версію
-   фічі), а звичайний пошук підрядка по тексту заголовків: підсвічує всі рядки/колонки,
-   де знайдено збіг, і прокручує таблицю до першого з них. */
-function attachCompatTableHandlers(main) {
-  main.querySelectorAll('.compat-filter-input').forEach(input => {
-    input.addEventListener('input', () => {
-      const wrap = main.querySelector('.compat-table-wrap');
-      if (!wrap) return;
-      const q = norm(input.value.trim());
-      wrap.querySelectorAll('.compat-match').forEach(el => el.classList.remove('compat-match'));
-      if (!q) return;
-      let firstRow = null, firstCol = null;
-      wrap.querySelectorAll('.compat-rowhead').forEach(el => {
-        if (norm(el.textContent).includes(q)) { el.classList.add('compat-match'); if (!firstRow) firstRow = el; }
-      });
-      wrap.querySelectorAll('.compat-colhead, .compat-colhead-group, .compat-colhead-size').forEach(el => {
-        if (norm(el.textContent).includes(q)) { el.classList.add('compat-match'); if (!firstCol) firstCol = el; }
-      });
-      // Віднімаємо реальний розмір закріплених шапки/першої колонки (не фіксоване число) —
-      // інакше знайдений збіг ховається ПІД закріпленою панеллю замість того, щоб опинитись
-      // одразу після неї.
-      if (firstRow) {
-        const totalHeadH = Array.from(wrap.querySelectorAll('thead tr')).reduce((sum, tr) => sum + tr.getBoundingClientRect().height, 0);
-        wrap.scrollTop = Math.max(0, firstRow.offsetTop - totalHeadH - 6);
-      }
-      if (firstCol) {
-        const rowheadW = wrap.querySelector('.compat-rowhead').getBoundingClientRect().width;
-        wrap.scrollLeft = Math.max(0, firstCol.offsetLeft - rowheadW - 6);
-      }
-    });
-  });
-  main.querySelectorAll('[data-compat-notes-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const body = btn.nextElementSibling;
-      if (!body) return;
-      body.hidden = !body.hidden;
-    });
-  });
-  main.querySelectorAll('[data-compat-clear]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      main.querySelectorAll('.compat-filter-input').forEach(input => { input.value = ''; });
-      main.querySelectorAll('.compat-match').forEach(el => el.classList.remove('compat-match'));
-      clearCompatHighlights(main);
-    });
-  });
-  // Заголовки колонок і перша колонка обрізані (щоб таблиця лишалась компактною) — тап
-  // показує повний текст у вже наявному спливаючому вікні "детальніше", з кнопкою
-  // "Виділити", яка підсвічує весь рядок/стовпчик — щоб легше знайти перетин.
-  main.querySelectorAll('.compat-rowhead').forEach(el => {
-    el.addEventListener('click', () => {
-      openSeriesInfo('Маркування', el.textContent.trim(), {
-        actionLabel: 'Виділити рядок',
-        onAction: () => highlightCompatRow(main, el)
-      });
-    });
-  });
-  main.querySelectorAll('.compat-colhead, .compat-colhead-size').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.getAttribute('data-col-idx'), 10);
-      openSeriesInfo('Маркування', el.textContent.trim(), {
-        actionLabel: 'Виділити стовпчик',
-        onAction: () => highlightCompatCol(main, idx, 1)
-      });
-    });
-  });
-  main.querySelectorAll('.compat-colhead-group').forEach(el => {
-    el.addEventListener('click', () => {
-      const start = parseInt(el.getAttribute('data-col-start'), 10);
-      const span = parseInt(el.getAttribute('data-col-span'), 10) || 1;
-      openSeriesInfo('Маркування', el.textContent.trim(), {
-        actionLabel: 'Виділити стовпчики',
-        onAction: () => highlightCompatCol(main, start, span)
-      });
-    });
-  });
-}
-
-async function renderMhiCompatTables() {
-  const main = document.getElementById('main');
-  main.innerHTML = '<div class="empty">Завантаження таблиці…</div>';
-  const data = await loadMhiCompatTables();
-  if (data === 'error') {
-    main.innerHTML = '<div class="empty">Не вдалося завантажити таблицю сумісності. Перевірте з’єднання і спробуйте ще раз.</div>';
-    return;
-  }
-
-  if (mhiCompatFolder === 'semi') {
-    main.innerHTML = renderSimpleCompatTableHtml(data.fd, {
-      rowGroupOf: r => r.sub ? (translateCompatGroup(r.group) + ' — ' + r.sub) : translateCompatGroup(r.group)
-    });
-    attachCompatTableHandlers(main);
-    return;
-  }
-
-  const sheets = [{ key: 'rac', label: 'RAC (спліт)' }, { key: 'racMulti', label: 'RAC MULTI' }];
-  const toggleHtml = `<div class="brand-toggle">${sheets.map(s =>
-    `<button type="button" class="brand-toggle-btn${mhiCompatSheet === s.key ? ' active' : ''}" data-compat-sheet="${s.key}">${escapeHtml(s.label)}</button>`
-  ).join('')}</div>`;
-  const bodyHtml = mhiCompatSheet === 'racMulti'
-    ? renderMultiCompatTableHtml(data.racMulti)
-    : renderSimpleCompatTableHtml(data.rac, { rowGroupOf: r => translateCompatGroup(r.family) });
-  main.innerHTML = toggleHtml + bodyHtml;
-  main.querySelectorAll('[data-compat-sheet]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const key = btn.getAttribute('data-compat-sheet');
-      if (key === mhiCompatSheet) return;
-      mhiCompatSheet = key;
-      history.replaceState({ tab: 'info', section: 'mhi-compat', compatFolder: mhiCompatFolder, compatSheet: key }, '', '#info-mhi-compat-' + mhiCompatFolder + '-' + key);
-      renderMhiCompatTables();
-    });
-  });
-  attachCompatTableHandlers(main);
 }
 
 /* ---------- Коди помилок Mitsubishi Heavy Industries (розділ "Інфо") ----------
@@ -5203,6 +5186,417 @@ async function searchMhiByCode() {
     return;
   }
   if (slot) slot.innerHTML = renderMhiResultsHtml();
+}
+
+/* ---------- Сумісність блоків MHI (розділ "Інфо") ----------
+   Дані — заздалегідь розібраний офлайн (ETL) result з дилерської таблиці сумісності
+   MHI (Compatibility of RAC_20260409_Customers.xlsx, листи RAC + RAC MULTI), у файлі
+   data/mhi-compat.json — сам xlsx НЕ в репозиторії (внутрішній документ MHI, не
+   публічна документація). Правила розбору маркувань — claude/mhi-compat-etl.js
+   (ТЗ "Розшифровка совместимости блоков RAC (MHI)"); parseMarking/checkCompatibility
+   тут — той самий алгоритм, продубльований під рантайм (ETL working with the table,
+   тут — з вводом користувача), щоб не розсинхронитись. Файл підвантажується (fetch)
+   лише коли користувач відкриває цей розділ — на старт застосунку не впливає. */
+let mhiCompatData = null;   // null (ще не завантажено) | 'loading' | 'error' | розібраний об'єкт
+let mhiCompatResult = null; // null | 'needinput' | {kind:...}
+
+const MHI_KNOWN_PREFIXES = ['FDTC', 'FDUM', 'FDEN', 'FDE', 'SRK', 'SRC', 'SRF', 'SRR', 'SKM', 'SCM']
+  .sort((a, b) => b.length - a.length);
+const MHI_INDOOR_PREFIXES = MHI_KNOWN_PREFIXES.filter(p => p !== 'SRC' && p !== 'SCM');
+const MHI_OUTDOOR_PREFIXES = ['SRC', 'SCM'];
+const MHI_RAC_CANON_SIZES = [20, 25, 35, 50, 60, 71, 80];
+const MHI_VRF_HINT_PREFIXES = ['FDC', 'KXZE', 'KXZ', 'KX'];
+
+function parseMhiMarking(raw, canonSizes) {
+  canonSizes = canonSizes || MHI_RAC_CANON_SIZES;
+  let s = String(raw || '').trim();
+  let hasR32Annotation = false;
+  const r32m = s.match(/\(\s*R\s*32\s*\)/i);
+  if (r32m) { hasR32Annotation = true; s = s.slice(0, r32m.index) + s.slice(r32m.index + r32m[0].length); }
+  const deprecated = /☆/.test(s);
+  s = s.replace(/[※☆]/g, '').replace(/\s+/g, '').toUpperCase();
+
+  const prefix = MHI_KNOWN_PREFIXES.find(p => s.startsWith(p));
+  if (!prefix) return { raw, error: 'unknown-prefix', rawPrefixGuess: (s.match(/^[A-Z]+/) || [''])[0], hasR32Annotation, deprecated };
+  let rest = s.slice(prefix.length);
+
+  let sizeKind = 'wildcard', sizeList = null;
+  if (/^(\.{2,}|…)\.?/.test(rest)) {
+    rest = rest.replace(/^(\.{2,}|…)\.?/, '');
+  } else if (rest.startsWith('-') && /^[A-Z]/.test(rest.slice(1))) {
+    rest = rest.slice(1);
+  } else {
+    const numM = rest.match(/^(\d+(?:[,~.\-]\d+)*)/);
+    if (numM) {
+      const numStr = numM[0];
+      rest = rest.slice(numStr.length);
+      if (numStr.includes('-') || numStr.includes('~')) {
+        const parts = numStr.split(/[-~]/).map(Number);
+        const min = Math.min(...parts), max = Math.max(...parts);
+        sizeKind = 'list';
+        sizeList = canonSizes.filter(n => n >= min && n <= max);
+      } else if (numStr.includes(',') || numStr.includes('.')) {
+        sizeKind = 'list';
+        sizeList = numStr.split(/[,.]/).map(Number);
+      } else {
+        sizeKind = 'list';
+        sizeList = [Number(numStr)];
+      }
+    }
+  }
+
+  const dashIdx = rest.indexOf('-');
+  let series, suffixVariants;
+  if (dashIdx === -1) { series = rest; suffixVariants = null; }
+  else { series = rest.slice(0, dashIdx); suffixVariants = rest.slice(dashIdx + 1).split(',').map(x => x.trim()).filter(Boolean); }
+  if (!series) return { raw, error: 'no-series', prefix, hasR32Annotation, deprecated };
+
+  let suffixFamily = null;
+  if (suffixVariants && suffixVariants.length) {
+    suffixFamily = suffixVariants[0][0] === 'S' ? 'S' : (suffixVariants[0][0] === 'W' ? 'W' : null);
+  } else if (hasR32Annotation) {
+    suffixFamily = 'W';
+  }
+
+  return { raw, prefix, sizeKind, sizeList, series, suffixVariants, suffixFamily, hasR32Annotation, deprecated };
+}
+
+function mhiLevenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) {
+    dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : 1 + Math.min(dp[i - 1][j - 1], dp[i - 1][j], dp[i][j - 1]);
+  }
+  return dp[m][n];
+}
+
+function mhiParseUserInput(raw, role) {
+  const p = parseMhiMarking(raw);
+  if (!p.error) return { parsed: p, typo: null };
+  if (p.error === 'unknown-prefix' && p.rawPrefixGuess) {
+    const candidates = role === 'outdoor' ? MHI_OUTDOOR_PREFIXES : MHI_INDOOR_PREFIXES;
+    let best = null, bestDist = Infinity;
+    candidates.forEach(c => { const d = mhiLevenshtein(p.rawPrefixGuess, c); if (d < bestDist) { bestDist = d; best = c; } });
+    if (best && bestDist <= 2) {
+      const idx = raw.toUpperCase().indexOf(p.rawPrefixGuess);
+      const corrected = best + raw.slice(idx + p.rawPrefixGuess.length);
+      const p2 = parseMhiMarking(corrected);
+      if (!p2.error) return { parsed: p2, typo: { from: p.rawPrefixGuess, to: best } };
+    }
+  }
+  return { parsed: p, typo: null };
+}
+
+/* template — розібраний рядок/стовпець з таблиці (може мати wildcard/список/суфікси-
+   варіанти); userInput — конкретний ввід користувача. Повертає null (не збіглось) або
+   {matched, extra, noTemplateSuffix} з розділу "ядро суфікса + зайвий хвіст". */
+function mhiSuffixCoreMatch(userSuffixText, templateVariants) {
+  if (!templateVariants) return { matched: null, extra: userSuffixText || null, noTemplateSuffix: true };
+  if (!userSuffixText) return null;
+  let best = null;
+  templateVariants.forEach(v => { if (userSuffixText.startsWith(v) && (!best || v.length > best.length)) best = v; });
+  if (!best) return null;
+  return { matched: best, extra: userSuffixText.slice(best.length) || null };
+}
+
+function mhiCandidateMatches(userInput, template) {
+  if (userInput.prefix !== template.prefix) return null;
+  if (userInput.series !== template.series) return null;
+  if (template.sizeKind !== 'wildcard') {
+    const uSize = userInput.sizeList ? userInput.sizeList[0] : null;
+    if (uSize != null && !template.sizeList.includes(uSize)) return null;
+  }
+  const userSuffixText = userInput.suffixVariants ? userInput.suffixVariants[0] : null;
+  const sc = mhiSuffixCoreMatch(userSuffixText, template.suffixVariants);
+  if (!sc) return null;
+  if (!sc.noTemplateSuffix && template.suffixFamily && userInput.suffixFamily && template.suffixFamily !== userInput.suffixFamily) return null;
+  return sc;
+}
+
+/* Той самий збіг, що й mhiCandidateMatches, але БЕЗ перевірки типорозміру — для
+   листа RAC MULTI: один зовнішній блок живить кілька внутрішніх різного розміру
+   одночасно, тому типорозмір, який ввів користувач для внутрішнього блока, не
+   звужує пошук — навпаки, показуємо ВСІ типорозміри цієї серії, сумісні саме з
+   цим зовнішнім блоком (кожен розмір після фіксу типорозмірів RAC MULTI — окремий
+   рядок у rules, зі своїм власним "запеченим" у текст маркуванням). */
+function mhiCandidateMatchesIgnoreSize(userInput, template) {
+  if (userInput.prefix !== template.prefix) return null;
+  if (userInput.series !== template.series) return null;
+  const userSuffixText = userInput.suffixVariants ? userInput.suffixVariants[0] : null;
+  const sc = mhiSuffixCoreMatch(userSuffixText, template.suffixVariants);
+  if (!sc) return null;
+  if (!sc.noTemplateSuffix && template.suffixFamily && userInput.suffixFamily && template.suffixFamily !== userInput.suffixFamily) return null;
+  return sc;
+}
+
+async function loadMhiCompatData() {
+  if (mhiCompatData && mhiCompatData !== 'error') return mhiCompatData;
+  mhiCompatData = 'loading';
+  try {
+    const resp = await fetch('data/mhi-compat.json');
+    if (!resp.ok) throw new Error('http ' + resp.status);
+    const json = await resp.json();
+    // пре-парсимо всі рядки/стовпці один раз одразу після завантаження — сам пошук
+    // після цього миттєвий, повторний парсинг на кожен тап не потрібен.
+    json.rac_rules.forEach(r => { r._i = parseMhiMarking(r.i); r._o = parseMhiMarking(r.o); });
+    json.rac_facts.forEach(r => { r._i = parseMhiMarking(r.i); });
+    json.multi_rules.forEach(r => { r._i = parseMhiMarking(r.i, []); r._o = parseMhiMarking(r.o, []); });
+    mhiCompatData = json;
+  } catch (e) {
+    mhiCompatData = 'error';
+  }
+  return mhiCompatData;
+}
+
+function checkMhiCompatibility(indoorRaw, outdoorRaw, data) {
+  // VRF/PAC (FDC/KX-серії) — поза межами цього довідника (тільки RAC/RAC MULTI),
+  // перевіряємо ДО парсингу за повною граматикою (у VRF інша схема маркування,
+  // якою цей довідник не займається, тож "не вдалося розпізнати" тут ввело б в оману).
+  const upIndoor = indoorRaw.toUpperCase(), upOutdoor = outdoorRaw.toUpperCase();
+  if (MHI_VRF_HINT_PREFIXES.some(p => upIndoor.startsWith(p) || upOutdoor.startsWith(p))) {
+    return { kind: 'vrf-out-of-scope' };
+  }
+
+  const outdoorProbe = parseMhiMarking(outdoorRaw);
+  const sheet = outdoorProbe.prefix === 'SCM' ? 'multi' : 'rac';
+
+  const { parsed: indoorInput, typo: indoorTypo } = mhiParseUserInput(indoorRaw, 'indoor');
+  const { parsed: outdoorInput, typo: outdoorTypo } = mhiParseUserInput(outdoorRaw, 'outdoor');
+  if (indoorInput.error || outdoorInput.error) {
+    return { kind: 'parse-error', badIndoor: !!indoorInput.error, badOutdoor: !!outdoorInput.error };
+  }
+
+  if (sheet === 'rac') {
+    const iSize = indoorInput.sizeList ? indoorInput.sizeList[0] : null;
+    const oSize = outdoorInput.sizeList ? outdoorInput.sizeList[0] : null;
+    if (iSize != null && oSize != null && iSize !== oSize) {
+      return { kind: 'size-mismatch', indoorSize: iSize, outdoorSize: oSize };
+    }
+  }
+
+  const rules = sheet === 'multi' ? data.multi_rules : data.rac_rules;
+  // На листі RAC внутрішній і зовнішній блок звіряються СУВОРО (включно з
+  // типорозміром — уже перевірили вище, що вони збігаються) — там одна колонка
+  // зазвичай і так одна конкретна клітинка. На RAC MULTI типорозмір внутрішнього
+  // блока навмисно ІГНОРУЄТЬСЯ — знаходимо ВСІ типорозміри цієї серії, сумісні
+  // саме з цим зовнішнім блоком, а не лише той один, що ввів користувач.
+  const indoorMatcher = sheet === 'multi' ? mhiCandidateMatchesIgnoreSize : mhiCandidateMatches;
+  const hits = [];
+  rules.forEach(rule => {
+    const om = mhiCandidateMatches(outdoorInput, rule._o);
+    if (!om) return;
+    const im = indoorMatcher(indoorInput, rule._i);
+    if (!im) return;
+    hits.push({ rule, indoorMatch: im, outdoorMatch: om });
+  });
+  if (!hits.length) return { kind: 'no-data' };
+  return { kind: 'found', hits, indoorTypo, outdoorTypo, sheet, indoorInput };
+}
+
+/* Заповнене лише ОДНЕ поле (внутрішній АБО зовнішній блок) — показуємо повний
+   перелік усього, з чим цей конкретний блок сумісний (офіційно й неофіційно), по
+   обох листах одразу. Для зовнішнього блока лист однозначно визначається префіксом
+   (SCM → multi, інакше rac); для внутрішнього — той самий префікс (напр. SRK)
+   трапляється на ОБОХ листах з різними наборами сумісних зовнішніх блоків (SRC на
+   RAC, SCM на RAC MULTI), тому шукаємо одразу в обох. Типорозмір введеного блока
+   тут звіряється СУВОРО (mhiCandidateMatches, не ігнорує розмір) — на відміну від
+   парного запиту для RAC MULTI, тут немає фіксованого зовнішнього блока, під
+   типорозмір якого можна було б "розширювати" список. */
+function checkMhiCompatibilitySingle(raw, role, data) {
+  const up = raw.toUpperCase();
+  if (MHI_VRF_HINT_PREFIXES.some(p => up.startsWith(p))) {
+    return { kind: 'vrf-out-of-scope' };
+  }
+  const { parsed: input, typo } = mhiParseUserInput(raw, role);
+  if (input.error) return { kind: 'parse-error-single', role };
+
+  const hits = [];
+  if (role === 'outdoor') {
+    const sheet = input.prefix === 'SCM' ? 'multi' : 'rac';
+    const rules = sheet === 'multi' ? data.multi_rules : data.rac_rules;
+    rules.forEach(rule => {
+      const m = mhiCandidateMatches(input, rule._o);
+      if (m) hits.push({ rule, match: m });
+    });
+  } else {
+    data.rac_rules.forEach(rule => {
+      const m = mhiCandidateMatches(input, rule._i);
+      if (m) hits.push({ rule, match: m });
+    });
+    data.multi_rules.forEach(rule => {
+      const m = mhiCandidateMatches(input, rule._i);
+      if (m) hits.push({ rule, match: m });
+    });
+  }
+  if (!hits.length) return { kind: 'no-data' };
+  return { kind: 'found-single', role, hits, typo, input };
+}
+
+function renderMhiCompatScreen() {
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="mhi-block">
+      <div class="mhi-block-title">Перевірка сумісності</div>
+      <div class="mhi-hint">Введіть маркування внутрішнього і зовнішнього блоків MHI (Спліт-системи та Мульти спліт-системи серій RAC/SCM) — так, як вони написані на блоці чи в прайсі, наприклад SRK50ZSX-W або SRC50ZMX-S. Можна заповнити лише одне поле — покажемо повний перелік усього, з чим цей блок сумісний.</div>
+      <div class="mhi-field">
+        <label class="mhi-label">Внутрішній блок</label>
+        <input type="text" class="mhi-code-input" id="mhi-compat-indoor" placeholder="Наприклад: SRK50ZSX-W">
+      </div>
+      <div class="mhi-field">
+        <label class="mhi-label">Зовнішній блок</label>
+        <input type="text" class="mhi-code-input" id="mhi-compat-outdoor" placeholder="Наприклад: SRC50ZMX-S">
+      </div>
+      <div class="mhi-btn-row">
+        <button type="button" class="mhi-search-btn" id="mhi-compat-check-btn">Перевірити</button>
+        <button type="button" class="mhi-clear-btn" id="mhi-compat-clear-btn">Очистити</button>
+      </div>
+    </div>
+    <div id="mhi-compat-result-slot">${renderMhiCompatResultHtml()}</div>
+  `;
+  document.getElementById('mhi-compat-check-btn').addEventListener('click', checkMhiCompat);
+  document.getElementById('mhi-compat-clear-btn').addEventListener('click', clearMhiCompat);
+  ['mhi-compat-indoor', 'mhi-compat-outdoor'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', function(e) { if (e.key === 'Enter') checkMhiCompat(); });
+  });
+}
+
+function clearMhiCompat() {
+  mhiCompatResult = null;
+  renderMhiCompatScreen();
+}
+
+async function checkMhiCompat() {
+  const indoorEl = document.getElementById('mhi-compat-indoor');
+  const outdoorEl = document.getElementById('mhi-compat-outdoor');
+  const indoor = indoorEl ? indoorEl.value.trim() : '';
+  const outdoor = outdoorEl ? outdoorEl.value.trim() : '';
+  const slot = document.getElementById('mhi-compat-result-slot');
+  if (!indoor && !outdoor) {
+    mhiCompatResult = 'needinput';
+    if (slot) slot.innerHTML = renderMhiCompatResultHtml();
+    return;
+  }
+  if (slot) slot.innerHTML = '<div class="mhi-result-loading">Пошук…</div>';
+  const data = await loadMhiCompatData();
+  if (data === 'error') {
+    mhiCompatResult = { kind: 'load-error' };
+    if (slot) slot.innerHTML = renderMhiCompatResultHtml();
+    return;
+  }
+  // Заповнені обидва поля — точна пара; лише одне — повний перелік усього, з чим
+  // сумісний саме цей блок (по обох листах одразу).
+  mhiCompatResult = (indoor && outdoor)
+    ? checkMhiCompatibility(indoor, outdoor, data)
+    : checkMhiCompatibilitySingle(indoor || outdoor, indoor ? 'indoor' : 'outdoor', data);
+  if (slot) slot.innerHTML = renderMhiCompatResultHtml();
+}
+
+function renderMhiCompatResultHtml() {
+  const r = mhiCompatResult;
+  if (r === 'needinput') {
+    return '<div class="mhi-result mhi-result-empty">Заповніть хоча б одне поле — внутрішній або зовнішній блок. Можна ввести лише один із них, щоб побачити повний перелік усього, з чим він сумісний.</div>';
+  }
+  if (!r) return '';
+  if (r.kind === 'load-error') {
+    return '<div class="mhi-result mhi-result-empty">Не вдалося завантажити довідник сумісності. Перевірте з’єднання і спробуйте ще раз.</div>';
+  }
+  if (r.kind === 'parse-error') {
+    const which = r.badIndoor && r.badOutdoor ? 'обидва маркування' : (r.badIndoor ? 'маркування внутрішнього блока' : 'маркування зовнішнього блока');
+    return `<div class="mhi-result mhi-result-empty">Не вдалося розпізнати ${escapeHtml(which)}. Перевірте, чи правильно введено маркування (має починатись з літер серії, напр. SRK, SRC, SCM).</div>`;
+  }
+  if (r.kind === 'parse-error-single') {
+    const which = r.role === 'indoor' ? 'маркування внутрішнього блока' : 'маркування зовнішнього блока';
+    return `<div class="mhi-result mhi-result-empty">Не вдалося розпізнати ${escapeHtml(which)}. Перевірте, чи правильно введено маркування (має починатись з літер серії, напр. SRK, SRC, SCM).</div>`;
+  }
+  if (r.kind === 'vrf-out-of-scope') {
+    return '<div class="mhi-result mhi-result-empty">Це схоже на маркування серії VRF/PAC (FDC/KX) — цей довідник охоплює лише побутові RAC і Мульти спліт-системи SCM. Для VRF зверніться до офіційного технічного посібника MHI або на вкладку "Мультизональні VRF" каталогу.</div>';
+  }
+  if (r.kind === 'size-mismatch') {
+    return `<div class="mhi-result mhi-result-empty">Типорозміри відрізняються: внутрішній блок — ${r.indoorSize}, зовнішній — ${r.outdoorSize}. Блоки різної потужності поєднати не можна (окрім Мульти спліт-систем SCM, де це нормально) — перевірте маркування.</div>`;
+  }
+  if (r.kind === 'no-data') {
+    return '<div class="mhi-result mhi-result-empty">Такої пари немає в таблиці сумісності. Це не означає, що блоки несумісні — просто ця комбінація не знайдена в офіційних даних MHI. Уточніть у технічному посібнику MHI або в дилера.</div>';
+  }
+  if (r.kind === 'found' || r.kind === 'found-single') {
+    // Прямо з клітинок таблиці, без переформулювання: групуємо знайдені збіги за
+    // статусом (◎ офіційно / 〇 без офіційного підтвердження / "-" несумісно), кожна
+    // група — свій колірний бейдж (зелений/жовтий/червоний) вгорі й під ним просто
+    // перелік сирого тексту маркування так, як він написаний у файлі MHI. Для
+    // парного запиту "суб'єкт" — завжди зовнішній блок (він точно один, той, що
+    // ввів користувач); для одиничного запиту "суб'єкт" — те єдине поле, яке
+    // заповнив користувач, а перелік — протилежне поле з кожного знайденого збігу
+    // (може бути з обох листів одразу, якщо шукали за внутрішнім блоком).
+    const single = r.kind === 'found-single';
+    const otherOf = single
+      ? (h => r.role === 'outdoor' ? h.rule.i : h.rule.o)
+      : (h => h.rule.i);
+    const subjectRaw = single
+      ? (r.role === 'outdoor' ? r.hits[0].rule.o : r.hits[0].rule.i)
+      : r.hits[0].rule.o;
+    const STATUS_LABEL = { recommended: 'Сумісно (офіційно)', conditional: 'Сумісно (без офіційного підтвердження)', incompatible: 'Несумісно' };
+    const VERB = { recommended: 'сумісний із', conditional: 'сумісний із', incompatible: 'несумісний із' };
+    function statusBlockHtml(status, items) {
+      if (!items.length) return '';
+      const itemsHtml = items.map(h => {
+        const dep = h.rule.d ? ' ☆' : '';
+        const fn = h.rule.f && h.rule.f.length ? `<div class="mhi-compat-footnote">${h.rule.f.map(escapeHtml).join('<br>')}</div>` : '';
+        return `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(otherOf(h))}${dep}</span></div>${fn}`;
+      }).join('');
+      return `
+        <div class="mhi-result-block">
+          <div class="mhi-compat-status mhi-compat-status-${status}">${escapeHtml(STATUS_LABEL[status])}</div>
+          <div class="mhi-result-section-title">${escapeHtml(subjectRaw)} ${VERB[status]}:</div>
+          <div class="mhi-compat-facts">${itemsHtml}</div>
+        </div>`;
+    }
+    const hasCompatible = r.hits.some(h => h.rule.s === 'recommended' || h.rule.s === 'conditional');
+    // Якщо серед знайдених клітинок немає жодної сумісної — усі "-" — це теж пряма
+    // відповідь із таблиці (не мовчання), показуємо її червоним блоком.
+    const groupsHtml = hasCompatible
+      ? ['recommended', 'conditional'].map(status => statusBlockHtml(status, r.hits.filter(h => h.rule.s === status))).join('')
+      : statusBlockHtml('incompatible', r.hits);
+    const typoList = single ? [r.typo] : [r.indoorTypo, r.outdoorTypo];
+    const typoHtml = typoList.filter(Boolean).map(t =>
+      `<div class="mhi-compat-note">⚠ У маркуванні виявлено розбіжність літер: введено "${escapeHtml(t.from)}", найближче відоме — "${escapeHtml(t.to)}". Результат нижче — за умови, що малось на увазі "${escapeHtml(t.to)}"; якщо введене маркування вірне як є — підтвердити сумісність не можна.</div>`
+    ).join('');
+    const indoorInputForFacts = single ? (r.role === 'indoor' ? r.input : null) : (r.sheet === 'rac' ? r.indoorInput : null);
+    const factsHtml = indoorInputForFacts ? renderMhiCompatFactsHtml(indoorInputForFacts) : '';
+    return `
+      <div class="mhi-result">
+        ${typoHtml}
+        ${groupsHtml}
+        ${factsHtml}
+      </div>`;
+  }
+  return '';
+}
+
+/* Мітки фактів у таблиці MHI — англійською, повним текстом (з поясненням у дужках,
+   напр. "SC-BIKN2-E necessity (For connecting with RC-E3, E4, E5, RC-EX1,...)").
+   Перекладаємо структуру речення українською, але коди/абревіатури/моделі (RC-E3,
+   SC-BIKN2-E, twin/triple/double-twin тощо) лишаємо як є — це не слова, а точні
+   позначення з документації MHI, перекладати їх не можна. Регулярка для SC-BIKN*
+   охоплює всі варіанти одразу (E/2-E/2-BL, різні переліки конекторів), решта —
+   окремо для двох унікальних рядків. */
+function translateMhiFactType(t) {
+  const s = String(t || '').replace(/\s+/g, ' ').trim();
+  const bikn = s.match(/^(SC-BIKN2?-(?:E|BL))\s*necessity\s*\(For connecting with (.+)\)$/i);
+  if (bikn) return `Потреба в ${bikn[1]} (для підключення з ${bikn[2]})`;
+  const plural = s.match(/^Plural use \(([^)]+)\)\s*\(([^)]+)\)$/i);
+  if (plural) return `Використання кількох внутрішніх блоків (${plural[1]}) (та сама модель, та сама потужність)`;
+  const vmulti = s.match(/^V-multi use\s*\(([^)]+)\)$/i);
+  if (vmulti) return `Використання V-multi (різна модель, різна потужність)`;
+  return t;
+}
+
+function renderMhiCompatFactsHtml(indoorInput) {
+  const data = mhiCompatData;
+  if (!data || data === 'loading' || data === 'error') return '';
+  const facts = data.rac_facts.filter(f => mhiCandidateMatches(indoorInput, f._i));
+  if (!facts.length) return '';
+  const rows = facts.map(f => `<div class="mhi-compat-fact-row"><span class="mhi-compat-fact-type">${escapeHtml(translateMhiFactType(f.t))}</span><span class="mhi-compat-fact-val">${escapeHtml(f.v)}</span></div>`).join('');
+  return `<div class="mhi-result-block mhi-result-block-divider"><div class="mhi-result-section-title">Внутрішні блоки: сумісність із аксесуарами</div><div class="mhi-compat-facts">${rows}</div></div>`;
 }
 
 /* ---------- Кабінет ---------- */
@@ -5404,12 +5798,6 @@ async function handleRegister() {
   btn.disabled = true;
   btn.textContent = 'Реєстрація...';
 
-  // signUp() встановлює сесію одразу — з цього моменту й до нашого власного
-  // renderCabinetTab() в кінці просимо глобальний onAuthStateChange-listener не
-  // перерендерювати Кабінет самому (інакше він зробить це ДО того, як рядок profiles
-  // взагалі буде записано, і покаже хибне "Не вдалося завантажити профіль").
-  suppressCabinetAutoRerender = true;
-
   const { data: signUpData, error: signUpError } = await sb.auth.signUp({
     email: phoneToEmail(phone),
     password: password
@@ -5420,7 +5808,6 @@ async function handleRegister() {
     errEl.innerHTML = '<div class="error">' + (already ? 'Цей номер телефону вже зареєстровано. Спробуйте увійти.' : 'Не вдалося зареєструватися. Спробуйте ще раз.') + '</div>';
     btn.disabled = false;
     btn.textContent = 'Зареєструватися';
-    suppressCabinetAutoRerender = false;
     return;
   }
 
@@ -5429,7 +5816,6 @@ async function handleRegister() {
     errEl.innerHTML = '<div class="error">Реєстрацію не завершено. Спробуйте увійти або зверніться до адміністратора.</div>';
     btn.disabled = false;
     btn.textContent = 'Зареєструватися';
-    suppressCabinetAutoRerender = false;
     return;
   }
 
@@ -5447,11 +5833,9 @@ async function handleRegister() {
     errEl.innerHTML = '<div class="error">Акаунт створено, але не вдалося зберегти дані профілю. Зверніться до адміністратора.</div>';
     btn.disabled = false;
     btn.textContent = 'Зареєструватися';
-    suppressCabinetAutoRerender = false;
     return;
   }
 
-  suppressCabinetAutoRerender = false;
   renderCabinetTab();
 }
 
@@ -5539,9 +5923,7 @@ async function handleReregister() {
     return;
   }
 
-  suppressCabinetAutoRerender = true;
   const { error: signInError } = await sb.auth.signInWithPassword({ email: phoneToEmail(phone), password: password });
-  suppressCabinetAutoRerender = false;
   if (signInError) {
     errEl.innerHTML = '<div class="error">Заявку створено, але не вдалося увійти автоматично. Спробуйте увійти вручну з новим паролем.</div>';
     btn.disabled = false;
@@ -5817,12 +6199,12 @@ async function renderAdminPanel(profile) {
       </div>`;
   }
 
-  // roleFilter: '' (усі), 'user', 'regional_admin', 'super_admin' — точна роль, або
-  // 'admin' — збірне "будь-який адмін" (лише regional_admin/super_admin), яким
-  // користується спрощений фільтр regional_admin.
+  // roleFilter: '' (усі), 'user', 'regional_admin', 'super_admin' — точна роль (використовує
+  // super_admin, якому потрібно розрізняти адмінів і супер-адмінів окремо), або 'admin' —
+  // збірне "будь-який адмін" (не user), яким користується спрощений фільтр regional_admin.
   function passesFilters(u, q, regionId, roleFilter) {
     if (regionId && String(u.region_id) !== regionId) return false;
-    if (roleFilter === 'admin') { if (u.role !== 'regional_admin' && u.role !== 'super_admin') return false; }
+    if (roleFilter === 'admin') { if (u.role === 'user') return false; }
     else if (roleFilter && u.role !== roleFilter) return false;
     if (q && !((u.full_name || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q))) return false;
     return true;
@@ -5991,664 +6373,7 @@ function renderCurrentTab() {
   else if (currentTab === 'cabinet') renderCabinetTab();
   else if (currentTab === 'contacts') renderContactsTab();
   else if (currentTab === 'info') renderInfoTab();
-  else if (currentTab === 'installer') renderInstallerTab();
 }
-
-/* ---------- CRМонтаж ----------
-   Стаціонарний розділ для будь-якої ролі й будь-якого залогіненого користувача — раніше
-   був окремою роллю "installer" (+ фіча "напарник"), обидві прибрані: розмежування за
-   роллю не мало сенсу для інструменту, яким кожен веде свій особистий список монтажів.
-   Єдина умова доступу — активна сесія (перевіряється тут напряму, а не лише переходом за
-   вкладкою нав-бару, щоб прямий перехід за хешем #installer теж не пропускав гостя). Без
-   сесії — перекидає на Кабінет, щоб увійти/зареєструватись. */
-async function renderInstallerTab() {
-  document.getElementById('back-btn').style.display = 'none';
-  document.getElementById('title').textContent = 'CRМонтаж';
-  const main = document.getElementById('main');
-  main.innerHTML = '<div class="empty">Завантаження...</div>';
-
-  const { data: sessionData } = await sb.auth.getSession();
-  const session = sessionData ? sessionData.session : null;
-
-  if (!session) {
-    history.replaceState({ tab: 'cabinet' }, '', '#cabinet');
-    switchTab('cabinet', false);
-    renderCurrentTab();
-    return;
-  }
-
-  taskQuickFilter = 'all';
-  main.innerHTML = `
-    <button type="button" class="primary-btn no-print" data-task-action="add" style="margin-bottom:12px;">+ Новий монтаж</button>
-    <div class="task-toolbar-row no-print">
-      <button type="button" data-task-action="print">🖨 Друк</button>
-      <button type="button" data-task-action="export-xlsx">📊 Excel</button>
-      <button type="button" data-task-action="suppliers">🏭 Постачальники</button>
-    </div>
-    <div class="admin-filters no-print">
-      <div class="admin-search"><input type="text" id="task-search" placeholder="Пошук за адресою чи клієнтом"></div>
-      <div class="brand-toggle toggle-3way" id="task-quick-filter">
-        <button type="button" class="brand-toggle-btn active" data-quick="all">Усі</button>
-        <button type="button" class="brand-toggle-btn" data-quick="today">Сьогодні</button>
-        <button type="button" class="brand-toggle-btn" data-quick="week">Цей тиждень</button>
-      </div>
-      <div class="admin-filter-row">
-        <div><select id="task-status-filter">
-          <option value="">Усі статуси</option>
-          ${Object.keys(TASK_STATUS_LABELS).map(s => `<option value="${s}">${escapeHtml(TASK_STATUS_LABELS[s])}</option>`).join('')}
-        </select></div>
-        <div><select id="task-equipment-filter">
-          <option value="">Усі види робіт</option>
-          ${taskEquipmentOptionsHtml(null)}
-        </select></div>
-      </div>
-    </div>
-    <div id="installer-tasks-list"><div class="empty">Завантаження...</div></div>
-  `;
-
-  main.querySelectorAll('#task-quick-filter .brand-toggle-btn').forEach(qbtn => {
-    qbtn.addEventListener('click', () => {
-      taskQuickFilter = qbtn.getAttribute('data-quick');
-      main.querySelectorAll('#task-quick-filter .brand-toggle-btn').forEach(b => b.classList.toggle('active', b === qbtn));
-      renderInstallerTaskList();
-    });
-  });
-  document.getElementById('task-search').addEventListener('input', renderInstallerTaskList);
-  document.getElementById('task-status-filter').addEventListener('change', renderInstallerTaskList);
-  document.getElementById('task-equipment-filter').addEventListener('change', renderInstallerTaskList);
-
-  await loadInstallerTasks();
-  renderInstallerTaskList();
-}
-
-/* ---------- CRМонтаж: список монтажів ----------
-   Персональна таблиця public.installer_tasks, RLS обмежує кожного користувача лише
-   власними рядками (installer_id = auth.uid()) — особистий список, не частина адмінки,
-   доступний однаково будь-якій ролі. */
-/* Було "тип обладнання" (Спліт-системи/Мульти спліт-системи/...) — на прохання
-   користувача замінено на вид робіт (2026-09-10, CHANGELOG). Значення зберігаються
-   в тій самій колонці equipment_type (без нової міграції), старі рядки з попередніми
-   значеннями просто не збігаються з новим списком — при редагуванні підставиться
-   перший пункт нового списку. */
-const TASK_EQUIPMENT_TYPES = ['Монтаж', 'Демонтаж', 'Закладка', 'Навіска', 'Чистка', 'Сервіс'];
-const TASK_STATUS_LABELS = { planned: 'Заплановано', in_progress: 'В процесі', done: 'Виконано', cancelled: 'Скасовано' };
-function taskStatusLabel(s) { return TASK_STATUS_LABELS[s] || s; }
-function taskEquipmentOptionsHtml(selected) {
-  return TASK_EQUIPMENT_TYPES.map(e => `<option value="${escapeHtml(e)}" ${e === selected ? 'selected' : ''}>${escapeHtml(e)}</option>`).join('');
-}
-/* Борг тепер вводиться вільним текстом (за проханням користувача — щоб можна було
-   писати не лише суму, а й "1500 + доставка" тощо), а не лише числом. Якщо введене —
-   чисте число, форматуємо як гроші; інакше показуємо текст як є. */
-function taskMoney(v) {
-  if (v === null || v === undefined || v === '') return '';
-  const s = String(v).trim();
-  const n = Number(s.replace(',', '.'));
-  return s !== '' && Number.isFinite(n) ? n.toLocaleString('uk-UA', { maximumFractionDigits: 2 }) + ' грн' : s;
-}
-/* Найкраще наближення суми з вільного тексту (для сумарного боргу постачальникам) —
-   бере число з початку рядка, якщо є, інакше 0. */
-function parseMoneyLead(v) {
-  const n = parseFloat(String(v == null ? '' : v).replace(',', '.'));
-  return Number.isFinite(n) ? n : 0;
-}
-
-let installerTasksCache = [];
-let editingTaskId = null;
-let taskQuickFilter = 'all'; // 'all' | 'today' | 'week'
-
-async function loadInstallerTasks() {
-  const { data: sessionData } = await sb.auth.getSession();
-  const session = sessionData ? sessionData.session : null;
-  if (!session) { installerTasksCache = []; return; }
-  const { data, error } = await sb.from('installer_tasks').select('*').eq('installer_id', session.user.id).order('scheduled_at');
-  installerTasksCache = error ? [] : (data || []);
-}
-
-function taskPassesFilters(t, q, status, equipment, quick) {
-  if (status && t.status !== status) return false;
-  if (equipment && t.equipment_type !== equipment) return false;
-  if (quick === 'today' || quick === 'week') {
-    const d = new Date(t.scheduled_at);
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfRange = new Date(startOfToday);
-    endOfRange.setDate(endOfRange.getDate() + (quick === 'today' ? 1 : 7));
-    if (d < startOfToday || d >= endOfRange) return false;
-  }
-  if (q) {
-    const hay = norm((t.address || '') + ' ' + (t.client_name || '') + ' ' + (t.client_phone || ''));
-    if (!hay.includes(q)) return false;
-  }
-  return true;
-}
-
-/* Той самий набір фільтрів (пошук/статус/обладнання/сьогодні-тиждень-усі), відсортований за
-   часом — і для показу списку, і для друку/експорту в Excel (Крок 4), щоб обидва завжди
-   показували ОДНЕ й те саме, без дублювання логіки фільтрації в двох місцях. */
-function getFilteredInstallerTasks() {
-  const searchEl = document.getElementById('task-search');
-  const statusEl = document.getElementById('task-status-filter');
-  const equipEl = document.getElementById('task-equipment-filter');
-  const q = norm(searchEl ? searchEl.value : '');
-  const status = statusEl ? statusEl.value : '';
-  const equipment = equipEl ? equipEl.value : '';
-  return installerTasksCache
-    .filter(t => taskPassesFilters(t, q, status, equipment, taskQuickFilter))
-    .slice()
-    .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at));
-}
-
-function renderInstallerTaskList() {
-  const listEl = document.getElementById('installer-tasks-list');
-  if (!listEl) return;
-  const filtered = getFilteredInstallerTasks();
-
-  if (!filtered.length) {
-    listEl.innerHTML = '<div class="empty">Монтажів не знайдено.</div>';
-    return;
-  }
-
-  let lastDateKey = null;
-  listEl.innerHTML = filtered.map(t => {
-    const d = new Date(t.scheduled_at);
-    const dateKey = d.toDateString();
-    let header = '';
-    if (dateKey !== lastDateKey) {
-      lastDateKey = dateKey;
-      const label = d.toLocaleDateString('uk-UA', { weekday: 'long', day: 'numeric', month: 'long' });
-      header = `<div class="segment-header">${escapeHtml(label)}</div>`;
-    }
-    return header + taskCardHtml(t, d);
-  }).join('');
-}
-
-function taskCardHtml(t, d) {
-  const timeLabel = d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-  const clientBits = [t.client_name, t.client_phone].filter(Boolean).map(escapeHtml).join(' · ');
-  const equipBits = escapeHtml(t.equipment_type || '');
-  const moneyBits = t.client_debt_amount ? 'Борг клієнта: ' + taskMoney(t.client_debt_amount) : '';
-  const statusOptionsHtml = Object.keys(TASK_STATUS_LABELS)
-    .map(s => `<option value="${s}" ${s === t.status ? 'selected' : ''}>${escapeHtml(TASK_STATUS_LABELS[s])}</option>`).join('');
-  return `
-    <div class="user-card" data-task-card-id="${t.id}">
-      <div class="user-card-top">
-        <div>
-          <p class="user-card-name">${escapeHtml(t.address)}</p>
-          <p class="user-card-sub">${timeLabel}${clientBits ? ' · ' + clientBits : ''}</p>
-        </div>
-        <div class="user-card-top-right">
-          <span class="badge badge-${escapeHtml(t.status)}">${escapeHtml(taskStatusLabel(t.status))}</span>
-          <button type="button" class="task-share-btn no-print" data-task-action="share" data-task-id="${t.id}" aria-label="Поділитися в месенджер">
-            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/>
-              <line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
-              <circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
-              <circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
-            </svg>
-          </button>
-          <button type="button" class="task-ics-btn no-print" data-task-action="ics" data-task-id="${t.id}" aria-label="Додати нагадування в календар">${TASK_CALENDAR_ICON}</button>
-          <button type="button" class="user-card-open-btn no-print" data-task-action="toggle" data-task-id="${t.id}" aria-label="Відкрити">${USER_CARD_OPEN_ICON}</button>
-        </div>
-      </div>
-      <div class="user-card-expand">
-        <p class="user-card-sub">${equipBits}</p>
-        ${moneyBits ? `<p class="user-card-sub">${moneyBits}</p>` : ''}
-        ${t.comment ? `<p class="user-card-sub">${escapeHtml(t.comment)}</p>` : ''}
-        <div class="user-card-row no-print">
-          <select data-task-action="status" data-task-id="${t.id}">${statusOptionsHtml}</select>
-          <label class="task-done-check">
-            <input type="checkbox" data-task-action="done-toggle" data-task-id="${t.id}" ${t.status === 'done' ? 'checked' : ''}>
-            Виконано
-          </label>
-        </div>
-        <div class="user-card-actions no-print">
-          <button type="button" data-task-action="edit" data-task-id="${t.id}">Редагувати</button>
-          <button type="button" class="reject" data-task-action="delete" data-task-id="${t.id}">Видалити</button>
-        </div>
-      </div>
-    </div>`;
-}
-
-/* Пошук за адресою/клієнтом/статусом/типом обладнання й підбір монтажу — навмисно НЕ
-   пов'язано з data-action/handleAdminAction (адмінська дія над користувачем) — окремі
-   атрибути data-task-action/data-task-id і окремі делеговані обробники нижче, щоб кнопки
-   картки монтажу випадково не потрапили в handleAdminAction (обидва рендеряться в те саме
-   #main). */
-async function handleTaskAction(action, id, value) {
-  if (action === 'toggle') {
-    const card = document.querySelector(`[data-task-card-id="${id}"]`);
-    if (card) card.classList.toggle('open');
-    return;
-  }
-  if (action === 'edit') {
-    const task = installerTasksCache.find(t => String(t.id) === String(id));
-    if (task) openTaskForm(task);
-    return;
-  }
-  if (action === 'delete') {
-    if (!confirm('Видалити цей монтаж?')) return;
-    const { error } = await sb.from('installer_tasks').delete().eq('id', id);
-    if (!error) { await loadInstallerTasks(); renderInstallerTaskList(); }
-    return;
-  }
-  if (action === 'status') {
-    const { error } = await sb.from('installer_tasks').update({ status: value }).eq('id', id);
-    if (!error) { await loadInstallerTasks(); renderInstallerTaskList(); }
-    return;
-  }
-  if (action === 'ics') {
-    const task = installerTasksCache.find(t => String(t.id) === String(id));
-    if (task) downloadTaskIcs(task);
-    return;
-  }
-  if (action === 'share') {
-    const task = installerTasksCache.find(t => String(t.id) === String(id));
-    if (task) shareTaskInfo(task, id);
-    return;
-  }
-}
-
-/* ---------- CRМонтаж: нагадування через .ics (Крок 3) ----------
-   Push-сповіщення в PWA мають обмеження на iOS (HANDOFF.md), тому за ТЗ основний спосіб
-   нагадування — календарна подія: монтажник тапає на іконку календаря в картці, файл
-   .ics із подією + вбудованим нагадуванням (VALARM за 30 хв до початку) завантажується
-   на пристрій, а далі системний застосунок календаря (Google Calendar/Apple Calendar/
-   будь-який інший) сам показує нагадування — так само надійно на iOS, як і на Android,
-   бо це вже не відповідальність PWA. Push-сповіщення для Android/десктопу — окремий
-   можливий наступний крок (потребує нового Edge Function + pg_cron, за зразком
-   send-promo-push з розділу Акції), тут навмисно не реалізовано, щоб не ускладнювати
-   цей крок. */
-const TASK_CALENDAR_ICON = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9.5h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-
-function escapeIcsText(s) {
-  return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
-}
-function toIcsUtc(date) {
-  const pad = n => String(n).padStart(2, '0');
-  return date.getUTCFullYear() + pad(date.getUTCMonth() + 1) + pad(date.getUTCDate()) + 'T' +
-    pad(date.getUTCHours()) + pad(date.getUTCMinutes()) + pad(date.getUTCSeconds()) + 'Z';
-}
-function buildTaskIcs(t) {
-  const start = new Date(t.scheduled_at);
-  const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 година за замовчуванням, тривалість монтажу в базі не зберігається
-  const summary = 'Монтаж: ' + (t.equipment_type || '');
-  const descLines = [];
-  if (t.client_name || t.client_phone) descLines.push('Клієнт: ' + [t.client_name, t.client_phone].filter(Boolean).join(', '));
-  descLines.push('Вид робіт: ' + (t.equipment_type || ''));
-  if (t.client_debt_amount) descLines.push('Борг клієнта: ' + taskMoney(t.client_debt_amount));
-  if (t.comment) descLines.push('Коментар: ' + t.comment);
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Sun-ice//CRMontag//UK',
-    'CALSCALE:GREGORIAN',
-    'BEGIN:VEVENT',
-    'UID:sunice-task-' + t.id + '@sun-ice.com.ua',
-    'DTSTAMP:' + toIcsUtc(new Date()),
-    'DTSTART:' + toIcsUtc(start),
-    'DTEND:' + toIcsUtc(end),
-    'SUMMARY:' + escapeIcsText(summary),
-    'DESCRIPTION:' + escapeIcsText(descLines.join('\n')),
-    'LOCATION:' + escapeIcsText(t.address || ''),
-    'BEGIN:VALARM',
-    'TRIGGER:-PT30M',
-    'ACTION:DISPLAY',
-    'DESCRIPTION:Нагадування про монтаж',
-    'END:VALARM',
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ];
-  return lines.join('\r\n');
-}
-function downloadTaskIcs(t) {
-  const blob = new Blob([buildTaskIcs(t)], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'montag-' + t.id + '.ics';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-
-/* ---------- CRМонтаж: відправка в месенджери (ТЗ 3.4) ----------
-   Той самий патерн, що й кнопка "Поділитися" в прайсі/кошику (navigator.share, з
-   резервним копіюванням у буфер) — на телефоні відкриває системне вікно "Поділитися"
-   зі списком месенджерів (Telegram/Viber/WhatsApp/будь-що ще встановлене), користувач
-   сам обирає й підтверджує відправку в обраному месенджері. Окремий клас
-   .task-share-btn (не .share-btn) навмисно — щоб не потрапити під делегований
-   обробник .share-btn у прайсі (index.html:3866), розрахований на іншу структуру DOM. */
-function shareTaskInfo(t, btnId) {
-  const d = new Date(t.scheduled_at);
-  const dateLabel = d.toLocaleDateString('uk-UA') + ' ' + d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
-  const lines = [
-    'Монтаж: ' + t.address,
-    'Дата/час: ' + dateLabel,
-    (t.client_name || t.client_phone) ? 'Клієнт: ' + [t.client_name, t.client_phone].filter(Boolean).join(', ') : null,
-    'Вид робіт: ' + t.equipment_type,
-    t.client_debt_amount ? 'Борг клієнта: ' + taskMoney(t.client_debt_amount) : null
-  ].filter(Boolean);
-  const shareText = lines.join('\n');
-  if (navigator.share) {
-    navigator.share({ text: shareText }).catch(() => {});
-  } else if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(shareText).then(() => {
-      const btn = document.querySelector(`.task-share-btn[data-task-id="${btnId}"]`);
-      if (btn) {
-        const oldHTML = btn.innerHTML;
-        btn.innerHTML = '✓';
-        setTimeout(() => { btn.innerHTML = oldHTML; }, 1200);
-      }
-    }).catch(() => {});
-  }
-}
-
-/* ---------- CRМонтаж: вивантаження списку (Крок 4) ----------
-   ТЗ 3.3: експорт у PDF або Excel + можливість швидко переглянути/роздрукувати список на
-   день перед виїздом. Excel — через xlsx.js, ту саму бібліотеку, що й так уже підключена
-   для розбору price.xlsx (жодної нової залежності). Друк — window.print() з CSS-правилом
-   .no-print (вище в <style>), що ховає все інтерактивне/навігаційне й розгортає кожну
-   картку повністю — саме це і є "швидко роздрукувати список на день", якщо перед друком
-   увімкнути швидкий фільтр "Сьогодні". PDF окремою бібліотекою свідомо не додавав — це
-   нова залежність заради того самого результату, який print() дає безкоштовно. Обидві дії
-   працюють з тим самим відфільтрованим списком, що й на екрані (getFilteredInstallerTasks),
-   тобто експортується/друкується рівно те, що зараз видно. */
-function exportInstallerTasksToExcel() {
-  const tasks = getFilteredInstallerTasks();
-  if (!tasks.length) {
-    alert('Немає монтажів для експорту за поточними фільтрами.');
-    return;
-  }
-  const rows = tasks.map(t => {
-    const d = new Date(t.scheduled_at);
-    return {
-      'Дата': d.toLocaleDateString('uk-UA'),
-      'Час': d.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' }),
-      'Адреса': t.address,
-      "Ім'я клієнта": t.client_name || '',
-      'Телефон клієнта': t.client_phone || '',
-      'Вид робіт': t.equipment_type,
-      'Борг клієнта': t.client_debt_amount || '',
-      'Статус': taskStatusLabel(t.status),
-      'Коментар': t.comment || ''
-    };
-  });
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Монтажі');
-  XLSX.writeFile(wb, 'montag-' + new Date().toISOString().slice(0, 10) + '.xlsx');
-}
-
-document.getElementById('main').addEventListener('click', function(e) {
-  const target = e.target.closest('[data-task-action]');
-  if (!target || target.tagName === 'SELECT') return;
-  const action = target.getAttribute('data-task-action');
-  if (action === 'add') { openTaskForm(null); return; }
-  if (action === 'print') { window.print(); return; }
-  if (action === 'export-xlsx') { exportInstallerTasksToExcel(); return; }
-  if (action === 'suppliers') { openSuppliersPanel(); return; }
-  const id = target.getAttribute('data-task-id');
-  if (action && id) handleTaskAction(action, id, null);
-});
-document.getElementById('main').addEventListener('change', function(e) {
-  const select = e.target.closest('select[data-task-action]');
-  if (select) {
-    const action = select.getAttribute('data-task-action');
-    const id = select.getAttribute('data-task-id');
-    if (action && id) handleTaskAction(action, id, select.value);
-    return;
-  }
-  const checkbox = e.target.closest('input[type="checkbox"][data-task-action="done-toggle"]');
-  if (checkbox) {
-    const id = checkbox.getAttribute('data-task-id');
-    if (id) handleTaskAction('status', id, checkbox.checked ? 'done' : 'planned');
-  }
-});
-
-function toDateValue(iso) {
-  const d = new Date(iso);
-  const pad = n => String(n).padStart(2, '0');
-  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-}
-function toTimeValue(iso) {
-  const d = new Date(iso);
-  const pad = n => String(n).padStart(2, '0');
-  return pad(d.getHours()) + ':' + pad(d.getMinutes());
-}
-/* Ручний ввід часу цифрами замість системного бігунка-пікера: користувач набирає
-   4 цифри, після другої сам вставляється ":", по blur — округлення до валідних меж
-   (23 год / 59 хв), щоб не піти в БД зі сміттям на кшталт "99:99". */
-function attachTimeInputFormatter(input) {
-  input.addEventListener('input', () => {
-    const digits = input.value.replace(/\D/g, '').slice(0, 4);
-    input.value = digits.length > 2 ? digits.slice(0, 2) + ':' + digits.slice(2) : digits;
-  });
-  input.addEventListener('blur', () => {
-    const m = input.value.match(/^(\d{1,2}):(\d{1,2})$/);
-    if (!m) { input.value = ''; return; }
-    const hh = Math.min(23, parseInt(m[1], 10));
-    const mm = Math.min(59, parseInt(m[2], 10));
-    input.value = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
-  });
-}
-attachTimeInputFormatter(document.getElementById('task-field-time'));
-attachDigitsOnlyFilter(document.getElementById('task-field-client-phone'));
-
-/* "Борг клієнта" — кнопка OK поруч з полем: суто візуальне підтвердження, що введене
-   не загубиться (сама форма зберігається разом з рештою полів по кнопці "Зберегти"). */
-(function () {
-  const debtInput = document.getElementById('task-field-client-debt');
-  const debtOkBtn = document.getElementById('task-field-client-debt-ok');
-  debtOkBtn.addEventListener('click', () => {
-    if (!debtInput.value.trim()) return;
-    debtInput.classList.add('input-confirmed');
-    debtOkBtn.textContent = '✓';
-    debtOkBtn.classList.add('confirmed');
-  });
-  debtInput.addEventListener('input', () => {
-    debtInput.classList.remove('input-confirmed');
-    debtOkBtn.textContent = 'OK';
-    debtOkBtn.classList.remove('confirmed');
-  });
-})();
-
-function openTaskForm(task) {
-  editingTaskId = task ? task.id : null;
-  document.getElementById('task-form-title').textContent = task ? 'Редагувати монтаж' : 'Новий монтаж';
-  document.getElementById('task-field-address').value = task ? (task.address || '') : '';
-  document.getElementById('task-field-date').value = task ? toDateValue(task.scheduled_at) : '';
-  document.getElementById('task-field-time').value = task ? toTimeValue(task.scheduled_at) : '';
-  document.getElementById('task-field-client-name').value = task ? (task.client_name || '') : '';
-  document.getElementById('task-field-client-phone').value = task ? (task.client_phone || '') : '';
-  document.getElementById('task-field-equipment').innerHTML = taskEquipmentOptionsHtml(task ? task.equipment_type : TASK_EQUIPMENT_TYPES[0]);
-  const debtInputEl = document.getElementById('task-field-client-debt');
-  debtInputEl.value = task && task.client_debt_amount ? task.client_debt_amount : '';
-  debtInputEl.classList.remove('input-confirmed');
-  const debtOkBtnEl = document.getElementById('task-field-client-debt-ok');
-  debtOkBtnEl.textContent = 'OK';
-  debtOkBtnEl.classList.remove('confirmed');
-  document.getElementById('task-field-comment').value = task ? (task.comment || '') : '';
-  document.getElementById('task-form-error').innerHTML = '';
-  document.getElementById('task-form-overlay').classList.add('show');
-}
-function closeTaskForm() {
-  document.getElementById('task-form-overlay').classList.remove('show');
-}
-document.getElementById('task-form-close').addEventListener('click', closeTaskForm);
-document.getElementById('task-form-backdrop').addEventListener('click', closeTaskForm);
-
-async function handleTaskFormSubmit() {
-  const errEl = document.getElementById('task-form-error');
-  errEl.innerHTML = '';
-  const address = document.getElementById('task-field-address').value.trim();
-  const dateVal = document.getElementById('task-field-date').value;
-  const timeVal = document.getElementById('task-field-time').value;
-  const clientName = document.getElementById('task-field-client-name').value.trim();
-  const clientPhone = document.getElementById('task-field-client-phone').value.trim();
-  const equipment = document.getElementById('task-field-equipment').value;
-  const clientDebt = document.getElementById('task-field-client-debt').value.trim();
-  const comment = document.getElementById('task-field-comment').value.trim();
-
-  if (!address || !dateVal || !/^\d{2}:\d{2}$/.test(timeVal)) {
-    errEl.innerHTML = '<div class="error">Заповніть адресу, дату і час (ГГ:ХХ).</div>';
-    return;
-  }
-
-  const { data: sessionData } = await sb.auth.getSession();
-  const session = sessionData ? sessionData.session : null;
-  if (!session) {
-    errEl.innerHTML = '<div class="error">Сесія закінчилась. Вийдіть і увійдіть знову.</div>';
-    return;
-  }
-
-  const btn = document.getElementById('task-form-submit-btn');
-  btn.disabled = true;
-
-  const row = {
-    installer_id: session.user.id,
-    address: address,
-    scheduled_at: new Date(dateVal + 'T' + timeVal).toISOString(),
-    client_name: clientName || null,
-    client_phone: clientPhone || null,
-    equipment_type: equipment,
-    client_debt_amount: clientDebt || null,
-    comment: comment || null
-  };
-
-  let error;
-  if (editingTaskId) {
-    ({ error } = await sb.from('installer_tasks').update(row).eq('id', editingTaskId));
-  } else {
-    ({ error } = await sb.from('installer_tasks').insert(row));
-  }
-
-  btn.disabled = false;
-  if (error) {
-    errEl.innerHTML = '<div class="error">Не вдалося зберегти. Спробуйте ще раз.</div>';
-    return;
-  }
-  closeTaskForm();
-  await loadInstallerTasks();
-  renderInstallerTaskList();
-}
-document.getElementById('task-form-submit-btn').addEventListener('click', handleTaskFormSubmit);
-
-/* ---------- CRМонтаж: постачальники (скільки монтажник сам винен) ----------
-   Окремо від монтажів — персональний список постачальників (public.installer_suppliers,
-   та сама RLS-модель installer_id = auth.uid()), проста поточна сума боргу на кожного,
-   без журналу операцій (за явним проханням користувача — простіше в реалізації й
-   використанні). Борг клієнта — окрема річ, лишається полем у самому монтажі
-   (task-field-client-debt), сюди не потрапляє. */
-let installerSuppliersCache = [];
-
-async function loadSuppliers() {
-  const { data: sessionData } = await sb.auth.getSession();
-  const session = sessionData ? sessionData.session : null;
-  if (!session) { installerSuppliersCache = []; return; }
-  const { data, error } = await sb.from('installer_suppliers').select('*').eq('installer_id', session.user.id).order('name');
-  installerSuppliersCache = error ? [] : (data || []);
-}
-
-function supplierRowHtml(s) {
-  return `
-    <div class="user-card" data-supplier-card-id="${s.id}">
-      <div class="user-card-top">
-        <div>
-          <p class="user-card-name">${escapeHtml(s.name)}</p>
-          ${s.note ? `<p class="user-card-sub">${escapeHtml(s.note)}</p>` : ''}
-        </div>
-        <div class="user-card-top-right">
-          <button type="button" class="reject" data-supplier-action="delete" data-supplier-id="${s.id}">Видалити</button>
-        </div>
-      </div>
-      <div class="field" style="margin-top:8px;">
-        <label>Борг</label>
-        <input type="text" value="${escapeHtml(s.debt_amount == null ? '' : s.debt_amount)}" placeholder="напр. 1500 або текстом" data-supplier-action="amount" data-supplier-id="${s.id}">
-      </div>
-    </div>`;
-}
-
-function renderSuppliersList() {
-  const listEl = document.getElementById('suppliers-list');
-  const totalEl = document.getElementById('suppliers-total');
-  if (!listEl) return;
-  if (!installerSuppliersCache.length) {
-    listEl.innerHTML = '<div class="empty">Постачальників ще нема.</div>';
-  } else {
-    listEl.innerHTML = installerSuppliersCache.map(supplierRowHtml).join('');
-  }
-  const total = installerSuppliersCache.reduce((sum, s) => sum + parseMoneyLead(s.debt_amount), 0);
-  totalEl.textContent = 'Разом винен постачальникам: ' + (total ? taskMoney(total) : '0 грн');
-}
-
-async function openSuppliersPanel() {
-  document.getElementById('suppliers-overlay').classList.add('show');
-  document.getElementById('suppliers-list').innerHTML = '<div class="empty">Завантаження...</div>';
-  document.getElementById('supplier-form-error').innerHTML = '';
-  document.getElementById('supplier-new-name').value = '';
-  document.getElementById('supplier-new-amount').value = '';
-  document.getElementById('supplier-new-note').value = '';
-  await loadSuppliers();
-  renderSuppliersList();
-}
-function closeSuppliersPanel() {
-  document.getElementById('suppliers-overlay').classList.remove('show');
-}
-document.getElementById('suppliers-close').addEventListener('click', closeSuppliersPanel);
-document.getElementById('suppliers-backdrop').addEventListener('click', closeSuppliersPanel);
-
-document.getElementById('supplier-add-btn').addEventListener('click', async () => {
-  const errEl = document.getElementById('supplier-form-error');
-  errEl.innerHTML = '';
-  const name = document.getElementById('supplier-new-name').value.trim();
-  const amount = document.getElementById('supplier-new-amount').value;
-  const note = document.getElementById('supplier-new-note').value.trim();
-  if (!name) {
-    errEl.innerHTML = '<div class="error">Вкажіть назву постачальника.</div>';
-    return;
-  }
-  const { data: sessionData } = await sb.auth.getSession();
-  const session = sessionData ? sessionData.session : null;
-  if (!session) {
-    errEl.innerHTML = '<div class="error">Сесія закінчилась. Вийдіть і увійдіть знову.</div>';
-    return;
-  }
-  const { error } = await sb.from('installer_suppliers').insert({
-    installer_id: session.user.id,
-    name: name,
-    debt_amount: amount.trim() || null,
-    note: note || null
-  });
-  if (error) {
-    errEl.innerHTML = '<div class="error">Не вдалося зберегти. Спробуйте ще раз.</div>';
-    return;
-  }
-  document.getElementById('supplier-new-name').value = '';
-  document.getElementById('supplier-new-amount').value = '';
-  document.getElementById('supplier-new-note').value = '';
-  await loadSuppliers();
-  renderSuppliersList();
-});
-
-document.getElementById('suppliers-list').addEventListener('click', async (e) => {
-  const btn = e.target.closest('[data-supplier-action="delete"]');
-  if (!btn) return;
-  const id = btn.getAttribute('data-supplier-id');
-  if (!confirm('Видалити цього постачальника?')) return;
-  const { error } = await sb.from('installer_suppliers').delete().eq('id', id);
-  if (!error) { await loadSuppliers(); renderSuppliersList(); }
-});
-
-document.getElementById('suppliers-list').addEventListener('change', async (e) => {
-  const input = e.target.closest('input[data-supplier-action="amount"]');
-  if (!input) return;
-  const id = input.getAttribute('data-supplier-id');
-  const value = input.value.trim() || null;
-  const { error } = await sb.from('installer_suppliers').update({ debt_amount: value }).eq('id', id);
-  if (!error) { await loadSuppliers(); renderSuppliersList(); }
-});
 
 /* Cross-fade вмісту екрана при перемиканні вкладок нижнього меню (див. словник
    анімацій у <style>). navFadeToken інвалідовує "застряглий" таймер попереднього
