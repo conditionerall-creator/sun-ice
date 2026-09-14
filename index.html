@@ -448,11 +448,11 @@
   }
   .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .menu-tile-photo .menu-tile-title { padding: 0 2px; }
-  /* Плитка з двома фото (напр. "Спліт-системи" — MHI/Galactic), що самі час від часу
-     перегортаються, як "живі" плитки Windows — тільки CSS 3D-transform на одному
-     елементі, вмикається/вимикається одним таймером у JS (startSplitFlip/stopSplitFlip),
-     ніякого постійного навантаження. Зупиняється по кліку — щоб не заважала переходу
-     growFadeEnter в категорію. */
+  /* Плитки з двома фото (MHI/Galactic чи інша пара — див. flipImg у CATALOG_TILES), що
+     самі час від часу перегортаються, як "живі" плитки Windows — тільки CSS
+     3D-transform на кожному елементі окремо, вмикається/вимикається в JS
+     (startFlip/stopAllFlips), ніякого постійного навантаження. Зупиняється по кліку —
+     щоб не заважала переходу growFadeEnter в категорію. */
   .menu-tile-flip { perspective: 1000px; }
   .menu-tile-flip-inner {
     position: relative;
@@ -2302,20 +2302,22 @@ const CATALOG_TILES = [
   },
   {
     id: 'multisplit', label: 'Мульти спліт-системи', img: 'tile-images/tile-multisplit.jpg',
+    flipImg: 'tile-images/tile-multisplit-galactic.jpg',
     mhi: { key: 'multisplit_mhi', sheet: 'МУЛЬТИСИСТЕМИ', highlight: 'series', multisplitSections: true, blockGrouping: true },
     gal: { key: 'multisplit_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'after', multisplitSections: true }
   },
   {
     id: 'semi', label: 'Напівпромислові спліт-системи', img: 'tile-images/tile-semi.jpg',
+    flipImg: 'tile-images/tile-semi-galactic.jpg',
     mhi: { key: 'semi_mhi', sheet: 'НАПІВПРОМ', highlight: 'category', baseAdjustPct: 20 },
     gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category' }
   },
-  { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.jpg', custom: 'vrf' },
-  { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.png', custom: 'kkb' },
-  { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tileheatpumps.jpg', custom: 'heatpumps' },
+  { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.jpg', flipImg: 'tile-images/tilevrf-galactic.jpg', custom: 'vrf' },
+  { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.png', flipImg: 'tile-images/tile-kkb-mhi.jpg', custom: 'kkb' },
+  { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tileheatpumps.jpg', flipImg: 'tile-images/tileheatpumps-qton.jpg', custom: 'heatpumps' },
   { id: 'chillers', label: 'Чиллери' },
-  { id: 'ventilation', label: 'Вентиляційне обладнання', img: 'tile-images/tile-ventilation.jpg', custom: 'ventilation' },
-  { id: 'aircurtains', label: 'Повітряні завіси', img: 'tile-images/tile-aircurtains.jpg', custom: 'aircurtains' },
+  { id: 'ventilation', label: 'Вентиляційне обладнання', img: 'tile-images/tile-ventilation.jpg', flipImg: 'tile-images/tile-ventilation-save.jpg', custom: 'ventilation' },
+  { id: 'aircurtains', label: 'Повітряні завіси', img: 'tile-images/tile-aircurtains.jpg', flipImg: 'tile-images/tile-aircurtains-frico.jpg', custom: 'aircurtains' },
   { id: 'convectors', label: 'Конвектори та обігрівачі' }
 ];
 
@@ -3645,28 +3647,33 @@ function triggerSoonFeedback(tileEl) {
   tip.classList.add('soon-tip-show');
 }
 
-/* "Жива" плитка з двома гранями (напр. Спліт-системи MHI/Galactic) — самостійно
+/* "Живі" плитки з двома гранями (напр. Спліт-системи MHI/Galactic) — кожна самостійно
    перегортається раз на 5-7 сек (випадково в цьому діапазоні, щоб не виглядало
-   механічно), поки видно каталог. Один самопланований setTimeout, а не setInterval —
-   легко зупинити (stopSplitFlip) без зайвого стану, і не продовжує рахувати, поки
-   вкладка неактивна. Зупиняється по кліку на плитку, перш ніж запуститься перехід у
+   механічно, і незалежно від інших плиток — не хором), поки видно каталог. Один
+   самопланований setTimeout на плитку, а не setInterval — легко зупинити все разом
+   (stopAllFlips) без зайвого стану, і не продовжує рахувати, поки вкладка неактивна.
+   Зупиняється по кліку на будь-яку плитку каталогу, перш ніж запуститься перехід у
    категорію (growFadeEnter), щоб transform плитки не "змагався" з transform переходу. */
-let splitFlipTimer = null;
-function stopSplitFlip() {
-  if (splitFlipTimer) { clearTimeout(splitFlipTimer); splitFlipTimer = null; }
+let flipTimers = new Set();
+function stopAllFlips() {
+  flipTimers.forEach(t => clearTimeout(t));
+  flipTimers.clear();
 }
-function startSplitFlip(flipEl) {
-  stopSplitFlip();
+function startFlip(flipEl) {
+  let current = null;
   const tick = () => {
-    if (!document.body.contains(flipEl)) { splitFlipTimer = null; return; }
+    flipTimers.delete(current);
+    if (!document.body.contains(flipEl)) return;
     flipEl.classList.toggle('flipped');
-    splitFlipTimer = setTimeout(tick, 5000 + Math.random() * 2000);
+    current = setTimeout(tick, 5000 + Math.random() * 2000);
+    flipTimers.add(current);
   };
-  splitFlipTimer = setTimeout(tick, 5000 + Math.random() * 2000);
+  current = setTimeout(tick, 5000 + Math.random() * 2000);
+  flipTimers.add(current);
 }
 
 function renderCatalogMenu() {
-  stopSplitFlip();
+  stopAllFlips();
   const main = document.getElementById('main');
   const hasData = Object.keys(sheetsData).length > 0;
   if (!hasData) {
@@ -3718,11 +3725,10 @@ function renderCatalogMenu() {
       </div>`;
   }).join('');
   main.innerHTML = '<div class="menu-grid">' + tiles + '</div>';
-  const flipTileEl = main.querySelector('[data-flip-tile]');
-  if (flipTileEl) startSplitFlip(flipTileEl);
+  main.querySelectorAll('[data-flip-tile]').forEach(startFlip);
   main.querySelectorAll('.menu-tile[data-tile]').forEach(el => {
     el.addEventListener('click', () => {
-      stopSplitFlip();
+      stopAllFlips();
       const tileId = el.getAttribute('data-tile');
       history.pushState({ tab: 'catalog', tile: tileId }, '', '#' + encodeURIComponent(tileId));
       activeTile = tileId;
