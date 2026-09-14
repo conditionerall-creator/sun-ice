@@ -1673,6 +1673,17 @@
   }
   .admin-section-title:first-child { padding-top: 0; }
   .admin-search { margin-bottom: 10px; }
+  /* Рядок пошуку, що не прокручується разом зі списком товарів (Systemair/Повітряні
+     завіси) — прилипає одразу під шапкою (--header-h, див. syncStickyHeaderOffset). */
+  .sticky-search {
+    position: sticky;
+    top: var(--header-h, 64px);
+    z-index: 5;
+    background: var(--bg);
+    padding-top: 8px;
+    margin: 0 0 -2px;
+  }
+  .sticky-search .admin-search { margin-bottom: 8px; }
   .user-card {
     background: var(--card);
     border: 1px solid var(--border);
@@ -2085,6 +2096,23 @@ const categoryStems = ['настінн', 'стельов', 'касетн', 'ка
 const PALETTE = ['#2563EB', '#059669', '#B45309', '#BE185D', '#7C3AED', '#C2410C', '#0D9488', '#991B1B'];
 
 function norm(v) { return String(v == null ? '' : v).toLowerCase().trim(); }
+/* Пошук у Systemair/Повітряні завіси: не має значення, чи введено маркування з пробілами
+   чи без ("K100M" = "K 100 M"), і не має значення, яка розкладка клавіатури була активна
+   (укр./англ.) — символ на тій самій фізичній клавіші рахується однаково. Стандартна
+   розкладка ЙЦУКЕН (Windows, укр.) на тих самих клавішах, що й QWERTY — переводимо
+   кирилицю в її латинський відповідник за позицією клавіші, і порівнюємо вже в одному
+   "канонічному" вигляді (латиниця), бо самі маркування завжди латиницею. */
+const UA_LAYOUT_TO_LATIN = {
+  'й':'q','ц':'w','у':'e','к':'r','е':'t','н':'y','г':'u','ш':'i','щ':'o','з':'p','х':'[','ї':']',
+  'ф':'a','і':'s','в':'d','а':'f','п':'g','р':'h','о':'j','л':'k','д':'l','ж':';','є':"'",
+  'я':'z','ч':'x','с':'c','м':'v','и':'b','т':'n','ь':'m','б':',','ю':'.'
+};
+function normalizeSearchKey(v) {
+  return String(v == null ? '' : v)
+    .toLowerCase()
+    .replace(/[а-яіїєґ]/g, ch => UA_LAYOUT_TO_LATIN[ch] || ch)
+    .replace(/\s+/g, '');
+}
 function cellContainsAny(v, keywords) {
   const s = norm(v);
   if (!s) return false;
@@ -2598,6 +2626,37 @@ function parseFricoSheet(wb) {
   }
   return items;
 }
+/* ---------- "Повітряні завіси" — REMAK (другий бренд, перемикач FRICO/REMAK) ----------
+   Аркуш "REMAK ЗАВІСИ": кілька однакових таблиць підряд (C1/D2/P-6 серії), заголовок
+   "Тип завіси"/"Модель" повторюється перед кожною — col0=група (об'єднана клітинка,
+   переносимо вперед), col1=маркування, col3=ціна €. В кінці окрема секція "Приладдя" з
+   ІНШИМ порядком колонок (col0=маркування, col1=опис) — той самий "зсув" між основною
+   таблицею і плоским списком аксесуарів, що вже траплявся в інших аркушах цього прайсу. */
+function parseRemakCurtainsSheet(wb) {
+  const rows = sheetRows(wb, 'REMAK ЗАВІСИ');
+  if (!rows) return [];
+  const items = [];
+  let currentGroup = null;
+  let inAccessories = false;
+  for (let r = 18; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const colA = String(row[0] || '').trim();
+    const colB = String(row[1] || '').trim();
+    const price = parseNumber(row[3]);
+    const normA = norm(colA);
+    if (normA === 'тип завіси' || normA === 'найменування') continue; // повторювані заголовки таблиць
+    if (normA === 'приладдя') { inAccessories = true; currentGroup = 'Приладдя'; continue; }
+    if (inAccessories) {
+      if (!colA || price === null) continue;
+      items.push({ model: colA, price, currency: 'EUR', groupKey: currentGroup, groupLabel: currentGroup });
+    } else {
+      if (colA) currentGroup = colA; // "Без обігріву"/"З електрообігрівом"/"З водяним обігрівом"
+      if (!colB || price === null) continue;
+      items.push({ model: colB, price, currency: 'EUR', groupKey: currentGroup, groupLabel: currentGroup });
+    }
+  }
+  return assignGroupColors(items);
+}
 async function openSystemairSkuPage(sku) {
   try {
     const res = await fetch('https://www.systemair.com/api/uk-ua/search?id=93290740&query=' + encodeURIComponent(sku) + '&type=skus&discontinued=false&maxHits=20');
@@ -2739,7 +2798,8 @@ const CUSTOM_SHEET_DIAG = [
   { key: 'kkb_gal', sheet: 'Galactic ККБ', tile: 'Компресорно-конденсаторні блоки (ККБ)', brand: 'gal', parse: parseKkbGalSheet },
   { key: 'kkb_mhi', sheet: 'ККБ MHI', tile: 'Компресорно-конденсаторні блоки (ККБ)', brand: 'mhi', parse: parseKkbMhiSheet },
   { key: 'systemair', sheet: 'SYSTEMAIR', tile: 'Вентиляційне обладнання', brand: 'systemair', parse: parseSystemairSheet },
-  { key: 'frico', sheet: 'FRICO', tile: 'Повітряні завіси', brand: 'frico', parse: parseFricoSheet }
+  { key: 'frico', sheet: 'FRICO', tile: 'Повітряні завіси', brand: 'frico', parse: parseFricoSheet },
+  { key: 'remak_curtains', sheet: 'REMAK ЗАВІСИ', tile: 'Повітряні завіси', brand: 'remak', parse: parseRemakCurtainsSheet }
 ];
 function parseGalVrfIndoorSheet(wb) {
   const rows = sheetRows(wb, 'Galactic VRF');
@@ -3087,7 +3147,7 @@ function tileHasAnyData(tile) {
     return !!((sheetsData.kkb_mhi && sheetsData.kkb_mhi.length) || (sheetsData.kkb_gal && sheetsData.kkb_gal.length));
   }
   if (tile.custom === 'ventilation') return !!(sheetsData.systemair && sheetsData.systemair.length);
-  if (tile.custom === 'aircurtains') return !!(sheetsData.frico && sheetsData.frico.length);
+  if (tile.custom === 'aircurtains') return !!((sheetsData.frico && sheetsData.frico.length) || (sheetsData.remak_curtains && sheetsData.remak_curtains.length));
   return (tile.mhi && sheetsData[tile.mhi.key]) || (tile.gal && sheetsData[tile.gal.key]);
 }
 function tileActiveCfg(tile) {
@@ -3179,6 +3239,28 @@ let brandSliderPrevBrand = null;
 
 /* Плавно "переїжджає" заливку перемикача MHI/GAL (тільки .brand-toggle-sliding, не
    3-way VRF) до активного боку. Викликати одразу після заміни main.innerHTML. */
+/* Висота шапки (position: sticky, top:0) змінюється (safe-area, банери) — рахуємо її і
+   виставляємо як CSS-змінну, щоб рядок пошуку (.sticky-search, теж position: sticky) міг
+   прилипати РІВНО під шапкою, а не наїжджати на неї. Викликати після кожного рендеру
+   екрана, де є .sticky-search, і на resize (банер міг з'явитись/зникнути). */
+function syncStickyHeaderOffset() {
+  const header = document.querySelector('header');
+  if (header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+}
+window.addEventListener('resize', syncStickyHeaderOffset);
+// Висота шапки може змінюватись і БЕЗ resize вікна (курс $/статус-рядок вантажиться
+// асинхронно вже ПІСЛЯ першого рендеру екрана) — ResizeObserver тримає --header-h
+// коректним завжди, без потреби викликати syncStickyHeaderOffset() вручну після кожної
+// такої зміни.
+(function () {
+  const headerEl = document.querySelector('header');
+  if (!headerEl) return;
+  if (window.ResizeObserver) {
+    new ResizeObserver(syncStickyHeaderOffset).observe(headerEl);
+  }
+  syncStickyHeaderOffset();
+})();
+
 function positionBrandSlider(container, brand, prevBrand) {
   const slider = container.querySelector('.brand-toggle-slider');
   if (!slider) return;
@@ -4020,14 +4102,14 @@ function renderVentilationList() {
   // маркуванням чи артикулом) — той самий список, просто звужений фільтром, з тим самим
   // порційним рендером.
   const allItems = sheetsData.systemair || [];
-  const q = norm(systemairSearchQuery);
+  const q = normalizeSearchKey(systemairSearchQuery);
   const filtered = q.length >= 2
-    ? allItems.filter(it => norm(it.model).includes(q) || norm(it.article).includes(q))
+    ? allItems.filter(it => normalizeSearchKey(it.model).includes(q) || normalizeSearchKey(it.article).includes(q))
     : allItems;
   const visibleCount = Math.min(systemairRenderCount, filtered.length);
   const visible = filtered.slice(0, visibleCount);
 
-  const searchHtml = `<div class="admin-search"><input type="text" id="systemair-search-input" placeholder="Пошук за маркуванням або артикулом..." value="${escapeHtml(systemairSearchQuery)}"></div>`;
+  const searchHtml = `<div class="sticky-search"><div class="admin-search"><input type="text" id="systemair-search-input" placeholder="Пошук за маркуванням або артикулом..." value="${escapeHtml(systemairSearchQuery)}"></div></div>`;
   let bodyHtml;
   if (allItems.length === 0) {
     bodyHtml = '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
@@ -4042,6 +4124,7 @@ function renderVentilationList() {
     bodyHtml = `<div class="count" id="systemair-count">${countText}</div><div id="systemair-rows">${buildSimplePriceRowsHtml(visible, opts)}</div>${loadMoreHtml}`;
   }
   main.innerHTML = searchHtml + bodyHtml;
+  syncStickyHeaderOffset();
   const input = document.getElementById('systemair-search-input');
   if (input) {
     input.addEventListener('input', () => {
@@ -4076,20 +4159,59 @@ function renderVentilationList() {
 }
 
 /* ---------- "Повітряні завіси" — FRICO ---------- */
+let aircurtainsSearchQuery = '';
 function renderAirCurtainsList() {
   const main = document.getElementById('main');
   openCalcPanelEl = null;
   seriesInfoTexts = [];
-  const items = sheetsData.frico || [];
-  if (items.length === 0) {
-    main.innerHTML = '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
-    return;
+
+  // FRICO/REMAK — той самий перемикач-механізм, що й ККБ (activeBrand 'mhi'/'gal' як
+  // спільний слот A/B, тут просто підписаний інакше в розмітці).
+  const brandToggleHtml = `
+    <div class="brand-toggle brand-toggle-sliding">
+      <div class="brand-toggle-slider"></div>
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">FRICO</button>
+      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">REMAK</button>
+    </div>`;
+  const prevBrandForSlider = brandSliderPrevBrand;
+  brandSliderPrevBrand = null;
+
+  const allItems = (activeBrand === 'mhi' ? sheetsData.frico : sheetsData.remak_curtains) || [];
+  const cartSourceKey = activeBrand === 'mhi' ? 'frico' : 'remak_curtains';
+  const q = normalizeSearchKey(aircurtainsSearchQuery);
+  const filtered = q.length >= 2
+    ? allItems.filter(it => normalizeSearchKey(it.model).includes(q) || normalizeSearchKey(it.article).includes(q))
+    : allItems;
+
+  const searchHtml = `<div class="sticky-search"><div class="admin-search"><input type="text" id="aircurtains-search-input" placeholder="Пошук за маркуванням або артикулом..." value="${escapeHtml(aircurtainsSearchQuery)}"></div></div>`;
+  let bodyHtml;
+  if (allItems.length === 0) {
+    bodyHtml = '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+  } else if (filtered.length === 0) {
+    bodyHtml = '<div class="empty">Нічого не знайдено</div>';
+  } else {
+    // Калькулятор по рядку не просили для цієї плитки — лише загальний (checkbox
+    // "підбірка"), за спільним правилом "де є ціна (роздрібна теж) — загальний
+    // калькулятор додаємо". stagger:false — до ~1000 позицій, послідовна анімація
+    // виглядала б як гальма.
+    const opts = { cartSourceKey, tileLabel: 'Повітряні завіси', showCalc: false, priceNote: 'роздрібна', stagger: false };
+    const countText = (q.length >= 2 ? 'Знайдено: ' : 'Всього: ') + filtered.length;
+    bodyHtml = `<div class="count">${countText}</div>` + buildSimplePriceRowsHtml(filtered, opts);
   }
-  // Калькулятор по рядку не просили для цієї плитки — лише загальний (checkbox
-  // "підбірка"), за спільним правилом "де є ціна (роздрібна теж) — загальний калькулятор
-  // додаємо". stagger:false — ~1000 позицій, послідовна анімація виглядала б як гальма.
-  const opts = { cartSourceKey: 'frico', tileLabel: 'Повітряні завіси', showCalc: false, priceNote: 'роздрібна', stagger: false };
-  main.innerHTML = '<div class="count">Всього: ' + items.length + '</div>' + buildSimplePriceRowsHtml(items, opts);
+  main.innerHTML = brandToggleHtml + searchHtml + bodyHtml;
+  attachBrandToggleHandlers(main);
+  positionBrandSlider(main, activeBrand, prevBrandForSlider);
+  syncStickyHeaderOffset();
+  const input = document.getElementById('aircurtains-search-input');
+  if (input) {
+    input.addEventListener('input', () => {
+      aircurtainsSearchQuery = input.value;
+      const caret = input.selectionStart;
+      renderAirCurtainsList();
+      const newInput = document.getElementById('aircurtains-search-input');
+      if (newInput) { newInput.focus(); newInput.setSelectionRange(caret, caret); }
+    });
+  }
 }
 
 /* ---------- "Теплові насоси" ---------- */
