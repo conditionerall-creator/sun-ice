@@ -785,6 +785,20 @@
   .calc-eq { font-weight: 600; }
   .calc-base { font-weight: 600; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .count { font-size: 12px; color: var(--text-secondary); padding: 8px 2px 4px; }
+  .load-more-btn {
+    display: block;
+    width: 100%;
+    margin: 14px 0 4px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--navy);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .load-more-btn:active { background: var(--accent-bg); }
 
   /* Теплові насоси / VRF: додатковий рядок під назвою (потужність тощо) */
   .row-sub { font-size: 12px; color: var(--text-secondary); margin: 2px 0 0; }
@@ -2022,6 +2036,8 @@ let activeBrand = 'mhi'; // 'mhi' | 'gal' — активний бренд у п�
 let heatpumpsBrand = null;
 let ventilationBrand = null; // null = меню (поки лише Systemair)
 let systemairSearchQuery = '';
+const SYSTEMAIR_BATCH = 200;
+let systemairRenderCount = SYSTEMAIR_BATCH;
 /* Плитка "Мультизональні VRF": для MHI — 3 перемикачі за вкладками прайсу (як activeBrand,
    без history.pushState), для GAL — 2 перемикачі (зовнішні/внутрішні). */
 let vrfMhiSource = 'outdoor'; // 'outdoor' | 'indoor_r410a' | 'indoor_kxze1w'
@@ -2513,8 +2529,22 @@ function parseThMhiEzyQtonSheet(wb) {
       continue; // заголовок групи (лише colA) або порожній/непарний рядок-продовження опису
     }
     const model = isShifted ? colA : colB;
-    if (!model) continue; // рідкісний "осиротілий" рядок з ціною другого варіанта без власної назви (напр. EMK500M) — опис і так видно в тексті першого рядка, друга ціна тут свідомо не вгадується
-    items.push({ model, price, currency: '$', groupKey: currentGroup, groupLabel: currentGroup });
+    if (!model) continue; // "осиротілий" рядок з ціною другого варіанта без власної назви (обробляється нижче ЯК ЧАСТИНА попереднього рядка, тут сам по собі більше нічого не додає)
+    // Рядок типу "EMK300M / EMK500M" чи "Anode T300/Anode T500" — одна назва об'єднує ДВА
+    // окремих маркування, і в файлі під ним є ще один рядок-"сирота" з другою ціною без
+    // власної назви. Незрозуміло, яка з двох цифр належить якому з двох маркувань у
+    // назві — свідомо НЕ вгадуємо (напр. по порядку), а показуємо прочерк для обох.
+    const nextRow = rows[r + 1] || [];
+    const nextColA = String(nextRow[0] || '').trim();
+    const nextColB = String(nextRow[1] || '').trim();
+    const nextModel = isShifted ? nextColA : nextColB;
+    const nextPrice = parseNumber(nextRow[3]);
+    const ambiguous = !nextModel && nextPrice !== null;
+    if (ambiguous) {
+      items.push({ model, priceUnknown: true, currency: '$', groupKey: currentGroup, groupLabel: currentGroup });
+    } else {
+      items.push({ model, price, currency: '$', groupKey: currentGroup, groupLabel: currentGroup });
+    }
     rowGroupMap[r] = currentGroup || undefined;
   }
   thEzyRowGroupMapCache = rowGroupMap;
@@ -2533,6 +2563,10 @@ async function getThEzyRowGroupMap() {
    Аркуш ~14000 рядків (весь європейський каталог) — без групування, простий плоский
    список: Артикул (A), Назва (B), Роздрібна ціна EUR (D). Рендериться лише за пошуком
    (renderVentilationList) — 14000 DOM-рядків одразу заморозили б мобільний браузер. */
+// articleLink: true — тап на артикул шукає товар за цим SKU через живий пошуковий API
+// офіційного сайту Systemair і відкриває знайдену сторінку (openSystemairSkuPage) —
+// тільки за ТОЧНИМ збігом номера, без здогадок, якщо не знайдено. Той самий сайт і той
+// самий механізм, що й у "Повітряні завіси" (FRICO) — обидва каталоги належать Systemair.
 function parseSystemairSheet(wb) {
   const rows = sheetRows(wb, 'SYSTEMAIR');
   if (!rows) return [];
@@ -2543,16 +2577,13 @@ function parseSystemairSheet(wb) {
     const model = String(row[1] || '').trim();
     const price = parseNumber(row[3]);
     if (!model || price === null) continue;
-    items.push({ model, article, price, currency: 'EUR' });
+    items.push({ model, article, articleLink: true, price, currency: 'EUR' });
   }
   return items;
 }
 
 /* ---------- "Повітряні завіси" — FRICO ----------
-   Назва (B) = маркування, Артикул (A), Роздрібна ціна EUR (D). articleLink: true — тап на
-   артикул шукає товар за цим SKU через живий пошуковий API офіційного сайту Systemair і
-   відкриває знайдену сторінку (openFricoProductPage) — тільки за ТОЧНИМ збігом номера,
-   без здогадок, якщо не знайдено. */
+   Назва (B) = маркування, Артикул (A), Роздрібна ціна EUR (D). */
 function parseFricoSheet(wb) {
   const rows = sheetRows(wb, 'FRICO');
   if (!rows) return [];
@@ -2567,7 +2598,7 @@ function parseFricoSheet(wb) {
   }
   return items;
 }
-async function openFricoProductPage(sku) {
+async function openSystemairSkuPage(sku) {
   try {
     const res = await fetch('https://www.systemair.com/api/uk-ua/search?id=93290740&query=' + encodeURIComponent(sku) + '&type=skus&discontinued=false&maxHits=20');
     if (!res.ok) return;
@@ -2587,9 +2618,12 @@ async function openFricoProductPage(sku) {
    заголовок серії/типажу (підпис бере з C, якщо є, інакше з B — так однаково працює і для
    "Зовнішніх блоків" (назва серії в B), і для "Внутрішніх" (назва типажу в C, короткий код
    у B)). */
+// rowGroupMap для кожного з трьох VRF MHI аркушів (extractSeriesImages) — окремий кеш на
+// sheetName, бо parseVrfTypeSheet() викликається тричі з різними аркушами/результатами.
+let vrfRowGroupMapCache = {};
 function parseVrfTypeSheet(wb, sheetName) {
   const rows = sheetRows(wb, sheetName);
-  if (!rows) return [];
+  if (!rows) { vrfRowGroupMapCache[sheetName] = []; return []; }
   // Стовпчик "Тип блоку"/моделі завжди рівно на 4 позиції лівіше за стовпчик ціни (яку б
   // саме колонку не займала ціна у конкретному аркуші) — тому знаходимо ціну через
   // findPriceHeader() (як і generic parseSheet()) і рахуємо решту від неї, а не хардкодимо
@@ -2597,12 +2631,13 @@ function parseVrfTypeSheet(wb, sheetName) {
   // а аркуші "VRF Внутрішні ..." — ні (SheetJS обрізає порожню колонку A, усе зсувається
   // на 1 вліво, модель опиняється у B) — офсет "модель − 4 = ціна" однаковий для обох форм.
   const priceHeader = findPriceHeader(rows);
-  if (!priceHeader) return [];
+  if (!priceHeader) { vrfRowGroupMapCache[sheetName] = []; return []; }
   const priceCol = priceHeader.col;
   const modelCol = priceCol - 4;
   const labelCol = modelCol - 1;
-  if (modelCol < 0) return [];
+  if (modelCol < 0) { vrfRowGroupMapCache[sheetName] = []; return []; }
   const items = [];
+  const rowGroupMap = [];
   let groupLabel = null;
   for (let r = priceHeader.row + 1; r < rows.length; r++) {
     const row = rows[r] || [];
@@ -2616,8 +2651,18 @@ function parseVrfTypeSheet(wb, sheetName) {
     }
     if (!c) continue;
     items.push({ model: c, price: price, currency: '$', groupKey: groupLabel, groupLabel: groupLabel });
+    rowGroupMap[r] = groupLabel || undefined;
   }
+  vrfRowGroupMapCache[sheetName] = rowGroupMap;
   return assignGroupColors(items);
+}
+async function getVrfRowGroupMap(cacheKey, rebuildFn) {
+  if (vrfRowGroupMapCache[cacheKey]) return vrfRowGroupMapCache[cacheKey];
+  const buf = await ensurePriceRawBuffer();
+  if (!buf) return [];
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
+  rebuildFn(wb); // побічний ефект — заповнює vrfRowGroupMapCache[cacheKey]
+  return vrfRowGroupMapCache[cacheKey] || [];
 }
 
 /* ---------- "Мультизональні VRF" — GALACTIC ----------
@@ -2626,8 +2671,9 @@ function parseVrfTypeSheet(wb, sheetName) {
    на вкладку "Контакти" (без калькулятора й підбірки, як і просив користувач). */
 function parseGalVrfOutdoorSheet(wb) {
   const rows = sheetRows(wb, 'Galactic VRF');
-  if (!rows) return [];
+  if (!rows) { vrfRowGroupMapCache.galOutdoor = []; return []; }
   const items = [];
+  const rowGroupMap = [];
   let groupLabel = null;
   let started = false;
   for (let r = 0; r < rows.length; r++) {
@@ -2645,7 +2691,9 @@ function parseGalVrfOutdoorSheet(wb) {
       model: model, price: null, currency: '', onRequest: true,
       groupKey: groupLabel, groupLabel: groupLabel, breakdownText: note || null
     });
+    rowGroupMap[r] = groupLabel || undefined;
   }
+  vrfRowGroupMapCache.galOutdoor = rowGroupMap;
   return assignGroupColors(items);
 }
 /* Обгортка для кастомних (не-generic) вкладок — та сама самодіагностика (price_issues),
@@ -2695,8 +2743,9 @@ const CUSTOM_SHEET_DIAG = [
 ];
 function parseGalVrfIndoorSheet(wb) {
   const rows = sheetRows(wb, 'Galactic VRF');
-  if (!rows) return [];
+  if (!rows) { vrfRowGroupMapCache.galIndoor = []; return []; }
   const items = [];
+  const rowGroupMap = [];
   let groupLabel = null;
   let started = false;
   for (let r = 0; r < rows.length; r++) {
@@ -2711,7 +2760,9 @@ function parseGalVrfIndoorSheet(wb) {
       model: model, price: null, currency: '', onRequest: true,
       groupKey: groupLabel, groupLabel: groupLabel, breakdownText: note || null
     });
+    rowGroupMap[r] = groupLabel || undefined;
   }
+  vrfRowGroupMapCache.galIndoor = rowGroupMap;
   return assignGroupColors(items);
 }
 
@@ -2845,7 +2896,7 @@ function buildSheetsData(wb, previousData) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 9;
+const PARSER_VERSION = 10;
 
 function loadProcessedCache() {
   try {
@@ -3212,6 +3263,7 @@ function renderCatalogMenu() {
       heatpumpsBrand = null;
       ventilationBrand = null;
       systemairSearchQuery = '';
+      systemairRenderCount = SYSTEMAIR_BATCH;
       vrfMhiSource = 'outdoor';
       vrfGalSide = 'outdoor';
       renderCatalogView();
@@ -3558,8 +3610,7 @@ function renderCatalogList() {
           infoEntry.getImages = async () => {
             const rowGroupMap = await getRowGroupMapForSplitTile(brandAtPush);
             const map = await extractSeriesImages(sheetAtPush, row => rowGroupMap[row]);
-            const url = map.get(effectiveKey);
-            return url ? [url] : [];
+            return map.get(effectiveKey) || [];
           };
         }
         seriesInfoTexts.push(infoEntry);
@@ -3689,9 +3740,14 @@ function buildSimplePriceRowsHtml(items, opts) {
       infoBtnHtml = `<button class="kit-info-btn" type="button" data-info-idx="${idx}" aria-label="Детальніше">ⓘ</button>`;
     }
 
-    const rowLocked = locked && !it.onRequest;
+    const rowLocked = locked && !it.onRequest && !it.priceUnknown;
     let rightHtml = infoBtnHtml;
-    if (it.onRequest) {
+    if (it.priceUnknown) {
+      // Клітинка прайсу неоднозначна (напр. один рядок з двома об'єднаними маркуваннями
+      // і двома можливими цифрами ціни на різних рядках) — свідомо НЕ вгадуємо, яка з
+      // цифр належить якому маркуванню, показуємо прочерк без калькулятора/підбірки.
+      rightHtml += `<div class="row-price">−</div>`;
+    } else if (it.onRequest) {
       rightHtml += (opts.onRequestLink === false)
         ? `<div class="row-price">За запитом</div>`
         : `<button type="button" class="price-request-btn">За запитом</button>`;
@@ -3719,13 +3775,13 @@ function buildSimplePriceRowsHtml(items, opts) {
 
     const powerHtml = it.power ? `<p class="row-sub">${escapeHtml(it.power)}</p>` : '';
     // Артикул (SYSTEMAIR/FRICO): просто текст, або — коли articleLink — кнопка, що шукає
-    // товар за цим SKU на офіційному сайті Systemair (openFricoProductPage).
+    // товар за цим SKU на офіційному сайті Systemair (openSystemairSkuPage).
     const articleHtml = it.article
       ? (it.articleLink
           ? `<button type="button" class="row-article-link" data-sku="${escapeHtml(it.article)}">Артикул: ${escapeHtml(it.article)}</button>`
           : `<p class="row-sub">Артикул: ${escapeHtml(it.article)}</p>`)
       : '';
-    const calcSlotHtml = (showCalc && !it.onRequest && !rowLocked)
+    const calcSlotHtml = (showCalc && !it.onRequest && !it.priceUnknown && !rowLocked)
       ? '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '')) + '</div>'
       : '';
 
@@ -3781,7 +3837,22 @@ function renderVrfList() {
     const src = VRF_MHI_SOURCES.find(s => s.key === vrfMhiSource);
     items = sheetsData[src.dataKey] || [];
     cartSourceKey = 'vrf_mhi_' + vrfMhiSource;
-    opts = { cartSourceKey, tileLabel: 'Мультизональні VRF', showCalc: false, showShare: false, priceNote: 'роздрібна', stagger: animateRows };
+    // Фото серії — той самий механізм, що й Спліт-системи/ККБ (extractSeriesImages).
+    // src.label збігається з реальною назвою аркуша ("VRF Зовнішні блоки" тощо).
+    opts = {
+      cartSourceKey, tileLabel: 'Мультизональні VRF', showCalc: false, showShare: false, priceNote: 'роздрібна', stagger: animateRows,
+      groupHeaderInfo: (effectiveKey) => {
+        if (!effectiveKey) return null;
+        return {
+          text: effectiveKey,
+          getImages: async () => {
+            const rowGroupMap = await getVrfRowGroupMap(src.label, wb => parseVrfTypeSheet(wb, src.label));
+            const map = await extractSeriesImages(src.label, row => rowGroupMap[row]);
+            return map.get(effectiveKey) || [];
+          }
+        };
+      }
+    };
   } else {
     subToggleHtml = `
       <div class="brand-toggle toggle-3way">
@@ -3790,7 +3861,22 @@ function renderVrfList() {
       </div>`;
     items = sheetsData[vrfGalSide === 'outdoor' ? 'vrf_gal_outdoor' : 'vrf_gal_indoor'] || [];
     cartSourceKey = 'vrf_gal_' + vrfGalSide;
-    opts = { cartSourceKey, tileLabel: 'Мультизональні VRF', stagger: animateRows };
+    const galCacheKey = vrfGalSide === 'outdoor' ? 'galOutdoor' : 'galIndoor';
+    const galRebuild = vrfGalSide === 'outdoor' ? parseGalVrfOutdoorSheet : parseGalVrfIndoorSheet;
+    opts = {
+      cartSourceKey, tileLabel: 'Мультизональні VRF', stagger: animateRows,
+      groupHeaderInfo: (effectiveKey) => {
+        if (!effectiveKey) return null;
+        return {
+          text: effectiveKey,
+          getImages: async () => {
+            const rowGroupMap = await getVrfRowGroupMap(galCacheKey, galRebuild);
+            const map = await extractSeriesImages('Galactic VRF', row => rowGroupMap[row]);
+            return map.get(effectiveKey) || [];
+          }
+        };
+      }
+    };
   }
 
   if (items.length === 0) {
@@ -3877,8 +3963,7 @@ function renderKkbList() {
               const m = rawRows && rawRows[row] ? String(rawRows[row][2] || '').trim() : '';
               return m ? extractGucSeries(m) : null;
             });
-            const url = map.get(effectiveKey);
-            return url ? [url] : [];
+            return map.get(effectiveKey) || [];
           }
         };
       }
@@ -3920,6 +4005,7 @@ function renderVentilationList() {
         history.pushState({ tab: 'catalog', tile: 'ventilation', vBrand: key }, '', '#ventilation-' + key);
         ventilationBrand = key;
         systemairSearchQuery = '';
+        systemairRenderCount = SYSTEMAIR_BATCH;
         renderVentilationList();
       });
     });
@@ -3927,43 +4013,64 @@ function renderVentilationList() {
   }
 
   // SYSTEMAIR — ~14000 позицій одним плоским списком (весь європейський каталог), без
-  // групування за серіями. Малювати все одразу — ~14000 DOM-рядків — заморозило б
-  // мобільний браузер, тому список з'являється лише за пошуком (маркування чи артикул),
-  // і навіть тоді обрізається до MAX_RESULTS, щоб не намалювати забагато за раз.
+  // групування за серіями. За проханням користувача весь товар має бути видно списком —
+  // але намалювати всі ~14000 DOM-рядків за раз усе одно заморозило б мобільний браузер,
+  // тому рендеримо частинами (SYSTEMAIR_BATCH за раз) із кнопкою "Показати ще" внизу —
+  // весь список зрештою доступний, просто не всі рядки одразу в DOM. Пошук (за
+  // маркуванням чи артикулом) — той самий список, просто звужений фільтром, з тим самим
+  // порційним рендером.
   const allItems = sheetsData.systemair || [];
   const q = norm(systemairSearchQuery);
-  const MAX_RESULTS = 150;
-  const matched = [];
-  if (q.length >= 2) {
-    for (let i = 0; i < allItems.length && matched.length < MAX_RESULTS; i++) {
-      const it = allItems[i];
-      if (norm(it.model).includes(q) || norm(it.article).includes(q)) matched.push(it);
-    }
-  }
+  const filtered = q.length >= 2
+    ? allItems.filter(it => norm(it.model).includes(q) || norm(it.article).includes(q))
+    : allItems;
+  const visibleCount = Math.min(systemairRenderCount, filtered.length);
+  const visible = filtered.slice(0, visibleCount);
+
   const searchHtml = `<div class="admin-search"><input type="text" id="systemair-search-input" placeholder="Пошук за маркуванням або артикулом..." value="${escapeHtml(systemairSearchQuery)}"></div>`;
   let bodyHtml;
   if (allItems.length === 0) {
     bodyHtml = '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
-  } else if (q.length < 2) {
-    bodyHtml = '<div class="empty">Введіть маркування або артикул (від 2 символів)</div>';
-  } else if (matched.length === 0) {
+  } else if (filtered.length === 0) {
     bodyHtml = '<div class="empty">Нічого не знайдено</div>';
   } else {
     const opts = { cartSourceKey: 'systemair', tileLabel: 'Вентиляційне обладнання', stagger: false };
-    const countHtml = matched.length === MAX_RESULTS
-      ? `<div class="count">Показано перші ${MAX_RESULTS} збігів — уточніть пошук</div>`
-      : `<div class="count">Знайдено: ${matched.length}</div>`;
-    bodyHtml = countHtml + buildSimplePriceRowsHtml(matched, opts);
+    const countText = (q.length >= 2 ? 'Знайдено: ' : 'Всього: ') + filtered.length;
+    const loadMoreHtml = visibleCount < filtered.length
+      ? `<button type="button" class="load-more-btn" id="systemair-load-more">Показати ще (${filtered.length - visibleCount})</button>`
+      : '';
+    bodyHtml = `<div class="count" id="systemair-count">${countText}</div><div id="systemair-rows">${buildSimplePriceRowsHtml(visible, opts)}</div>${loadMoreHtml}`;
   }
   main.innerHTML = searchHtml + bodyHtml;
   const input = document.getElementById('systemair-search-input');
   if (input) {
     input.addEventListener('input', () => {
       systemairSearchQuery = input.value;
+      systemairRenderCount = SYSTEMAIR_BATCH; // нова умова пошуку — пагінація з початку
       const caret = input.selectionStart;
       renderVentilationList();
       const newInput = document.getElementById('systemair-search-input');
       if (newInput) { newInput.focus(); newInput.setSelectionRange(caret, caret); }
+    });
+  }
+  const loadMoreBtn = document.getElementById('systemair-load-more');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', () => {
+      // Дописуємо лише НОВУ порцію рядків у кінець списку (не перемальовуємо все) —
+      // інакше клік внизу довгого списку щоразу підкидав би сторінку нагору.
+      const prevCount = visibleCount;
+      systemairRenderCount += SYSTEMAIR_BATCH;
+      const nextCount = Math.min(systemairRenderCount, filtered.length);
+      const nextBatch = filtered.slice(prevCount, nextCount);
+      const rowsContainer = document.getElementById('systemair-rows');
+      if (rowsContainer) {
+        rowsContainer.insertAdjacentHTML('beforeend', buildSimplePriceRowsHtml(nextBatch, { cartSourceKey: 'systemair', tileLabel: 'Вентиляційне обладнання', stagger: false }));
+      }
+      if (nextCount >= filtered.length) {
+        loadMoreBtn.remove();
+      } else {
+        loadMoreBtn.textContent = 'Показати ще (' + (filtered.length - nextCount) + ')';
+      }
     });
   }
 }
@@ -4046,8 +4153,7 @@ function renderHeatpumpsList() {
           getImages: async () => {
             const rowGroupMap = await getThEzyRowGroupMap();
             const map = await extractSeriesImages('TH MHI – EZY та Qton', row => rowGroupMap[row]);
-            const url = map.get(effectiveKey);
-            return url ? [url] : [];
+            return map.get(effectiveKey) || [];
           }
         };
       }
@@ -4148,14 +4254,29 @@ async function extractSeriesImages(sheetName, rowToGroup) {
         idToImage[drawRelEls[i].getAttribute('Id')] = drawRelEls[i].getAttribute('Target').split('/').pop();
       }
 
-      // Рядок 0 у всіх трьох аркушах — логотипи/декоративні шапки, не стосуються жодної
-      // конкретної серії, тому свідомо відкидаємо. Анкери йдуть за зростанням рядка, тому
-      // при збігу групи в Map лишається образ з БЛИЖЧОГО (пізнішого) анкера — саме він
-      // зазвичай і є "справжнім" фото серії, а не випадковий банер над нею.
+      // Рядок 0 у всіх аркушах — логотипи/декоративні шапки, не стосуються жодної
+      // конкретної серії, свідомо відкидаємо одразу.
       anchors.sort((a, b) => a.row - b.row);
+      const withRow0Dropped = anchors.filter(a => a.row !== 0);
+
+      // Значки/бейджі (R410A, R32, Wi-Fi ready тощо) намальовані ОДНИМ і тим самим файлом,
+      // повторно вставленим біля десятків різних серій — на відміну від справжнього фото
+      // товару, яке в файлі завжди рівно ОДНЕ. Рахуємо, скільки разів кожен image-файл
+      // трапляється у ВСЬОМУ аркуші, і відкидаємо все, що повторюється (поріг ">1") —
+      // залишаються тільки унікальні, тобто справжні фото. Перевірено на реальних даних
+      // (ПОБУТОВІ/GALACTIC): без цього фільтра "фото" серії міг стати банер "РОЗПРОДАЖ!"
+      // чи іконка хладагента, що випадково потрапляє в діапазон рядків групи.
+      const fileCounts = new Map();
+      withRow0Dropped.forEach(a => {
+        const f = idToImage[a.embedId];
+        if (f) fileCounts.set(f, (fileCounts.get(f) || 0) + 1);
+      });
+      const uniqueAnchors = withRow0Dropped.filter(a => fileCounts.get(idToImage[a.embedId]) === 1);
+
+      // Кілька анкерів однієї групи (напр. кілька окремих фото серії поруч) — усі йдуть у
+      // масив, у порядку рядків аркуша (тобто в тому ж порядку, що й в самому Excel).
       const result = new Map();
-      for (const a of anchors) {
-        if (a.row === 0) continue;
+      for (const a of uniqueAnchors) {
         const imgFile = idToImage[a.embedId];
         if (!imgFile) continue;
         const ext = (imgFile.split('.').pop() || '').toLowerCase();
@@ -4167,7 +4288,8 @@ async function extractSeriesImages(sheetName, rowToGroup) {
         if (!entry) continue;
         const bytes = await entry.async('arraybuffer');
         const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
-        result.set(group, url);
+        if (!result.has(group)) result.set(group, []);
+        result.get(group).push(url);
       }
       return result;
     } catch (e) {
@@ -4287,7 +4409,7 @@ document.getElementById('main').addEventListener('click', function(e) {
   const articleLinkBtn = e.target.closest('.row-article-link');
   if (articleLinkBtn) {
     const sku = articleLinkBtn.getAttribute('data-sku');
-    if (sku) openFricoProductPage(sku);
+    if (sku) openSystemairSkuPage(sku);
     return;
   }
   const toggleBtn = e.target.closest('.calc-toggle');
