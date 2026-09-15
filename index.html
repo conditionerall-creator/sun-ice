@@ -697,6 +697,42 @@
     background: #fff;
     object-fit: contain;
   }
+  /* Тіло листа "Інструкція" (Теплові насоси → MHI EZY/Q-ton) — той самий
+     info-sheet-body, що й у series-info/task-form, але з розміченим HTML замість
+     звичайного тексту, тому власний білий колір whitespace і своя типографіка. */
+  .instruction-sheet-body { white-space: normal; }
+  .instruction-sheet-body p { margin: 0 0 10px; }
+  .instruction-sheet-body h4 {
+    margin: 20px 0 8px;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .instruction-sheet-body h4:first-child { margin-top: 0; }
+  .instruction-sheet-body h5 {
+    margin: 14px 0 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .instruction-sheet-body ul, .instruction-sheet-body ol { margin: 0 0 10px; padding-left: 1.2em; }
+  .instruction-sheet-body li { margin-bottom: 5px; }
+  .instruction-sheet-body strong { color: var(--text); }
+  .instr-table-wrap { overflow-x: auto; margin: 0 0 12px; border: 1px solid var(--border); border-radius: 10px; }
+  .instruction-sheet-body table { border-collapse: collapse; width: 100%; min-width: 320px; font-size: 12.5px; }
+  .instruction-sheet-body th, .instruction-sheet-body td { padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .instruction-sheet-body thead th { background: var(--bg); font-weight: 700; color: var(--text-secondary); }
+  .instruction-sheet-body tbody tr:last-child td { border-bottom: none; }
+  .instr-note {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 9px 12px;
+    margin: 0 0 12px;
+    font-size: 12.5px;
+  }
+  .instr-note:last-child { margin-bottom: 0; }
   .row-info { min-width: 0; flex: 1; }
   .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: normal; overflow-wrap: break-word; position: relative; z-index: 0; }
   .row-click-zone:active ~ .row-info .row-name, .row-info-zone:active ~ .row-info .row-name { opacity: 0.6; }
@@ -2075,6 +2111,11 @@
       <div class="back-btn" id="back-btn">←</div>
       <h1 id="title">Каталог Sun-Ice</h1>
       <div class="icon-btn" id="refresh-icon" title="Оновити прайс" style="display:none;">↻</div>
+      <!-- Обидві з'являються лише на плитці "Теплові насоси" → MHI EZY/Q-ton (перемикається
+           в renderHeatpumpsList()) — кожна відкриває свій info-sheet з поясненням про
+           відповідну машину (Hydrolution EZY і Q-ton — різні продукти під однією плиткою). -->
+      <div class="icon-btn icon-btn-text" id="th-ezy-instruction-btn" title="Інструкція — Hydrolution EZY" style="display:none;">EZY</div>
+      <div class="icon-btn icon-btn-text" id="q-ton-instruction-btn" title="Інструкція — MHI Q-ton" style="display:none;">Q-TON</div>
       <div class="icon-btn icon-btn-text" id="shortcut-icon" title="Встановити застосунок на головний екран" style="display:none;">Встановити</div>
     </div>
     <div class="rate-row" id="rate-row" style="display:none;">
@@ -2136,6 +2177,237 @@
     <div class="info-sheet-body" id="series-info-body"></div>
     <div class="info-sheet-actions" id="series-info-actions" hidden>
       <button type="button" class="info-sheet-action-btn" id="series-info-action-btn"></button>
+    </div>
+  </div>
+</div>
+
+<!-- "Інструкція" (Теплові насоси → MHI EZY/Q-ton) — той самий info-sheet-патерн, що
+     й series-info-overlay вище, тільки текст статичний і прописаний прямо в розмітці
+     (не залежить від прайсу, JS лише відкриває/закриває лист). -->
+<div class="info-sheet-overlay" id="th-ezy-instruction-overlay">
+  <div class="info-sheet-backdrop" id="th-ezy-instruction-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title">Hydrolution EZY — коротко про все</div>
+      <button type="button" class="info-sheet-close" id="th-ezy-instruction-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body instruction-sheet-body">
+      <p>Тепловий насос повітря-вода на пропані R290. Моноблок — увесь холодильний контур зібраний у вуличному блоці, в дім заходять звичайні водяні труби.</p>
+      <p>→ Плюс: монтаж без вакуумування контуру, майстер-холодильник не потрібен<br>→ Мінус: трасу між будинком і вуличним блоком треба захищати від замерзання (гліколь або автозлив)</p>
+      <p>Гріє воду до 75&nbsp;°C, працює аж до −25&nbsp;°C на вулиці — тобто тягне навіть старі радіатори, не тільки теплу підлогу.</p>
+
+      <h4>Комплект — це конструктор із 4 частин</h4>
+
+      <h5>1. Вуличний блок</h5>
+      <div class="instr-table-wrap">
+        <table>
+          <thead><tr><th>Модель</th><th>Потужність</th><th>Струм</th></tr></thead>
+          <tbody>
+            <tr><td>FDCM60</td><td>5,5 кВт</td><td>13 А (1 фаза)</td></tr>
+            <tr><td>FDCM71</td><td>8 кВт</td><td>16 А (1 фаза)</td></tr>
+            <tr><td>FDCM100</td><td>10,2 кВт</td><td>21 / 11 А</td></tr>
+            <tr><td>FDCM140</td><td>12,5 кВт</td><td>28 / 11 А</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>VNX = одна фаза, VSX = три фази. Є три фази — беріть VSX, струм удвічі менший.</p>
+
+      <h5>2. Внутрішній блок — обов'язково один із трьох</h5>
+      <ul>
+        <li><strong>HMM100</strong> — «все в одному»: бак 180 л + розширювальний + ТЕН 9 кВт, 150 кг, ставиться в котельні. Найпростіший варіант для житлового будинку.</li>
+        <li><strong>HBM140</strong> — гідробокс, 31 кг, на стіну. Бак окремо. ТЕНа немає взагалі — резерв на морози треба продумати окремо.</li>
+        <li><strong>HBM140H</strong> — той самий гідробокс + ТЕН 9 кВт + три фази. У більшості випадків логічніший за звичайний HBM140.</li>
+      </ul>
+
+      <h5>3. Бак гарячої води (якщо взяли гідробокс)</h5>
+      <div class="instr-note">⚠️ Дивіться не на літри, а на об'єм змійовика. Насос гріє низькою температурою, йому потрібна велика площа теплообміну.</div>
+      <div class="instr-table-wrap">
+        <table>
+          <thead><tr><th>Модель</th><th>Об'єм</th><th>Змійовик</th></tr></thead>
+          <tbody>
+            <tr><td>PT300</td><td>279 л</td><td>9,4 л</td></tr>
+            <tr><td>PT300-V2</td><td>285 л</td><td>16 л</td></tr>
+            <tr><td>PT500</td><td>476 л</td><td>13 л</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>PT300-V2 — правильний вибір під тепловий насос; PT300 слабенький, PT500 багато води при скромному змійовику.</p>
+
+      <h5>4. Контролер</h5>
+      <ul>
+        <li><strong>RC-HY20-W</strong> — один насос, один контур.</li>
+        <li><strong>RC-HY40-W</strong> — каскад до 8 насосів, кілька контурів.</li>
+      </ul>
+      <p>Обидва з інтернетом через myUplink.</p>
+
+      <h4>Підбір потужності — 3 речі, на яких всі спотикаються</h4>
+      <ol>
+        <li><strong>Цифри в таблиці — це при +7&nbsp;°C.</strong> При −20 віддача падає приблизно на третину. Правильно: насос закриває 80–90% тепловтрат у розрахунковий мороз, пік добирає ТЕН — не беріть з розрахунку на повне покриття морозів, це переплата й тактування восени.</li>
+        <li><strong>Температура води вирішує все.</strong> COP найменшої моделі: режим 45/40 → COP 3,77; режим 35/30 → COP 5,14 — різниця в третину по рахунку за світло. Тепла підлога чи занижені радіатори окупляться швидше, ніж потужніший насос.</li>
+        <li><strong>Не беріть із запасом.</strong> Інвертор модулює, але має нижню межу. Насос 12,5 кВт у домі, якому треба 5, — постійно вмикається-вимикається і зношується швидше. Прикидка: 50–70 Вт/м² для утепленого дому, 90–120 Вт/м² для старого (грубо — нормально рахувати тепловтрати).</li>
+      </ol>
+
+      <h4>Електрика</h4>
+      <ul>
+        <li>28 А — однофазна FDCM140. Окремий кабель, окремий автомат, стара проводка не потягне.</li>
+        <li>11 А — та сама модель на три фази.</li>
+        <li>+26 А (230 В) або +13 А (400 В) — ТЕН внутрішнього блока, зверху до насоса.</li>
+      </ul>
+      <div class="instr-note">Генератор/ДБЖ: інверторному компресору потрібна чиста синусоїда, запас джерела — мінімум подвійний до номіналу.</div>
+
+      <h4>Монтаж: 5 місць, де спотикаються</h4>
+      <ul>
+        <li><strong>🔥 R290 — це пропан.</strong> Горючий, важчий за повітря, стікає вниз. Норми по відстанях до вікон, приямків, продухів, вентканалів — тільки вулиця, тільки з дотриманням зон.</li>
+        <li><strong>💧 Конденсат.</strong> Взимку при відтайках ллє багато води. Потрібна дренажна подушка зі щебеню або підігрітий злив — інакше до лютого блок стоїть у крижаній брилі.</li>
+        <li><strong>📏 Місце.</strong> Підставка 30–50 см від землі (сніг), зазори для повітря, не в «кишеню» між стінами, не під вікно спальні сусіда — 41–51 дБ на метрі чутно нормально.</li>
+        <li><strong>🌡 Об'єм води в системі.</strong> Для нормальної відтайки потрібен буфер, якщо система малооб'ємна (радіатори з термоголовками). Тепла підлога об'єм дає сама.</li>
+        <li><strong>🧊 Гліколь.</strong> Забирає 5–10% тепловіддачі і додає опір. Циркуляційний насос — із запасом по напору.</li>
+      </ul>
+
+      <h4>Що коштує окремо</h4>
+      <p>Сонячні панелі, басейн, сонячні колектори, Modbus, SG Ready, каскад із 8 блоків — у базовий комплект не входить, доплата й карти розширення. Уточнюйте при замовленні.</p>
+
+      <h4>Шпаргалка по кроках</h4>
+      <ol>
+        <li>Рахуємо тепловтрати → вибираємо блок (для 120–180 м² зазвичай FDCM71 або FDCM100).</li>
+        <li>Є три фази? → версія VSX.</li>
+        <li>Все в одному корпусі → HMM100. Бак більший за 180 л або вже є → HBM140H + PT300-V2.</li>
+        <li>Один насос → RC-HY20-W. Каскад або два контури → RC-HY40-W.</li>
+        <li>Перевіряємо ввід електрики + місце під блок з урахуванням норм по пропану.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<!-- "Q-TON" (Теплові насоси → MHI EZY/Q-ton) — той самий info-sheet-патерн, що й
+     th-ezy-instruction-overlay вище, лише про іншу машину (CO2-насос ГВП, а не EZY). -->
+<div class="info-sheet-overlay" id="q-ton-instruction-overlay">
+  <div class="info-sheet-backdrop" id="q-ton-instruction-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title">MHI Q-ton ESA30EH2-25 — коротко про все</div>
+      <button type="button" class="info-sheet-close" id="q-ton-instruction-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body instruction-sheet-body">
+      <p>Промисловий тепловий насос для гарячої води на вуглекислому газі (R744 / CO₂). Не плутайте з Hydrolution — це інша порода машини.</p>
+      <p><strong>Головна фішка:</strong> потужність 30 кВт тримається і в +16, і в −7&nbsp;°C — віддача однакова, зростає тільки споживання (6,98 → 10,73 кВт). Звичайний фреоновий насос на морозі просідає, цей — ні.</p>
+      <p><strong>Друга фішка:</strong> воду гріє до 90&nbsp;°C. Без ТЕНа, самим компресором.</p>
+      <p>→ Це машина для готелів, хостелів, спортзалів, пралень, харчових виробництв, автомийок<br>→ Для опалення приватного будинку — надлишок, там своя логіка підбору</p>
+
+      <h4>Ключові цифри</h4>
+      <div class="instr-table-wrap">
+        <table>
+          <tbody>
+            <tr><td>Потужність</td><td>30 кВт (стабільно)</td></tr>
+            <tr><td>COP міжсезоння</td><td>4,30 (повітря +16, вода 17→65 °C)</td></tr>
+            <tr><td>COP мороз</td><td>2,80 (повітря −7, вода 5→90 °C)</td></tr>
+            <tr><td>Діапазон вулиці</td><td>−25…+43 °C</td></tr>
+            <tr><td>Вода на виході</td><td>60…90 °C</td></tr>
+            <tr><td>Живлення</td><td>тільки 3 фази 380–415 В</td></tr>
+            <tr><td>Струм</td><td>21 А макс, пусковий усього 5 А</td></tr>
+            <tr><td>Шум</td><td>58 дБ тиск / 70 дБ потужність</td></tr>
+            <tr><td>Габарити</td><td>1690×1350×755 мм</td></tr>
+            <tr><td>Вага</td><td>375 кг (385 у роботі)</td></tr>
+            <tr><td>Холодоагент</td><td>CO₂, 8,5 кг, GWP = 1</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Пусковий струм 5&nbsp;А при номіналі 21&nbsp;А — це інвертор із плавним пуском. Для генератора чи слабкої мережі це дуже добра новина.</p>
+
+      <h4>Найважливіше, що треба зрозуміти: це проточник</h4>
+      <p>Q-ton не гріє бак по колу, як звичайний бойлер. Він працює наскрізь: холодна вода зайшла → за один прохід → 90&nbsp;°C вийшла в бак.</p>
+      <div class="instr-table-wrap">
+        <table>
+          <thead><tr><th>Режим</th><th>Л/хв</th><th>Л/год</th></tr></thead>
+          <tbody>
+            <tr><td>Міжсезоння, 17→65 °C</td><td>8,97</td><td>≈ 538</td></tr>
+            <tr><td>Мороз, 5→90 °C</td><td>5,06</td><td>≈ 304</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="instr-note">⚠️ Цифри виглядають маленькими, але це вода на 90 градусів. Після змішувача до 45&nbsp;°C вона розходиться приблизно втричі.</div>
+      <p>Наслідок для проєкту: обов'язковий стратифікаційний бак-накопичувач. Машина набирає його повільно і рівно протягом доби, а пікове розбирання (ранок у готелі, вечір у спортзалі) покриває бак, а не насос.</p>
+
+      <h4>Два режими підживлення</h4>
+      <ul>
+        <li><strong>Top up</strong>, 5–35 °C — заходить свіжа холодна вода.</li>
+        <li><strong>Warm up</strong>, 35–63 °C — догрів уже теплої води з бака.</li>
+      </ul>
+      <p>Машина вміє обидва — можна і наповнювати бак з нуля, і підтягувати температуру в контурі рециркуляції.</p>
+
+      <h4>Як підбирати</h4>
+      <ol>
+        <li><strong>Рахуємо не кВт, а літри на добу.</strong> Груба прикидка на воду 45&nbsp;°C: готель/хостел — 100–150 л на гостя, спортзал/душові — 30–50 л на відвідувача, пральня — за паспортом обладнання, гуртожиток — 80–120 л на людину.</li>
+        <li><strong>Дивимось на графік споживання, а не на суму.</strong> Два готелі по 3000 л/добу — різні проєкти, якщо в одному воду беруть рівномірно, а в другому 70% за дві години вранці. Рівномірне споживання = менший насос + менший бак; гострий пік = той самий насос + великий бак.</li>
+        <li><strong>Рахуємо за найгіршим сценарієм.</strong> Беріть продуктивність 304 л/год, а не 538 — влітку буде запас, взимку не буде дефіциту. Приклад: об'єкт потребує 4000 л на добу при 60&nbsp;°C. 304 л/год × 20 робочих годин ≈ 6000 л — одна машина закриває із запасом. Але якщо 3000 з них треба за 3 години — потрібен бак мінімум на 3000 л.</li>
+        <li><strong>Каскад.</strong> Модулі об'єднуються в групу під спільним керуванням — стандартне рішення для великих об'єктів і заразом резервування: одна машина в сервісі, решта тримає об'єкт. Кількість у каскаді уточнюйте в документації під конкретну модифікацію.</li>
+      </ol>
+
+      <h4>Вода — тут усе серйозно</h4>
+      <div class="instr-note">⚠️ Вода має відповідати JRA-GL 02:1994. Інакше — накип і корозія. Газоохолоджувач — мідний змійовик, і вода в ньому гріється до 90&nbsp;°C за один прохід, накип сідає в рази швидше, ніж у звичайному бойлері.</div>
+      <p>Що робити: аналіз води до закупівлі обладнання (не після), жорстка вода → пом'якшувач обов'язково (не опція), механічний фільтр на вході, регулярне обслуговування водопідготовки — закласти в кошторис.</p>
+      <p>Тиск на вході: максимум 500 кПа (5 бар). Якщо в мережі більше — редуктор.</p>
+
+      <h4>Електрика</h4>
+      <div class="instr-table-wrap">
+        <table>
+          <tbody>
+            <tr><td>Автомат (MCCB)</td><td>30 А</td></tr>
+            <tr><td>ПЗВ</td><td>30 А / 30 мА / 0,1 с</td></tr>
+            <tr><td>Кабель</td><td>8 мм² × 4 (траса до 70 м)</td></tr>
+            <tr><td>Заземлення</td><td>болт M6</td></tr>
+            <tr><td>Кабель пульта</td><td>0,3 мм² × 2, екранований MVVS</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Три фази — обов'язково, однофазної версії немає, альтернативи немає.</p>
+      <p>Про кабель пульта: екран не для краси, прокладати окремо від силових ліній — інакше будуть плаваючі помилки зв'язку.</p>
+
+      <h4>Монтаж: 6 місць, де спотикаються</h4>
+      <ul>
+        <li><strong>⚖️ 375 кг.</strong> Це не «поставили на кронштейни» — потрібен бетонний фундамент або підготовлена платформа з віброопорами.</li>
+        <li><strong>💨 Повітря: 260 м³/хв, два вентилятори.</strong> Машина проганяє через себе величезний об'єм і викидає його охолодженим. Не в замкнений дворик, не в приямок, не під вікна — зазори за інструкцією, рециркуляція повітря вб'є COP миттєво.</li>
+        <li><strong>💧 Дренаж.</strong> Є дренажний штуцер Rc3/4 і три підігрівачі проти замерзання (піддон, труба, шланг) — вони працюють, але тільки якщо злив прокладено з ухилом і не впирається в лід. Взимку конденсату багато.</li>
+        <li><strong>🔧 Труби Rc3/4 (мідь 20А).</strong> Три підключення: вхід холодної, вихід гарячої, дренаж.</li>
+        <li><strong>🌀 Насос слабкий.</strong> Вбудований насос дає 5 м напору при 17 л/хв — це на коротку трасу до бака. Бак далеко або складна обв'язка → зовнішній циркуляційний насос у проєкт.</li>
+        <li><strong>🔴 Тиск 14 МПа = 140 бар.</strong> CO₂-контур працює під тиском, якого фреонові системи не бачать. Обслуговувати може тільки сервіс із допуском і обладнанням під R744 — знайдіть такого в регіоні до покупки, це реальний ризик проєкту, а не формальність.</li>
+      </ul>
+
+      <h4>Що каже енергоетикетка</h4>
+      <p>Профіль водорозбору XXL (найбільший із стандартних).</p>
+      <div class="instr-table-wrap">
+        <table>
+          <thead><tr><th>Показник</th><th>Помірний</th><th>Теплий</th><th>Холодний</th></tr></thead>
+          <tbody>
+            <tr><td>Клас опалення</td><td>A+</td><td>—</td><td>—</td></tr>
+            <tr><td>Клас ГВП</td><td>A</td><td>—</td><td>—</td></tr>
+            <tr><td>Теплова потужність</td><td>27 кВт</td><td>30 кВт</td><td>19 кВт</td></tr>
+            <tr><td>Сезонна ефективність</td><td>146%</td><td>174%</td><td>127%</td></tr>
+            <tr><td>Річне спож. (опалення)</td><td>14 822 кВт·год</td><td>9 199</td><td>15 499</td></tr>
+            <tr><td>Річне спож. (ГВП)</td><td>1 909 кВт·год</td><td>1 683</td><td>3 467</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Одеса — це «помірний клімат». Орієнтуйтесь на середню колонку: 146% сезонної ефективності.</p>
+
+      <h4>Дрібниці з приміток, які варто знати</h4>
+      <ul>
+        <li>Температура плаває ±3&nbsp;°C від заданої. Для ГВП це нормально, для технологічного процесу з жорсткою вимогою по температурі — закладайте це в проєкт.</li>
+        <li>Улітку машина сама себе притримує: якщо вхідна вода ≥30&nbsp;°C і на вулиці ≥25&nbsp;°C — автоматика обмежує нагрів, щоб не задирати температуру. Це штатна поведінка, не поломка.</li>
+        <li>COP на морозі (2,80) рахували без урахування 345 Вт антизамерзаючого нагрівача — взимку реальне споживання трохи вище паспортного.</li>
+        <li>Шум 58 дБ міряли в безлунній камері. На об'єкті між стінами буде голосніше через відбиття — для готелю рознесіть по відстані від вікон.</li>
+      </ul>
+
+      <h4>Шпаргалка по кроках</h4>
+      <ol>
+        <li>Рахуємо літри на добу + будуємо графік споживання по годинах.</li>
+        <li>Ділимо на 304 л/год (зимова продуктивність) → скільки машин.</li>
+        <li>Пік споживання мінус те, що насос дає в ці години → об'єм бака.</li>
+        <li>Робимо аналіз води → водопідготовка в кошторис.</li>
+        <li>Перевіряємо: три фази є? Автомат 30 А? Кабель 8 мм²?</li>
+        <li>Місце: фундамент під 375 кг + вільне повітря + дренаж із ухилом.</li>
+        <li>Знаходимо сервіс із допуском на R744 у своєму регіоні.</li>
+      </ol>
     </div>
   </div>
 </div>
@@ -3512,11 +3784,17 @@ function renderCatalogView() {
   if (activeTile === null) {
     backBtn.style.display = 'none';
     title.textContent = 'Каталог Sun-Ice';
+    document.getElementById('th-ezy-instruction-btn').style.display = 'none';
+    document.getElementById('q-ton-instruction-btn').style.display = 'none';
     renderCatalogMenu();
   } else {
     backBtn.style.display = 'flex';
     const tile = CATALOG_TILES.find(t => t.id === activeTile);
     title.textContent = tile ? tile.label : activeTile;
+    if (activeTile !== 'heatpumps') {
+      document.getElementById('th-ezy-instruction-btn').style.display = 'none';
+      document.getElementById('q-ton-instruction-btn').style.display = 'none';
+    }
     renderCatalogList();
   }
   renderRateRow();
@@ -4635,6 +4913,10 @@ function renderHeatpumpsList() {
   const main = document.getElementById('main');
   openCalcPanelEl = null;
   seriesInfoTexts = [];
+  // Кнопки "EZY"/"Q-TON" у шапці стосуються лише плитки EZY/Q-ton — на решті
+  // плиток (і в меню вибору бренду нижче) ховаємо обидві.
+  document.getElementById('th-ezy-instruction-btn').style.display = heatpumpsBrand === 'ezyqton' ? 'flex' : 'none';
+  document.getElementById('q-ton-instruction-btn').style.display = heatpumpsBrand === 'ezyqton' ? 'flex' : 'none';
 
   if (!heatpumpsBrand) {
     const tilesHtml = HEATPUMPS_BRANDS.map(b => `
@@ -4887,6 +5169,24 @@ function closeSeriesInfo() {
 }
 document.getElementById('series-info-close').addEventListener('click', closeSeriesInfo);
 document.getElementById('series-info-backdrop').addEventListener('click', closeSeriesInfo);
+
+function closeThEzyInstruction() {
+  document.getElementById('th-ezy-instruction-overlay').classList.remove('show');
+}
+document.getElementById('th-ezy-instruction-btn').addEventListener('click', () => {
+  document.getElementById('th-ezy-instruction-overlay').classList.add('show');
+});
+document.getElementById('th-ezy-instruction-close').addEventListener('click', closeThEzyInstruction);
+document.getElementById('th-ezy-instruction-backdrop').addEventListener('click', closeThEzyInstruction);
+
+function closeQtonInstruction() {
+  document.getElementById('q-ton-instruction-overlay').classList.remove('show');
+}
+document.getElementById('q-ton-instruction-btn').addEventListener('click', () => {
+  document.getElementById('q-ton-instruction-overlay').classList.add('show');
+});
+document.getElementById('q-ton-instruction-close').addEventListener('click', closeQtonInstruction);
+document.getElementById('q-ton-instruction-backdrop').addEventListener('click', closeQtonInstruction);
 
 document.getElementById('register-gate-close').addEventListener('click', closeRegisterGate);
 document.getElementById('register-gate-backdrop').addEventListener('click', closeRegisterGate);
@@ -7006,6 +7306,10 @@ function switchTab(tab, pushHistory) {
   renderCartBar();
   document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
   document.getElementById('shortcut-icon').style.display = tab === 'cabinet' ? 'flex' : 'none';
+  if (tab !== 'catalog') {
+    document.getElementById('th-ezy-instruction-btn').style.display = 'none';
+    document.getElementById('q-ton-instruction-btn').style.display = 'none';
+  }
   document.getElementById('status-row').style.display = 'none';
   document.getElementById('error-block').innerHTML = '';
   if (pushHistory) {
