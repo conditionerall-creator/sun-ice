@@ -11,7 +11,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sun-ice">
-<meta name="theme-color" content="#0A0A0A">
+<meta name="theme-color" content="#2A2725">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,19 +20,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
   :root {
-    /* Преміум-палітра 2026-09-08: нейтральний чорно-білий + акцентний червоний (той самий
-       відтінок, що в лого MHI і на sun-ice.com.ua) — без синьо-сірого "SaaS"-відтінку, який
-       був раніше (slate-палітра Tailwind). Мета — "породисто, дорого, мінімалістично". */
-    --bg: #FAFAFA;
-    --card: #ffffff;
-    --border: #E4E4E4;
-    --text: #121212;
-    --text-secondary: #6E6E73;
-    --accent: #E60012;
-    --accent-bg: #FEE2E2;
-    --danger: #a32d2d;
-    --navy: #0A0A0A;
-    --navy-2: #242426;
+    /* Палітра 2026-09-18 — токени дизайн-системи Sun-ice ("Sun-ice Design System-handoff"):
+       тепла приглушена гама (sand/ink/ember) замість нейтрального чорно-білого з червоним
+       MHI. Акцент — приглушений оранж лого, а не червоний, щоб довгі прайс-листи читались
+       спокійно. Назви змінних НАВМИСНО лишені ті самі, що були (--bg/--card/--accent/
+       --navy...) — так перефарбовується весь застосунок, без правок у 2000+ місцях
+       використання. Попередні значення (для відкату) — в CHANGELOG 2026-09-18.
+       Палітра-донор: ember-600 #C85A1C, sand-100 #F8F5F1, ink-800 #3D3A37 тощо. */
+    --bg: #F8F5F1;             /* sand-100 — фон екрана */
+    --card: #FFFFFF;           /* surface-card — картки, рядки прайсу */
+    --border: #E8E3DC;         /* sand-300 — рамки, розділювачі */
+    --text: #3D3A37;           /* ink-800 — основний текст */
+    --text-secondary: #8B8682; /* ink-500 — другорядний текст */
+    --accent: #C85A1C;         /* ember-600 — акцент (оранж лого, приглушений) */
+    --accent-press: #A04714;   /* ember-700 — натиснутий стан акценту */
+    --accent-bg: #F7EBE1;      /* ember-100 — підложка акценту */
+    --danger: #A8432F;         /* clay-600 */
+    --navy: #2A2725;           /* ink-900 — темні поверхні й лінії */
+    --navy-2: #3D3A37;         /* ink-800 */
   }
   * { box-sizing: border-box; }
   body {
@@ -43,12 +48,12 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: none;
   }
-  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background: #fff; }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
 
   /* Install banner */
   .install-banner {
     display: none;
-    background: linear-gradient(to right, #111827, var(--navy-2), var(--navy));
+    background: linear-gradient(to right, #2A2725, var(--navy-2), var(--navy));
     color: #fff;
     padding: 10px 14px;
     padding-top: calc(10px + env(safe-area-inset-top));
@@ -79,7 +84,7 @@
   }
   .install-banner .close-x {
     background: transparent;
-    color: #9A9AA0;
+    color: #8B8682;
     font-size: 16px;
     padding: 4px 6px;
     font-weight: 400;
@@ -96,7 +101,7 @@
     font-size: 13px;
     align-items: center;
     gap: 10px;
-    border-bottom: 1px solid #a3000d;
+    border-bottom: 1px solid #A04714;
   }
   .notify-banner.show { display: flex; }
   .notify-banner-text { flex: 1; line-height: 1.4; }
@@ -114,14 +119,14 @@
   }
   .notify-banner .close-x {
     background: transparent;
-    color: #fecaca;
+    color: #F0DCCB;
     font-size: 16px;
     padding: 4px 6px;
     font-weight: 400;
     flex-shrink: 0;
   }
   .notify-banner.show ~ .app header { padding-top: 16px; }
-  .install-banner.show ~ .notify-banner.show { border-top: 1px solid #a3000d; }
+  .install-banner.show ~ .notify-banner.show { border-top: 1px solid #A04714; }
 
   /* Header */
   header {
@@ -149,7 +154,7 @@
   .install-gate-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.45);
+    background: rgba(42, 39, 37, 0.46);
   }
   .install-gate-sheet {
     position: relative;
@@ -258,28 +263,22 @@
   input[type=file] { display: none; }
 
   /* Глобальний пошук (кнопка-лупа в шапці) — GLOBAL_SEARCH_ENABLED.
-     Кругла кнопка сидить на нижньому краї шапки (половина всередині, половина зовні —
-     шапка position: sticky, тому лупа лишається на екрані при прокрутці). Прив'язана до
-     ПРАВОГО краю, а не до центру, як у макеті дизайн-системи: центр нижнього краю вже
-     зайнятий ручкою "Підбірки" (.cart-hud), яку туди поставили свідомо, щоб вона падала
-     в проміжок між кнопками MHI/GAL. Позиціонується absolute, тому висоту шапки не
-     збільшує і --header-h (syncStickyHeaderOffset) не зсуває. */
+     Сидить у верхньому рядку шапки, праворуч, звичайним елементом потоку. У макеті
+     дизайн-системи вона нависала на нижньому краї шапки, але в реальному застосунку
+     це перекривало плитки каталогу й кнопки MHI/GAL, тому лупа лишається всередині
+     шапки (на прохання користувача). Кругла й у колір --accent — щоб лишалась єдиною
+     помітною кнопкою шапки, як задумано в макеті. */
   .global-search-fab {
-    position: absolute;
-    top: 100%;
-    right: 16px;
-    transform: translateY(-50%);
-    width: 46px; height: 46px;
+    width: 40px; height: 40px;
     border-radius: 999px;
-    border: 3px solid var(--card);
     background: var(--accent);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
-    z-index: 20;
-    box-shadow: 0 6px 16px -4px rgba(230, 0, 18, 0.45);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px -4px rgba(200, 90, 28, 0.5);
   }
-  .global-search-fab svg { width: 21px; height: 21px; display: block; }
-  .global-search-fab:active { transform: translateY(-50%) scale(0.94); }
+  .global-search-fab svg { width: 19px; height: 19px; display: block; }
+  .global-search-fab:active { transform: scale(0.94); }
 
   /* Панель результатів — той самий info-sheet-патерн, що й series-info-overlay тощо,
      лише з полем вводу зверху тіла. white-space: normal — бо спільний .info-sheet-body
@@ -706,7 +705,7 @@
   .info-sheet-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.45);
+    background: rgba(42, 39, 37, 0.46);
   }
   .info-sheet-panel {
     position: relative;
@@ -843,18 +842,23 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent);
+    color: var(--text-secondary);
     cursor: pointer;
     flex-shrink: 0;
     padding: 0;
   }
   .calc-toggle svg { width: 17px; height: 17px; display: block; }
   .calc-toggle:active { background: var(--accent-bg); }
+  /* "Поділитися" — єдина акцентна кнопка в рядку прайсу (так прописано в дизайн-системі:
+     надіслати ціну клієнту — це та дія, по яку дилер і заходить). Галочка "в підбірку" і
+     калькулятор навпаки лишаються тихими сіро-бежевими. Глиф — біла обведення
+     (currentColor), а не колишній синій триколірний. */
   .share-btn, .task-share-btn {
     width: 28px; height: 28px;
     border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--bg);
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -863,7 +867,7 @@
     padding: 0;
   }
   .share-btn svg, .task-share-btn svg { width: 16px; height: 16px; display: block; }
-  .share-btn:active, .task-share-btn:active { background: var(--accent-bg); color: var(--accent); }
+  .share-btn:active, .task-share-btn:active { background: var(--accent-press); border-color: var(--accent-press); }
   /* Плавний перехід стану галочки "в підбірку" — тільки opacity/колір, без стрибків
      розміру; tap-феєдбек (scale) для всіх трьох іконок рядка — у словнику анімацій. */
   .cart-check-btn { transition: opacity 200ms ease, background-color 200ms ease, border-color 200ms ease; }
@@ -980,7 +984,7 @@
     border: none;
     background: none;
     font-size: 12px;
-    color: #1E5A96;
+    color: var(--accent);
     text-decoration: underline;
     text-underline-offset: 2px;
     cursor: pointer;
@@ -1041,7 +1045,7 @@
   }
   .mhi-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .mhi-dot-run { background: #16A34A; box-shadow: 0 0 0 3px rgba(22,163,74,0.15); }
-  .mhi-dot-timer { background: #D97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.15); }
+  .mhi-dot-timer { background: #9A7326; box-shadow: 0 0 0 3px rgba(154,115,38,0.15); }
   .mhi-select, .mhi-code-input { width: 100%; box-sizing: border-box; }
   .mhi-search-btn {
     display: block;
@@ -1086,7 +1090,7 @@
     font-size: 13px;
     font-weight: 600;
     color: var(--accent);
-    background: rgba(230, 0, 18, 0.08);
+    background: rgba(200, 90, 28, 0.08);
     border-radius: 8px;
     padding: 8px 10px;
     line-height: 1.4;
@@ -1193,14 +1197,16 @@
     align-items: center;
     gap: 6px;
     border: none;
-    background: linear-gradient(135deg, #FF8A1E, #FF3D5A);
+    /* Був гарячий оранжево-рожевий градієнт — у теплій приглушеній палітрі
+       дизайн-системи він виглядав чужим, тому просто акцентний ember. */
+    background: var(--accent);
     color: #fff;
     font-size: 13px;
     font-weight: 700;
     padding: 7px 14px 9px;
     border-radius: 0 0 14px 14px;
     cursor: pointer;
-    box-shadow: 0 6px 14px -3px rgba(255, 61, 90, 0.55);
+    box-shadow: 0 6px 14px -3px rgba(200, 90, 28, 0.5);
   }
   .cart-fab-badge {
     min-width: 18px; height: 18px;
@@ -1232,7 +1238,7 @@
     border-radius: 50%;
     background: var(--card);
     border: 2px solid var(--accent);
-    box-shadow: 0 10px 26px -6px rgba(230,0,18,0.5);
+    box-shadow: 0 10px 26px -6px rgba(200, 90, 28, 0.5);
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     padding: 8px;
@@ -1302,7 +1308,7 @@
     justify-content: center;
   }
   .cart-panel-overlay.show { display: flex; }
-  .cart-panel-backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.45); }
+  .cart-panel-backdrop { position: absolute; inset: 0; background: rgba(42, 39, 37, 0.46); }
   .cart-panel {
     position: relative;
     width: 100%;
@@ -1425,7 +1431,7 @@
   .cart-empty-hint { font-size: 12.5px; color: var(--text-secondary); margin: 4px 0; text-align: center; }
 
   .error {
-    background: #fcebeb;
+    background: #F6E7E3;
     color: var(--danger);
     padding: 10px 12px;
     border-radius: 10px;
@@ -1433,8 +1439,8 @@
     margin-top: 10px;
   }
   .warn {
-    background: #faeeda;
-    color: #854f0b;
+    background: #F3EAD7;
+    color: #7C5B15;
     padding: 8px 12px;
     border-radius: 10px;
     font-size: 12px;
@@ -1519,7 +1525,7 @@
     margin-top: 10px;
     padding: 8px 12px;
     border-radius: 8px;
-    border: 1px solid #f0cccc;
+    border: 1px solid #E3CFC9;
     background: var(--bg);
     color: var(--danger);
     font-size: 12px;
@@ -1593,7 +1599,7 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.94);
+    background: rgba(42, 39, 37, 0.94);
     z-index: 1000;
     flex-direction: column;
   }
@@ -1812,7 +1818,7 @@
      по кнопці "Зберегти" — це чисто візуальне підтвердження для користувача). */
   .debt-input-row { display: flex; gap: 8px; align-items: center; }
   .debt-input-row input { flex: 1; }
-  .debt-input-row input.input-confirmed { border-color: #16a34a; }
+  .debt-input-row input.input-confirmed { border-color: #6B9E7F; }
   .debt-ok-btn {
     flex-shrink: 0;
     padding: 11px 16px;
@@ -1824,7 +1830,7 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .debt-ok-btn.confirmed { background: #16a34a; border-color: #16a34a; color: #fff; }
+  .debt-ok-btn.confirmed { background: #6B9E7F; border-color: #6B9E7F; color: #fff; }
 
   /* Admin panel */
   .admin-section-title {
@@ -1869,15 +1875,17 @@
     white-space: nowrap;
     flex-shrink: 0;
   }
-  .badge-pending { background: #faeeda; color: #854f0b; }
+  .badge-pending { background: #F3EAD7; color: #7C5B15; }
   .badge-approved { background: var(--accent-bg); color: var(--accent); }
-  .badge-rejected, .badge-blocked { background: #fcebeb; color: var(--danger); }
+  .badge-rejected, .badge-blocked { background: #F6E7E3; color: var(--danger); }
   /* Статуси монтажів (CRМонтаж) — окремі класи, не змішувати з badge-pending/approved
      вище (семантика інша, хоч кольори подекуди перегукуються). */
-  .badge-planned { background: #faeeda; color: #854f0b; }
-  .badge-in_progress { background: #dbeafe; color: #1d4ed8; }
-  .badge-done { background: #dcfce7; color: #1e8e3e; }
-  .badge-cancelled { background: #fcebeb; color: var(--danger); }
+  .badge-planned { background: #F3EAD7; color: #7C5B15; }
+  /* "В процесі" — акцентний ember (активна дія), щоб не злитись із "заплановано"
+     (амбер): раніше він був синім, а синього в теплій палітрі більше немає. */
+  .badge-in_progress { background: var(--accent-bg); color: var(--accent-press); }
+  .badge-done { background: #E6EFE9; color: #3F6B51; }
+  .badge-cancelled { background: #F6E7E3; color: var(--danger); }
   .user-card-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
   .user-card-row select { flex: 1; font-size: 12px; padding: 7px 6px; }
   .task-done-check { display: flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; cursor: pointer; }
@@ -1897,7 +1905,7 @@
     color: var(--text);
   }
   .user-card-actions button.approve { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .user-card-actions button.reject { color: var(--danger); border-color: #f0cccc; }
+  .user-card-actions button.reject { color: var(--danger); border-color: #E3CFC9; }
 
   /* Кнопка "відкрити" — іконка без тексту, розкриває дії/налаштування картки користувача */
   .user-card-top-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -1967,8 +1975,8 @@
     font-weight: 700;
     padding: 2px 8px;
     border-radius: 20px;
-    background: #ffedd5;
-    color: #9a3412;
+    background: #F7EBE1;
+    color: #A04714;
     margin: 6px 0 0;
   }
 
@@ -2003,7 +2011,7 @@
   .price-issue-text { flex: 1; min-width: 0; }
   .price-issue-row strong { font-size: 12.5px; display: block; }
   .price-issue-row.price-issue-error strong { color: var(--danger); }
-  .price-issue-row.price-issue-warning strong { color: #854f0b; }
+  .price-issue-row.price-issue-warning strong { color: #7C5B15; }
   .price-issue-msg { font-size: 12px; color: var(--text); margin-top: 2px; line-height: 1.4; }
   .price-issue-meta { font-size: 10.5px; color: var(--text-secondary); margin-top: 3px; }
   .price-issue-resolve-btn {
@@ -2105,7 +2113,7 @@
   .compat-rowhead {
     position: sticky;
     left: 0;
-    background: #FAFAFA;
+    background: var(--bg);
     font-weight: 700;
     font-size: 10.5px;
     text-align: left;
@@ -2131,16 +2139,18 @@
     white-space: normal;
     border-right: none;
   }
-  .compat-cell-yes { color: #1E8E3E; font-weight: 700; }
-  .compat-cell-maybe { color: #B8860B; font-weight: 700; }
+  .compat-cell-yes { color: #3F6B51; font-weight: 700; }
+  .compat-cell-maybe { color: #9A7326; font-weight: 700; }
   .compat-cell-no2 { color: var(--accent); font-weight: 700; }
-  .compat-cell-no { color: #CBCBCB; }
-  .compat-match { background: #FEF3C7 !important; }
+  .compat-cell-no { color: #D6CFC5; }
+  /* Знайдений збіг — зелений sage ("сумісно"), щоб не зливатись із підсвіткою осей
+     нижче (вона тепла ember-200 замість колишньої синьої: синього в палітрі більше нема). */
+  .compat-match { background: #E6EFE9 !important; }
   /* Незалежне підсвічування рядка/стовпчика (кнопка "Виділити" у спливаючому вікні) —
-     жовтий (.compat-match) зайнятий пошуком, тому тут синій; клітинка на перетині двох
-     підсвічених осей — обидва класи разом — темніша, щоб одразу впадала в очі. */
-  .compat-row-highlight, .compat-col-highlight { background: #DBEAFE !important; }
-  .compat-row-highlight.compat-col-highlight { background: #93C5FD !important; }
+     клітинка на перетині двох підсвічених осей (обидва класи разом) темніша, щоб одразу
+     впадала в очі. */
+  .compat-row-highlight, .compat-col-highlight { background: #F0DCCB !important; }
+  .compat-row-highlight.compat-col-highlight { background: #E3B58F !important; }
   .compat-notes-wrap { margin-top: 10px; }
   .compat-notes-toggle {
     width: 100%;
@@ -2212,6 +2222,12 @@
       <div class="icon-btn icon-btn-text" id="th-ezy-instruction-btn" title="Інструкція — Hydrolution EZY" style="display:none;">EZY</div>
       <div class="icon-btn icon-btn-text" id="q-ton-instruction-btn" title="Інструкція — MHI Q-ton" style="display:none;">Q-TON</div>
       <div class="icon-btn icon-btn-text" id="shortcut-icon" title="Встановити застосунок на головний екран" style="display:none;">Встановити</div>
+      <!-- Глобальний пошук за маркуванням — доступний з будь-якої вкладки (не прив'язаний
+           до switchTab, на відміну від refresh-icon/shortcut-icon вище). Вимикається
+           повністю через GLOBAL_SEARCH_ENABLED (safe rollback без заливання іншого файлу). -->
+      <div class="global-search-fab" id="global-search-btn" title="Пошук за маркуванням" aria-label="Пошук за маркуванням" role="button">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.4" y1="15.4" x2="20.5" y2="20.5"/></svg>
+      </div>
     </div>
     <div class="rate-row" id="rate-row" style="display:none;">
       <span class="rate-label">Курс $:</span>
@@ -2224,13 +2240,6 @@
       <div class="status-text" id="status-text"></div>
     </div>
     <div id="error-block"></div>
-    <!-- Глобальний пошук за маркуванням — доступний з будь-якої вкладки (не прив'язаний
-         до switchTab, на відміну від refresh-icon/shortcut-icon вище). Сидить на нижньому
-         краї шапки праворуч, бо центр зайнятий ручкою "Підбірки" (нижче). Вимикається
-         повністю через GLOBAL_SEARCH_ENABLED (safe rollback без заливання іншого файлу). -->
-    <div class="global-search-fab" id="global-search-btn" title="Пошук за маркуванням" aria-label="Пошук за маркуванням" role="button">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.4" y1="15.4" x2="20.5" y2="20.5"/></svg>
-    </div>
     <!-- "Підбірка" (кошик): ручка + підказка підв'язані до шапки (position: sticky) і
          центровані по горизонталі — так ручка лягає в проміжок між кнопками MHI/GAL, а не
          повністю на одну з них, і не заважає навігації. -->
@@ -2825,7 +2834,14 @@ const categoryStems = ['настінн', 'стельов', 'касетн', 'ка
 // нижня лінія заголовка сегмента) — навмисно НЕ пастельні заливки фону рядка (як було раніше):
 // суцільна заливка кольором виглядала по-дитячому яскраво, тонка смужка на білому тлі —
 // стримано і "дорого", але зберігає ту саму функцію швидкого візуального розрізнення серій.
-const PALETTE = ['#2563EB', '#059669', '#B45309', '#BE185D', '#7C3AED', '#C2410C', '#0D9488', '#991B1B'];
+/* Кольори-маркери серій у прайсі (смуги по боках рядка + лінія під підписом серії).
+   2026-09-18: були насичені "веб"-кольори (синій/зелений/фіолетовий...) — у теплій
+   приглушеній палітрі дизайн-системи вони виглядали чужорідно. Замінені на приглушену
+   теплу гаму (ember/сажа/сейдж/клей/амбер/бронза/хвоя/слива). Сама механіка (колір на
+   серію) лишилась — вона допомагає бачити межі серій при прокрутці; у макеті
+   дизайн-системи смуг немає взагалі, тож якщо захочеться "як у макеті" — достатньо
+   віддати тут один колір на всі серії. */
+const PALETTE = ['#C85A1C', '#7C6A55', '#6B9E7F', '#A8432F', '#9A7326', '#8B6A3F', '#46685F', '#7A6E86'];
 
 function norm(v) { return String(v == null ? '' : v).toLowerCase().trim(); }
 /* Пошук у Systemair/Повітряні завіси: не має значення, чи введено маркування з пробілами
@@ -3837,7 +3853,7 @@ function buildSheetsData(wb, previousData) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 11;
+const PARSER_VERSION = 12;
 
 function loadProcessedCache() {
   try {
@@ -4543,7 +4559,7 @@ function renderCartPanel() {
   body.innerHTML = itemsHtml + `
     <div class="cart-total-row">
       ${calcHtml}
-      <button type="button" class="share-btn cart-share-btn" aria-label="Поділитися підбіркою"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
+      <button type="button" class="share-btn cart-share-btn" aria-label="Поділитися підбіркою"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8.8" y1="10.8" x2="15.2" y2="7"/><line x1="8.8" y1="13.2" x2="15.2" y2="17"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="5.6" r="2.8"/><circle cx="18" cy="18.4" r="2.8"/></g></svg></button>
     </div>
     <button type="button" class="cart-clear-btn" id="cart-clear-btn">Очистити підбірку</button>
   `;
@@ -4690,7 +4706,7 @@ function renderCatalogList() {
             <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect x="3" y="1.5" width="18" height="21" rx="3" fill="var(--navy)"/>
-                <rect x="6" y="4.5" width="12" height="5" rx="1.1" fill="#CFE0F0"/>
+                <rect x="6" y="4.5" width="12" height="5" rx="1.1" fill="#EDE6DC"/>
                 <rect x="6" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
                 <rect x="10.2" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
                 <rect x="14.4" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
@@ -4700,7 +4716,7 @@ function renderCatalogList() {
               </svg>
             </button>
             <div class="row-price${locked ? ' row-price-locked' : ''}" aria-label="${locked ? 'Ціна доступна після реєстрації' : ''}">${priceStr}</div>
-            <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>
+            <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8.8" y1="10.8" x2="15.2" y2="7"/><line x1="8.8" y1="13.2" x2="15.2" y2="17"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="5.6" r="2.8"/><circle cx="18" cy="18.4" r="2.8"/></g></svg></button>
           </div>
         </div>
         ${locked ? '' : '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, priceStr) + '</div>'}
@@ -4801,7 +4817,7 @@ function buildSimplePriceRowsHtml(items, opts) {
       const calcBtnHtml = showCalc ? `<button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect x="3" y="1.5" width="18" height="21" rx="3" fill="var(--navy)"/>
-                <rect x="6" y="4.5" width="12" height="5" rx="1.1" fill="#CFE0F0"/>
+                <rect x="6" y="4.5" width="12" height="5" rx="1.1" fill="#EDE6DC"/>
                 <rect x="6" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
                 <rect x="10.2" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
                 <rect x="14.4" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
@@ -4810,7 +4826,7 @@ function buildSimplePriceRowsHtml(items, opts) {
                 <rect x="14.4" y="16.1" width="3.6" height="3.4" rx="0.8" fill="var(--accent)"/>
               </svg>
             </button>` : '';
-      const shareBtnHtml = showShare ? `<button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/><circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/><circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/></svg></button>` : '';
+      const shareBtnHtml = showShare ? `<button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8.8" y1="10.8" x2="15.2" y2="7"/><line x1="8.8" y1="13.2" x2="15.2" y2="17"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="5.6" r="2.8"/><circle cx="18" cy="18.4" r="2.8"/></g></svg></button>` : '';
       rightHtml += `${cartBtnHtml}${calcBtnHtml}<div class="row-price${rowLocked ? ' row-price-locked' : ''}" aria-label="${rowLocked ? 'Ціна доступна після реєстрації' : ''}">${priceStr}</div>${shareBtnHtml}`;
     }
 
@@ -8152,11 +8168,7 @@ function taskCardHtml(t, d) {
           <span class="badge badge-${escapeHtml(t.status)}">${escapeHtml(taskStatusLabel(t.status))}</span>
           <button type="button" class="task-share-btn no-print" data-task-action="share" data-task-id="${t.id}" aria-label="Поділитися в месенджер">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <line x1="8.6" y1="10.6" x2="15.4" y2="6.6" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/>
-              <line x1="8.6" y1="13.4" x2="15.4" y2="17.4" stroke="#1E5A96" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="6" cy="12" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
-              <circle cx="18" cy="5.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
-              <circle cx="18" cy="18.5" r="3.3" fill="#7FC4EF" stroke="#0B3C6B" stroke-width="1.6"/>
+              <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8.8" y1="10.8" x2="15.2" y2="7"/><line x1="8.8" y1="13.2" x2="15.2" y2="17"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="5.6" r="2.8"/><circle cx="18" cy="18.4" r="2.8"/></g>
             </svg>
           </button>
           <button type="button" class="task-ics-btn no-print" data-task-action="ics" data-task-id="${t.id}" aria-label="Додати нагадування в календар">${TASK_CALENDAR_ICON}</button>
