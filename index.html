@@ -407,7 +407,17 @@
      VRF) — сама заливка активної кнопки тепер окремий шар позаду тексту, JS рухає
      його transform-ом (translateX), кнопки лишаються прозорими там, де на них лежить
      бігунок. Базове позиціювання тут статичне, сам рух — у словнику анімацій. */
-  .brand-toggle-sliding { position: relative; }
+  /* Прилипає під шапкою, щоб при прокрутці прайсу було видно, який бренд відкритий.
+     Саме на .brand-toggle-sliding, а не на .brand-toggle: інакше це правило (нижче в
+     каскаді, та сама специфічність) перебило б position назад на relative. Sticky так
+     само лишається containing block для .brand-toggle-slider, тож бігунок працює.
+     background обов'язковий — крізь gap між кнопками просвічували б рядки товарів. */
+  .brand-toggle-sliding {
+    position: sticky;
+    top: var(--header-h, 64px);
+    z-index: 5;
+    background: var(--bg);
+  }
   /* top/bottom дзеркалять вертикальний padding .brand-toggle (4px 0 12px), щоб бігунок
      точно збігався з висотою кнопок, а не з висотою контейнера разом із його padding. */
   .brand-toggle-slider {
@@ -875,6 +885,11 @@
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
+    /* Клас використовує і <button> ("Показати ще" у Systemair), і <a> (посилання на
+       сайт Clint у кінці категорії чиллерів) — для кнопки ці два рядки нічого не
+       міняють (у неї так типово), а посиланню повертають вигляд кнопки. */
+    text-align: center;
+    text-decoration: none;
   }
   .load-more-btn:active { background: var(--accent-bg); }
 
@@ -1745,10 +1760,12 @@
   .admin-section-title:first-child { padding-top: 0; }
   .admin-search { margin-bottom: 10px; }
   /* Рядок пошуку, що не прокручується разом зі списком товарів (Systemair/Повітряні
-     завіси) — прилипає одразу під шапкою (--header-h, див. syncStickyHeaderOffset). */
+     завіси) — прилипає одразу під шапкою (--header-h, див. syncStickyHeaderOffset).
+     Якщо на екрані є ще й липкий перемикач брендів (Повітряні завіси), пошук
+     прилипає під ним — інакше обидва прилипли б на одній висоті й наклались. */
   .sticky-search {
     position: sticky;
-    top: var(--header-h, 64px);
+    top: calc(var(--header-h, 64px) + var(--brand-toggle-h, 0px));
     z-index: 5;
     background: var(--bg);
     padding-top: 8px;
@@ -2587,9 +2604,13 @@ const CATALOG_TILES = [
   { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.jpg', flipImg: 'tile-images/tilevrf-galactic.jpg', custom: 'vrf' },
   { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.png', flipImg: 'tile-images/tile-kkb-mhi.jpg', custom: 'kkb' },
   { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tileheatpumps.jpg', flipImg: 'tile-images/tileheatpumps-qton.jpg', custom: 'heatpumps' },
-  { id: 'chillers', label: 'Чиллери' },
+  // Чиллери — єдина плитка на статичних даних (CLINT_SERIES), не з прайсу: асортимент
+  // Clint дилер тут лише оглядає, ціни всі "за запитом". Фото плитки — ті самі файли,
+  // що й у сітці категорій усередині, щоб не тримати в репо дублі тих самих знімків.
+  { id: 'chillers', label: 'Чиллери', img: 'tile-images/tile-clint-commercial.jpg', flipImg: 'tile-images/tile-clint-watercooled.jpg', custom: 'chillers' },
   { id: 'ventilation', label: 'Вентиляційне обладнання', img: 'tile-images/tile-ventilation.jpg', flipImg: 'tile-images/tile-ventilation-save.jpg', custom: 'ventilation' },
   { id: 'aircurtains', label: 'Повітряні завіси', img: 'tile-images/tile-aircurtains.jpg', flipImg: 'tile-images/tile-aircurtains-frico.jpg', custom: 'aircurtains' },
+  { id: 'consumables', label: 'Витратні матеріали', img: 'tile-images/tile-consumables.png', flipImg: 'tile-images/tile-consumables-s30.png', custom: 'consumables' },
   { id: 'convectors', label: 'Конвектори та обігрівачі' }
 ];
 
@@ -2633,6 +2654,9 @@ let activeBrand = 'mhi'; // 'mhi' | 'gal' — активний бренд у п�
    щоб апаратна/шапкова кнопка "назад" повертала саме до цього меню. */
 let heatpumpsBrand = null;
 let ventilationBrand = null; // null = меню (поки лише Systemair)
+/* Плитка "Чиллери": null = сітка з 6 категорій Clint, інакше id категорії —
+   див. renderChillersList(). Перемикання через history.pushState, як у теплових насосах. */
+let chillersCategory = null;
 let systemairSearchQuery = '';
 const SYSTEMAIR_BATCH = 200;
 let systemairRenderCount = SYSTEMAIR_BATCH;
@@ -3406,6 +3430,129 @@ function parseCustomTileSheet(wb, sheetName, tileLabel, brandTag, parseFn, probl
     return [];
   }
 }
+/* ---------- "Витратні матеріали" (аркуш "Витратні матеріали") ----------
+   Аркуш — не одна таблиця, а кілька різних табличок підряд із власними заголовками
+   колонок і об'єднаними клітинками, тому автопошук заголовка (findPriceHeader) тут не
+   працює: беремо рівно ті рядки, які просив користувач, фіксованими вікнами.
+
+   ВАЖЛИВО: на відміну від решти парсерів, читаємо за АДРЕСАМИ клітинок (B7, C7...), а
+   не через sheetRows()/індекси масиву. Причина: діапазон цього аркуша — B1:F40, тобто
+   він починається з колонки B, і sheet_to_json зсунув би всі колонки на одну вліво
+   (B став би нульовим). Адресація літерами не залежить ні від цього зсуву, ні від
+   того, чи з'явиться колись щось у колонці A, і збігається з тим, що видно в Excel.
+
+   Свідомо НЕ беремо групу "ТРУБА та ТЕРМОІЗОЛЯТОР" (рядки 20-27) і позиції К-3/К-3n
+   (рядки 9, 12) та MULTI ANTI-VIBRATION PAD (рядок 18) — їх користувач не включив.
+
+   Ціни тут ДИЛЕРСЬКІ і в різних валютах у різних групах ($ на кронштейни, EUR на
+   решту), тому валюта зберігається в кожній позиції окремо, а не одна на аркуш. */
+const CONSUMABLE_ROWS = {
+  // B=найменування, C=код, D=розміри, E=крок кріплення, F=ціна
+  brackets:   { groupRow: 5,  rows: [7, 8, 10, 11], currency: '$' },
+  // B=маркування, C=артикул, D=опис, F=ціна
+  antivib:    { groupRow: 14, rows: [16, 17],       currency: 'EUR' },
+  // назва (B) і ціна (F) — в першому рядку блоку (об'єднані клітинки), опис — нижче в B
+  winterKits: { groupRow: 31, currency: 'EUR',
+                blocks: [{ head: 32, desc: 34 }, { head: 37, desc: 39 }] }
+};
+
+/* "9" → "9", "1.58" → "1,58": копійки показуємо лише там, де вони справді є. */
+function formatConsumablePrice(price, currency) {
+  const num = Number.isInteger(price)
+    ? price.toLocaleString('uk-UA')
+    : price.toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num + ' ' + currency;
+}
+
+function parseConsumablesSheet(wb) {
+  const sheet = wb.Sheets['Витратні матеріали'];
+  if (!sheet) return [];
+  // Текст клітинки за адресою; у прайсі багато переносів рядка всередині клітинок.
+  const raw = (col, row) => {
+    const c = sheet[col + row];
+    return c && c.v != null ? c.v : '';
+  };
+  const cell = (col, row) => String(raw(col, row)).replace(/\r\n/g, '\n').trim();
+  // Для підрядка під назвою переноси не потрібні — там має бути один рядок.
+  const flat = (s) => s.replace(/\s+/g, ' ').trim();
+  const groupLabelAt = (row, fallback) => flat(cell('B', row)) || fallback;
+  const items = [];
+
+  // --- Кронштейни: B=назва+навантаження одним текстом, C=код, D=розміри, E=крок кріплення
+  const br = CONSUMABLE_ROWS.brackets;
+  const brGroup = groupLabelAt(br.groupRow, 'Опора під кондиціонер (КРОНШТЕЙНИ)');
+  br.rows.forEach(r => {
+    const full = cell('B', r);
+    const price = parseNumber(raw('F', r));
+    if (!full || price === null) return;
+    // "Опора під кондиціонер К-1n (з нержавіючої сталі) Рекомендоване навантаження: 50 кг"
+    // → маркування "К-1n (нерж.)", підрядок "50 кг · 430х350х50 мм". Повторювати
+    // "Опора під кондиціонер" у кожному рядку не треба — це вже написано в заголовку групи.
+    const code = (full.match(/К-\d+\s*n?/i) || [full])[0].replace(/\s+/g, '');
+    const stainless = /нержавію/i.test(full);
+    const load = (full.match(/навантаження:\s*([\d\s]+кг)/i) || [])[1];
+    const size = flat(cell('D', r));
+    const pitch = flat(cell('E', r));
+    items.push({
+      model: code + (stainless ? ' (нерж.)' : ''),
+      power: [load && flat(load), size ? size + ' мм' : ''].filter(Boolean).join(' · '),
+      article: cell('C', r),
+      price, currency: br.currency,
+      priceText: formatConsumablePrice(price, br.currency),
+      groupKey: brGroup, groupLabel: brGroup,
+      breakdownText: [
+        flat(full),
+        size ? 'Розміри (ДхВхШ): ' + size + ' мм' : '',
+        pitch ? 'Відстань між кріпленням: ' + pitch.replace(/-{2,}/g, '–') + ' мм (є розширений паз)' : ''
+      ].filter(Boolean).join('\n')
+    });
+  });
+
+  // --- Антивібраційні опори: B=маркування (як у виробника), C=артикул, D=опис українською
+  const av = CONSUMABLE_ROWS.antivib;
+  const avGroup = groupLabelAt(av.groupRow, 'Антивібраційні опори');
+  av.rows.forEach(r => {
+    const model = flat(cell('B', r));
+    const price = parseNumber(raw('F', r));
+    if (!model || price === null) return;
+    const desc = flat(cell('D', r));
+    items.push({
+      model,
+      // З опису в підрядок іде лише уточнення в дужках ("ціна за 1 шт, в комплекті 4 шт.") —
+      // саме те, що дилеру треба бачити біля ціни, щоб не порахувати комплект за штуку.
+      power: (desc.match(/\(([^)]*)\)/) || [])[1] || '',
+      article: cell('C', r),
+      price, currency: av.currency,
+      priceText: formatConsumablePrice(price, av.currency),
+      groupKey: avGroup, groupLabel: avGroup,
+      breakdownText: desc
+    });
+  });
+
+  // --- Зимові комплекти: назва й ціна в об'єднаних клітинках, опис окремим рядком нижче
+  const wk = CONSUMABLE_ROWS.winterKits;
+  const wkGroup = groupLabelAt(wk.groupRow, 'Зимові комплекти');
+  wk.blocks.forEach(b => {
+    const model = flat(cell('B', b.head));
+    const price = parseNumber(raw('F', b.head));
+    if (!model || price === null) return;
+    const rawDesc = cell('B', b.desc);
+    // Код лежить у самому тексті опису — "(код Г8145)". Виносимо його в артикул, щоб
+    // дилер бачив код окремо, а не шукав його в кінці абзацу.
+    const codeInText = (rawDesc.match(/\(код\s+([^)]+)\)/i) || [])[1] || '';
+    items.push({
+      model,
+      article: codeInText,
+      price, currency: wk.currency,
+      priceText: formatConsumablePrice(price, wk.currency),
+      groupKey: wkGroup, groupLabel: wkGroup,
+      breakdownText: rawDesc.replace(/\s*\(код\s+[^)]+\)/i, '').trim()
+    });
+  });
+
+  return assignGroupColors(items);
+}
+
 /* Спільний список для buildSheetsData() (розбір) і reportPriceDiagnostics() (автогасіння
    виправлених проблем) — щоб не дублювати одні й ті самі tile/brand/sheet у двох місцях. */
 const CUSTOM_SHEET_DIAG = [
@@ -3422,7 +3569,8 @@ const CUSTOM_SHEET_DIAG = [
   { key: 'kkb_mhi', sheet: 'ККБ MHI', tile: 'Компресорно-конденсаторні блоки (ККБ)', brand: 'mhi', parse: parseKkbMhiSheet },
   { key: 'systemair', sheet: 'SYSTEMAIR', tile: 'Вентиляційне обладнання', brand: 'systemair', parse: parseSystemairSheet },
   { key: 'frico', sheet: 'FRICO', tile: 'Повітряні завіси', brand: 'frico', parse: parseFricoSheet },
-  { key: 'remak_curtains', sheet: 'REMAK ЗАВІСИ', tile: 'Повітряні завіси', brand: 'remak', parse: parseRemakCurtainsSheet }
+  { key: 'remak_curtains', sheet: 'REMAK ЗАВІСИ', tile: 'Повітряні завіси', brand: 'remak', parse: parseRemakCurtainsSheet },
+  { key: 'consumables', sheet: 'Витратні матеріали', tile: 'Витратні матеріали', brand: 'consumables', parse: parseConsumablesSheet }
 ];
 function parseGalVrfIndoorSheet(wb) {
   const rows = sheetRows(wb, 'Galactic VRF');
@@ -3579,7 +3727,7 @@ function buildSheetsData(wb, previousData) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 10;
+const PARSER_VERSION = 11;
 
 function loadProcessedCache() {
   try {
@@ -3771,6 +3919,9 @@ function tileHasAnyData(tile) {
   }
   if (tile.custom === 'ventilation') return !!(sheetsData.systemair && sheetsData.systemair.length);
   if (tile.custom === 'aircurtains') return !!((sheetsData.frico && sheetsData.frico.length) || (sheetsData.remak_curtains && sheetsData.remak_curtains.length));
+  if (tile.custom === 'consumables') return !!(sheetsData.consumables && sheetsData.consumables.length);
+  // Чиллери живуть на статичних даних у коді, а не в прайсі — плитка наповнена завжди.
+  if (tile.custom === 'chillers') return true;
   return (tile.mhi && sheetsData[tile.mhi.key]) || (tile.gal && sheetsData[tile.gal.key]);
 }
 function tileActiveCfg(tile) {
@@ -3875,6 +4026,12 @@ let brandSliderPrevBrand = null;
 function syncStickyHeaderOffset() {
   const header = document.querySelector('header');
   if (header) document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+  // Другий липкий шар: перемикач брендів. Коли він на екрані, .sticky-search має
+  // прилипати під ним, а не на тій самій висоті. Немає перемикача — 0px.
+  const toggle = document.querySelector('#main .brand-toggle-sliding');
+  document.documentElement.style.setProperty(
+    '--brand-toggle-h', toggle ? toggle.offsetHeight + 'px' : '0px'
+  );
 }
 window.addEventListener('resize', syncStickyHeaderOffset);
 // Висота шапки може змінюватись і БЕЗ resize вікна (курс $/статус-рядок вантажиться
@@ -4029,6 +4186,7 @@ function renderCatalogMenu() {
       activeBrand = 'mhi';
       heatpumpsBrand = null;
       ventilationBrand = null;
+      chillersCategory = null;
       systemairSearchQuery = '';
       systemairRenderCount = SYSTEMAIR_BATCH;
       vrfMhiSource = 'outdoor';
@@ -4299,6 +4457,8 @@ function renderCatalogList() {
   if (tileForDispatch && tileForDispatch.custom === 'kkb') { renderKkbList(); return; }
   if (tileForDispatch && tileForDispatch.custom === 'ventilation') { renderVentilationList(); return; }
   if (tileForDispatch && tileForDispatch.custom === 'aircurtains') { renderAirCurtainsList(); return; }
+  if (tileForDispatch && tileForDispatch.custom === 'chillers') { renderChillersList(); return; }
+  if (tileForDispatch && tileForDispatch.custom === 'consumables') { renderConsumablesList(); return; }
 
   const main = document.getElementById('main');
   openCalcPanelEl = null; // старі вузли DOM зараз буде замінено — посилання все одно застаріє
@@ -4519,7 +4679,11 @@ function buildSimplePriceRowsHtml(items, opts) {
         ? `<div class="row-price">За запитом</div>`
         : `<button type="button" class="price-request-btn">За запитом</button>`;
     } else {
-      let priceStr = Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '');
+      // priceText — готовий рядок ціни від парсера. Потрібен там, де ціна дробова
+      // (витратні матеріали: 1,58 EUR): звичайна гілка округляє до цілого, бо в решті
+      // прайсу копійок не буває. Порожній/відсутній — рахуємо як завжди.
+      let priceStr = it.priceText
+        || (Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : ''));
       if (opts.priceNote) priceStr += `<span class="row-price-note">${escapeHtml(opts.priceNote)}</span>`;
       const cartKey = cartSourceKey + '|' + it.model;
       const cartQty = showCart ? cartQtyFor(cartKey) : 0;
@@ -4794,6 +4958,13 @@ function renderVentilationList() {
   const visibleCount = Math.min(systemairRenderCount, filtered.length);
   const visible = filtered.slice(0, visibleCount);
 
+  // Один об'єкт на обидва місця рендеру рядків (перша порція і докрутка "Показати ще") —
+  // раніше це були два окремі літерали, і будь-яка зміна опцій легко розходилась між ними.
+  const rowOpts = {
+    cartSourceKey: 'systemair', tileLabel: 'Вентиляційне обладнання',
+    stagger: false, priceNote: 'роздрібна'
+  };
+
   const searchHtml = `<div class="sticky-search"><div class="admin-search"><input type="text" id="systemair-search-input" placeholder="Пошук за маркуванням або артикулом..." value="${escapeHtml(systemairSearchQuery)}"></div></div>`;
   let bodyHtml;
   if (allItems.length === 0) {
@@ -4801,12 +4972,11 @@ function renderVentilationList() {
   } else if (filtered.length === 0) {
     bodyHtml = '<div class="empty">Нічого не знайдено</div>';
   } else {
-    const opts = { cartSourceKey: 'systemair', tileLabel: 'Вентиляційне обладнання', stagger: false };
     const countText = (q.length >= 2 ? 'Знайдено: ' : 'Всього: ') + filtered.length;
     const loadMoreHtml = visibleCount < filtered.length
       ? `<button type="button" class="load-more-btn" id="systemair-load-more">Показати ще (${filtered.length - visibleCount})</button>`
       : '';
-    bodyHtml = `<div class="count" id="systemair-count">${countText}</div><div id="systemair-rows">${buildSimplePriceRowsHtml(visible, opts)}</div>${loadMoreHtml}`;
+    bodyHtml = `<div class="count" id="systemair-count">${countText}</div><div id="systemair-rows">${buildSimplePriceRowsHtml(visible, rowOpts)}</div>${loadMoreHtml}`;
   }
   main.innerHTML = searchHtml + bodyHtml;
   syncStickyHeaderOffset();
@@ -4832,7 +5002,7 @@ function renderVentilationList() {
       const nextBatch = filtered.slice(prevCount, nextCount);
       const rowsContainer = document.getElementById('systemair-rows');
       if (rowsContainer) {
-        rowsContainer.insertAdjacentHTML('beforeend', buildSimplePriceRowsHtml(nextBatch, { cartSourceKey: 'systemair', tileLabel: 'Вентиляційне обладнання', stagger: false }));
+        rowsContainer.insertAdjacentHTML('beforeend', buildSimplePriceRowsHtml(nextBatch, rowOpts));
       }
       if (nextCount >= filtered.length) {
         loadMoreBtn.remove();
@@ -4849,6 +5019,14 @@ function renderAirCurtainsList() {
   const main = document.getElementById('main');
   openCalcPanelEl = null;
   seriesInfoTexts = [];
+
+  // Заголовок екрана дописуємо брендом: renderCatalogView() виставив просто tile.label
+  // ДО цього виклику, тому тут його можна перезаписати (так само робить вкладка Інфо).
+  // Перемикання бренду знову проходить через renderCatalogList() → сюди, тож заголовок
+  // сам стане "REMAK" — окремої логіки не треба. Підпис плитки в каталозі (tile.label)
+  // при цьому лишається без бренду.
+  document.getElementById('title').textContent =
+    'Повітряні завіси ' + (activeBrand === 'mhi' ? 'FRICO' : 'REMAK');
 
   // FRICO/REMAK — той самий перемикач-механізм, що й ККБ (activeBrand 'mhi'/'gal' як
   // спільний слот A/B, тут просто підписаний інакше в розмітці).
@@ -4897,6 +5075,239 @@ function renderAirCurtainsList() {
       if (newInput) { newInput.focus(); newInput.setSelectionRange(caret, caret); }
     });
   }
+}
+
+/* ---------- "Чиллери" — Clint (Італія) ----------
+   ЄДИНА плитка каталогу на статичних даних, а не з прайсу. Причина: у прайсі на аркуші
+   CLINT є лише 4 серії, а дилеру треба бачити весь асортимент, який виробник показує в
+   розділі Europe свого сайту. Ціни на чилери в прайсі й так усі "За запитом", тобто
+   гнатись за оновленням через прайс тут нічого.
+
+   Дерево повторює сайт: плитка → 6 категорій (фанкойли свідомо не беремо) → рядки
+   серій, згруповані підрозділами. Глибше не йдемо: типорозміри й PDF лишаються на
+   сайті виробника, туди веде посилання в кінці кожної категорії.
+
+   Потужність — діапазон по серії, як на сайті (там теж діапазон, а не кожен
+   типорозмір). Виносні конденсатори — не кВт, а витрата повітря м³/с: так на сайті,
+   бо це не холодильна машина.
+
+   Дані зібрані з clint.it розбором HTML (не на око): кількість серій у кожній
+   категорії звірена з кількістю посилань на товари на сторінці — 2/35/21/2/11/2 = 73.
+   Тексти перекладені українською (на сайті вони російською, місцями англійською, у
+   різному регістрі) і скорочені до суті: маркування й потужність дилер читає в рядку,
+   а в описі має бути лише те, чим серія відрізняється — тип компресора, вентилятора,
+   теплообмінника. Переклад — єдине, що тут зроблено "руками", тому при оновленні
+   асортименту простіше перезібрати з сайту, ніж правити по одному рядку. */
+const CLINT_DELIVERY_NOTE = 'Термін доставки зі складу в Італії — від 6 до 12 тижнів залежно від моделі';
+
+const CLINT_CATEGORIES = [
+  { id: 'residential', label: 'Побутові та комерційні', img: 'tile-images/tile-clint-residential.jpg',
+    url: 'https://clint.it/ru/products/europe/air-cooled-liquid-chillers-and-heat-pumps-for-residential-light-commercial-application/' },
+  { id: 'commercial', label: 'Комерційні та промислові', img: 'tile-images/tile-clint-commercial.jpg',
+    url: 'https://clint.it/ru/products/europe/air-cooled-liquid-chillers-and-heat-pumps-for-commercial-industrial-application/' },
+  // Коротко: повна назва ("...та виносні конденсатори") розсипалась на 4 рядки і в
+  // підписі плитки, і в шапці екрана. Що саме входить — видно з підзаголовків усередині.
+  { id: 'watercooled', label: 'Водяне охолодження', img: 'tile-images/tile-clint-watercooled.jpg',
+    url: 'https://clint.it/ru/products/europe/water-cooled-condenserless-liquid-chillers-and-heat-pumps-for-commercial-industrial-application-remote-condensers/' },
+  { id: 'rooftop', label: 'Дахові кондиціонери', img: 'tile-images/tile-clint-rooftop.jpg',
+    url: 'https://clint.it/ru/products/europe/packaged-roof-top-units/' },
+  { id: 'condensing', label: 'Компресорно-конденсаторні блоки', img: 'tile-images/tile-clint-condensing.jpg',
+    url: 'https://clint.it/ru/products/europe/condensing-units/' },
+  { id: 'hydronic', label: 'Гідравлічні модулі', img: 'tile-images/tile-clint-hydronic.jpg',
+    url: 'https://clint.it/ru/products/europe/hydronic-modules/' }
+];
+
+/* Рядки: [маркування, потужність, опис]. Порожня потужність = її немає й на сайті. */
+const CLINT_SERIES = [
+  { cat: 'residential', group: 'Теплові насоси', items: [
+    ['CHA/F/ML/WP 52÷92', '19,0–27,0 кВт', 'Виділений тепловий насос повітря/вода для високотемпературної гарячої води. Осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.']
+  ]},
+  { cat: 'residential', group: 'Чилери з повітряним охолодженням конденсатора та теплові насоси', items: [
+    ['CHA/IG/A 51÷81', '9,7–18,0 кВт', 'Реверсивні, клас А. Інверторні спіральні компресори, осьові вентилятори, пластинчастий теплообмінник, високоефективний EC-інверторний насос.']
+  ]},
+
+  { cat: 'commercial', group: 'Теплові насоси', items: [
+    ['CHA/K/A/WP 182-P÷604-P', '56,0–197 кВт', 'Виділений тепловий насос повітря/вода, гаряча вода до 55 °C. Осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHA/F/ML/WP 102-P÷504-P', '32,0–182 кВт', 'Виділений тепловий насос повітря/вода для високотемпературної гарячої води. Осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHV/P/WP 152-P÷504-P', '48,0–164 кВт', 'Виділений тепловий насос повітря/вода класу А для високотемпературної гарячої води. Осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHV/P/HE/WP 152-P÷504-P', '50,0–166 кВт', 'Наднизький шум, висока ефективність. Гаряча вода до 70 °C, EC-інверторні осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHA/K/A/WP 726-P÷24012-P', '227–762 кВт', 'Виділений тепловий насос повітря/вода, гаряча вода до 55 °C. Осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.']
+  ]},
+  { cat: 'commercial', group: 'Чилери з повітряним охолодженням конденсатора та теплові насоси', items: [
+    ['CHA/IK/A 91÷151', '26,0–42,0 кВт', 'Клас А. Інверторні спіральні компресори, осьові вентилятори, пластинчастий теплообмінник.'],
+    ['CHA/IK/A 172-P÷574-P', '50,0–179 кВт', 'Клас А. Інверторні спіральні компресори, осьові вентилятори, пластинчастий теплообмінник.'],
+    ['CHA/K/AF 182-P÷604-P', '51,0–183 кВт', 'Спіральні компресори, осьові вентилятори, пластинчастий теплообмінник.'],
+    ['CHA/K 182-P÷604-P', '48,0–178 кВт', 'Спіральні компресори, осьові вентилятори, пластинчасті теплообмінники.'],
+    ['CHA/K 182÷604', '49,0–179 кВт', 'Спіральні компресори, осьові вентилятори, кожухотрубні теплообмінники.'],
+    ['CRA/IK/A 51÷131', '12,0–36,0 кВт', 'Для внутрішнього встановлення з повітропроводами. Інверторний спіральний компресор, EC-інверторні вентилятори, пластинчастий теплообмінник.'],
+    ['CHV/P/MC 152-P÷756-P', '48,0–220 кВт', 'Спіральні компресори, осьові вентилятори, пластинчасті випарники.'],
+    ['CHV/P/HE/MC 152-P÷756-P', '49,0–226 кВт', 'Висока ефективність. EC-інверторні осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHV/H/HE/MC 804-P÷2406-P', '213–600 кВт', 'Клас А. Осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHV/H/XE/MC 804-P÷2406-P', '223–618 кВт', 'Клас А, повітря/вода. EC-осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHA/IK/A 674-P÷2356-P', '196–668 кВт', 'Клас А. Інверторні спіральні компресори, осьові вентилятори, пластинчастий теплообмінник.'],
+    ['CHA/K/AF 726-P÷24012-P', '197–692 кВт', 'Спіральні компресори, осьові вентилятори, пластинчастий теплообмінник.'],
+    ['CHA/K 726-P÷36012-P', '199–1051 кВт', 'Спіральні компресори, осьові вентилятори, пластинчасті теплообмінники.'],
+    ['CHA/K 726÷36012', '200–1062 кВт', 'Спіральні компресори, осьові вентилятори, кожухотрубні теплообмінники.'],
+    ['CHA/H/A 351-P÷1221-P', '79,0–208 кВт', 'Осьові вентилятори, спіральні компресори, кожухотрубний теплообмінник.'],
+    ['CHA/H/A 351÷1221', '79,0–211 кВт', 'Осьові вентилятори, інверторний гвинтовий компресор, кожухотрубний теплообмінник.'],
+    ['CHA/H/A 1002÷6002', '197–1353 кВт', 'Осьові вентилятори, (інверторний) гвинтовий компресор, кожухотрубний теплообмінник.'],
+    ['CHA/Y/A 1302÷6002', '263–1533 кВт', 'Реверсивні. Осьові вентилятори, (інверторні) гвинтові компресори, кожухотрубний теплообмінник.'],
+    ['CHA/TTH 1301-1÷4904-1', '262–1340 кВт', 'Турбокомпресори (відцентрові з магнітною левітацією), затоплений кожухотрубний теплообмінник, осьові вентилятори.'],
+    ['CHA/TTY 1301-1÷5004-1', '248–1456 кВт', 'Турбокомпресори (відцентрові з магнітною левітацією), затоплений кожухотрубний теплообмінник, осьові вентилятори.']
+  ]},
+  { cat: 'commercial', group: 'Чилери з природним охолодженням (free cooling)', items: [
+    ['CHA/K/FC 182-P÷604-P', '53,0–174 кВт', 'Повітря/вода з природним охолодженням. Осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHA/K/FC 726-P÷36012-P', '208–1102 кВт', 'Повітря/вода з природним охолодженням. Осьові вентилятори, спіральні компресори, пластинчастий теплообмінник.'],
+    ['CHA/H/FC 351-P÷901-P', '82,0–170 кВт', 'Режим природного охолодження. Осьові вентилятори, гвинтові компресори, кожухотрубні теплообмінники.'],
+    ['CHA/H/FC 1002÷4802', '232–1144 кВт', 'Режим природного охолодження. Осьові вентилятори, гвинтові компресори, кожухотрубні теплообмінники.'],
+    ['CHA/Y/FC 1202-B÷6002-B', '217–1460 кВт', 'Режим природного охолодження. Осьові вентилятори, гвинтові компресори, кожухотрубні теплообмінники.'],
+    ['CHA/TTH/FC 1301-1÷4904-1', '279–1386 кВт', 'Природне охолодження. Турбокомпресори (відцентрові з магнітною левітацією), затоплюваний кожухотрубний теплообмінник.'],
+    ['CHA/TTY/FC 1301-1÷5004-1', '246–1443 кВт', 'Природне охолодження. Турбокомпресори (відцентрові з магнітною левітацією), затоплюваний кожухотрубний теплообмінник.']
+  ]},
+  { cat: 'commercial', group: 'Багатофункціональні агрегати для 4-трубних систем', items: [
+    ['CHA/K/EP 182-P÷602-P', '49,0–168 кВт', '4-трубна система, повітряне охолодження конденсатора. Осьові вентилятори, спіральні компресори, пластинчасті випарники.'],
+    ['CHA/K/EP 604-P÷2004-P', '', '4-трубна система, повітряне охолодження конденсатора. Осьові вентилятори, спіральні компресори, пластинчасті випарники. Потужність на сайті виробника не вказана — уточнюйте.'],
+    ['CHA/Y/EP 1352÷4402', '278–1133 кВт', '4-трубна система. EC-інверторні двигуни, інверторні компресори, кожухотрубні теплообмінники.']
+  ]},
+
+  { cat: 'watercooled', group: 'Чилери з водяним охолодженням конденсатора та теплові насоси', items: [
+    ['CWW/K/WP 31÷151', '13,0–60,0 кВт', 'Реверсивні. Спіральні компресори, пластинчасті теплообмінники.'],
+    ['CWW/K 182-P÷604-P', '55,0–195 кВт', 'Спіральні компресори, пластинчасті теплообмінники.'],
+    ['CWW/K 182÷604', '57,0–196 кВт', 'Спіральні компресори, кожухотрубні теплообмінники.'],
+    ['CWW/K 726-P÷1128-P', '224–383 кВт', 'Спіральні компресори, пластинчасті теплообмінники.'],
+    ['CWW/K 726÷1128', '225–375 кВт', 'Спіральні компресори, кожухотрубні теплообмінники.'],
+    ['CWW/H/A 351-P÷901-P', '86,0–189 кВт', 'Гвинтові компресори, кожухотрубні теплообмінники.'],
+    ['CWW/H/A 1002÷6002', '234–1650 кВт', 'Гвинтові компресори, кожухотрубні теплообмінники.'],
+    ['CWW/Y/A 1002-T÷7202-T', '250–2143 кВт', 'Гвинтові компресори, кожухотрубні теплообмінники.'],
+    ['CWW/Y 1302-B÷9002-B', '267–2349 кВт', 'Гвинтові компресори, кожухотрубні теплообмінники.'],
+    ['CWW/TTH 1701-1÷6606-1', '321–1922 кВт', 'Компресори Turbocor (магнітна левітація), затоплені кожухотрубні теплообмінники. Для роботи з градирнями.'],
+    ['CWW/TTH/DR 1701-1÷6606-1', '301–1802 кВт', 'Компресори Turbocor (магнітна левітація), затоплені кожухотрубні теплообмінники. Для роботи з сухими градирнями.'],
+    ['CWW/TTY 1601-1÷14406-1', '319–3912 кВт', 'Компресори Turbocor (магнітна левітація), затоплені кожухотрубні теплообмінники. Для роботи з градирнями.'],
+    ['CWW/TTY/DR 1601-1÷6204-1', '298–1584 кВт', 'Компресори Turbocor (магнітна левітація), затоплені кожухотрубні теплообмінники. Для роботи з сухими градирнями.']
+  ]},
+  { cat: 'watercooled', group: 'Чилери з виносними конденсаторами та теплові насоси', items: [
+    ['MEA/K 31÷151', '8,5–42,0 кВт', 'Спіральні компресори, пластинчасті теплообмінники.'],
+    ['MEA/K 182-P÷604-P', '51,0–176 кВт', 'Спіральні компресори, пластинчасті теплообмінники.'],
+    ['MEA/Y 1302-B÷9002-B', '235–2060 кВт', 'Гвинтові компресори, кожухотрубні теплообмінники.']
+  ]},
+  { cat: 'watercooled', group: 'Виносні конденсатори', items: [
+    ['RCA/K 5111÷8222', '1,4–23,0 м³/с', 'Виносний конденсатор з осьовими вентиляторами. Показник — витрата повітря.'],
+    ['RCA/K/SSL 6111÷8222', '1,5–18,0 м³/с', 'Наднизький шум. Осьові вентилятори. Показник — витрата повітря.'],
+    ['RCA/Y 8141÷9282', '21,0–124 м³/с', 'Виносний конденсатор з осьовими вентиляторами. Показник — витрата повітря.'],
+    ['RCA/Y/SSL 8231÷9281', '23,0–76,0 м³/с', 'Наднизький шум. Осьові вентилятори. Показник — витрата повітря.']
+  ]},
+  { cat: 'watercooled', group: 'Виділені теплові насоси з водяним охолодженням', items: [
+    ['CWW/Y/BH 81-P÷1204-P', '37,0–550 кВт', 'Вода/вода для води надвисокої температури. Спіральні компресори, пластинчасті теплообмінники.']
+  ]},
+
+  { cat: 'rooftop', group: 'Дахові кондиціонери з подвійними панелями', items: [
+    ['RTQ/IK/EC 101÷181', '19,0–42,0 кВт', 'Моноблок із подвійними панелями. Інверторний спіральний компресор, EC-інверторний вентилятор plug-fan.'],
+    ['RTA/IK/EC 172÷724', '58,0–252 кВт', 'Інверторні спіральні компресори, вентилятори plug-fan з EC-інверторними двигунами.'],
+    ['RTA/IK/EC/MS 172÷724', '58,0–252 кВт', 'Інверторні спіральні компресори, plug-fan з EC-інверторними двигунами, змішувальна камера.'],
+    ['RTA/IK/EC/ECO 172÷724', '58,0–252 кВт', 'Інверторні спіральні компресори, plug-fan з EC-інверторними двигунами, економайзер.'],
+    ['RTA/IK/EC/ECO/REC-FX 172÷724', '58,0–252 кВт', 'Інверторні спіральні компресори, plug-fan з EC-інверторними двигунами, економайзер, перехреснотічний рекуператор.'],
+    ['RTA/IK/EC/ECO/REC-WH 172÷724', '58,0–252 кВт', 'Інверторні спіральні компресори, plug-fan з EC-інверторними двигунами, економайзер, роторний рекуператор.'],
+    ['RTA/K/EC 182÷804', '58,0–252 кВт', 'Спіральні компресори, осьові вентилятори або plug-fan з EC-інверторними двигунами.'],
+    ['RTA/K/EC/MS 182÷804', '58,0–252 кВт', 'Спіральні компресори, осьові або plug-fan вентилятори, змішувальна камера.'],
+    ['RTA/K/EC/ECO 182÷804', '58,0–252 кВт', 'Спіральні компресори, осьові або plug-fan вентилятори, економайзер.'],
+    ['RTA/K/EC/ECO/REC-FX 182÷804', '58,0–252 кВт', 'Спіральні компресори, осьові або plug-fan вентилятори, економайзер, перехреснотічний рекуператор.'],
+    ['RTA/K/EC/ECO/REC-WH 182÷804', '58,0–252 кВт', 'Спіральні компресори, осьові або plug-fan вентилятори, економайзер, роторний рекуператор.']
+  ]},
+
+  { cat: 'condensing', group: 'Компресорно-конденсаторні блоки', items: [
+    ['MHA/K 31÷151', '9,2–45,0 кВт', 'Осьові вентилятори, спіральні компресори.'],
+    ['MHA/K 182÷604', '51,0–188 кВт', 'Осьові вентилятори, спіральні компресори.']
+  ]},
+
+  { cat: 'hydronic', group: 'Окремі гідравлічні модули', items: [
+    ['MR 30÷70', '', 'Окремий гідравлічний модуль.'],
+    ['MR 1500÷2500', '', 'Окремий гідравлічний модуль із насосною групою.']
+  ]}
+];
+
+/* Плоский список позицій категорії у форматі, який розуміє buildSimplePriceRowsHtml. */
+function clintItemsFor(catId) {
+  const items = [];
+  CLINT_SERIES.filter(g => g.cat === catId).forEach(g => {
+    g.items.forEach(([marking, power, description]) => {
+      items.push({
+        model: marking,
+        power,
+        breakdownText: description,
+        onRequest: true,
+        groupKey: g.group,
+        groupLabel: g.group
+      });
+    });
+  });
+  return assignGroupColors(items);
+}
+
+function renderChillersList() {
+  const main = document.getElementById('main');
+  openCalcPanelEl = null;
+  seriesInfoTexts = [];
+
+  if (!chillersCategory) {
+    const tilesHtml = CLINT_CATEGORIES.map(c => `
+      <div class="menu-tile menu-tile-photo" data-clint-cat="${escapeHtml(c.id)}">
+        <div class="menu-tile-photo-wrap"><img src="${escapeHtml(c.img)}" alt="" loading="lazy"></div>
+        <div class="menu-tile-title">${escapeHtml(c.label)}</div>
+      </div>`).join('');
+    main.innerHTML = '<div class="count">Clint, Італія · ціни за запитом</div>'
+      + '<div class="menu-grid">' + tilesHtml + '</div>'
+      + `<div class="instr-note">${escapeHtml(CLINT_DELIVERY_NOTE)}</div>`;
+    main.querySelectorAll('[data-clint-cat]').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-clint-cat');
+        history.pushState({ tab: 'catalog', tile: 'chillers', chillersCat: id }, '', '#chillers-' + id);
+        chillersCategory = id;
+        renderChillersList();
+      });
+    });
+    return;
+  }
+
+  const cat = CLINT_CATEGORIES.find(c => c.id === chillersCategory);
+  if (!cat) { chillersCategory = null; renderChillersList(); return; }
+  document.getElementById('title').textContent = cat.label;
+
+  const items = clintItemsFor(cat.id);
+  // Ціни на чилери — завжди індивідуальні (комплектація, версія, доставка з Італії),
+  // тому "За запитом" тут звичайний текст, а не кнопка переходу в Контакти: інакше
+  // кожен рядок у списку виглядав би як окрема кнопка й екран став би рябим.
+  const opts = {
+    tileLabel: 'Чиллери', showCalc: false, showCart: false, showShare: false,
+    onRequestLink: false, stagger: false
+  };
+  main.innerHTML = `<div class="count">Серій: ${items.length} · натисніть ⓘ, щоб побачити опис</div>`
+    + buildSimplePriceRowsHtml(items, opts)
+    + `<a class="load-more-btn" href="${escapeHtml(cat.url)}" target="_blank" rel="noopener">Дивитись усі моделі на сайті Clint →</a>`;
+}
+
+/* ---------- "Витратні матеріали" ---------- */
+function renderConsumablesList() {
+  const main = document.getElementById('main');
+  openCalcPanelEl = null;
+  seriesInfoTexts = [];
+
+  document.getElementById('title').textContent = 'Витратні матеріали для монтажу';
+
+  const items = sheetsData.consumables || [];
+  if (items.length === 0) {
+    main.innerHTML = '<div class="empty">Прайс для цього розділу ще не завантажено.</div>';
+    return;
+  }
+
+  // Калькулятор і підбірка вимкнені свідомо: ціни тут у двох валютах ($ і EUR), а
+  // перерахунок у застосунку є лише для $↔₴ (usdRate), курсу EUR немає. Плюс ціни
+  // дробові (1,58 EUR) — підбірка їх округлює, тобто показала б неправильну суму.
+  const opts = {
+    tileLabel: 'Витратні матеріали', showCalc: false, showCart: false,
+    priceNote: 'дилерська', stagger: false
+  };
+  main.innerHTML = `<div class="count">Позицій: ${items.length}</div>`
+    + buildSimplePriceRowsHtml(items, opts);
 }
 
 /* ---------- "Теплові насоси" ---------- */
@@ -5283,7 +5694,17 @@ document.getElementById('main').addEventListener('click', function(e) {
     const panel = rowEl.querySelector('.calc-panel');
     const resultEl = panel ? panel.querySelector('.calc-result') : null;
     const basePriceEl = rowEl.querySelector('.row-price');
-    const priceText = (resultEl ? resultEl.textContent : (basePriceEl ? basePriceEl.textContent : '')).trim();
+    // У .row-price, крім самої ціни, лежить ще дрібна примітка окремим span
+    // ("роздрібна"/"дилерська"). У текст для месенджера вона потрапляти не повинна:
+    // textContent склеював би її з ціною без пробілу — "1 250 EURроздрібна".
+    let basePriceText = '';
+    if (basePriceEl) {
+      const clone = basePriceEl.cloneNode(true);
+      const note = clone.querySelector('.row-price-note');
+      if (note) note.remove();
+      basePriceText = clone.textContent;
+    }
+    const priceText = (resultEl ? resultEl.textContent : basePriceText).trim();
     const model = nameEl ? nameEl.textContent.trim() : '';
     const shareText = model + ' — ' + priceText;
     if (navigator.share) {
@@ -5491,6 +5912,7 @@ window.addEventListener('popstate', function(event) {
       activeTile = state.tile || null; activeBrand = 'mhi';
       heatpumpsBrand = state.hpBrand || null;
       ventilationBrand = state.vBrand || null;
+      chillersCategory = state.chillersCat || null;
       vrfMhiSource = 'outdoor'; vrfGalSide = 'outdoor';
     }
     if (state.tab === 'info') {
@@ -5506,6 +5928,7 @@ window.addEventListener('popstate', function(event) {
     mhiCompatSheet = 'rac';
     heatpumpsBrand = null;
     ventilationBrand = null;
+    chillersCategory = null;
     vrfMhiSource = 'outdoor'; vrfGalSide = 'outdoor';
     if (currentTab === 'catalog') renderCatalogView();
     else if (currentTab === 'info') renderInfoTab();
