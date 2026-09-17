@@ -245,7 +245,85 @@
     border-color: var(--accent);
     white-space: nowrap;
   }
+  /* Оновити прайс (↻) — навмисно тиха, дрібна іконка (як у макеті дизайн-системи):
+     єдина помітна кнопка в шапці — кругла лупа пошуку на нижньому краї. */
+  .icon-btn-quiet {
+    width: 22px; height: 22px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 15px;
+    opacity: 0.6;
+  }
   input[type=file] { display: none; }
+
+  /* Глобальний пошук (кнопка-лупа в шапці) — GLOBAL_SEARCH_ENABLED.
+     Кругла кнопка сидить на нижньому краї шапки (половина всередині, половина зовні —
+     шапка position: sticky, тому лупа лишається на екрані при прокрутці). Прив'язана до
+     ПРАВОГО краю, а не до центру, як у макеті дизайн-системи: центр нижнього краю вже
+     зайнятий ручкою "Підбірки" (.cart-hud), яку туди поставили свідомо, щоб вона падала
+     в проміжок між кнопками MHI/GAL. Позиціонується absolute, тому висоту шапки не
+     збільшує і --header-h (syncStickyHeaderOffset) не зсуває. */
+  .global-search-fab {
+    position: absolute;
+    top: 100%;
+    right: 16px;
+    transform: translateY(-50%);
+    width: 46px; height: 46px;
+    border-radius: 999px;
+    border: 3px solid var(--card);
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+    box-shadow: 0 6px 16px -4px rgba(230, 0, 18, 0.45);
+  }
+  .global-search-fab svg { width: 21px; height: 21px; display: block; }
+  .global-search-fab:active { transform: translateY(-50%) scale(0.94); }
+
+  /* Панель результатів — той самий info-sheet-патерн, що й series-info-overlay тощо,
+     лише з полем вводу зверху тіла. white-space: normal — бо спільний .info-sheet-body
+     має pre-wrap (він для сирих текстів описів серій), і без цього переноси рядків у
+     розмітці результатів малювались би як пусті рядки (та сама правка, що й для
+     .instruction-sheet-body). */
+  .info-sheet-body.global-search-body { white-space: normal; }
+  .global-search-field-wrap {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--card);
+    padding-bottom: 10px;
+  }
+  .global-search-field-wrap input[type=text] { width: 100%; }
+  .global-search-hint, .global-search-empty {
+    padding: 32px 10px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+  }
+  .global-search-count { font-size: 11px; color: var(--text-secondary); padding: 0 2px 8px; }
+  .gsearch-hit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .gsearch-hit:last-child { border-bottom: none; }
+  .gsearch-hit:active { background: var(--bg); }
+  .gsearch-hit-info { min-width: 0; }
+  .gsearch-hit-model {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .gsearch-hit-sub { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
 
   .rate-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
   .rate-label { font-weight: 600; }
@@ -2127,7 +2205,7 @@
     <div class="header-top">
       <div class="back-btn" id="back-btn">←</div>
       <h1 id="title">Каталог Sun-Ice</h1>
-      <div class="icon-btn" id="refresh-icon" title="Оновити прайс" style="display:none;">↻</div>
+      <div class="icon-btn icon-btn-quiet" id="refresh-icon" title="Оновити прайс" style="display:none;">↻</div>
       <!-- Обидві з'являються лише на плитці "Теплові насоси" → MHI EZY/Q-ton (перемикається
            в renderHeatpumpsList()) — кожна відкриває свій info-sheet з поясненням про
            відповідну машину (Hydrolution EZY і Q-ton — різні продукти під однією плиткою). -->
@@ -2146,6 +2224,13 @@
       <div class="status-text" id="status-text"></div>
     </div>
     <div id="error-block"></div>
+    <!-- Глобальний пошук за маркуванням — доступний з будь-якої вкладки (не прив'язаний
+         до switchTab, на відміну від refresh-icon/shortcut-icon вище). Сидить на нижньому
+         краї шапки праворуч, бо центр зайнятий ручкою "Підбірки" (нижче). Вимикається
+         повністю через GLOBAL_SEARCH_ENABLED (safe rollback без заливання іншого файлу). -->
+    <div class="global-search-fab" id="global-search-btn" title="Пошук за маркуванням" aria-label="Пошук за маркуванням" role="button">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.4" y1="15.4" x2="20.5" y2="20.5"/></svg>
+    </div>
     <!-- "Підбірка" (кошик): ручка + підказка підв'язані до шапки (position: sticky) і
          центровані по горизонталі — так ручка лягає в проміжок між кнопками MHI/GAL, а не
          повністю на одну з них, і не заважає навігації. -->
@@ -2194,6 +2279,25 @@
     <div class="info-sheet-body" id="series-info-body"></div>
     <div class="info-sheet-actions" id="series-info-actions" hidden>
       <button type="button" class="info-sheet-action-btn" id="series-info-action-btn"></button>
+    </div>
+  </div>
+</div>
+
+<!-- Глобальний пошук за маркуванням (кнопка-лупа в шапці) — той самий info-sheet-патерн.
+     Охоплює лише Спліт-системи/Мульти спліт-системи/Напівпромислові спліт-системи
+     (MHI+Galactic), решта плиток каталогу свідомо не входять — див. CHANGELOG. -->
+<div class="info-sheet-overlay" id="global-search-overlay">
+  <div class="info-sheet-backdrop" id="global-search-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title">Пошук за маркуванням</div>
+      <button type="button" class="info-sheet-close" id="global-search-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body global-search-body">
+      <div class="global-search-field-wrap">
+        <input type="text" id="global-search-input" placeholder="Мінімум 3 символи, пробіли не рахуються" autocomplete="off">
+      </div>
+      <div id="global-search-results"></div>
     </div>
   </div>
 </div>
@@ -2618,6 +2722,10 @@ const CATALOG_TILES = [
 
 /* ЖАРТ-НАПИСИ (тимчасово) — щоб прибрати жарти, просто постав false */
 const JOKE_MODE = true;
+
+/* Глобальний пошук за маркуванням (кнопка-лупа в шапці) — миттєвий безпечний відкат:
+   постав false, і кнопка й уся функція повністю ховаються, без заливання іншого файлу. */
+const GLOBAL_SEARCH_ENABLED = true;
 
 /* Push-сповіщення адміністраторам про нову заявку + лічильник на іконці застосунку.
    Публічний VAPID-ключ — безпечно тримати в клієнтському коді (це не секрет). */
@@ -5582,6 +5690,111 @@ function closeSeriesInfo() {
 }
 document.getElementById('series-info-close').addEventListener('click', closeSeriesInfo);
 document.getElementById('series-info-backdrop').addEventListener('click', closeSeriesInfo);
+
+/* ---------- Глобальний пошук за маркуванням (кнопка-лупа в шапці) ---------- */
+/* Лише три плитки зі "звичайною" структурою прайсу (Спліт-системи/Мульти спліт-системи/
+   Напівпромислові спліт-системи), MHI+Galactic кожна — на прохання користувача решта
+   плиток (VRF, ККБ, теплові насоси, чиллери, вентиляція, завіси, витратні матеріали) у
+   цей пошук не входять. Виведено з CATALOG_TILES, а не продубльовано вручну, щоб не
+   розсинхронитись, якщо ключі/назви плиток колись зміняться. */
+const GLOBAL_SEARCH_TILES = CATALOG_TILES
+  .filter(t => ['split', 'multisplit', 'semi'].includes(t.id))
+  .flatMap(t => [
+    { tileId: t.id, tileLabel: t.label, brand: 'mhi', brandLabel: 'MHI', key: t.mhi.key },
+    { tileId: t.id, tileLabel: t.label, brand: 'gal', brandLabel: 'GALACTIC', key: t.gal.key }
+  ]);
+
+/* Ранжування: 0 — точний збіг, 1 — маркування починається з запиту, 2 — запит десь
+   усередині (менша позиція символу й коротше маркування — точніше). Позицію збігу
+   рахуємо тим самим regex, що й matchesSearchQuery (buildSearchPattern) — так ранжування
+   лишається толерантним до розкладки клавіатури, а не лише сам факт "знайдено". Мінімум
+   3 значущих символи запиту — пробіли в normalizeSearchKey уже не рахуються. */
+function computeGlobalSearchResults(query) {
+  const significant = normalizeSearchKey(query);
+  if (significant.length < 3) return [];
+  const patternSrc = buildSearchPattern(query);
+  let re = null;
+  try { re = patternSrc ? new RegExp(patternSrc) : null; } catch (e) { re = null; }
+  const hits = [];
+  GLOBAL_SEARCH_TILES.forEach(src => {
+    (sheetsData[src.key] || []).forEach(it => {
+      const normModel = normalizeSearchKey(it.model);
+      let pos;
+      if (re) {
+        const m = normModel.match(re);
+        if (!m) return;
+        pos = m.index;
+      } else {
+        pos = normModel.indexOf(significant);
+        if (pos < 0) return;
+      }
+      const rank = normModel === significant ? 0 : (pos === 0 ? 1 : 2);
+      hits.push({ tileId: src.tileId, tileLabel: src.tileLabel, brand: src.brand, brandLabel: src.brandLabel, item: it, rank, pos, len: normModel.length });
+    });
+  });
+  hits.sort((a, b) => a.rank - b.rank || a.pos - b.pos || a.len - b.len);
+  return hits.slice(0, 5);
+}
+
+function renderGlobalSearchResults(query) {
+  const container = document.getElementById('global-search-results');
+  if (normalizeSearchKey(query).length < 3) {
+    container.innerHTML = '<div class="global-search-hint">Введіть щонайменше 3 символи маркування — пробіли можна не рахувати.</div>';
+    return;
+  }
+  const hits = computeGlobalSearchResults(query);
+  if (!hits.length) {
+    container.innerHTML = `<div class="global-search-empty">Нічого не знайдено за «${escapeHtml(query)}»</div>`;
+    return;
+  }
+  const locked = !hasFullAccess;
+  container.innerHTML = '<div class="global-search-count">Знайдено: ' + hits.length + '</div>' +
+    hits.map((h, idx) => {
+      const priceStr = Math.round(h.item.price).toLocaleString('uk-UA') + (h.item.currency ? ' ' + h.item.currency : '');
+      return `
+        <div class="gsearch-hit" data-hit-idx="${idx}">
+          <div class="gsearch-hit-info">
+            <div class="gsearch-hit-model">${escapeHtml(h.item.model)}</div>
+            <div class="gsearch-hit-sub">${escapeHtml(h.tileLabel)} · ${escapeHtml(h.brandLabel)}</div>
+          </div>
+          <div class="row-price${locked ? ' row-price-locked' : ''}">${priceStr}</div>
+        </div>`;
+    }).join('');
+  container.querySelectorAll('.gsearch-hit[data-hit-idx]').forEach(el => {
+    el.addEventListener('click', () => {
+      goToGlobalSearchHit(hits[Number(el.getAttribute('data-hit-idx'))]);
+    });
+  });
+}
+
+function goToGlobalSearchHit(hit) {
+  closeGlobalSearch();
+  if (currentTab !== 'catalog') switchTab('catalog', true);
+  history.pushState({ tab: 'catalog', tile: hit.tileId }, '', '#' + encodeURIComponent(hit.tileId));
+  activeTile = hit.tileId;
+  activeBrand = hit.brand;
+  renderCatalogView();
+}
+
+function openGlobalSearch() {
+  document.getElementById('global-search-overlay').classList.add('show');
+  const input = document.getElementById('global-search-input');
+  input.value = ''; // завжди чистий пошук при відкритті — інакше збивало б з пантелику
+                     // залишений запит із попереднього відкриття в іншому контексті
+  renderGlobalSearchResults('');
+  setTimeout(() => input.focus(), 50);
+}
+function closeGlobalSearch() {
+  document.getElementById('global-search-overlay').classList.remove('show');
+}
+if (GLOBAL_SEARCH_ENABLED) {
+  document.getElementById('global-search-btn').addEventListener('click', openGlobalSearch);
+  document.getElementById('global-search-close').addEventListener('click', closeGlobalSearch);
+  document.getElementById('global-search-backdrop').addEventListener('click', closeGlobalSearch);
+  document.getElementById('global-search-input').addEventListener('input', e => renderGlobalSearchResults(e.target.value));
+} else {
+  document.getElementById('global-search-btn').style.display = 'none';
+}
 
 function closeThEzyInstruction() {
   document.getElementById('th-ezy-instruction-overlay').classList.remove('show');
