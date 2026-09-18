@@ -38,6 +38,8 @@
     --danger: #A8432F;         /* clay-600 */
     --navy: #2A2725;           /* ink-900 — темні поверхні й лінії */
     --navy-2: #3D3A37;         /* ink-800 */
+    /* Помітність водяного знака-логотипа в шапці — крутити тут (дизайн-система радить .07) */
+    --header-logo-opacity: 0.13;
   }
   * { box-sizing: border-box; }
   body {
@@ -53,7 +55,9 @@
   /* Install banner */
   .install-banner {
     display: none;
-    background: linear-gradient(to right, #2A2725, var(--navy-2), var(--navy));
+    /* Був градієнт із трьох близьких темних тонів — дизайн-система забороняє градієнти
+       за контентом ("Never a gradient behind content"), тому просто плоский ink-900. */
+    background: var(--navy);
     color: #fff;
     padding: 10px 14px;
     padding-top: calc(10px + env(safe-area-inset-top));
@@ -262,72 +266,11 @@
   }
   input[type=file] { display: none; }
 
-  /* Глобальний пошук (кнопка-лупа в шапці) — GLOBAL_SEARCH_ENABLED.
-     Сидить у верхньому рядку шапки, праворуч, звичайним елементом потоку. У макеті
-     дизайн-системи вона нависала на нижньому краї шапки, але в реальному застосунку
-     це перекривало плитки каталогу й кнопки MHI/GAL, тому лупа лишається всередині
-     шапки (на прохання користувача). Кругла й у колір --accent — щоб лишалась єдиною
-     помітною кнопкою шапки, як задумано в макеті. */
-  .global-search-fab {
-    width: 40px; height: 40px;
-    border-radius: 999px;
-    background: var(--accent);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px -4px rgba(200, 90, 28, 0.5);
-  }
-  .global-search-fab svg { width: 19px; height: 19px; display: block; }
-  .global-search-fab:active { transform: scale(0.94); }
-
-  /* Панель результатів — той самий info-sheet-патерн, що й series-info-overlay тощо,
-     лише з полем вводу зверху тіла. white-space: normal — бо спільний .info-sheet-body
-     має pre-wrap (він для сирих текстів описів серій), і без цього переноси рядків у
-     розмітці результатів малювались би як пусті рядки (та сама правка, що й для
-     .instruction-sheet-body). */
-  .info-sheet-body.global-search-body { white-space: normal; }
-  .global-search-field-wrap {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: var(--card);
-    padding-bottom: 10px;
-  }
-  .global-search-field-wrap input[type=text] { width: 100%; }
-  .global-search-hint, .global-search-empty {
-    padding: 32px 10px;
-    text-align: center;
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.6;
-  }
-  .global-search-count { font-size: 11px; color: var(--text-secondary); padding: 0 2px 8px; }
-  .gsearch-hit {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 12px 4px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-  }
-  .gsearch-hit:last-child { border-bottom: none; }
-  .gsearch-hit:active { background: var(--bg); }
-  .gsearch-hit-info { min-width: 0; }
-  .gsearch-hit-model {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .gsearch-hit-sub { font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
-
   .rate-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
   .rate-label { font-weight: 600; }
-  .rate-value { color: var(--text); font-weight: 700; }
+  .rate-value { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
   .rate-input {
+    font-variant-numeric: tabular-nums;
     width: 70px;
     padding: 4px 6px;
     border: 1px solid var(--border);
@@ -1098,6 +1041,7 @@
   }
   .mhi-result-empty { color: var(--text-secondary); font-size: 13.5px; line-height: 1.55; text-align: center; padding: 8px 4px; }
   .mhi-result-code {
+    font-variant-numeric: tabular-nums;
     display: inline-block;
     font-size: 20px;
     font-weight: 800;
@@ -1362,7 +1306,7 @@
   }
   .cart-item-name { flex: 1; font-size: 13px; min-width: 0; word-break: break-word; }
   .cart-item-tile { display: block; font-size: 10.5px; color: var(--text-secondary); font-weight: 500; }
-  .cart-item-price { color: var(--text-secondary); font-weight: 600; }
+  .cart-item-price { color: var(--text-secondary); font-weight: 600; font-variant-numeric: tabular-nums; }
   .cart-qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .cart-qty-btn {
     width: 24px; height: 24px;
@@ -2176,9 +2120,99 @@
     color: var(--text-secondary);
   }
   .compat-notes-body div { margin-bottom: 4px; }
+  /* Іконки дизайн-системи (вшитий спрайт Lucide, див. коментар біля <symbol> у <body>).
+     1.9px штрих, круглі кінці, currentColor — рівно як вимагає дизайн-система.
+     Розмір керується font-size контейнера (іконка = 1em), тож окремих розмірів не треба. */
+  .ic {
+    width: 1em; height: 1em;
+    display: inline-block;
+    vertical-align: -0.14em;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  /* Іконка перед текстом у рядку (контакти, тулбар CRМонтаж) */
+  .ic-lead { margin-right: 7px; vertical-align: -0.16em; }
+  .branch-line .ic-lead { color: var(--text-secondary); }
+  /* Емодзі-запасний варіант, коли ICONS_LUCIDE = false */
+  .ic-fb { font-style: normal; }
+
+  /* ЛОГОТИП У ШАПЦІ (дизайн-система). Два режими одночасно, обидва вмикає клас
+     .home-logo на <header>:
+       • водяний знак — напівпрозорий логотип по центру шапки на ВСІХ екранах, крім
+         головної (там він був би дублем самого заголовка-логотипа);
+       • на головному екрані каталогу логотип замінює текст «Каталог Sun-Ice».
+     Логотип у h1 зроблений фоном, а не окремим <img>, бо всі екрани присвоюють
+     title.textContent — дочірній елемент вони б затирали, фон лишається.
+     Прозорість винесена в змінну: одна правка, щоб зробити знак помітнішим/тихішим.
+     Дизайн-система радить .07, тут свідомо помітніше — на прохання користувача.
+     Файл 201×130 px, тому вище ~60px його не показуємо (розмиється). */
+  .header-watermark {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    height: 58px;
+    opacity: var(--header-logo-opacity);
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+  }
+  header > *:not(.header-watermark) { position: relative; z-index: 1; }
+  header.home-logo .header-watermark { display: none; }
+  header.home-logo h1 {
+    color: transparent;
+    min-height: 48px;
+    background-image: url('tile-images/sun-ice-logo.png');
+    background-repeat: no-repeat;
+    /* 17px = 8px ромба + 9px проміжку, щоб логотип не наїжджав на ромб */
+    background-position: 17px center;
+    background-size: auto 42px;
+  }
+
+  /* Розміри іконок у конкретних місцях. Там, де вже є правило на svg
+     (.calc-toggle svg, .share-btn svg, .task-ics-btn svg) — воно й керує розміром,
+     бо специфічніше за .ic; тут лише те, що успадковувало б font-size тексту. */
+  .nav-btn .nav-icon {
+    display: flex; align-items: center; justify-content: center;
+    height: 19px;
+  }
+  .nav-btn .nav-icon .ic { vertical-align: 0; }
+  .cart-check-btn .cart-check-icon { display: flex; }
+  .cart-check-btn .cart-check-icon .ic { width: 14px; height: 14px; vertical-align: 0; stroke-width: 2.4; }
+  .cart-fab .ic { width: 16px; height: 16px; vertical-align: -0.22em; }
 </style>
 </head>
 <body>
+<!-- ================== НАБІР ІКОНОК (Lucide 0.544, вшитий спрайт) ==================
+     Дизайн-система вимагає штрихові іконки Lucide замість емодзі. Замість підключення
+     зовнішнього скрипта Lucide з CDN (unpkg) сюди вшиті лише ті ~16 гліфів, що реально
+     потрібні: застосунок офлайн-перший (sw.js кешує файли), і зовнішній скрипт означав би
+     зникнення іконок без мережі та зайву вагу. Вигляд ідентичний — це ті самі контури Lucide.
+     Використання: ic('layout-grid', '🏠') у JS або <svg class="ic"><use href="#ic-…"></use></svg>
+     у статичній розмітці. Миттєвий відкат на емодзі — ICONS_LUCIDE = false. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="ic-layout-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="ic-flame" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="ic-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="ic-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="ic-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  <symbol id="ic-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="ic-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="ic-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  <symbol id="ic-printer" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></symbol>
+  <symbol id="ic-file-spreadsheet" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></symbol>
+  <symbol id="ic-factory" viewBox="0 0 24 24"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></symbol>
+  <symbol id="ic-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
+  <symbol id="ic-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+  <symbol id="ic-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+  <symbol id="ic-calculator" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></symbol>
+  <symbol id="ic-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></symbol>
+  <symbol id="ic-receipt" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/></symbol>
+</svg>
 <div class="install-banner" id="install-banner">
   <div class="install-banner-text" id="install-banner-text"></div>
   <button id="install-action-btn" style="display:none;">Встановити</button>
@@ -2212,22 +2246,17 @@
 </div>
 <div class="app">
   <header>
+    <img class="header-watermark" src="tile-images/sun-ice-logo.png" alt="" aria-hidden="true">
     <div class="header-top">
-      <div class="back-btn" id="back-btn">←</div>
+      <div class="back-btn" id="back-btn"><svg class="ic" data-fb="←" aria-hidden="true"><use href="#ic-arrow-left"></use></svg></div>
       <h1 id="title">Каталог Sun-Ice</h1>
-      <div class="icon-btn icon-btn-quiet" id="refresh-icon" title="Оновити прайс" style="display:none;">↻</div>
+      <div class="icon-btn icon-btn-quiet" id="refresh-icon" title="Оновити прайс" style="display:none;"><svg class="ic" data-fb="↻" aria-hidden="true"><use href="#ic-refresh-cw"></use></svg></div>
       <!-- Обидві з'являються лише на плитці "Теплові насоси" → MHI EZY/Q-ton (перемикається
            в renderHeatpumpsList()) — кожна відкриває свій info-sheet з поясненням про
            відповідну машину (Hydrolution EZY і Q-ton — різні продукти під однією плиткою). -->
       <div class="icon-btn icon-btn-text" id="th-ezy-instruction-btn" title="Інструкція — Hydrolution EZY" style="display:none;">EZY</div>
       <div class="icon-btn icon-btn-text" id="q-ton-instruction-btn" title="Інструкція — MHI Q-ton" style="display:none;">Q-TON</div>
       <div class="icon-btn icon-btn-text" id="shortcut-icon" title="Встановити застосунок на головний екран" style="display:none;">Встановити</div>
-      <!-- Глобальний пошук за маркуванням — доступний з будь-якої вкладки (не прив'язаний
-           до switchTab, на відміну від refresh-icon/shortcut-icon вище). Вимикається
-           повністю через GLOBAL_SEARCH_ENABLED (safe rollback без заливання іншого файлу). -->
-      <div class="global-search-fab" id="global-search-btn" title="Пошук за маркуванням" aria-label="Пошук за маркуванням" role="button">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.4" y1="15.4" x2="20.5" y2="20.5"/></svg>
-      </div>
     </div>
     <div class="rate-row" id="rate-row" style="display:none;">
       <span class="rate-label">Курс $:</span>
@@ -2245,7 +2274,7 @@
          повністю на одну з них, і не заважає навігації. -->
     <div class="cart-hud" id="cart-hud">
       <button type="button" class="cart-fab" id="cart-fab" style="display:none;" aria-label="Відкрити підбірку">
-        🧾<span class="cart-fab-badge" id="cart-fab-badge">0</span>
+        <svg class="ic" data-fb="🧾" aria-hidden="true"><use href="#ic-receipt"></use></svg><span class="cart-fab-badge" id="cart-fab-badge">0</span>
       </button>
       <div class="cart-toast" id="cart-toast"></div>
     </div>
@@ -2257,12 +2286,12 @@
 
 <nav class="bottom-nav no-print">
   <div class="nav-indicator" id="nav-indicator"></div>
-  <button class="nav-btn active" data-tab="catalog"><span class="nav-icon">🏠</span>Каталог</button>
-  <button class="nav-btn" data-tab="promotions"><span class="nav-icon">🔥</span>Акції</button>
-  <button class="nav-btn" data-tab="cabinet"><span class="nav-icon">👤</span>Кабінет</button>
-  <button class="nav-btn" data-tab="contacts"><span class="nav-icon">📞</span>Контакти</button>
-  <button class="nav-btn" data-tab="info"><span class="nav-icon">ℹ️</span>Інфо</button>
-  <button class="nav-btn" data-tab="installer"><span class="nav-icon">🛠️</span>CRМонтаж</button>
+  <button class="nav-btn active" data-tab="catalog"><span class="nav-icon"><svg class="ic" data-fb="🏠" aria-hidden="true"><use href="#ic-layout-grid"></use></svg></span>Каталог</button>
+  <button class="nav-btn" data-tab="promotions"><span class="nav-icon"><svg class="ic" data-fb="🔥" aria-hidden="true"><use href="#ic-flame"></use></svg></span>Акції</button>
+  <button class="nav-btn" data-tab="cabinet"><span class="nav-icon"><svg class="ic" data-fb="👤" aria-hidden="true"><use href="#ic-user"></use></svg></span>Кабінет</button>
+  <button class="nav-btn" data-tab="contacts"><span class="nav-icon"><svg class="ic" data-fb="📞" aria-hidden="true"><use href="#ic-phone"></use></svg></span>Контакти</button>
+  <button class="nav-btn" data-tab="info"><span class="nav-icon"><svg class="ic" data-fb="ℹ️" aria-hidden="true"><use href="#ic-info"></use></svg></span>Інфо</button>
+  <button class="nav-btn" data-tab="installer"><span class="nav-icon"><svg class="ic" data-fb="🛠️" aria-hidden="true"><use href="#ic-wrench"></use></svg></span>CRМонтаж</button>
 </nav>
 
 <div class="img-lightbox-overlay" id="img-lightbox-overlay">
@@ -2288,25 +2317,6 @@
     <div class="info-sheet-body" id="series-info-body"></div>
     <div class="info-sheet-actions" id="series-info-actions" hidden>
       <button type="button" class="info-sheet-action-btn" id="series-info-action-btn"></button>
-    </div>
-  </div>
-</div>
-
-<!-- Глобальний пошук за маркуванням (кнопка-лупа в шапці) — той самий info-sheet-патерн.
-     Охоплює лише Спліт-системи/Мульти спліт-системи/Напівпромислові спліт-системи
-     (MHI+Galactic), решта плиток каталогу свідомо не входять — див. CHANGELOG. -->
-<div class="info-sheet-overlay" id="global-search-overlay">
-  <div class="info-sheet-backdrop" id="global-search-backdrop"></div>
-  <div class="info-sheet-panel">
-    <div class="info-sheet-header">
-      <div class="info-sheet-title">Пошук за маркуванням</div>
-      <button type="button" class="info-sheet-close" id="global-search-close" aria-label="Закрити">✕</button>
-    </div>
-    <div class="info-sheet-body global-search-body">
-      <div class="global-search-field-wrap">
-        <input type="text" id="global-search-input" placeholder="Мінімум 3 символи, пробіли не рахуються" autocomplete="off">
-      </div>
-      <div id="global-search-results"></div>
     </div>
   </div>
 </div>
@@ -2732,9 +2742,27 @@ const CATALOG_TILES = [
 /* ЖАРТ-НАПИСИ (тимчасово) — щоб прибрати жарти, просто постав false */
 const JOKE_MODE = true;
 
-/* Глобальний пошук за маркуванням (кнопка-лупа в шапці) — миттєвий безпечний відкат:
-   постав false, і кнопка й уся функція повністю ховаються, без заливання іншого файлу. */
-const GLOBAL_SEARCH_ENABLED = true;
+/* ІКОНКИ. true — штрихові гліфи Lucide зі вшитого спрайта (вимога дизайн-системи),
+   false — миттєвий відкат на емодзі, які були раніше, без заливання іншого файлу.
+   Відкат працює і для статичної розмітки: у ній кожна іконка несе data-fb з емодзі,
+   і swapIconsToEmoji() нижче підміняє їх при старті. */
+const ICONS_LUCIDE = true;
+
+/* Повертає розмітку іконки: або <use> зі спрайта, або емодзі-запасний варіант.
+   fb — емодзі, яке стояло тут до редизайну (воно ж потрапляє в data-fb). */
+function ic(name, fb, cls) {
+  if (!ICONS_LUCIDE) return fb ? '<span class="ic-fb">' + fb + '</span>' : '';
+  return '<svg class="ic' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#ic-' + name + '"></use></svg>';
+}
+function swapIconsToEmoji() {
+  document.querySelectorAll('svg.ic[data-fb]').forEach(el => {
+    const span = document.createElement('span');
+    span.className = 'ic-fb';
+    span.textContent = el.getAttribute('data-fb');
+    el.replaceWith(span);
+  });
+}
+if (!ICONS_LUCIDE) swapIconsToEmoji();
 
 /* Push-сповіщення адміністраторам про нову заявку + лічильник на іконці застосунку.
    Публічний VAPID-ключ — безпечно тримати в клієнтському коді (це не секрет). */
@@ -4061,11 +4089,14 @@ function renderCatalogView() {
   if (activeTile === null) {
     backBtn.style.display = 'none';
     title.textContent = 'Каталог Sun-Ice';
+    /* На головній логотип замінює текст заголовка (див. .home-logo в CSS) */
+    document.querySelector('header').classList.add('home-logo');
     document.getElementById('th-ezy-instruction-btn').style.display = 'none';
     document.getElementById('q-ton-instruction-btn').style.display = 'none';
     renderCatalogMenu();
   } else {
     backBtn.style.display = 'flex';
+    document.querySelector('header').classList.remove('home-logo');
     const tile = CATALOG_TILES.find(t => t.id === activeTile);
     title.textContent = tile ? tile.label : activeTile;
     if (activeTile !== 'heatpumps') {
@@ -4559,7 +4590,7 @@ function renderCartPanel() {
   body.innerHTML = itemsHtml + `
     <div class="cart-total-row">
       ${calcHtml}
-      <button type="button" class="share-btn cart-share-btn" aria-label="Поділитися підбіркою"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8.8" y1="10.8" x2="15.2" y2="7"/><line x1="8.8" y1="13.2" x2="15.2" y2="17"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="5.6" r="2.8"/><circle cx="18" cy="18.4" r="2.8"/></g></svg></button>
+      <button type="button" class="share-btn cart-share-btn" aria-label="Поділитися підбіркою">${ic('share-2', '')}</button>
     </div>
     <button type="button" class="cart-clear-btn" id="cart-clear-btn">Очистити підбірку</button>
   `;
@@ -4702,21 +4733,12 @@ function renderCatalogList() {
             <p class="row-name">${escapeHtml(it.model)}</p>
           </div>
           <div class="row-right">
-            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
+            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
             <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <rect x="3" y="1.5" width="18" height="21" rx="3" fill="var(--navy)"/>
-                <rect x="6" y="4.5" width="12" height="5" rx="1.1" fill="#EDE6DC"/>
-                <rect x="6" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
-                <rect x="10.2" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
-                <rect x="14.4" y="11.7" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
-                <rect x="6" y="16.1" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
-                <rect x="10.2" y="16.1" width="3.6" height="3.4" rx="0.8" fill="#fff"/>
-                <rect x="14.4" y="16.1" width="3.6" height="3.4" rx="0.8" fill="var(--accent)"/>
-              </svg>
+              ${ic('calculator', '')}
             </button>
             <div class="row-price${locked ? ' row-price-locked' : ''}" aria-label="${locked ? 'Ціна доступна після реєстрації' : ''}">${priceStr}</div>
-            <button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8.8" y1="10.8" x2="15.2" y2="7"/><line x1="8.8" y1="13.2" x2="15.2" y2="17"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="5.6" r="2.8"/><circle cx="18" cy="18.4" r="2.8"/></g></svg></button>
+            <button class="share-btn" type="button" aria-label="Поділитися">${ic('share-2', '')}</button>
           </div>
         </div>
         ${locked ? '' : '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, priceStr) + '</div>'}
@@ -4813,7 +4835,7 @@ function buildSimplePriceRowsHtml(items, opts) {
       if (opts.priceNote) priceStr += `<span class="row-price-note">${escapeHtml(opts.priceNote)}</span>`;
       const cartKey = cartSourceKey + '|' + it.model;
       const cartQty = showCart ? cartQtyFor(cartKey) : 0;
-      const cartBtnHtml = showCart ? `<button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tileLabel)}" aria-label="Додати в підбірку"><span class="cart-check-icon">✓</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>` : '';
+      const cartBtnHtml = showCart ? `<button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tileLabel)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>` : '';
       const calcBtnHtml = showCalc ? `<button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
               <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                 <rect x="3" y="1.5" width="18" height="21" rx="3" fill="var(--navy)"/>
@@ -4826,7 +4848,7 @@ function buildSimplePriceRowsHtml(items, opts) {
                 <rect x="14.4" y="16.1" width="3.6" height="3.4" rx="0.8" fill="var(--accent)"/>
               </svg>
             </button>` : '';
-      const shareBtnHtml = showShare ? `<button class="share-btn" type="button" aria-label="Поділитися"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8.8" y1="10.8" x2="15.2" y2="7"/><line x1="8.8" y1="13.2" x2="15.2" y2="17"/><circle cx="6" cy="12" r="2.8"/><circle cx="18" cy="5.6" r="2.8"/><circle cx="18" cy="18.4" r="2.8"/></g></svg></button>` : '';
+      const shareBtnHtml = showShare ? `<button class="share-btn" type="button" aria-label="Поділитися">${ic('share-2', '')}</button>` : '';
       rightHtml += `${cartBtnHtml}${calcBtnHtml}<div class="row-price${rowLocked ? ' row-price-locked' : ''}" aria-label="${rowLocked ? 'Ціна доступна після реєстрації' : ''}">${priceStr}</div>${shareBtnHtml}`;
     }
 
@@ -5707,111 +5729,6 @@ function closeSeriesInfo() {
 document.getElementById('series-info-close').addEventListener('click', closeSeriesInfo);
 document.getElementById('series-info-backdrop').addEventListener('click', closeSeriesInfo);
 
-/* ---------- Глобальний пошук за маркуванням (кнопка-лупа в шапці) ---------- */
-/* Лише три плитки зі "звичайною" структурою прайсу (Спліт-системи/Мульти спліт-системи/
-   Напівпромислові спліт-системи), MHI+Galactic кожна — на прохання користувача решта
-   плиток (VRF, ККБ, теплові насоси, чиллери, вентиляція, завіси, витратні матеріали) у
-   цей пошук не входять. Виведено з CATALOG_TILES, а не продубльовано вручну, щоб не
-   розсинхронитись, якщо ключі/назви плиток колись зміняться. */
-const GLOBAL_SEARCH_TILES = CATALOG_TILES
-  .filter(t => ['split', 'multisplit', 'semi'].includes(t.id))
-  .flatMap(t => [
-    { tileId: t.id, tileLabel: t.label, brand: 'mhi', brandLabel: 'MHI', key: t.mhi.key },
-    { tileId: t.id, tileLabel: t.label, brand: 'gal', brandLabel: 'GALACTIC', key: t.gal.key }
-  ]);
-
-/* Ранжування: 0 — точний збіг, 1 — маркування починається з запиту, 2 — запит десь
-   усередині (менша позиція символу й коротше маркування — точніше). Позицію збігу
-   рахуємо тим самим regex, що й matchesSearchQuery (buildSearchPattern) — так ранжування
-   лишається толерантним до розкладки клавіатури, а не лише сам факт "знайдено". Мінімум
-   3 значущих символи запиту — пробіли в normalizeSearchKey уже не рахуються. */
-function computeGlobalSearchResults(query) {
-  const significant = normalizeSearchKey(query);
-  if (significant.length < 3) return [];
-  const patternSrc = buildSearchPattern(query);
-  let re = null;
-  try { re = patternSrc ? new RegExp(patternSrc) : null; } catch (e) { re = null; }
-  const hits = [];
-  GLOBAL_SEARCH_TILES.forEach(src => {
-    (sheetsData[src.key] || []).forEach(it => {
-      const normModel = normalizeSearchKey(it.model);
-      let pos;
-      if (re) {
-        const m = normModel.match(re);
-        if (!m) return;
-        pos = m.index;
-      } else {
-        pos = normModel.indexOf(significant);
-        if (pos < 0) return;
-      }
-      const rank = normModel === significant ? 0 : (pos === 0 ? 1 : 2);
-      hits.push({ tileId: src.tileId, tileLabel: src.tileLabel, brand: src.brand, brandLabel: src.brandLabel, item: it, rank, pos, len: normModel.length });
-    });
-  });
-  hits.sort((a, b) => a.rank - b.rank || a.pos - b.pos || a.len - b.len);
-  return hits.slice(0, 5);
-}
-
-function renderGlobalSearchResults(query) {
-  const container = document.getElementById('global-search-results');
-  if (normalizeSearchKey(query).length < 3) {
-    container.innerHTML = '<div class="global-search-hint">Введіть щонайменше 3 символи маркування — пробіли можна не рахувати.</div>';
-    return;
-  }
-  const hits = computeGlobalSearchResults(query);
-  if (!hits.length) {
-    container.innerHTML = `<div class="global-search-empty">Нічого не знайдено за «${escapeHtml(query)}»</div>`;
-    return;
-  }
-  const locked = !hasFullAccess;
-  container.innerHTML = '<div class="global-search-count">Знайдено: ' + hits.length + '</div>' +
-    hits.map((h, idx) => {
-      const priceStr = Math.round(h.item.price).toLocaleString('uk-UA') + (h.item.currency ? ' ' + h.item.currency : '');
-      return `
-        <div class="gsearch-hit" data-hit-idx="${idx}">
-          <div class="gsearch-hit-info">
-            <div class="gsearch-hit-model">${escapeHtml(h.item.model)}</div>
-            <div class="gsearch-hit-sub">${escapeHtml(h.tileLabel)} · ${escapeHtml(h.brandLabel)}</div>
-          </div>
-          <div class="row-price${locked ? ' row-price-locked' : ''}">${priceStr}</div>
-        </div>`;
-    }).join('');
-  container.querySelectorAll('.gsearch-hit[data-hit-idx]').forEach(el => {
-    el.addEventListener('click', () => {
-      goToGlobalSearchHit(hits[Number(el.getAttribute('data-hit-idx'))]);
-    });
-  });
-}
-
-function goToGlobalSearchHit(hit) {
-  closeGlobalSearch();
-  if (currentTab !== 'catalog') switchTab('catalog', true);
-  history.pushState({ tab: 'catalog', tile: hit.tileId }, '', '#' + encodeURIComponent(hit.tileId));
-  activeTile = hit.tileId;
-  activeBrand = hit.brand;
-  renderCatalogView();
-}
-
-function openGlobalSearch() {
-  document.getElementById('global-search-overlay').classList.add('show');
-  const input = document.getElementById('global-search-input');
-  input.value = ''; // завжди чистий пошук при відкритті — інакше збивало б з пантелику
-                     // залишений запит із попереднього відкриття в іншому контексті
-  renderGlobalSearchResults('');
-  setTimeout(() => input.focus(), 50);
-}
-function closeGlobalSearch() {
-  document.getElementById('global-search-overlay').classList.remove('show');
-}
-if (GLOBAL_SEARCH_ENABLED) {
-  document.getElementById('global-search-btn').addEventListener('click', openGlobalSearch);
-  document.getElementById('global-search-close').addEventListener('click', closeGlobalSearch);
-  document.getElementById('global-search-backdrop').addEventListener('click', closeGlobalSearch);
-  document.getElementById('global-search-input').addEventListener('input', e => renderGlobalSearchResults(e.target.value));
-} else {
-  document.getElementById('global-search-btn').style.display = 'none';
-}
-
 function closeThEzyInstruction() {
   document.getElementById('th-ezy-instruction-overlay').classList.remove('show');
 }
@@ -6495,9 +6412,9 @@ async function renderContactsTab() {
   main.innerHTML = data.map(b => `
     <div class="branch-card">
       <p class="branch-name">${escapeHtml(b.name)}</p>
-      ${b.address ? `<p class="branch-line">📍 ${escapeHtml(b.address)}</p>` : ''}
-      ${(b.phones || []).map(p => `<p class="branch-line">📞 <a href="tel:${escapeHtml(p.replace(/[^\d+]/g, ''))}">${escapeHtml(p)}</a></p>`).join('')}
-      ${b.email ? `<p class="branch-line">✉️ <a href="mailto:${escapeHtml(b.email)}">${escapeHtml(b.email)}</a></p>` : ''}
+      ${b.address ? `<p class="branch-line">${ic('map-pin', '📍', 'ic-lead')}${escapeHtml(b.address)}</p>` : ''}
+      ${(b.phones || []).map(p => `<p class="branch-line">${ic('phone', '📞', 'ic-lead')}<a href="tel:${escapeHtml(p.replace(/[^\d+]/g, ''))}">${escapeHtml(p)}</a></p>`).join('')}
+      ${b.email ? `<p class="branch-line">${ic('mail', '✉️', 'ic-lead')}<a href="mailto:${escapeHtml(b.email)}">${escapeHtml(b.email)}</a></p>` : ''}
     </div>
   `).join('');
 }
@@ -7954,6 +7871,9 @@ function switchTab(tab, pushHistory) {
   });
   updateNavIndicator(document.querySelector('.nav-btn.active'));
   document.getElementById('back-btn').style.display = 'none';
+  /* Логотип-заголовок лишається тільки на головній каталогу; renderCatalogView()
+     увімкне його назад, якщо ми перейшли саме туди. */
+  document.querySelector('header').classList.remove('home-logo');
   document.getElementById('rate-row').style.display = 'none';
   openCalcPanelEl = null;
   closeCartPanel();
@@ -8009,9 +7929,9 @@ async function renderInstallerTab() {
   main.innerHTML = `
     <button type="button" class="primary-btn no-print" data-task-action="add" style="margin-bottom:12px;">+ Новий монтаж</button>
     <div class="task-toolbar-row no-print">
-      <button type="button" data-task-action="print">🖨 Друк</button>
-      <button type="button" data-task-action="export-xlsx">📊 Excel</button>
-      <button type="button" data-task-action="suppliers">🏭 Постачальники</button>
+      <button type="button" data-task-action="print">${ic('printer', '🖨', 'ic-lead')}Друк</button>
+      <button type="button" data-task-action="export-xlsx">${ic('file-spreadsheet', '📊', 'ic-lead')}Excel</button>
+      <button type="button" data-task-action="suppliers">${ic('factory', '🏭', 'ic-lead')}Постачальники</button>
     </div>
     <div class="admin-filters no-print">
       <div class="admin-search"><input type="text" id="task-search" placeholder="Пошук за адресою чи клієнтом"></div>
@@ -8243,7 +8163,7 @@ async function handleTaskAction(action, id, value) {
    можливий наступний крок (потребує нового Edge Function + pg_cron, за зразком
    send-promo-push з розділу Акції), тут навмисно не реалізовано, щоб не ускладнювати
    цей крок. */
-const TASK_CALENDAR_ICON = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9.5h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+const TASK_CALENDAR_ICON = ic('calendar', '🗓');
 
 function escapeIcsText(s) {
   return String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
