@@ -467,41 +467,78 @@
     color: var(--text-secondary);
     border: 1px solid var(--border);
   }
-  /* Плитки з фото (замість буквеної іконки) — фото зверху (contain, на білому тлі, щоб
-     не обрізати логотипи/підписи на різних за пропорціями зображеннях), назва знизу. */
-  .menu-tile-photo { padding: 8px; gap: 6px; }
-  .menu-tile-photo-wrap {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    border-radius: 6px;
-    overflow: hidden;
-    background: #fff;
-    border: 1px solid var(--border);
-  }
-  .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .menu-tile-photo .menu-tile-title { padding: 0 2px; }
-  /* Плитки з двома фото (MHI/Galactic чи інша пара — див. flipImg у CATALOG_TILES), що
-     самі час від часу перегортаються, як "живі" плитки Windows — тільки CSS
-     3D-transform на кожному елементі окремо, вмикається/вимикається в JS
-     (startFlipRotation/stopAllFlips), ніякого постійного навантаження. Зупиняється по кліку —
-     щоб не заважала переходу growFadeEnter в категорію. */
-  .menu-tile-flip { perspective: 1000px; }
-  .menu-tile-flip-inner {
+  /* Плитки з фото — цільна картинка на всю картку (4:3, object-fit: cover), а підпис —
+     білим ПОВЕРХ зображення в нижньому лівому куті, на м'якій темній градієнт-підложці
+     (::after). Картинки в tile-images готуються саме під це: виріб на темному градієнтному
+     фоні, рівно 4:3, нижні 40 % притемнені під підпис — тому білого тла й рамки навколо
+     фото більше немає. Стосується ВСІХ екранів із фото-плитками: головний каталог, бренди
+     вентиляції й теплових насосів, категорії Clint, Інфо. Плитки "Скоро" і буквені —
+     не чіпаємо, вони лишаються світлими. */
+  .menu-tile-photo {
     position: relative;
-    width: 100%;
-    height: 100%;
-    transition: transform 0.7s cubic-bezier(.4, .2, .2, 1);
-    transform-style: preserve-3d;
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.06);
+    background: #0D131B;
+    aspect-ratio: 4 / 3;
+    min-height: 0;
   }
-  .menu-tile-flip.flipped .menu-tile-flip-inner { transform: rotateY(180deg); }
-  .menu-tile-flip-face {
+  .menu-tile-photo-wrap {
     position: absolute;
     inset: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    overflow: hidden;
+  }
+  .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Підложка під підписом — щоб білий текст читався на будь-якій картинці. */
+  .menu-tile-photo::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 55%;
+    background: linear-gradient(to top, rgba(8,12,17,.85), rgba(8,12,17,0));
+    pointer-events: none;
+    z-index: 1;
+  }
+  .menu-tile-photo .menu-tile-title {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    z-index: 2;
+    padding: 0;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,.55);
+  }
+  /* Плитки з двома фото (MHI/Galactic чи інша пара — див. flipImg у CATALOG_TILES), що
+     самі час від часу перегортаються, як "живі" плитки Windows. Перегортається ВСЯ картка
+     цілком — картинка разом із підписом, рамкою й тінню, тому 3D-обгортка лежить ЗОВНІ
+     .menu-tile, а не всередині фото (як було до цього, коли крутилась сама лише картинка,
+     а підпис стояв на місці). Тільки CSS 3D-transform на кожному елементі окремо,
+     вмикається/вимикається в JS (startFlipRotation/stopAllFlips), ніякого постійного
+     навантаження. Зупиняється по кліку — щоб не заважала переходу growFadeEnter
+     в категорію. */
+  .menu-tile-3d { perspective: 1000px; cursor: pointer; transition: transform .1s; }
+  .menu-tile-3d-inner {
+    display: grid;   /* обидві грані в одній комірці -> висота обгортки = максимум з граней */
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(.4, .2, .2, 1);
+  }
+  .menu-tile-3d.flipped .menu-tile-3d-inner { transform: rotateY(180deg); }
+  .menu-tile-face {
+    grid-area: 1 / 1;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
-  .menu-tile-flip-face img { width: 100%; height: 100%; object-fit: contain; display: block; }
-  .menu-tile-flip-back { transform: rotateY(180deg); }
+  .menu-tile-face-back { transform: rotateY(180deg); }
+  /* Натиск тепер на обгортці, а не на грані — інакше scale грані б'ється з її rotateY. */
+  .menu-tile-3d:active { transform: scale(0.96); }
+  .menu-tile-3d .menu-tile:active { transform: none; }
 
   /* ---------- Словник анімацій (тільки transform+opacity, ніколи width/height/top/
      left/margin/padding). Усе всередині prefers-reduced-motion: no-preference — при
@@ -511,7 +548,8 @@
     /* Stagger-поява карток сітки/списку: fade + translateY. Затримку між рядами задає
        JS через inline animation-delay на кожній картці. */
     @keyframes tileEnter { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
-    .menu-tile.tile-enter { animation: tileEnter 280ms ease-out both; }
+    .menu-tile.tile-enter,
+    .menu-tile-3d.tile-enter { animation: tileEnter 280ms ease-out both; }
 
     /* Спільний "grow+fade" перехід плитка → деталі. Анімується #main як ціле, з
        transform-origin у точці, де була натиснута плитка (рахує JS), тому виглядає
@@ -4308,6 +4346,9 @@ function stopAllFlips() {
 }
 function startFlipRotation(flipEls) {
   stopAllFlips();
+  // При системно вимкнених анімаціях плитки просто стоять на передній грані — крутити
+  // їх без плавного переходу означало б різко підміняти картинку, це гірше за спокій.
+  if (prefersReducedMotionQuery.matches) return;
   flipOrder = Array.from(flipEls);
   if (!flipOrder.length) return;
   // Порядок навмисно перетасований (не зліва-направо/зверху-вниз, як у сітці) — щоб
@@ -4356,15 +4397,21 @@ function renderCatalogMenu() {
         </div>`;
     }
     if (tile.img && tile.flipImg) {
+      // Обидві грані — повноцінні картки (.menu-tile.menu-tile-photo) з власним підписом,
+      // тому перегортається вся плитка цілком. data-tile і data-flip-tile — на обгортці:
+      // клік і 3D-поворот мають стосуватись усієї картки, а не однієї з граней.
       return `
-        <div class="menu-tile menu-tile-photo${enterAttr}" data-tile="${escapeHtml(tile.id)}">
-          <div class="menu-tile-photo-wrap menu-tile-flip" data-flip-tile>
-            <div class="menu-tile-flip-inner">
-              <div class="menu-tile-flip-face menu-tile-flip-front"><img src="${escapeHtml(tile.img)}" alt="" loading="lazy"></div>
-              <div class="menu-tile-flip-face menu-tile-flip-back"><img src="${escapeHtml(tile.flipImg)}" alt="" loading="lazy"></div>
+        <div class="menu-tile-3d${enterAttr}" data-flip-tile data-tile="${escapeHtml(tile.id)}">
+          <div class="menu-tile-3d-inner">
+            <div class="menu-tile menu-tile-photo menu-tile-face menu-tile-face-front">
+              <div class="menu-tile-photo-wrap"><img src="${escapeHtml(tile.img)}" alt="" loading="lazy"></div>
+              <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
+            </div>
+            <div class="menu-tile menu-tile-photo menu-tile-face menu-tile-face-back">
+              <div class="menu-tile-photo-wrap"><img src="${escapeHtml(tile.flipImg)}" alt="" loading="lazy"></div>
+              <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
             </div>
           </div>
-          <div class="menu-tile-title">${escapeHtml(tile.label)}</div>
         </div>`;
     }
     if (tile.img) {
@@ -4384,7 +4431,10 @@ function renderCatalogMenu() {
   }).join('');
   main.innerHTML = '<div class="menu-grid">' + tiles + '</div>';
   startFlipRotation(main.querySelectorAll('[data-flip-tile]'));
-  main.querySelectorAll('.menu-tile[data-tile]').forEach(el => {
+  // Не '.menu-tile[data-tile]': у плиток із парою фото data-tile висить на обгортці
+  // .menu-tile-3d. Її ж rect бере playGrowFadeEnter як точку, з якої "виростає" екран
+  // категорії, — і це правильна геометрія, обгортка збігається з видимою карткою.
+  main.querySelectorAll('[data-tile]').forEach(el => {
     el.addEventListener('click', () => {
       stopAllFlips();
       const tileId = el.getAttribute('data-tile');
