@@ -2197,21 +2197,33 @@
      низька кнопка й висока плашка розійшлись би по вертикалі.
      Смужка-індикатор зверху (.nav-indicator) рахується по getBoundingClientRect, тому
      перестановку вона відпрацьовує сама — правити нічого не треба. */
+  /* justify-content: flex-end притискає підписи ВСІХ вкладок до нижнього краю — саме
+     завдяки цьому підпис "Каталог" стоїть рівно в одну лінію з рештою, хоча його
+     іконки в потоці немає. */
   .nav-btn { justify-content: flex-end; font-weight: 500; padding: 11px 2px 10px; }
   .nav-btn-primary {
     flex: 1.3 1 0;
-    padding: 7px 2px 8px;
-    gap: 4px;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: .03em;
   }
+  /* Плашка ВИЙНЯТА З ПОТОКУ (position: absolute) і піднята над верхнім краєм меню.
+     Це головне: висоту рядка задають звичайні маленькі іконки, а великий "Каталог"
+     просто виступає вгору, як плаваюча кнопка. Якби плашка лишалась у потоці, вона
+     розпирала б усю смугу меню вгору — саме це й виглядало громіздко.
+     top: -14px — на стільки плашка вилазить над смугою; єдине число, щоб крутити виступ.
+     Тінь тепло-сіра (дизайн-система: тіні ніколи не синьо-чорні). */
   .nav-btn-primary .nav-icon {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 38px; height: 38px;
     border-radius: 999px;
     font-size: 21px;
     background: var(--accent-bg);
     color: var(--accent);
+    box-shadow: 0 4px 12px -2px rgba(42, 39, 37, 0.18);
     transition: background-color 220ms ease, color 220ms ease;
   }
   /* У плашці штрих трохи тонший — іконка більша, за макетом 1.8 проти 1.9 */
@@ -7896,6 +7908,10 @@ function updateNavIndicator(activeBtn) {
   const btnRect = activeBtn.getBoundingClientRect();
   const x = (btnRect.left - navRect.left) + (btnRect.width - indicator.offsetWidth) / 2;
   indicator.style.transform = 'translateX(' + Math.round(x) + 'px)';
+  /* У головної вкладки ("Каталог") індикатора не видно — його б усе одно закрила
+     плашка, що виступає вгору. Там роль індикатора грає сама плашка: коли вкладка
+     активна, вона заливається суцільним акцентом. */
+  indicator.style.opacity = activeBtn.classList.contains('nav-btn-primary') ? '0' : '1';
 }
 window.addEventListener('resize', () => updateNavIndicator(document.querySelector('.nav-btn.active')));
 
