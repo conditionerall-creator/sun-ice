@@ -135,6 +135,7 @@
   /* Header */
   header {
     padding: calc(16px + env(safe-area-inset-top)) 16px 16px;
+    overflow: hidden;
     background: rgba(255,255,255,0.95);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -2189,12 +2190,20 @@
      title.textContent — дочірній елемент вони б затирали, фон лишається.
      Прозорість винесена в змінну: одна правка, щоб зробити знак помітнішим/тихішим.
      Дизайн-система радить .07, тут свідомо помітніше — на прохання користувача.
-     Файл 201×130 px, тому вище ~60px його не показуємо (розмиється). */
+     Знак горизонтальний (655×211, пропорція 3.1:1) — удвічі ширший за попередній. По
+     центру шапки він лягав просто на рядок «Востанне оновлено…», тому притиснутий до
+     правого краю і навмисно виходить за нього: заголовок і дата вирівняні ліворуч,
+     праворуч стоїть лише іконка оновлення, і знак там нікому не заважає. Обрізає його
+     overflow самої шапки. */
   .header-watermark {
     position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    height: 58px;
+    top: 50%;
+    right: -18px;
+    left: auto;
+    transform: translateY(-50%);
+    width: 54%;
+    max-width: 230px;
+    height: auto;
     opacity: var(--header-logo-opacity);
     pointer-events: none;
     user-select: none;
@@ -2205,11 +2214,11 @@
   header.home-logo h1 {
     color: transparent;
     min-height: 48px;
-    background-image: url('tile-images/sun-ice-logo.png');
+    background-image: url('tile-images/sun-ice-logo-wide.png');
     background-repeat: no-repeat;
     /* 17px = 8px ромба + 9px проміжку, щоб логотип не наїжджав на ромб */
     background-position: 17px center;
-    background-size: auto 42px;
+    background-size: auto 38px;
   }
 
   /* Розміри іконок у конкретних місцях. Там, де вже є правило на svg
@@ -2330,7 +2339,7 @@
 </div>
 <div class="app">
   <header>
-    <img class="header-watermark" src="tile-images/sun-ice-logo.png" alt="" aria-hidden="true">
+    <img class="header-watermark" src="tile-images/sun-ice-logo-wide.png" alt="" aria-hidden="true">
     <div class="header-top">
       <div class="back-btn" id="back-btn"><svg class="ic" data-fb="←" aria-hidden="true"><use href="#ic-arrow-left"></use></svg></div>
       <h1 id="title">Каталог Sun-Ice</h1>
@@ -2815,7 +2824,7 @@ const CATALOG_TILES = [
     gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category' }
   },
   { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.jpg', flipImg: 'tile-images/tilevrf-galactic.jpg', custom: 'vrf' },
-  { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.png', flipImg: 'tile-images/tile-kkb-mhi.jpg', custom: 'kkb' },
+  { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.jpg', flipImg: 'tile-images/tile-kkb-mhi.jpg', custom: 'kkb' },
   { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tileheatpumps.jpg', flipImg: 'tile-images/tileheatpumps-qton.jpg', custom: 'heatpumps' },
   // Чиллери — єдина плитка на статичних даних (CLINT_SERIES), не з прайсу: асортимент
   // Clint дилер тут лише оглядає, ціни всі "за запитом". Фото плитки — ті самі файли,
@@ -2823,7 +2832,7 @@ const CATALOG_TILES = [
   { id: 'chillers', label: 'Чиллери', img: 'tile-images/tile-clint-commercial.jpg', flipImg: 'tile-images/tile-clint-watercooled.jpg', custom: 'chillers' },
   { id: 'ventilation', label: 'Вентиляційне обладнання', img: 'tile-images/tile-ventilation.jpg', flipImg: 'tile-images/tile-ventilation-save.jpg', custom: 'ventilation' },
   { id: 'aircurtains', label: 'Повітряні завіси', img: 'tile-images/tile-aircurtains.jpg', flipImg: 'tile-images/tile-aircurtains-frico.jpg', custom: 'aircurtains' },
-  { id: 'consumables', label: 'Витратні матеріали', img: 'tile-images/tile-consumables.png', flipImg: 'tile-images/tile-consumables-s30.png', custom: 'consumables' },
+  { id: 'consumables', label: 'Витратні матеріали', img: 'tile-images/tile-consumables.jpg', flipImg: 'tile-images/tile-consumables-s30.jpg', custom: 'consumables' },
   { id: 'convectors', label: 'Конвектори та обігрівачі' }
 ];
 
@@ -5566,7 +5575,7 @@ const HEATPUMPS_BRANDS = [
   { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumpsmhi.jpg' },
   { key: 'heatguard', label: 'HeatGuard', img: 'tile-images/heatguardlogo.svg' },
   { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguardlogo.svg' },
-  { key: 'ezyqton', label: 'MHI EZY / Q-ton', img: 'tile-images/heatpumps-ezyqton.png' }
+  { key: 'ezyqton', label: 'MHI EZY / Q-ton', img: 'tile-images/heatpumps-ezyqton.jpg' }
 ];
 function renderHeatpumpsList() {
   const main = document.getElementById('main');
