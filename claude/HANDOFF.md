@@ -23,9 +23,24 @@ Edge Function `reregister-user` переписана: раніше вона ВИ
 Звичайна нова реєстрація — `pending` без `reregistered_at` — як і раніше бачить ціни
 одразу. Нового статусу й міграції БД свідомо не заводили. Деталі — CHANGELOG 2026-09-19.
 
-**Заливати ОБОВ'ЯЗКОВО обидва:** `index.html` на GitHub **і** новий код функції в
-Supabase (Edge Functions → reregister-user → Deploy updates). Поодинці кожен лишає
-дірку відкритою.
+✅ **Усе задеплоєно 2026-09-19 самим Claude** (користувач попросив зробити це в Chrome,
+а не диктувати кроки). Що саме й чим підтверджено:
+
+- **Edge Function `reregister-user`** — Supabase показує «updated a few seconds ago»,
+  deployments 1 → 2. Перед деплоєм вміст редактора звірено з локальним файлом по
+  SHA-256 (збіг). Після деплою — POST з порожнім тілом повертає `400 invalid input`,
+  тобто функція піднімається без помилок імпорту.
+- **`index.html` на GitHub Pages** — живий файл `curl`-ом збігається з локальним
+  **байт у байт**; у ньому є `PRICE_HIDDEN_TEXT`, `profileAllowsPrices`,
+  `stripPricesFromSheets`, `ACCESS_OFFLINE_GRACE_MS`, і немає старого
+  `row-price-locked { filter: blur`.
+- **Документація і SQL** — `claude/CHANGELOG.md`, `claude/HANDOFF.md`,
+  `claude/sql/2026-09-19-check-profile-on-user-delete.sql` віддаються raw-посиланням
+  (200).
+
+**Живцем НЕ перевірено** (потрібен реальний акаунт, у Claude його нема й не повинно
+бути): сам сценарій «Забули пароль» — відмова заблокованому, зміна пароля звичайному
+дилеру, підтвердження адміном, і головне — **чи на місці монтажі після зміни пароля**.
 
 **Код Edge Functions почав з'являтись у репозиторії** — `claude/edge-functions/`
 `reregister-user/index.ts`. Решта трьох (`admin-delete-user`, `send-promo-push`,
