@@ -6355,6 +6355,24 @@ async function getCurrentProfileRole() {
    ця дія миттєво (при наступному відкритті/перевірці) знову ховає ціни. Гостям (без
    сесії) ціни завжди заховані. */
 const PRICE_ACCESS_DENIED_STATUSES = ['blocked', 'rejected'];
+
+/* Чи можна показувати ціни власникові цього профілю. Два випадки відмови:
+   1) status 'blocked'/'rejected' — адмін закрив доступ;
+   2) status 'pending' І непорожній reregistered_at — людина щойно змінила пароль через
+      "Забули пароль", і доступ до цін чекає підтвердження адміністратора («варіант з
+      підтвердженням», погоджено з користувачем 2026-09-19).
+   Звичайна НОВА реєстрація теж 'pending', але в неї reregistered_at порожній — вона, як
+   і раніше, бачить ціни одразу, це свідома поведінка застосунку.
+   Окремий статус на кшталт 'pending_reset' навмисно не заводили: пара полів дає той
+   самий результат без міграції БД і без ризику наштовхнутись на CHECK-обмеження колонки
+   status. Серверна половина цієї логіки — Edge Function reregister-user, копія коду в
+   claude/edge-functions/reregister-user/index.ts. */
+function profileAllowsPrices(profile) {
+  if (!profile) return false;
+  if (PRICE_ACCESS_DENIED_STATUSES.includes(profile.status)) return false;
+  if (profile.status === 'pending' && profile.reregistered_at) return false;
+  return true;
+}
 let hasFullAccess = false;
 let lastAccessCheckAt = 0;
 let accessCheckInFlight = null;
@@ -6442,11 +6460,11 @@ async function refreshAccessState(opts) {
         hasFullAccess = false;
         confirmed = true; // немає сесії — це певна відповідь, не збій зв'язку
       } else {
-        const { data: profile, error } = await sb.from('profiles').select('status').eq('id', session.user.id).single();
+        const { data: profile, error } = await sb.from('profiles').select('status, reregistered_at').eq('id', session.user.id).single();
         if (error && isOfflineError(error)) {
           hasFullAccess = storedAccessAllows();
         } else {
-          hasFullAccess = !!profile && !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status);
+          hasFullAccess = profileAllowsPrices(profile);
           confirmed = true;
         }
       }
@@ -7643,21 +7661,31 @@ async function handleRegister() {
   renderCabinetTab();
 }
 
-/* ---- "Забули пароль" — повторна реєстрація з тим самим номером ----
-   Старий обліковий запис із цим номером видаляється (через Edge Function reregister-user,
-   бо видалення чужого auth-акаунту потребує service role — з анонімного ключа це
-   неможливо), натомість створюється новий з новим паролем і статусом "На розгляді",
-   позначений reregistered_at — щоб адмін одразу бачив у списку, що це саме повторна
-   заявка, а не звичайна нова людина. Без SMS/email-підтвердження номера це той самий
-   рівень довіри, що й у звичайній реєстрації застосунку (номер ніяк не підтверджується
-   і там), тому й тут навмисно не посилюється. */
+/* ---- "Забули пароль" — зміна пароля наявному акаунту ----
+   Виконує Edge Function reregister-user (зміна чужого пароля потребує service role, з
+   анонімного ключа це неможливо); копія її коду — claude/edge-functions/reregister-user/
+   index.ts.
+
+   ДО 2026-09-19 вона ВИДАЛЯЛА старий акаунт і створювала новий. Це давало три біди:
+   заблокований обходив блокування (новий рядок мав 'pending', а 'pending' бачить ціни);
+   разом з профілем каскадом гинули ВСІ монтажі людини (installer_tasks → profiles →
+   auth.users, обидві зв'язки ON DELETE CASCADE); і скидались role/price_type. Тепер
+   функція міняє пароль наявному акаунту й нічого не видаляє.
+
+   Заблокованим і відхиленим зміна пароля не дається взагалі (403) — інакше блокування
+   не мало б сенсу. Решті пароль міняється одразу, але статус стає 'pending' +
+   reregistered_at, і ціни ховаються до підтвердження адміном (див. profileAllowsPrices).
+
+   Номер телефону, як і раніше, ніяк не підтверджується — той, хто знає чужий номер,
+   може змінити на ньому пароль. Але тепер це не знищує дані й не відкриває цін: доступ
+   дає лише адмін, який бачить у панелі позначку повторної заявки. */
 async function renderReregisterForm() {
   const holder = document.getElementById('auth-form-holder');
   holder.innerHTML = '<div class="empty">Завантаження...</div>';
   const regions = await getRegions();
   const options = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
   holder.innerHTML = `
-    <p class="promo-doc-note" style="margin:-4px 0 4px;">Якщо ви забули пароль — введіть свій номер телефону, ім'я, регіон і новий пароль. Старий обліковий запис із цим номером буде видалено, а нова заявка знову пройде підтвердження адміністратором.</p>
+    <p class="promo-doc-note" style="margin:-4px 0 4px;">Якщо ви забули пароль — введіть свій номер телефону, ім'я, регіон і новий пароль. Обліковий запис, ваші монтажі та інші дані зберігаються — зміниться лише пароль. Доступ до цін відновиться після підтвердження адміністратором.</p>
     <div class="field">
       <label>Ім’я та прізвище</label>
       <input type="text" id="rereg-name" placeholder="Введіть ім’я">
@@ -7719,9 +7747,15 @@ async function handleReregister() {
   if (error || (data && data.error)) {
     const detail = (data && data.error) || (error && error.message) || '';
     const notFound = /not.?found/i.test(detail);
+    /* 403 "account blocked" — заблокованому/відхиленому пароль не міняють. Текст
+       навмисно не пояснює, що саме сталось: людина має звернутись до адміністратора,
+       а не підбирати обхід. */
+    const blocked = /blocked/i.test(detail);
     errEl.innerHTML = '<div class="error">' + (notFound
       ? 'Обліковий запис із цим номером не знайдено. Якщо ви ще не реєструвались — скористайтесь звичайною реєстрацією.'
-      : 'Не вдалося виконати повторну реєстрацію. Спробуйте ще раз або зверніться до адміністратора.') + '</div>';
+      : blocked
+        ? 'Змінити пароль для цього номера неможливо. Зверніться до адміністратора.'
+        : 'Не вдалося змінити пароль. Спробуйте ще раз або зверніться до адміністратора.') + '</div>';
     btn.disabled = false;
     btn.textContent = 'Зареєструватися повторно';
     return;
@@ -7827,10 +7861,16 @@ function clearNotificationsAndBadge() {
 /* ---- Авторизований звичайний користувач ---- */
 async function renderUserStatus(profile) {
   const main = document.getElementById('main');
-  // Доступ (у т.ч. до цін у прайсі) діє одразу після подання заявки (status='pending') —
-  // адмін пізніше або підтверджує, або блокує/відхиляє (саме ці два статуси закривають
-  // доступ, див. PRICE_ACCESS_DENIED_STATUSES).
-  const priceLine = !PRICE_ACCESS_DENIED_STATUSES.includes(profile.status) ? '<br>Тип цін: ' + escapeHtml(priceTypeLabel(profile.price_type)) : '';
+  // Доступ (у т.ч. до цін у прайсі) діє одразу після ЗВИЧАЙНОЇ реєстрації
+  // (status='pending', reregistered_at порожній) — адмін пізніше або підтверджує, або
+  // блокує/відхиляє. Виняток — зміна пароля через "Забули пароль": там ціни чекають
+  // підтвердження адміністратора. Єдиний критерій — profileAllowsPrices().
+  const canSeePrices = profileAllowsPrices(profile);
+  const awaitingAfterReset = profile.status === 'pending' && !!profile.reregistered_at;
+  const priceLine = canSeePrices ? '<br>Тип цін: ' + escapeHtml(priceTypeLabel(profile.price_type)) : '';
+  const resetNoteHtml = awaitingAfterReset
+    ? '<div class="warn">Пароль змінено, вхід відновлено. Ціни у прайсі з\'являться, щойно адміністратор підтвердить заявку — зазвичай це швидко. Ваші монтажі та інші дані на місці.</div>'
+    : '';
   // Кнопка "Увімкнути сповіщення" тут потрібна не тільки адмінам (як було раніше) — саме
   // через цю підписку звичайні користувачі й отримують push про нові акції (див.
   // send-promo-push.ts): без неї в push_subscriptions не було б жодного запису для
@@ -7846,7 +7886,8 @@ async function renderUserStatus(profile) {
       <div class="status-card-title">${escapeHtml(statusLabel(profile.status))}</div>
       <div class="status-card-sub">${escapeHtml(profile.full_name || '')}<br>${escapeHtml(profile.phone || '')}${priceLine}</div>
     </div>
-    ${JOKE_MODE && profile.status === 'pending' ? '<div class="joke-note">Зареєструвались, не перенавантажились!? Винагорода? Дякуємо, що не насварили :-)</div>' : ''}
+    ${resetNoteHtml}
+    ${JOKE_MODE && profile.status === 'pending' && !awaitingAfterReset ? '<div class="joke-note">Зареєструвались, не перенавантажились!? Винагорода? Дякуємо, що не насварили :-)</div>' : ''}
     ${pushHtml}
     <button class="logout-btn" id="cab-logout-btn">Вийти</button>
   `;
