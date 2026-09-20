@@ -8,56 +8,66 @@
 // інакше знову залишиться без джерела правди.
 //
 // ─────────────────────────────────────────────────────────────────────────────
-// ВЕРСІЯ 2026-09-19. Що змінилось проти першої версії і чому.
+// ВЕРСІЯ 2026-09-20. ГОЛОВНЕ: додано CORS — без нього функція була недосяжна.
 //
-// Перша версія на "Забули пароль" ВИДАЛЯЛА старий auth-акаунт і створювала новий.
-// Через це було три проблеми:
+// Симптом: у застосунку "Забули пароль" завжди показував "Не вдалося змінити пароль".
+// Причина НЕ в логіці функції: браузер перед POST шле preflight-запит OPTIONS, а
+// функція не віддавала заголовок Access-Control-Allow-Origin. Браузер скасовував
+// запит, і supabase-js повертав FunctionsFetchError ("Failed to send a request to the
+// Edge Function") — клієнт показував загальну помилку. У логах Supabase такий виклик
+// навіть не з'являвся.
+//
+// Цього блоку не було і в найпершій версії функції, тому кнопка "Забули пароль",
+// найімовірніше, НЕ працювала з застосунку ніколи. Сусідня admin-delete-user, яку теж
+// викликають з браузера, CORS має — саме її патерн тут і скопійовано.
+//
+// Пастка для майбутнього: перевірка функції через curl НЕ ловить цю поломку, бо curl
+// не робить preflight. Перевіряти треба з браузера з того самого origin, де живе
+// застосунок (GitHub Pages).
+//
+// ВЕРСІЯ 2026-09-19 (залишається чинною). Раніше на "Забули пароль" функція ВИДАЛЯЛА
+// старий auth-акаунт і створювала новий. Три біди:
 //
 //   1. ОБХІД БЛОКУВАННЯ. Новий рядок profiles створювався зі status='pending', а
-//      'pending' у застосунку дає повний доступ до цін. Тобто заблокований дилер
-//      натискав "Забули пароль", вводив свій номер і будь-який новий пароль — і знову
-//      бачив ціни. Сама позначка про блокування при цьому стиралась разом зі старим
-//      рядком.
+//      'pending' у застосунку дає повний доступ до цін.
 //   2. ВТРАТА ДАНИХ CRМОНТАЖУ. installer_tasks.installer_id → profiles(id) стоїть з
-//      ON DELETE CASCADE, а profiles.id → auth.users теж CASCADE. Тому видалення
-//      акаунта знищувало ВСІ монтажі людини (і, за тією ж схемою, постачальників).
-//      Монтажник, який просто забув пароль, втрачав усю свою робочу базу без
-//      попередження й без можливості відновити.
-//   3. ВТРАТА РОЛІ Й ТИПУ ЦІН. Новий рядок писався з role='user', price_type='regular'.
-//      Тобто regional_admin, який забув пароль, ставав звичайним користувачем, а
-//      індивідуальний тип цін скидався на стандартний.
+//      ON DELETE CASCADE, а profiles.id → auth.users теж CASCADE. Видалення акаунта
+//      знищувало ВСІ монтажі людини (і постачальників).
+//   3. ВТРАТА РОЛІ Й ТИПУ ЦІН. Новий рядок писався з role='user',
+//      price_type='regular'.
 //
-// Тепер функція НЕ видаляє нічого. Вона міняє пароль наявному акаунту
-// (admin.updateUserById) і оновлює в профілі тільки ім'я, регіон і reregistered_at.
-// role, price_type, монтажі, постачальники — лишаються недоторканими.
+// Тепер функція нічого не видаляє: міняє пароль наявному акаунту
+// (admin.updateUserById). Заблокованим і відхиленим відмовляє (403). Решті ставить
+// status='pending' + reregistered_at, і застосунок ховає ціни до підтвердження
+// адміністратором (див. profileAllowsPrices() в index.html).
 //
-// Плюс дві поведінкові зміни, погоджені з користувачем 2026-09-19:
+// ЧОМУ НЕ ЧІПАЄМО region_id (виправлено 2026-09-20). У БД на profiles висить тригер
+// trg_prevent_role_region_change:
 //
-//   * Заблокованим і відхиленим (status 'blocked'/'rejected') зміна пароля НЕ дається
-//     взагалі — 403 і текст "зверніться до адміністратора". Це закриває обхід.
-//   * Решті пароль міняється одразу (людина входить), але статус ставиться 'pending'
-//     разом з reregistered_at — і застосунок ховає ціни, поки адмін не підтвердить
-//     ("варіант з підтвердженням"). Саме комбінація pending + reregistered_at ≠ null
-//     означає "чекає підтвердження після зміни пароля"; у звичайної нової реєстрації
-//     reregistered_at порожній, тому вона, як і раніше, бачить ціни одразу.
-//     Клієнтська частина цієї логіки — profileAllowsPrices() в index.html.
+//     if (new.role is distinct from old.role
+//         or new.region_id is distinct from old.region_id) then
+//       if public.current_role() <> 'super_admin' then raise exception ... ;
 //
-// Чому окремий статус не заводили: 'pending' + reregistered_at дає той самий результат
-// без міграції БД і без ризику наштовхнутись на CHECK-обмеження колонки status.
-//
-// Що ця функція НЕ вирішує: номер телефону ніяк не підтверджується (ні SMS, ні дзвінка),
-// тому будь-хто, хто знає чужий номер, усе ще може змінити пароль на свій. Але тепер це
-// не знищує дані й не дає цін — доступ відкриє тільки адмін, який побачить у панелі
-// повторну заявку. Технічний захист номера — окреме майбутнє рішення (SMS-код).
+// Тобто регіон має право міняти тільки super_admin. Якби функція записувала region_id
+// з форми, то (а) при виборі іншого регіону оновлення падало б з винятком, і (б) це
+// був би обхід самого правила — людина міняла б собі регіон через "забув пароль".
+// Тому регіон і роль лишаються такими, як були; у формі поле регіону прибрано.
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Вхід:  { phone, full_name, password, region_id }
+// Вхід:  { phone, full_name, password }   (region_id, якщо прийде, ігнорується)
 // Вихід: { user_id } | { error }
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+// Той самий набір, що в admin-delete-user. Без нього браузер не пропускає виклик.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+const jsonHeaders = { ...corsHeaders, "Content-Type": "application/json" };
 
 // Статуси, яким зміна пароля через цю функцію заборонена.
 const REREGISTER_DENIED_STATUSES = ["blocked", "rejected"];
@@ -68,17 +78,20 @@ function phoneToEmail(phone: string) {
 }
 
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const body = await req.json().catch(() => ({}));
     const phone = String(body.phone || "").trim();
     const fullName = String(body.full_name || "").trim();
     const password = String(body.password || "");
-    const regionId = Number(body.region_id);
 
-    if (!phone || !fullName || !password || !regionId || password.length < 6) {
+    if (!phone || !fullName || !password || password.length < 6) {
       return new Response(JSON.stringify({ error: "invalid input" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" },
+        headers: jsonHeaders,
       });
     }
 
@@ -93,7 +106,7 @@ Deno.serve(async (req) => {
     if (!profile) {
       return new Response(JSON.stringify({ error: "account not found for this phone" }), {
         status: 404,
-        headers: { "Content-Type": "application/json" },
+        headers: jsonHeaders,
       });
     }
 
@@ -103,7 +116,7 @@ Deno.serve(async (req) => {
     if (REREGISTER_DENIED_STATUSES.includes(profile.status)) {
       return new Response(JSON.stringify({ error: "account blocked" }), {
         status: 403,
-        headers: { "Content-Type": "application/json" },
+        headers: jsonHeaders,
       });
     }
 
@@ -111,18 +124,17 @@ Deno.serve(async (req) => {
     // каскадом полетять монтажі (див. коментар вгорі).
     const { error: pwdErr } = await supabase.auth.admin.updateUserById(profile.id, {
       password: password,
-      email: phoneToEmail(phone),
-      email_confirm: true,
     });
     if (pwdErr) throw pwdErr;
 
-    // В профілі оновлюємо тільки те, що людина щойно ввела, плюс позначки заявки.
-    // role і price_type НЕ чіпаємо — вони лишаються такими, якими їх поставив адмін.
+    // role, price_type і region_id НЕ чіпаємо (див. коментар про тригер вгорі).
+    // status='pending' + reregistered_at = "чекає підтвердження після зміни пароля";
+    // на цю пару полів реагують і profileAllowsPrices() в застосунку, і тригер
+    // trg_notify_reregistration, який шле push адміністраторам.
     const { error: profileErr } = await supabase
       .from("profiles")
       .update({
         full_name: fullName,
-        region_id: regionId,
         status: "pending",
         reregistered_at: new Date().toISOString(),
       })
@@ -131,12 +143,13 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ user_id: profile.id }), {
       status: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: jsonHeaders,
     });
   } catch (e) {
+    console.error("reregister-user failed:", e);
     return new Response(JSON.stringify({ error: String((e && (e as any).message) || e) }), {
       status: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: jsonHeaders,
     });
   }
 });
