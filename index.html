@@ -7682,10 +7682,13 @@ async function handleRegister() {
 async function renderReregisterForm() {
   const holder = document.getElementById('auth-form-holder');
   holder.innerHTML = '<div class="empty">Завантаження...</div>';
-  const regions = await getRegions();
-  const options = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
+  /* Поле регіону тут свідомо відсутнє (2026-09-20). Регіон має право міняти лише
+     super_admin — це стереже тригер trg_prevent_role_region_change у БД. Якби форма
+     "Забули пароль" його надсилала, то (а) вибір іншого регіону валив би оновлення
+     винятком, і (б) це був би обхід самого правила. Тому регіон лишається той, що був;
+     змінити його може тільки адміністратор. */
   holder.innerHTML = `
-    <p class="promo-doc-note" style="margin:-4px 0 4px;">Якщо ви забули пароль — введіть свій номер телефону, ім'я, регіон і новий пароль. Обліковий запис, ваші монтажі та інші дані зберігаються — зміниться лише пароль. Доступ до цін відновиться після підтвердження адміністратором.</p>
+    <p class="promo-doc-note" style="margin:-4px 0 4px;">Якщо ви забули пароль — введіть свій номер телефону, ім'я та новий пароль. Обліковий запис, ваші монтажі та інші дані зберігаються — зміниться лише пароль. Доступ до цін відновиться після підтвердження адміністратором.</p>
     <div class="field">
       <label>Ім’я та прізвище</label>
       <input type="text" id="rereg-name" placeholder="Введіть ім’я">
@@ -7701,10 +7704,6 @@ async function renderReregisterForm() {
       <label>Новий пароль</label>
       <input type="password" id="rereg-password" placeholder="Не менше 6 символів">
     </div>
-    <div class="field">
-      <label>Регіон</label>
-      <select id="rereg-region">${options}</select>
-    </div>
     <button class="primary-btn" id="rereg-submit-btn">Зареєструватися повторно</button>
     <button type="button" class="link-btn" id="rereg-back-btn">Назад до входу</button>
     <div id="rereg-error"></div>
@@ -7718,12 +7717,10 @@ async function handleReregister() {
   const name = document.getElementById('rereg-name').value.trim();
   const phone = fullPhoneFromLocalInput('rereg-phone');
   const password = document.getElementById('rereg-password').value;
-  const regionSelect = document.getElementById('rereg-region');
-  const regionId = regionSelect.value;
   const errEl = document.getElementById('rereg-error');
   errEl.innerHTML = '';
 
-  if (!name || normalizePhoneDigits(phone).length <= 2 || !password || !regionId) {
+  if (!name || normalizePhoneDigits(phone).length <= 2 || !password) {
     errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
     return;
   }
@@ -7741,7 +7738,7 @@ async function handleReregister() {
   btn.textContent = 'Реєстрація...';
 
   const { data, error } = await sb.functions.invoke('reregister-user', {
-    body: { phone: phone, full_name: name, password: password, region_id: parseInt(regionId, 10) }
+    body: { phone: phone, full_name: name, password: password }
   });
 
   if (error || (data && data.error)) {
