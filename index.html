@@ -2292,34 +2292,71 @@
      а логотип під неї підлаштовується, а не навпаки.
      Ширина логотипа — в одній змінній: міняєш її, і відступ тексту та позиція ↻
      їдуть за нею самі. */
-  header.home-logo { --home-logo-w: 116px; }
+  /* ГОЛОВНА. Третя редакція, 2026-09-21 (на прохання користувача): логотип на всю
+     ширину І висоту шапки, курси одним рядком без слова «Курс» — самі знаки $ і €,
+     а решта написів — одним рядком одразу під курсами.
+
+     ЧОМУ ТЕКСТ ПОВЕРХ ЛОГОТИПА ТУТ ЧИТАЄТЬСЯ, хоча в першій спробі не читався:
+     логотип у файлі НЕ відцентрований по вертикалі. Поміряно по смугах —
+     артворк (помаранчевий SUN, метелик, синій ICE) займає приблизно 20–70 % висоти,
+     а нижні 30 % майже порожні (непрозорість 0.17 → 0.07 → 0.03). Тому обидва
+     текстові рядки ставимо в нижню третину — вони лягають на чисте тло, а не на
+     кольорові блоки, і ніякої підложки під текст не треба взагалі.
+
+     ЧОМУ САМЕ ТАКІ ЦИФРИ. Пропорція знака 3.10:1, тому на всю ширину екрана він має
+     висоту 100vw/3.10 = 32.3vw. Артворк усередині файлу закінчується приблизно на 70 %
+     цієї висоти, тобто на 22.6vw — нижче вже чисте тло. Звідси margin-top текстового
+     блоку: 21.5vw мінус верхній відступ шапки. min-height гарантує, що шапка ніколи не
+     буде нижчою за сам знак (інакше він вилазив би за неї — overflow у шапки тепер
+     visible заради ручки підбірки).
+     ЯКЩО ЛОГОТИП КОЛИСЬ ПЕРЕМАЛЮЮТЬ: перевірити, чи лишилась порожня нижня третина.
+     Якщо ні — або міняти ці відсотки, або вмикати світлу підложку під текстом
+     (градієнт, як на плитках каталогу, лише світлий). Пробував варіант із підложкою і
+     обрізаним знаком — виглядає гірше, знак ріжеться. */
+  header.home-logo {
+    padding-bottom: 7px;
+    min-height: calc(32.3vw + env(safe-area-inset-top));
+  }
   header.home-logo .header-logo-band {
     position: absolute;
-    right: 16px;
-    top: calc(16px + env(safe-area-inset-top));
-    bottom: 14px;
-    width: var(--home-logo-w);
+    inset: 0;                 /* на всю ширину й висоту шапки */
+    display: block;
+    z-index: 0;
   }
   header.home-logo .header-logo-band img {
-    width: 100%;
-    max-height: 100%;
-    object-fit: contain; /* щоб на низькій шапці логотип стискався, а не вилазив */
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;   /* на всю ширину, без обрізання: висота підбереться сама */
+    height: auto;
   }
-  header.home-logo .rate-row,
-  header.home-logo .status-row { padding-right: calc(var(--home-logo-w) + 12px); }
+  /* Текстовий блок починається там, де закінчується артворк знака. */
+  header.home-logo .rate-row { margin-top: max(44px, calc(21.5vw - 16px)); }
   /* Заголовка текстом на головній немає — логотип і є заголовком. */
   header.home-logo .header-top h1 { display: none; }
   /* position: static обов'язковий. Загальне правило `header > *` робить .header-top
      позиціонованим, і тоді абсолютна іконка ↻ рахувала б координати від НЬОГО, а не
      від самої шапки. */
   header.home-logo .header-top { position: static; }
-  /* ↻ стоїть у нижньому куті текстової колонки — поруч із рядком «Прайс від …», якого
-     вона й стосується. У верхньому правому куті місця більше немає: там логотип. */
+  /* ↻ — у правому кінці рядка з курсами. */
   header.home-logo #refresh-icon {
     position: absolute;
-    right: calc(16px + var(--home-logo-w) + 12px);
-    bottom: 12px;
+    right: 16px;
+    bottom: 30px;
     z-index: 2;
+  }
+  /* Текст — поверх знака (z-index), відступ зверху заданий вище. */
+  header.home-logo .rate-row { position: relative; z-index: 2; }
+  /* На головній рядок статусу окремо не малюємо — його текст іде в спільний
+     рядок під курсами (див. setCatalogStatus / renderRateRow). */
+  header.home-logo .status-row { display: none; }
+  /* Один рядок, без переносів: якщо в адміна текст задовгий — краще три крапки,
+     ніж друга стрічка, яка розтягне шапку. Повний текст лишається в title. */
+  header.home-logo .rate-meta {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 30px; /* щоб не заповзати під ↻ */
   }
 
   /* ВНУТРІШНІ ЕКРАНИ: логотип маленький, у нижньому правому куті шапки, АБСОЛЮТНО —
@@ -2479,11 +2516,14 @@
          якої курс діє (її вводить адміністратор), а для адміністраторів ще й хто та
          коли вносив зміну востаннє (це ставить тригер у базі, підмінити не можна). -->
     <div class="rate-row" id="rate-row" style="display:none;">
+      <!-- Без слова «Курс» — самі знаки валют (прохання користувача 2026-09-21).
+           aria-label лишаємо повними: для читалки екрана «$ 44,90 ₴» без пояснення
+           беззмістовне. -->
       <div class="rate-line" id="rate-view">
-        <span class="rate-label">Курс $:</span>
-        <span class="rate-value" id="rate-value">—</span>
-        <span class="rate-label rate-label-eur">€:</span>
-        <span class="rate-value" id="rate-value-eur">—</span>
+        <span class="rate-label" aria-hidden="true">$</span>
+        <span class="rate-value" id="rate-value" aria-label="Курс долара">—</span>
+        <span class="rate-label rate-label-eur" aria-hidden="true">€</span>
+        <span class="rate-value" id="rate-value-eur" aria-label="Курс євро">—</span>
         <button type="button" class="rate-edit-btn" id="rate-edit-btn" style="display:none;" aria-label="Редагувати курси">✎</button>
       </div>
       <div class="rate-edit" id="rate-edit" style="display:none;">
@@ -4358,12 +4398,30 @@ async function reportPriceDiagnostics(issues, newVersion) {
   }
 }
 
-function setCatalogStatus(text) {
+/* Останній текст статусу прайсу. Потрібен окремо, бо на ГОЛОВНІЙ він більше не
+   живе у власному рядку: за проханням користувача (2026-09-21) усі написи під
+   курсами зведені в ОДИН рядок, і статус малюється всередині нього (renderRateRow).
+   На внутрішніх екранах усе лишилось як було — свій рядок .status-row. */
+let catalogStatusText = '';
+/* Малює статус там, де для нього місце на ПОТОЧНОМУ екрані. Винесено окремо від
+   setCatalogStatus навмисно: статус приходить один раз (коли завантажився прайс, тобто
+   зазвичай ще на головній), а показувати його треба й після переходу в категорію.
+   Перша версія цього не враховувала — на головній рядок ховався, а при вході в
+   категорію його ніхто не повертав, і «Прайс від 11.09.2026» зникав з усіх внутрішніх
+   екранів. Тому renderCatalogView() викликає цю функцію при кожній зміні екрана. */
+function applyCatalogStatusUi() {
   const row = document.getElementById('status-row');
   const el = document.getElementById('status-text');
-  if (!text) { row.style.display = 'none'; return; }
+  if (!row || !el) return;
+  const onHome = currentTab === 'catalog' && activeTile === null;
+  if (onHome) { row.style.display = 'none'; renderRateRow(); return; } // на головній — у спільний рядок під курсами
+  if (!catalogStatusText) { row.style.display = 'none'; return; }
   row.style.display = 'flex';
-  el.textContent = text;
+  el.textContent = catalogStatusText;
+}
+function setCatalogStatus(text) {
+  catalogStatusText = text || '';
+  applyCatalogStatusUi();
 }
 
 /* ---------- Курси валют у шапці каталогу (редагують regional_admin/super_admin) ----------
@@ -4429,29 +4487,35 @@ function renderRateRow() {
   /* Приписка під курсами. Перший рядок бачать усі, другий — лише адміністратори.
      Кольором нічого не виділяємо: домовленість 2026-09-21 — ніякого червоного, лише
      спокійна підказка тим, хто може це виправити. */
+  /* ОДИН рядок під курсами — так попросив користувач. Тому не список рядків, а
+     частини, зшиті крапкою-розділювачем; якщо не вміщається, CSS обріже три крапками,
+     а повний текст лишиться в підказці (title). */
   const meta = document.getElementById('rate-meta');
-  const lines = [];
-  if (rateEffectiveDate) lines.push('діє від ' + escapeHtml(formatDateUa(rateEffectiveDate)));
-  /* Одна підказка замість двох. Перша версія показувала адміну окремо «дату не
-     вказано» і окремо «вкажіть курс і дату» — два рядки про одне й те саме. Помітив
-     це на живому сайті після заливки. */
+  const parts = [];
+  if (rateEffectiveDate) parts.push('курс від ' + formatDateUa(rateEffectiveDate));
   if (rateViewerIsAdmin && (!usdRate || !rateEffectiveDate)) {
-    let hint;
-    if (!usdRate && !rateEffectiveDate) hint = 'не вказано курс долара і дату, від якої він діє';
-    else if (!usdRate) hint = 'не вказано курс долара';
-    else hint = 'не вказано дату, від якої діє курс';
-    if (!usdRate) hint += ' — у калькуляторі немає перерахунку в гривню';
-    lines.push(hint);
+    if (!usdRate && !rateEffectiveDate) parts.push('не вказано курс долара і дату');
+    else if (!usdRate) parts.push('не вказано курс долара — немає перерахунку в гривню');
+    else parts.push('не вказано дату, від якої діє курс');
   }
+  // Статус прайсу ("Прайс від 11.09.2026", "Завантаження…") — сюди ж, окремого рядка
+  // на головній більше немає.
+  if (catalogStatusText) parts.push(catalogStatusText);
+  /* Хто міняв курс — лише адміністраторам і САМИМ ОСТАННІМ. Порядок тут не випадковий:
+     рядок один, і якщо він не вміститься, CSS обріже саме хвіст. Тому спершу те, що
+     потрібно дилеру (дати), а потім службове. Слово «змінив» і рік навмисно прибрані —
+     з ними рядок переставав вміщатись навіть на широкому телефоні (вимірював: треба
+     було 433 px при доступних 383). */
   if (rateViewerIsAdmin && rateUpdatedByName) {
     const when = rateUpdatedAt ? new Date(rateUpdatedAt).toLocaleString('uk-UA', {
-      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      hour: '2-digit', minute: '2-digit'
     }) : '';
-    lines.push('<span class="rate-meta-admin">змінив ' + escapeHtml(rateUpdatedByName) +
-               (when ? ' · ' + escapeHtml(when) : '') + '</span>');
+    parts.push(rateUpdatedByName + (when ? ', ' + when : ''));
   }
-  meta.innerHTML = lines.join('<br>');
-  meta.style.display = lines.length ? 'block' : 'none';
+  const text = parts.join(' · ');
+  meta.textContent = text;
+  meta.title = text; // повний текст, якщо рядок обрізало
+  meta.style.display = text ? 'block' : 'none';
 }
 
 /* Перемикання "перегляд ↔ редагування" курсів. */
@@ -4600,10 +4664,12 @@ function renderCatalogView() {
     document.querySelector('header').classList.add('home-logo');
     document.getElementById('th-ezy-instruction-btn').style.display = 'none';
     document.getElementById('q-ton-instruction-btn').style.display = 'none';
+    applyCatalogStatusUi(); // на головній статус іде в рядок під курсами
     renderCatalogMenu();
   } else {
     backBtn.style.display = 'flex';
     document.querySelector('header').classList.remove('home-logo');
+    applyCatalogStatusUi(); // у категорії — у власний рядок .status-row
     const tile = CATALOG_TILES.find(t => t.id === activeTile);
     title.textContent = tile ? tile.label : activeTile;
     if (activeTile !== 'heatpumps') {
