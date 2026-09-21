@@ -15,9 +15,24 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- Зовнішні бібліотеки. ВЕРСІЇ ЗАФІКСОВАНІ ТОЧНО + integrity (контрольна сума файлу).
+     Навіщо: до 2026-09-21 supabase-js тягнувся за плаваючим тегом "@2" — тобто CDN міг
+     будь-коли віддати новішу версію, і застосунок зламався б сам собою, без жодної нашої
+     правки. Тепер браузер відмовиться виконати файл, якщо його вміст відрізняється від
+     того, під який ми тестували.
+     Як оновлювати версію бібліотеки: взяти нову адресу, порахувати нову суму
+     (`curl -sL <адреса> | openssl dgst -sha384 -binary | openssl base64 -A`), замінити
+     обидва значення разом. Замінити лише адресу, забувши суму — застосунок не
+     завантажиться взагалі. Суми xlsx і jszip звірені з тим, що публікує сам cdnjs. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"
+        integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP"
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
+        integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+        integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <style>
   :root {
     /* Палітра 2026-09-18 — токени дизайн-системи Sun-ice ("Sun-ice Design System-handoff"):
@@ -38,8 +53,9 @@
     --danger: #A8432F;         /* clay-600 */
     --navy: #2A2725;           /* ink-900 — темні поверхні й лінії */
     --navy-2: #3D3A37;         /* ink-800 */
-    /* Помітність водяного знака-логотипа в шапці — крутити тут (дизайн-система радить .07) */
-    --header-logo-opacity: 0.13;
+    /* Змінної --header-logo-opacity тут більше немає: до 2026-09-21 логотип у шапці був
+       напівпрозорим водяним знаком, тепер він повноколірний і нічим не перекритий
+       (див. .header-logo-band у <style>). */
   }
   * { box-sizing: border-box; }
   body {
@@ -224,7 +240,12 @@
     flex-shrink: 0;
     color: var(--text);
   }
-  h1 { font-size: 18px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; margin: 0; flex: 1; display: flex; align-items: center; gap: 9px; }
+  /* min-width: 0 обов'язковий. За замовчуванням flex-елемент не звужується вужче за
+     своє найдовше слово (min-width: auto), і довгий заголовок на кшталт
+     «НАПІВПРОМИСЛОВІ СПЛІТ-СИСТЕМИ» розпирав рядок шапки, виштовхуючи іконку ↻ за
+     правий край екрана. Помітили це 2026-09-21, коли поруч із заголовком з'явився
+     логотип і місця в рядку стало менше. */
+  h1 { font-size: 18px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; margin: 0; flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; }
   h1::before {
     content: '';
     width: 8px; height: 8px;
@@ -267,12 +288,26 @@
   }
   input[type=file] { display: none; }
 
-  .rate-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+  /* Блок курсів валют у шапці (лише головний екран каталогу). Рядок значень, під ним
+     дрібна сіра приписка, і замість усього цього — форма редагування для адмінів. */
+  .rate-row { margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+  .rate-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .rate-label { font-weight: 600; }
+  .rate-label-eur { margin-left: 8px; }
   .rate-value { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
-  .rate-input {
+  /* Курс, якого немає: не «дірка», а чесний напис. Кнопку ₴ у калькуляторі в цьому
+     випадку теж ховаємо — див. buildCalcPanelHtml. */
+  .rate-value-empty { color: var(--text-secondary); font-weight: 600; }
+  /* Дрібна приписка під курсами: «діє від …», а для адмінів ще й хто/коли змінював.
+     Навмисно тьмяна й маленька — користувач просив «маленьким непомітним текстом». */
+  .rate-meta { margin-top: 3px; font-size: 10.5px; line-height: 1.45; color: var(--text-secondary); opacity: .85; }
+  .rate-meta-admin { opacity: .7; }
+
+  .rate-edit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  .rate-field { display: flex; align-items: center; gap: 4px; font-weight: 600; }
+  .rate-field input {
     font-variant-numeric: tabular-nums;
-    width: 70px;
+    width: 74px;
     padding: 4px 6px;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -282,7 +317,25 @@
     background: var(--bg);
     color: var(--text);
   }
-  .rate-edit-btn, .rate-save-btn {
+  .rate-field-date input { width: 132px; }
+  .rate-edit-actions { display: flex; gap: 6px; }
+  .rate-save-btn, .rate-cancel-btn {
+    padding: 4px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .rate-save-btn { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .rate-cancel-btn { color: var(--text-secondary); }
+  .rate-save-btn[disabled] { opacity: .6; }
+  /* Повідомлення про невдале збереження. До 2026-09-21 його не існувало взагалі:
+     код ігнорував помилку, і адмін бачив новий курс у себе, хоч насправді нічого не
+     збереглось — у решти лишався старий. */
+  .rate-edit-msg { margin: 2px 0 0; font-size: 11px; color: var(--danger); min-height: 0; }
+  .rate-edit-btn {
     width: 24px; height: 24px;
     border-radius: 7px;
     border: 1px solid var(--border);
@@ -495,13 +548,21 @@
     overflow: hidden;
   }
   .menu-tile-photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* Підложка під підписом — щоб білий текст читався на будь-якій картинці. */
+  /* Підложка під підписом — щоб білий текст читався на будь-якій картинці.
+     2026-09-21: зменшена з 55%/0.85 до 34%/0.62. Причина — користувач сказав, що блоки
+     на плитках темнуваті. Поміряли всі 30 файлів: середня яскравість 116–166 з 255,
+     темних пікселів менше 5% — тобто САМІ ФОТО світлі, темним виріб робила саме ця
+     заливка, бо на знімках виріб стоїть якраз у нижній половині кадру. Спершу міняємо
+     тільки ці дві цифри (один рядок, миттєвий відкат) і НЕ чіпаємо самі jpg. Якщо
+     виявиться замало — тоді освітлювати файли, і вже під цей новий градієнт.
+     Нижче 0.55 не опускати без перевірки на світлих знімках (tile-consumables,
+     tile-multisplit — найсвітліші з усіх): білий підпис почне зливатись. */
   .menu-tile-photo::after {
     content: '';
     position: absolute;
     inset: auto 0 0 0;
-    height: 55%;
-    background: linear-gradient(to top, rgba(8,12,17,.85), rgba(8,12,17,0));
+    height: 34%;
+    background: linear-gradient(to top, rgba(8,12,17,.62), rgba(8,12,17,0));
     pointer-events: none;
     z-index: 1;
   }
@@ -2184,45 +2245,74 @@
   /* Емодзі-запасний варіант, коли ICONS_LUCIDE = false */
   .ic-fb { font-style: normal; }
 
-  /* ЛОГОТИП У ШАПЦІ (дизайн-система). Два режими одночасно, обидва вмикає клас
-     .home-logo на <header>:
-       • водяний знак — напівпрозорий логотип по центру шапки на ВСІХ екранах, крім
-         головної (там він був би дублем самого заголовка-логотипа);
-       • на головному екрані каталогу логотип замінює текст «Каталог Sun-Ice».
-     Логотип у h1 зроблений фоном, а не окремим <img>, бо всі екрани присвоюють
-     title.textContent — дочірній елемент вони б затирали, фон лишається.
-     Прозорість винесена в змінну: одна правка, щоб зробити знак помітнішим/тихішим.
-     Дизайн-система радить .07, тут свідомо помітніше — на прохання користувача.
-     Знак горизонтальний (655×211, пропорція 3.1:1) — удвічі ширший за попередній. По
-     центру шапки він лягав просто на рядок «Востанне оновлено…», тому притиснутий до
-     правого краю і навмисно виходить за нього: заголовок і дата вирівняні ліворуч,
-     праворуч стоїть лише іконка оновлення, і знак там нікому не заважає. Обрізає його
-     overflow самої шапки. */
-  .header-watermark {
-    position: absolute;
-    top: 50%;
-    right: -18px;
-    left: auto;
-    transform: translateY(-50%);
-    width: 54%;
-    max-width: 230px;
-    height: auto;
-    opacity: var(--header-logo-opacity);
+  /* ЛОГОТИП У ШАПЦІ — переробка 2026-09-21 (узгоджено з користувачем, варіант «D»).
+
+     ЯК БУЛО і ЧОМУ ЗМІНИЛИ. Логотип був водяним знаком: напівпрозорий (opacity .13),
+     притиснутий до правого краю і навмисно виходив за нього. Користувач попросив
+     зробити навпаки — щоб логотип було добре видно і щоб він займав шапку собою.
+     Спершу пробували буквально те, що просили: логотип на всю ширину в повний колір,
+     а курс і заголовок ПОВЕРХ нього (з матовою плівкою під текстом). Намалювали —
+     вийшло погано: плівка робить логотип каламутним, а текст усе одно лягає на синій
+     прямокутник «ICE» і не читається. Тому зупинились на варіанті, де логотип
+     НІЧИМ не перекритий, а текст стоїть під ним окремою смугою.
+
+     ДВА РЕЖИМИ, перемикає клас .home-logo на <header> (ставиться на головному екрані
+     каталогу, див. renderCatalogView):
+       • головна — логотип великою смугою по центру, у повний колір; текстовий
+         заголовок тут не потрібен, логотип і є заголовком;
+       • решта екранів — той самий логотип, але маленький і в один рядок із заголовком,
+         бо інакше кожен екран прайсу втрачав би ~80 px висоти списку.
+
+     Логотип тепер окремий <img> у власній обгортці, а не фон у h1: h1 на кожному
+     екрані отримує textContent, тобто з ним логотип жив би лише на головній. */
+  .header-logo-band {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     pointer-events: none;
     user-select: none;
-    z-index: 0;
   }
-  header > *:not(.header-watermark) { position: relative; z-index: 1; }
-  header.home-logo .header-watermark { display: none; }
-  header.home-logo h1 {
-    color: transparent;
-    min-height: 48px;
-    background-image: url('tile-images/sun-ice-logo-wide.png');
-    background-repeat: no-repeat;
-    /* 17px = 8px ромба + 9px проміжку, щоб логотип не наїжджав на ромб */
-    background-position: 17px center;
-    background-size: auto 38px;
+  .header-logo-band img { display: block; height: auto; width: auto; }
+
+  /* ГОЛОВНА: логотип у потоці, окремим рядком зверху, по центру. Текстового заголовка
+     тут немає — логотип і є заголовком.
+     Рядок .header-top на головній стискається в нуль: h1 прихований, кнопка «назад»
+     на головній і так не потрібна, а іконку ↻ виносимо абсолютом у вільний правий кут
+     на рівні логотипа. Інакше під логотипом лишалася б порожня смуга ~25 px із самотньою
+     іконкою — саме так і вийшло з першої спроби. Логотип по центру має max-width 250px
+     із 343 доступних, тож праворуч від нього вистачає місця під іконку 22 px. */
+  header.home-logo .header-logo-band { margin: -2px 0 10px; }
+  header.home-logo .header-logo-band img { width: 68%; max-width: 250px; }
+  header.home-logo .header-top h1 { display: none; }
+  /* position: static обов'язковий. Загальне правило `header > *` робить .header-top
+     позиціонованим, і тоді абсолютна іконка ↻ рахувала б координати від НЬОГО (тобто
+     опинялась би під логотипом, а не поруч із ним). Тут вимикаємо це, щоб іконка
+     рахувалась від самої шапки. */
+  header.home-logo .header-top { position: static; }
+  header.home-logo #refresh-icon {
+    position: absolute;
+    top: calc(16px + env(safe-area-inset-top));
+    right: 16px;
+    z-index: 2;
   }
+
+  /* ВНУТРІШНІ ЕКРАНИ: логотип маленький, у нижньому правому куті шапки, АБСОЛЮТНО —
+     тобто поза потоком. Спершу пробували поставити його в рядок із заголовком, але
+     тоді він відбирав ширину в h1: «НАПІВПРОМИСЛОВІ СПЛІТ-СИСТЕМИ» ламалось на три
+     рядки і шапка росла з 75 до 100 px на КОЖНОМУ екрані прайсу. Поза потоком заголовок
+     знову отримує всю ширину, як було до появи логотипа.
+     Саме нижній правий кут, а не верхній: угорі справа живуть ↻ та кнопки EZY/Q-TON.
+     Унизу справа — порожнє місце поряд із коротким рядком «Прайс від …». */
+  header:not(.home-logo) .header-logo-band {
+    position: absolute;
+    right: 16px;
+    bottom: 12px;
+    height: 19px;
+    z-index: 0; /* якщо на якомусь екрані текст усе ж дотягнеться сюди — він буде зверху */
+  }
+  header:not(.home-logo) .header-logo-band img { height: 100%; }
+
+  header > * { position: relative; z-index: 1; }
 
   /* Розміри іконок у конкретних місцях. Там, де вже є правило на svg
      (.calc-toggle svg, .share-btn svg, .task-ics-btn svg) — воно й керує розміром,
@@ -2342,7 +2432,10 @@
 </div>
 <div class="app">
   <header>
-    <img class="header-watermark" src="tile-images/sun-ice-logo-wide.png" alt="" aria-hidden="true">
+    <!-- Логотип. Прямий нащадок <header> — це важливо: на внутрішніх екранах він
+         позиціюється абсолютно відносно самої шапки (див. .header-logo-band у <style>),
+         а всередині .header-top це було б неможливо, бо той сам позиціонований. -->
+    <div class="header-logo-band"><img src="tile-images/sun-ice-logo-wide.png" alt="Sun-ice"></div>
     <div class="header-top">
       <div class="back-btn" id="back-btn"><svg class="ic" data-fb="←" aria-hidden="true"><use href="#ic-arrow-left"></use></svg></div>
       <h1 id="title">Каталог Sun-Ice</h1>
@@ -2354,12 +2447,30 @@
       <div class="icon-btn icon-btn-text" id="q-ton-instruction-btn" title="Інструкція — MHI Q-ton" style="display:none;">Q-TON</div>
       <div class="icon-btn icon-btn-text" id="shortcut-icon" title="Встановити застосунок на головний екран" style="display:none;">Встановити</div>
     </div>
+    <!-- КУРСИ ВАЛЮТ. Показуються лише на головному екрані каталогу.
+         $ бере участь у калькуляторі, € — суто довідковий (позиції в євро є, але
+         перерахунок для них не просили). Під курсами — дрібний сірий рядок: дата, від
+         якої курс діє (її вводить адміністратор), а для адміністраторів ще й хто та
+         коли вносив зміну востаннє (це ставить тригер у базі, підмінити не можна). -->
     <div class="rate-row" id="rate-row" style="display:none;">
-      <span class="rate-label">Курс $:</span>
-      <span class="rate-value" id="rate-value">—</span>
-      <input type="number" class="rate-input" id="rate-input" step="0.01" min="0" style="display:none;">
-      <button type="button" class="rate-edit-btn" id="rate-edit-btn" style="display:none;" aria-label="Редагувати курс">✎</button>
-      <button type="button" class="rate-save-btn" id="rate-save-btn" style="display:none;" aria-label="Зберегти курс">✓</button>
+      <div class="rate-line" id="rate-view">
+        <span class="rate-label">Курс $:</span>
+        <span class="rate-value" id="rate-value">—</span>
+        <span class="rate-label rate-label-eur">€:</span>
+        <span class="rate-value" id="rate-value-eur">—</span>
+        <button type="button" class="rate-edit-btn" id="rate-edit-btn" style="display:none;" aria-label="Редагувати курси">✎</button>
+      </div>
+      <div class="rate-edit" id="rate-edit" style="display:none;">
+        <label class="rate-field"><span>$</span><input type="number" id="rate-input-usd" step="0.01" min="0" inputmode="decimal"></label>
+        <label class="rate-field"><span>€</span><input type="number" id="rate-input-eur" step="0.01" min="0" inputmode="decimal"></label>
+        <label class="rate-field rate-field-date"><span>діє від</span><input type="date" id="rate-input-date"></label>
+        <div class="rate-edit-actions">
+          <button type="button" class="rate-save-btn" id="rate-save-btn">Зберегти</button>
+          <button type="button" class="rate-cancel-btn" id="rate-cancel-btn">Скасувати</button>
+        </div>
+        <p class="rate-edit-msg" id="rate-edit-msg"></p>
+      </div>
+      <div class="rate-meta" id="rate-meta"></div>
     </div>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
@@ -2918,12 +3029,18 @@ let vrfGalSide = 'outdoor';   // 'outdoor' | 'indoor'
 let priceVersion = null;
 let catalogInitDone = false;
 let usdRate = null;      // курс $ → грн (з app_settings), для перерахунку в калькуляторі
+let eurRate = null;      // курс € → грн. ДОВІДКОВИЙ: у розрахунках не бере участі (див. нижче)
+let rateEffectiveDate = null;  // дата, ВІД ЯКОЇ діє курс — вводить адміністратор руками
+let rateUpdatedByName = null;  // хто востаннє міняв курс (ставить тригер у базі)
+let rateUpdatedAt = null;      // коли востаннє міняли (теж тригер)
 let canEditRate = false; // чи може поточний користувач редагувати курс (regional_admin/super_admin)
+let rateViewerIsAdmin = false; // адмінам показуємо додатковий рядок "хто і коли змінював"
 /* "Підбірка" (кошик) — позиції, які користувач додав галочкою біля рядка прайсу, щоб
    зібрати кілька товарів в один розрахунок і поділитися одним повідомленням. Ключ кожної
    позиції унікальний у межах плитки+бренду+моделі, щоб той самий кошик коректно різнив
    однакові моделі з різних розділів каталогу. */
 let cart = [];
+let cartRestored = false; // чи вже піднімали збережену підбірку з пристрою за цей запуск
 let cartToastTimer = null;
 // Калькулятор у рядку прайсу: тримаємо, який саме .calc-panel зараз розкритий (лише один
 // одночасно), щоб дотик поза ним чи гортання списку самі його згортали.
@@ -3068,10 +3185,23 @@ function isCategoryLabel(text) {
   if (!s) return false;
   return categoryStems.some(stem => s.includes(stem));
 }
+/* Екранування тексту, який підставляється в розмітку.
+   ВАЖЛИВО про лапки: textContent→innerHTML екранує лише & < >, але НЕ лапки. А результат
+   цієї функції підставляється не тільки між тегами, а й УСЕРЕДИНУ атрибутів
+   (value="...", data-sku="...", aria-label="..."). Тому до 2026-09-21 будь-яка подвійна
+   лапка у введеному тексті розривала атрибут і ламала верстку — наприклад пошук по
+   запиту 15" у Systemair. Додано явну заміну лапок; без неї сама лише зачистка вводу
+   (stripQuotes нижче) не рятує, бо в атрибути потрапляє ще й текст із прайсу. */
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
-  return div.innerHTML;
+  return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+/* Зачистка того, що вводить користувач: лапки прибираємо відразу при введенні, щоб вони
+   не потрапляли ні в базу, ні в розмітку. Домовленість із користувачем 2026-09-21:
+   "якщо стерти лапки, то все ж добре — хай вводить нормальні символи". */
+function stripQuotes(str) {
+  return String(str == null ? '' : str).replace(/["'«»„“”‘’]/g, '');
 }
 function parseSheet(rows, highlightMode, opts) {
   opts = opts || {};
@@ -3566,17 +3696,57 @@ function parseRemakCurtainsSheet(wb) {
   }
   return assignGroupColors(items);
 }
+/* Відкриває картку товару на сайті Systemair за артикулом з прайсу.
+
+   ДВІ ПОЛАГОДЖЕНІ БІДИ (2026-09-21), через які тап по артикулу часто "нічого не робив":
+
+   1) ВІКНО ВІДКРИВАЛОСЬ ЗАПІЗНО. Було: спершу await fetch до сайту, і лише ПОТІМ
+      window.open. Браузер дозволяє відкрити вкладку тільки безпосередньо в момент
+      дотику; через 300–800 мс після відповіді сервера він вважає це спливаючим вікном
+      і ГАСИТЬ МОВЧКИ, без помилки в консолі. На iPhone і у встановленому застосунку —
+      особливо жорстко. Підтверджено користувачем: тап по назві моделі (там window.open
+      викликається синхронно, див. .row-click-zone) відкриває Google нормально, а тап по
+      артикулу не робив нічого.
+      Тепер: порожня вкладка відкривається ПЕРШИМ рядком, ще до запиту, а вже потім їй
+      підставляється знайдена адреса.
+
+   2) НЕМА ТОЧНОГО ЗБІГУ — НЕ БУЛО НІЧОГО. Аркуш SYSTEMAIR — увесь європейський каталог,
+      а сайт Systemair Україна лише його частина: на вибірці з 10 артикулів вентиляції
+      2 не знаходились узагалі (напр. 2430, 16956 — їх нема в українському каталозі,
+      перевірено і з discontinued=true). Старий код у такому разі просто виходив.
+      Тепер: відкриваємо картку найближчого знайденого товару того ж сімейства
+      (для 2430 це 2435 — та сама серія AR200, інший типорозмір) і чесно попереджаємо
+      написом, що точного артикула не знайдено. Якщо не знайшлось нічого — вкладку
+      закриваємо й кажемо про це, а не лишаємо порожню. */
+function systemairProductUrl(u) {
+  return String(u || '').replace(/^systemair-uk-ua\//, 'https://www.systemair.com/uk-ua/');
+}
 async function openSystemairSkuPage(sku) {
+  // ПЕРШИМ ділом, поки ще діє "дозвіл від дотику" — інакше вкладку заблокують.
+  const tab = window.open('', '_blank');
   try {
-    const res = await fetch('https://www.systemair.com/api/uk-ua/search?id=93290740&query=' + encodeURIComponent(sku) + '&type=skus&discontinued=false&maxHits=20');
-    if (!res.ok) return;
+    const res = await fetch('https://www.systemair.com/api/uk-ua/search?id=93290740&query=' +
+      encodeURIComponent(sku) + '&type=skus&discontinued=false&maxHits=20');
+    if (!res.ok) throw new Error('http ' + res.status);
     const data = await res.json();
-    const match = (data.skus || []).find(s => String(s.number) === String(sku));
-    if (match && match.url) {
-      window.open(match.url.replace(/^systemair-uk-ua\//, 'https://www.systemair.com/uk-ua/'), '_blank');
+    const list = (data && data.skus) || [];
+    const exact = list.find(s => String(s.number) === String(sku));
+    const chosen = exact || list.find(s => s && s.url);
+
+    if (!chosen || !chosen.url) {
+      if (tab) tab.close();
+      showHeaderToast('Артикул ' + sku + ' не знайдено на сайті Systemair', 2600);
+      return;
+    }
+    const url = systemairProductUrl(chosen.url);
+    if (tab) tab.location.href = url; else window.open(url, '_blank');
+    if (!exact) {
+      showHeaderToast('Точного артикула ' + sku + ' немає на сайті — відкрито найближчий товар', 3200);
     }
   } catch (e) {
-    // Тихо ігноруємо — це збагачення (посилання на офіційний сайт), не критична функція.
+    // Сайт недоступний або немає інтернету. Порожню вкладку прибираємо за собою.
+    if (tab) tab.close();
+    showHeaderToast('Не вдалося звʼязатися з сайтом Systemair', 2600);
   }
 }
 
@@ -3991,6 +4161,22 @@ function buildSheetsData(wb, previousData) {
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
 const PARSER_VERSION = 12;
 
+/* Версія прайсу — це насправді ДАТА, закодована цифрами: 20260911 = 11.09.2026
+   (правило користувача, підтверджене 2026-09-21). Показувати дилеру голе "версія
+   20260911" сенсу немає, тому розкладаємо назад у дату. Якщо колись версія буде не
+   у форматі дати — чесно пишемо "версія N", нічого не ламається.
+   Навмисно НЕ беремо price_meta.updated_at: його ніхто не оновлює при заміні файлу
+   (перевірено — там стоїть 4 вересня при версії 20260911), тобто воно бреше. */
+function priceVersionLabel(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  const m = s.match(/^(\d{4})(\d{2})(\d{2})$/);
+  if (!m) return 'Прайс, версія ' + s;
+  const d = Number(m[3]), mo = Number(m[2]);
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return 'Прайс, версія ' + s;
+  return 'Прайс від ' + m[3] + '.' + m[2] + '.' + m[1];
+}
+
 function loadProcessedCache() {
   try {
     const raw = localStorage.getItem('sunice_price_cache');
@@ -4001,7 +4187,7 @@ function loadProcessedCache() {
     sheetsData = cached.data;
     priceDataStripped = cached.stripped === true;
     priceVersion = cached.version || null;
-    setCatalogStatus('Востаннє оновлено: ' + new Date(cached.savedAt).toLocaleString('uk-UA') + (priceVersion ? ' · версія ' + priceVersion : ''));
+    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено');
     return true;
   } catch (e) {
     return false;
@@ -4037,6 +4223,15 @@ function stripPricesFromSheets(data) {
 
 /* Зберігає розібраний прайс на пристрій. Тому, хто має доступ, — як є; решті —
    знеціненою копією (stripped: true), щоб на пристрої не лишалось цін. */
+/* Збій збереження кешу більше не зникає безслідно (2026-09-21).
+   Чому це важливо: у localStorage близько 5 МБ на застосунок, а розібраний прайс уже
+   важить ~1,7 МБ тексту (на iPhone символи рахуються по 2 байти, тобто ~3,4 МБ з 5).
+   Коли місця забракне, setItem кине QuotaExceededError — раніше його мовчки ковтав
+   `catch (e) {}`, і застосунок просто почав би качати 10,6 МБ прайсу ПРИ КОЖНОМУ
+   запуску, а причину ніхто б не побачив. Тепер це потрапляє в "Діагностику прайсу"
+   у супер-адміна — там, де вже живуть проблеми розбору.
+   Рапортуємо один раз за запуск: інакше кожне відкриття каталогу писало б новий рядок. */
+let priceCacheFailureReported = false;
 function persistProcessedCache(version) {
   try {
     const stripped = !hasFullAccess;
@@ -4044,7 +4239,21 @@ function persistProcessedCache(version) {
       data: stripped ? stripPricesFromSheets(sheetsData) : sheetsData,
       version: version, savedAt: Date.now(), parserVersion: PARSER_VERSION, stripped: stripped
     }));
-  } catch (e) {}
+  } catch (e) {
+    if (priceCacheFailureReported) return;
+    priceCacheFailureReported = true;
+    try {
+      sb.rpc('report_price_issue', {
+        p_version: String(version == null ? '' : version),
+        p_tile_label: 'Кеш прайсу на пристрої',
+        p_brand: '-',
+        p_kind: 'warning',
+        p_message: 'Не вдалося зберегти прайс на пристрій (' + ((e && e.name) || 'помилка') +
+                   '). Застосунок качатиме прайс наново при кожному запуску — найімовірніше, ' +
+                   'скінчилось місце в сховищі браузера.'
+      }).catch(function () {});
+    } catch (e2) {}
+  }
 }
 
 async function checkPriceVersion() {
@@ -4131,30 +4340,106 @@ function setCatalogStatus(text) {
   el.textContent = text;
 }
 
-/* ---------- Курс долара в шапці каталогу (редагують regional_admin/super_admin) ---------- */
+/* ---------- Курси валют у шапці каталогу (редагують regional_admin/super_admin) ----------
+   ДОЛАР бере участь у калькуляторі (перемикач $/₴ у рядку прайсу).
+   ЄВРО — суто довідковий: позиції в євро в прайсі є (Systemair, FRICO, REMAK, витратні),
+   але перерахунок для них користувач не замовляв. Якщо колись захоче — вмикати тут же,
+   у buildCalcPanelHtml, за тим самим зразком, що й долар.
+   ДАТА «діє від» — вводить адміністратор руками, бачать усі.
+   ХТО І КОЛИ змінював — ставить тригер trg_stamp_rate_author у базі (підмінити з
+   браузера неможливо), бачать лише адміністратори. */
 async function loadExchangeRate() {
   try {
-    const { data } = await sb.from('app_settings').select('usd_rate').eq('id', 1).single();
+    const { data } = await sb.from('app_settings')
+      .select('usd_rate, eur_rate, rate_effective_date, rate_updated_by_name, updated_at')
+      .eq('id', 1).single();
     usdRate = data && data.usd_rate != null ? Number(data.usd_rate) : null;
+    eurRate = data && data.eur_rate != null ? Number(data.eur_rate) : null;
+    rateEffectiveDate = data ? (data.rate_effective_date || null) : null;
+    rateUpdatedByName = data ? (data.rate_updated_by_name || null) : null;
+    rateUpdatedAt = data ? (data.updated_at || null) : null;
   } catch (e) {
-    usdRate = null;
+    usdRate = null; eurRate = null;
+    rateEffectiveDate = null; rateUpdatedByName = null; rateUpdatedAt = null;
   }
   try {
     const role = await getCurrentProfileRole();
     canEditRate = role === 'regional_admin' || role === 'super_admin';
+    rateViewerIsAdmin = canEditRate;
   } catch (e) {
     canEditRate = false;
+    rateViewerIsAdmin = false;
   }
   renderRateRow();
 }
+
+/* "44,9" → "44,90 ₴". Два знаки після коми навмисно: курс 44,9 і 44,90 — те саме, але
+   в рядку поруч із євро однакова кількість знаків читається рівніше. */
+function formatRate(v) {
+  return Number(v).toLocaleString('uk-UA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₴';
+}
+function formatDateUa(iso) {
+  if (!iso) return '';
+  const m = String(iso).slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? (m[3] + '.' + m[2] + '.' + m[1]) : String(iso);
+}
+
 function renderRateRow() {
   const row = document.getElementById('rate-row');
   if (!row) return;
   const show = currentTab === 'catalog' && activeTile === null;
-  row.style.display = show ? 'flex' : 'none';
+  row.style.display = show ? 'block' : 'none';
   if (!show) return;
-  document.getElementById('rate-value').textContent = usdRate ? usdRate.toLocaleString('uk-UA') + ' ₴' : 'не встановлено';
+
+  const usdEl = document.getElementById('rate-value');
+  const eurEl = document.getElementById('rate-value-eur');
+  usdEl.textContent = usdRate ? formatRate(usdRate) : 'не встановлено';
+  usdEl.classList.toggle('rate-value-empty', !usdRate);
+  eurEl.textContent = eurRate ? formatRate(eurRate) : 'не встановлено';
+  eurEl.classList.toggle('rate-value-empty', !eurRate);
+
   document.getElementById('rate-edit-btn').style.display = canEditRate ? 'flex' : 'none';
+
+  /* Приписка під курсами. Перший рядок бачать усі, другий — лише адміністратори.
+     Кольором нічого не виділяємо: домовленість 2026-09-21 — ніякого червоного, лише
+     спокійна підказка тим, хто може це виправити. */
+  const meta = document.getElementById('rate-meta');
+  const lines = [];
+  if (rateEffectiveDate) {
+    lines.push('діє від ' + escapeHtml(formatDateUa(rateEffectiveDate)));
+  } else if (rateViewerIsAdmin) {
+    lines.push('дату, від якої діє курс, не вказано');
+  }
+  if (rateViewerIsAdmin && (!usdRate || !rateEffectiveDate)) {
+    lines.push('вкажіть курс і дату — без курсу в калькуляторі немає перерахунку в гривню');
+  }
+  if (rateViewerIsAdmin && rateUpdatedByName) {
+    const when = rateUpdatedAt ? new Date(rateUpdatedAt).toLocaleString('uk-UA', {
+      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    }) : '';
+    lines.push('<span class="rate-meta-admin">змінив ' + escapeHtml(rateUpdatedByName) +
+               (when ? ' · ' + escapeHtml(when) : '') + '</span>');
+  }
+  meta.innerHTML = lines.join('<br>');
+  meta.style.display = lines.length ? 'block' : 'none';
+}
+
+/* Перемикання "перегляд ↔ редагування" курсів. */
+function openRateEditor() {
+  document.getElementById('rate-view').style.display = 'none';
+  document.getElementById('rate-meta').style.display = 'none';
+  const box = document.getElementById('rate-edit');
+  box.style.display = 'flex';
+  document.getElementById('rate-input-usd').value = usdRate != null ? usdRate : '';
+  document.getElementById('rate-input-eur').value = eurRate != null ? eurRate : '';
+  document.getElementById('rate-input-date').value = rateEffectiveDate ? String(rateEffectiveDate).slice(0, 10) : '';
+  document.getElementById('rate-edit-msg').textContent = '';
+  document.getElementById('rate-input-usd').focus();
+}
+function closeRateEditor() {
+  document.getElementById('rate-edit').style.display = 'none';
+  document.getElementById('rate-view').style.display = 'flex';
+  renderRateRow();
 }
 
 async function initCatalog() {
@@ -4163,6 +4448,13 @@ async function initCatalog() {
   const hadCache = loadProcessedCache();
   if (hadCache) {
     renderCatalogView();
+    /* ДО 2026-09-21 тут стояв просто return: якщо на пристрої вже лежав прайс, версію
+       в price_meta не звіряли ВЗАГАЛІ. Оновити прайс можна було лише вручну, кнопкою ↻
+       у кутку — а про неї більшість дилерів не знає. Тобто людина могла місяцями
+       називати клієнтам ціни зі старого прайсу і не підозрювати про це.
+       Тепер кеш так само показується миттєво (швидкість не втрачаємо), а звірка
+       з сервером іде слідом у фоні. */
+    checkPriceUpdateInBackground();
     return;
   }
   setCatalogStatus('Завантаження прайсу...');
@@ -4172,14 +4464,52 @@ async function initCatalog() {
     await downloadAndParsePrice(meta ? meta.version : null);
     priceVersion = meta ? meta.version : 1;
     persistProcessedCache(priceVersion);
-    setCatalogStatus('Завантажено: ' + new Date().toLocaleString('uk-UA') + (meta ? ' · версія ' + priceVersion : ''));
+    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено');
   } catch (e) {
     setCatalogStatus('Немає підключення до інтернету. Прайс ще не завантажено.');
   }
   renderCatalogView();
 }
 
+/* Тиха фонова звірка версії прайсу з price_meta.
+   Тиха — тобто НЕ чіпає рядок стану, поки не виявиться, що прайс справді застарів:
+   інакше при кожному відкритті каталогу блимало б "Перевірка оновлень…" на рівному
+   місці. Немає мережі — просто мовчимо, людина далі працює з тим, що є (у цьому й
+   сенс кешу). Знайшли нову версію — докачуємо і перемальовуємо відкритий екран.
+   Захист від повторів: за один запуск застосунку перевіряємо один раз, і ніколи —
+   паралельно з ручним ↻ (handleRefreshClick), щоб не качати 10 МБ двічі. */
+let priceUpdateCheckDone = false;
+let priceDownloadInFlight = false;
+async function checkPriceUpdateInBackground() {
+  if (priceUpdateCheckDone || priceDownloadInFlight) return;
+  priceUpdateCheckDone = true;
+  try {
+    const meta = await checkPriceVersion();
+    if (!meta || meta.version == null) return;                 // немає зв'язку — мовчимо
+    if (priceVersion !== null && meta.version === priceVersion) return; // уже актуальний
+    if (priceDownloadInFlight) return;
+    priceDownloadInFlight = true;
+    setCatalogStatus('Зʼявився новий прайс — завантажую…');
+    try {
+      await downloadAndParsePrice(meta.version);
+      priceVersion = meta.version;
+      persistProcessedCache(priceVersion);
+      setCatalogStatus(priceVersionLabel(priceVersion) + ' · щойно оновлено');
+      // Людина могла за цей час зайти в категорію — перемальовуємо саме те, що відкрито.
+      catalogMenuSkipEnterAnim = true;
+      if (currentTab === 'catalog') renderCatalogView();
+      renderCartBar();
+    } finally {
+      priceDownloadInFlight = false;
+    }
+  } catch (e) {
+    // Не вийшло — лишаємо те, що вже показано. Рядок стану не чіпаємо навмисно.
+  }
+}
+
 async function handleRefreshClick() {
+  // Фонова звірка могла вже качати прайс — двічі 10 МБ поспіль качати не треба.
+  if (priceDownloadInFlight) { setCatalogStatus('Прайс уже завантажується…'); return; }
   setCatalogStatus('Перевірка оновлень...');
   const meta = await checkPriceVersion();
   if (!meta) {
@@ -4187,19 +4517,22 @@ async function handleRefreshClick() {
     return;
   }
   if (priceVersion !== null && meta.version === priceVersion) {
-    setCatalogStatus('Прайс актуальний (версія ' + meta.version + ')');
+    setCatalogStatus(priceVersionLabel(meta.version) + ' · це найсвіжіший');
     return;
   }
   setCatalogStatus('Завантаження нового прайсу...');
+  priceDownloadInFlight = true;
   try {
     await downloadAndParsePrice(meta.version);
     priceVersion = meta.version;
     persistProcessedCache(priceVersion);
-    setCatalogStatus('Оновлено: ' + new Date().toLocaleString('uk-UA') + ' · версія ' + priceVersion);
+    setCatalogStatus(priceVersionLabel(priceVersion) + ' · щойно оновлено');
     catalogMenuSkipEnterAnim = true; // користувач і так стоїть на цьому екрані — не повторювати stagger
     renderCatalogView();
   } catch (e) {
     setCatalogStatus('Немає підключення. Відображається остання завантажена версія прайсу.');
+  } finally {
+    priceDownloadInFlight = false;
   }
 }
 
@@ -4534,7 +4867,11 @@ const CALC_MODE_ICON = { sub_pct: '−%', add_pct: '+%', sub_flat: '−', add_fl
 const CALC_MODE_ORDER = ['sub_pct', 'add_pct', 'sub_flat', 'add_flat'];
 function buildCalcPanelHtml(price, currency, priceStr, opts) {
   opts = opts || {};
-  const curBtnsHtml = currency === '$' ? `
+  /* Перемикач ₴ показуємо ЛИШЕ коли курс справді заданий (2026-09-21).
+     Раніше кнопка була завжди, а convertAmount() без курсу повертав доларову суму
+     БЕЗ перерахунку — і калькулятор чесно підписував її знаком ₴. Тобто позиція за
+     1 200 $ показувалась як "1 200 ₴". Краще не дати натиснути, ніж показати неправду. */
+  const curBtnsHtml = (currency === '$' && usdRate > 0) ? `
             <div class="calc-currency">
               <button type="button" class="calc-cur-btn active" data-cur="$">$</button>
               <button type="button" class="calc-cur-btn" data-cur="UAH">₴</button>
@@ -4638,6 +4975,35 @@ function handleCalcDelegatedInput(e) {
    тільки саму кнопку (без перерендеру всього списку — інакше гортання прайсу збивалось би
    при кожному натисканні). Плаваюча кнопка (#cart-fab) і панель (#cart-panel-overlay) —
    статичні елементи поза #main, що показуються лише коли підбірка не порожня. */
+/* Збереження підбірки на пристрій (2026-09-21).
+   Навіщо: до цього підбірка жила тільки в пам'яті відкритої сторінки. Дилер набирав
+   10 позицій на об'єкті, телефон вивантажував застосунок з пам'яті при дзвінку — і всі
+   галочки треба було ставити заново.
+   Ціни в підбірці — це ціни, тому зберігаємо ЛИШЕ тому, хто має доступ (hasFullAccess),
+   і стираємо, щойно доступ зник (див. ensureAccessFresh) — тим самим правилом, що й
+   кеш прайсу (stripPricesFromSheets). Збій запису ігноруємо: підбірка — зручність,
+   а не дані, через які можна зламати роботу. */
+const CART_STORAGE_KEY = 'sunice_cart';
+function persistCart() {
+  try {
+    if (!hasFullAccess || !cart.length) { localStorage.removeItem(CART_STORAGE_KEY); return; }
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ savedAt: Date.now(), items: cart }));
+  } catch (e) {}
+}
+function loadStoredCart() {
+  try {
+    if (!hasFullAccess) return;
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const items = parsed && Array.isArray(parsed.items) ? parsed.items : [];
+    // Беремо лише рядки очікуваної форми — щоб зіпсований чи старий запис не зронив UI.
+    cart = items.filter(c => c && typeof c.key === 'string' && typeof c.qty === 'number' && c.qty > 0)
+                .map(c => ({ key: c.key, model: String(c.model || ''), price: Number(c.price) || 0,
+                             currency: String(c.currency || ''), tileLabel: String(c.tileLabel || ''),
+                             qty: Math.max(1, Math.round(c.qty)) }));
+  } catch (e) { cart = []; }
+}
 function cartQtyFor(key) {
   const entry = cart.find(c => c.key === key);
   return entry ? entry.qty : 0;
@@ -4665,13 +5031,18 @@ function addToCart(btn) {
   showCartToast(model, entry.qty);
   renderCartBar();
 }
-function showCartToast(model, qty) {
+/* Коротке повідомлення внизу шапки. Спочатку було тільки для підбірки, з 2026-09-21
+   використовується ще й для повідомлень про артикул (див. openSystemairSkuPage). */
+function showHeaderToast(text, ms) {
   const toast = document.getElementById('cart-toast');
   if (!toast) return;
-  toast.textContent = model + ' — ' + qty + ' шт. Натисни знову — буде +1';
+  toast.textContent = text;
   toast.classList.add('show');
   if (cartToastTimer) clearTimeout(cartToastTimer);
-  cartToastTimer = setTimeout(() => { toast.classList.remove('show'); }, 1800);
+  cartToastTimer = setTimeout(() => { toast.classList.remove('show'); }, ms || 1800);
+}
+function showCartToast(model, qty) {
+  showHeaderToast(model + ' — ' + qty + ' шт. Натисни знову — буде +1');
 }
 function syncCartRowBadge(key) {
   const main = document.getElementById('main');
@@ -4702,6 +5073,10 @@ function syncAllCartBadges() {
 function renderCartBar() {
   const fab = document.getElementById('cart-fab');
   if (!fab) return;
+  /* Єдина точка збереження підбірки на пристрій: renderCartBar() викликається ПІСЛЯ
+     кожної зміни (додали, ± кількість, прибрали рядок, очистили, втратили доступ до
+     цін) — тому достатньо одного виклику тут, замість п'яти по різних обробниках. */
+  persistCart();
   const totalQty = cart.reduce((s, c) => s + c.qty, 0);
   if (totalQty === 0 || currentTab !== 'catalog') {
     fab.style.display = 'none';
@@ -5295,7 +5670,7 @@ function renderVentilationList() {
   const input = document.getElementById('systemair-search-input');
   if (input) {
     input.addEventListener('input', () => {
-      systemairSearchQuery = input.value;
+      systemairSearchQuery = stripQuotes(input.value); // лапки ламали б value="..." при перемальовуванні
       systemairRenderCount = SYSTEMAIR_BATCH; // нова умова пошуку — пагінація з початку
       const caret = input.selectionStart;
       renderVentilationList();
@@ -5380,7 +5755,7 @@ function renderAirCurtainsList() {
   const input = document.getElementById('aircurtains-search-input');
   if (input) {
     input.addEventListener('input', () => {
-      aircurtainsSearchQuery = input.value;
+      aircurtainsSearchQuery = stripQuotes(input.value); // див. коментар у пошуку Systemair
       const caret = input.selectionStart;
       renderAirCurtainsList();
       const newInput = document.getElementById('aircurtains-search-input');
@@ -6149,29 +6524,67 @@ document.getElementById('cart-panel-overlay').addEventListener('click', function
   }
 });
 
-document.getElementById('rate-edit-btn').addEventListener('click', function() {
-  document.getElementById('rate-value').style.display = 'none';
-  this.style.display = 'none';
-  const input = document.getElementById('rate-input');
-  input.style.display = 'inline-block';
-  input.value = usdRate || '';
-  input.focus();
-  document.getElementById('rate-save-btn').style.display = 'flex';
-});
+document.getElementById('rate-edit-btn').addEventListener('click', openRateEditor);
+document.getElementById('rate-cancel-btn').addEventListener('click', closeRateEditor);
+
 document.getElementById('rate-save-btn').addEventListener('click', async function() {
-  const input = document.getElementById('rate-input');
-  const val = parseFloat(input.value);
-  if (isNaN(val) || val <= 0) return;
+  const msg = document.getElementById('rate-edit-msg');
+  const usdRaw = document.getElementById('rate-input-usd').value.trim();
+  const eurRaw = document.getElementById('rate-input-eur').value.trim();
+  const dateRaw = document.getElementById('rate-input-date').value;
+  msg.textContent = '';
+
+  // Долар обов'язковий — саме він рахує гривню в калькуляторі.
+  const usdVal = parseFloat(usdRaw);
+  if (!usdRaw || isNaN(usdVal) || usdVal <= 0) {
+    msg.textContent = 'Вкажіть курс долара числом, більшим за нуль.';
+    return;
+  }
+  // Євро довідкове — можна лишити порожнім, але якщо введено, має бути числом.
+  let eurVal = null;
+  if (eurRaw) {
+    eurVal = parseFloat(eurRaw);
+    if (isNaN(eurVal) || eurVal <= 0) { msg.textContent = 'Курс євро має бути числом, більшим за нуль.'; return; }
+  }
+  if (!dateRaw) { msg.textContent = 'Вкажіть дату, від якої діє курс.'; return; }
+
   this.disabled = true;
-  try {
-    await sb.from('app_settings').upsert({ id: 1, usd_rate: val });
-    usdRate = val;
-  } catch (e) {}
+  /* ГОЛОВНЕ ВИПРАВЛЕННЯ, і воно має ДВА шари — другий я знайшов, лише перевіривши вживу.
+
+     Шар 1. Раніше тут було
+         try { await sb.from('app_settings').upsert(...) } catch (e) {}
+     і одразу usdRate = val. Але supabase-js на невдалий запит НЕ кидає виняток — він
+     повертає { error }. Тобто catch не спрацьовував ніколи, помилку ніхто не читав, і
+     адміністратор бачив у себе новий курс, будучи впевненим, що зберіг, тоді як у решти
+     лишався старий.
+
+     Шар 2. Самої перевірки error ВСЕ ОДНО МАЛО. Якщо запис не проходить через RLS
+     (наприклад, сесія протухла і людина вже не адміністратор), PostgREST не вважає це
+     помилкою: запит успішний, просто оновлено 0 рядків. error буде null — і ми знову
+     показали б «Курс збережено». Тому просимо .select(): він повертає рядки, яких
+     запит реально торкнувся. Порожньо — значить не зберегли.
+
+     Так само, до речі, мовчки провалювалась галочка «буду мати на увазі» в акціях
+     (див. mark_promo_seen) — та сама пастка, інше місце. */
+  const { data, error } = await sb.from('app_settings')
+    .update({ usd_rate: usdVal, eur_rate: eurVal, rate_effective_date: dateRaw })
+    .eq('id', 1)
+    .select('id');
   this.disabled = false;
-  input.style.display = 'none';
-  this.style.display = 'none';
-  document.getElementById('rate-value').style.display = 'inline';
-  renderRateRow();
+
+  if (error) {
+    msg.textContent = 'Не вдалося зберегти: ' + (error.message || 'спробуйте ще раз');
+    return; // форму НЕ закриваємо — інакше це знову виглядало б як успіх
+  }
+  if (!data || !data.length) {
+    msg.textContent = 'Курс не збережено: недостатньо прав. Спробуйте вийти і зайти знову.';
+    return;
+  }
+  // Перечитуємо з бази, а не віримо своїм же числам: ім'я автора й час проставляє
+  // тригер на сервері, з клієнта їх не видно.
+  await loadExchangeRate();
+  closeRateEditor();
+  showHeaderToast('Курс збережено', 1600);
 });
 
 /* Делеговані обробники дій у адмін-панелі Кабінету (кнопки й селекти з data-action) */
@@ -6247,53 +6660,87 @@ window.addEventListener('popstate', function(event) {
 
 /* ---------- Акції ---------- */
 
-/* "Буду мати на увазі" / кулька "Цікава новина" — спільний стан для обох механізмів:
-   promo_ack_id (яку акцію користувач востаннє підтвердив) і promo_last_nag_at (коли
-   його востаннє нагадували про поточну найновішу — і push, і сама кулька в застосунку
-   оновлюють це поле, щоб не нагадувати частіше ніж раз на 3 дні). Для залогіненого
-   користувача це поля в public.profiles (щоб те саме бачив і сервер при розсилці
-   push — див. send-promo-push.ts); для гостя (не залогінений) — той самий стан у
-   localStorage, суто для показу кульки на цьому пристрої (гостям push однаково не
-   надсилається, бо в них немає підписки push_subscriptions). */
-const PROMO_NAG_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
+/* "Буду мати на увазі" / кулька "Цікава новина".
+
+   ЩО БУЛО ЗЛАМАНО (знайдено при перевірці 2026-09-21)
+   Застосунок писав promo_ack_id / promo_last_nag_at прямо в profiles. Але в profiles
+   немає політики, яка дозволяє людині оновити ВЛАСНИЙ рядок — лише адмінам. Перевірено
+   на живій базі: такий запит оновлював 0 рядків, і помилки при цьому не було
+   (supabase-js на відфільтрований RLS-ом рядок виняток не кидає, а `.catch()` тут узагалі
+   нічого не ловив). Тобто галочка НЕ ЗБЕРІГАЛАСЬ НІКОЛИ. Тепер запис іде через вузьку
+   функцію public.mark_promo_seen — вона міняє рівно дві колонки і рівно у власному
+   рядку того, хто дзвонить (див. claude/sql/2026-09-21-promo-balloon-timer.sql).
+
+   ДВА РІЗНІ ТАЙМЕРИ, І ЦЕ НАВМИСНО
+   • promo_balloon_last_at — кулька всередині застосунку. Інтервал 5 днів. Повертається
+     навіть після галочки (варіант А, обраний користувачем): галочка прибирає кульку
+     зараз, але через 5 днів вона нагадає про себе знову.
+   • promo_last_nag_at — системні push. Ним керує ВИКЛЮЧНО Edge Function
+     send-promo-push, застосунок його більше не торкається. Там усе лишається як було:
+     натиснув галочку — push про цю акцію більше не приходить.
+   Чому не одне поле: раніше кулька і розсилка ділили promo_last_nag_at і збивали
+   таймер одне одному. А зробити push теж «кожні 5 днів назавжди» — вірний спосіб
+   змусити людей вимкнути сповіщення застосунку зовсім.
+
+   Гість (не залогінений) — той самий стан у localStorage, суто для показу кульки на
+   цьому пристрої: push гостям однаково не надсилається, бо немає push_subscriptions. */
+const PROMO_BALLOON_INTERVAL_MS = 5 * 24 * 60 * 60 * 1000;
 const PROMO_GUEST_KEY = 'sunice_promo_guest';
 
 async function getPromoAckState() {
   const { data: sessionData } = await sb.auth.getSession();
   const session = sessionData ? sessionData.session : null;
-  let ackId = null, lastNagAt = null;
+  let ackId = null, balloonAt = null;
   if (session) {
-    const { data: profile } = await sb.from('profiles').select('promo_ack_id, promo_last_nag_at').eq('id', session.user.id).single();
-    if (profile) { ackId = profile.promo_ack_id; lastNagAt = profile.promo_last_nag_at; }
+    const { data: profile } = await sb.from('profiles').select('promo_ack_id, promo_balloon_last_at').eq('id', session.user.id).single();
+    if (profile) { ackId = profile.promo_ack_id; balloonAt = profile.promo_balloon_last_at; }
   } else {
     try {
       const raw = localStorage.getItem(PROMO_GUEST_KEY);
-      if (raw) { const s = JSON.parse(raw); ackId = s.ackId != null ? s.ackId : null; lastNagAt = s.lastNagAt || null; }
+      if (raw) { const s = JSON.parse(raw); ackId = s.ackId != null ? s.ackId : null; balloonAt = s.balloonAt || s.lastNagAt || null; }
     } catch (e) {}
   }
-  return { session, ackId, lastNagAt };
+  return { session, ackId, balloonAt };
 }
 
 async function ackPromo(latestId, session) {
-  const nowIso = new Date().toISOString();
   if (session) {
-    await sb.from('profiles').update({ promo_ack_id: latestId, promo_last_nag_at: nowIso }).eq('id', session.user.id).catch(function () {});
+    // Галочка: запам'ятовуємо акцію, але таймер кульки НЕ зсуваємо — його зсуває сам
+    // показ кульки. Інакше галочка відкладала б наступну появу на зайві 5 днів.
+    const { error } = await sb.rpc('mark_promo_seen', { p_ack_id: latestId, p_touch_balloon: false });
+    if (error) return; // мовчки: це зручність, а не критична дія
   } else {
-    try { localStorage.setItem(PROMO_GUEST_KEY, JSON.stringify({ ackId: latestId, lastNagAt: nowIso })); } catch (e) {}
+    try {
+      const raw = localStorage.getItem(PROMO_GUEST_KEY);
+      const prev = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(PROMO_GUEST_KEY, JSON.stringify({ ackId: latestId, balloonAt: prev.balloonAt || null }));
+    } catch (e) {}
   }
 }
 
-async function nagPromo(ackId, session) {
-  const nowIso = new Date().toISOString();
+/* Позначити, що кульку щойно показали — звідси й рахуються 5 днів до наступного разу. */
+async function markBalloonShown(ackId, session) {
   if (session) {
-    await sb.from('profiles').update({ promo_last_nag_at: nowIso }).eq('id', session.user.id).catch(function () {});
+    await sb.rpc('mark_promo_seen', { p_ack_id: null, p_touch_balloon: true });
   } else {
-    try { localStorage.setItem(PROMO_GUEST_KEY, JSON.stringify({ ackId: ackId, lastNagAt: nowIso })); } catch (e) {}
+    try {
+      localStorage.setItem(PROMO_GUEST_KEY, JSON.stringify({ ackId: ackId, balloonAt: new Date().toISOString() }));
+    } catch (e) {}
   }
 }
 
 /* Глобальна кулька "Цікава новина" — перевіряється один раз при старті застосунку,
-   з'являється поверх будь-якої вкладки (не тільки Акції). */
+   з'являється поверх будь-якої вкладки (не тільки Акції).
+
+   ПРАВИЛО ПОКАЗУ (варіант А, обраний користувачем 2026-09-21): показуємо, якщо кульку
+   ще жодного разу не показували АБО від останнього показу минуло 5 днів. Галочка
+   «Добре, буду мати на увазі» ховає кульку зараз і вимикає push про цю акцію, але НЕ
+   робить її німою назавжди — через 5 днів вона нагадає знову.
+
+   Відоме обмеження, свідомо прийняте: якщо нову акцію опублікують через день після
+   того, як кульку показували, вона з'явиться не одразу, а коли доб'ють ці 5 днів. Про
+   саму ж нову акцію людина однаково дізнається — на неї одразу йде push (mode: 'new'
+   в send-promo-push). Рівно так само поводилась і попередня версія, тільки з 3 днями. */
 async function checkPromoBalloon() {
   try {
     const { data: promos, error } = await sb.from('promotions').select('id').eq('is_active', true).order('id', { ascending: false }).limit(1);
@@ -6301,11 +6748,10 @@ async function checkPromoBalloon() {
     const latestId = promos[0].id;
 
     const state = await getPromoAckState();
-    if (state.ackId === latestId) return; // цю саму акцію вже підтвердили
-    if (state.lastNagAt && (Date.now() - new Date(state.lastNagAt).getTime()) < PROMO_NAG_INTERVAL_MS) return;
+    if (state.balloonAt && (Date.now() - new Date(state.balloonAt).getTime()) < PROMO_BALLOON_INTERVAL_MS) return;
 
     showPromoBalloon();
-    nagPromo(state.ackId, state.session);
+    markBalloonShown(state.ackId != null ? state.ackId : latestId, state.session);
   } catch (e) {}
 }
 
@@ -6488,6 +6934,11 @@ async function ensureAccessFresh(force) {
   await refreshAccessState({ force: force === true });
   if (hasFullAccess === before) return hasFullAccess;
   if (!hasFullAccess) cart = [];
+  /* Перше підтвердження доступу за цей запуск — саме тут піднімаємо збережену підбірку
+     з пристрою. Раніше не можна: у підбірці ціни, і поки доступ не підтверджено, ми не
+     маємо права їх відновлювати. Прапорець — щоб повторний перехід "немає доступу →
+     є доступ" не воскресив підбірку, яку щойно свідомо скинули. */
+  if (hasFullAccess && !cartRestored) { cartRestored = true; loadStoredCart(); }
   /* Доступ з'явився (підтвердили заявку, розблокували, увійшли), але в пам'яті лежить
      копія прайсу без цін — показувати нема чого, треба перекачати. */
   if (hasFullAccess && priceDataStripped) { reloadPriceAfterAccessGranted(); return hasFullAccess; }
@@ -6498,14 +6949,17 @@ async function ensureAccessFresh(force) {
 
 async function reloadPriceAfterAccessGranted() {
   setCatalogStatus('Завантаження прайсу...');
+  priceDownloadInFlight = true;
   try {
     const meta = await checkPriceVersion();
     await downloadAndParsePrice(meta ? meta.version : null);
     priceVersion = meta ? meta.version : priceVersion;
     persistProcessedCache(priceVersion);
-    setCatalogStatus('Завантажено: ' + new Date().toLocaleString('uk-UA') + (priceVersion ? ' · версія ' + priceVersion : ''));
+    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено');
   } catch (e) {
     setCatalogStatus('Немає підключення. Ціни з\'являться після виходу в мережу.');
+  } finally {
+    priceDownloadInFlight = false;
   }
   if (currentTab === 'catalog') renderCatalogView();
   renderCartBar();
@@ -6515,7 +6969,12 @@ async function reloadPriceAfterAccessGranted() {
    висить у пам'яті; до 2026-09-19 стан рахувався лише на старті та при вході/виході,
    тому про блокування людина дізнавалась аж коли supabase-js оновить токен (до години). */
 document.addEventListener('visibilitychange', function () {
-  if (document.visibilityState === 'visible') ensureAccessFresh(true);
+  if (document.visibilityState !== 'visible') return;
+  ensureAccessFresh(true);
+  /* Курс теж перечитуємо (2026-09-21). До цього він вантажився РАЗ за запуск, в
+     initCatalog. PWA на телефоні висить у пам'яті тижнями — адміністратор міняв курс,
+     а дилер далі рахував за старим, поки не перезапустить застосунок. */
+  if (catalogInitDone) loadExchangeRate();
 });
 
 /* Спливаюча картка "Зареєструйтесь" — при дотику на заховану ціну/калькулятор. */
@@ -7433,9 +7892,15 @@ function statusLabel(status) {
     blocked: 'Заблоковано'
   }[status] || 'На розгляді';
 }
-function priceTypeLabel(pt) {
-  return { regular: 'Стандартна', client: 'Клієнтська', vip: 'VIP' }[pt] || (pt || '—');
-}
+/* «Тип цін» (Стандартна / Клієнтська / VIP) прибрано з інтерфейсу 2026-09-21.
+   Причина: поле зберігалось у profiles, адмін міг його перемикати, дилеру писалось
+   "Тип цін: VIP" — але на ЖОДНУ ціну в застосунку воно не впливало, бо ніде, крім цього
+   підпису, не використовувалось. Тобто інтерфейс обіцяв те, чого не робив (у базі всі
+   16 профілів і так стояли на 'regular').
+   Колонку price_type у базі НАВМИСНО лишено: даних не втрачаємо, і якщо різні рівні цін
+   колись знадобляться по-справжньому, повернути вибір в адмінку — кілька хвилин.
+   При реєстрації поле й далі заповнюється 'regular', бо цього вимагає RLS-політика
+   "Users can insert own profile" (with check ... price_type = 'regular'). */
 function roleLabel(role) {
   return { user: 'Користувач', regional_admin: 'Регіональний адмін', super_admin: 'Супер-адмін' }[role] || role;
 }
@@ -7864,7 +8329,7 @@ async function renderUserStatus(profile) {
   // підтвердження адміністратора. Єдиний критерій — profileAllowsPrices().
   const canSeePrices = profileAllowsPrices(profile);
   const awaitingAfterReset = profile.status === 'pending' && !!profile.reregistered_at;
-  const priceLine = canSeePrices ? '<br>Тип цін: ' + escapeHtml(priceTypeLabel(profile.price_type)) : '';
+  const priceLine = ''; // "Тип цін" прибрано 2026-09-21 — див. коментар біля колишнього priceTypeLabel
   const resetNoteHtml = awaitingAfterReset
     ? '<div class="warn">Пароль змінено, вхід відновлено. Ціни у прайсі з\'являться, щойно адміністратор підтвердить заявку — зазвичай це швидко. Ваші монтажі та інші дані на місці.</div>'
     : '';
@@ -8004,19 +8469,20 @@ async function renderAdminPanel(profile) {
     } else {
       const blockLabel = u.status === 'blocked' ? 'Розблокувати' : 'Заблокувати';
       const blockAction = u.status === 'blocked' ? 'unblock' : 'block';
-      actions = `
+      /* Вибір "Тип цін" прибрано 2026-09-21 (нічого не робив — див. коментар біля
+         колишнього priceTypeLabel). Разом з ним рядок .user-card-row лишився б у
+         регіонального адміна порожнім (вибір ролі бачить лише super_admin) — тому
+         тепер увесь рядок малюється тільки там, де в ньому щось є. */
+      const roleRowHtml = isSuper ? `
         <div class="user-card-row">
-          <select data-action="price_type" data-id="${u.id}">
-            <option value="regular" ${u.price_type === 'regular' ? 'selected' : ''}>Стандартна ціна</option>
-            <option value="client" ${u.price_type === 'client' ? 'selected' : ''}>Клієнтська ціна</option>
-            <option value="vip" ${u.price_type === 'vip' ? 'selected' : ''}>VIP ціна</option>
-          </select>
-          ${isSuper ? `<select data-action="role" data-id="${u.id}">
+          <select data-action="role" data-id="${u.id}">
             <option value="user" ${u.role === 'user' ? 'selected' : ''}>Користувач</option>
             <option value="regional_admin" ${u.role === 'regional_admin' ? 'selected' : ''}>Регіон. адмін</option>
             <option value="super_admin" ${u.role === 'super_admin' ? 'selected' : ''}>Супер-адмін</option>
-          </select>` : ''}
-        </div>
+          </select>
+        </div>` : '';
+      actions = `
+        ${roleRowHtml}
         <div class="user-card-actions">
           <button type="button" data-action="${blockAction}" data-id="${u.id}">${blockLabel}</button>
           ${deleteBtn}
@@ -8157,7 +8623,7 @@ async function handleAdminAction(action, id, value) {
   else if (action === 'reject') update = { status: 'rejected' };
   else if (action === 'block') update = { status: 'blocked' };
   else if (action === 'unblock') update = { status: 'approved' };
-  else if (action === 'price_type') update = { price_type: value };
+  // 'price_type' більше не приходить — вибір прибрано з картки користувача 2026-09-21.
   else if (action === 'role') update = { role: value };
   else return;
 
@@ -8881,7 +9347,8 @@ document.getElementById('suppliers-list').addEventListener('change', async (e) =
   const input = e.target.closest('input[data-supplier-action="amount"]');
   if (!input) return;
   const id = input.getAttribute('data-supplier-id');
-  const value = input.value.trim() || null;
+  // Лапки прибираємо: це значення повертається в розмітку як value="..." (supplierRowHtml)
+  const value = stripQuotes(input.value).trim() || null;
   const { error } = await sb.from('installer_suppliers').update({ debt_amount: value }).eq('id', id);
   if (!error) { await loadSuppliers(); renderSuppliersList(); }
 });
@@ -9124,7 +9591,7 @@ window.addEventListener('appinstalled', () => {
 /* ---------- Банер "увімкніть сповіщення" ---------- */
 /* Хрестик не вимикає нагадування назавжди (сповіщення про акції й статус заявки —
    не дрібниця) — лише відкладає банер на кілька днів, за аналогією з нагадуванням
-   про акції (PROMO_NAG_INTERVAL_MS нижче). Якщо дозвіл надано в налаштуваннях
+   про акції (PROMO_BALLOON_INTERVAL_MS вище). Якщо дозвіл надано в налаштуваннях
    назавжди відхилено (Notification.permission === 'denied'), банер не показуємо
    взагалі — повторний запит браузер однаково заблокує, а поради "змініть у
    налаштуваннях браузера" в тонкому банері лише дратуватимуть. */

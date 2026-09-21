@@ -7,7 +7,7 @@ const APP_NAME = 'Sun-ice';
 /* Підвищуй цю версію, коли треба примусово скинути закешовану статику користувачам
    (наприклад, якщо після оновлення щось виглядає "старим") — старий кеш видаляється
    автоматично в 'activate'. */
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = 'sunice-shell-' + CACHE_VERSION;
 
 /* "Оболонка" застосунку — те, що потрібне, щоб сторінка відкрилась і показала хоч
@@ -21,7 +21,10 @@ const APP_SHELL = [
   new URL('icon-192.png', self.registration.scope).href,
   new URL('apple-touch-icon.png', self.registration.scope).href,
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js',
+  /* Адреса ТОЧНО така сама, як у <script> в index.html (версія зафіксована 2026-09-21).
+     Якщо розійдеться — сюди кешуватиметься один файл, а сторінка проситиме інший,
+     і офлайн застосунок не підніметься. Міняти обидва місця разом. */
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js',
   'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
@@ -91,6 +94,17 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+/* Куди вести по тапу на сповіщення. Сервер шле url: "/" — на GitHub Pages це корінь
+   домену, а не застосунок (він у /sun-ice/). Тому "/" і порожнє значення замінюємо на
+   власну адресу застосунку; будь-яку іншу адресу з сервера поважаємо як є, але
+   приводимо до абсолютної відносно scope. */
+function notificationTargetUrl(raw) {
+  const scope = self.registration.scope;
+  const s = raw && String(raw).trim();
+  if (!s || s === '/') return scope;
+  try { return new URL(s, scope).href; } catch (e) { return scope; }
+}
+
 self.addEventListener('push', (event) => {
   let data = {};
   try {
@@ -100,11 +114,35 @@ self.addEventListener('push', (event) => {
   }
 
   const title = data.title || APP_NAME;
+  /* ТРИ ВИПРАВЛЕННЯ 2026-09-21:
+
+     1) icon/badge. Без них Android малює в шторці сіру системну заглушку замість
+        логотипа Sun-ice — сповіщення не впізнаване з першого погляду.
+
+     2) МІТКА (tag). Була однакова для всіх сповіщень ('sunice-notification'), а за
+        правилами Web Push нове сповіщення з тією самою міткою ЗАМІНЮЄ попереднє. Тобто
+        дві акції підряд (або акція + заявка на реєстрацію) давали одне сповіщення:
+        друге тихо витісняло перше. Тепер мітка від сервера зберігається (там вони вже
+        різні: 'sunice-promo' для акцій), а коли її немає — робимо унікальну.
+        renotify має сенс лише разом з тим самим tag, тому вмикаємо його тільки тоді,
+        коли мітку явно задав сервер, — інакше браузер лається на renotify без tag.
+
+     3) url за замовчуванням. Було '/', а застосунок живе за адресою /sun-ice/ на
+        GitHub Pages: тап по сповіщенню при повністю закритому застосунку відкривав
+        корінь домену, тобто порожню сторінку. Тепер за замовчуванням — власна адреса
+        застосунку (scope). Те саме робимо і з '/', який шле Edge Function
+        send-promo-push: перевіряти там нічого не треба, лагодимо на своєму боці.
+
+     ВАЖЛИВО: браузер бере ці налаштування зі СВІЖОГО sw.js. Тому CACHE_VERSION
+     піднято до v3 — щоб старий service worker гарантовано замінився. */
+  const serverTag = data.tag && String(data.tag).trim();
   const options = {
     body: data.body || '',
-    tag: data.tag || 'sunice-notification',
-    renotify: true,
-    data: { url: data.url || '/' }
+    icon: new URL('icon-192.png', self.registration.scope).href,
+    badge: new URL('icon-192.png', self.registration.scope).href,
+    tag: serverTag || ('sunice-' + Date.now()),
+    renotify: !!serverTag,
+    data: { url: notificationTargetUrl(data.url) }
   };
 
   event.waitUntil(
@@ -114,7 +152,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  const targetUrl = notificationTargetUrl(event.notification.data && event.notification.data.url);
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const client of list) {
