@@ -308,10 +308,33 @@
   /* Курс, якого немає: не «дірка», а чесний напис. Кнопку ₴ у калькуляторі в цьому
      випадку теж ховаємо — див. buildCalcPanelHtml. */
   .rate-value-empty { color: var(--text-secondary); font-weight: 600; }
-  /* Дрібна приписка під курсами: «діє від …», а для адмінів ще й хто/коли змінював.
-     Навмисно тьмяна й маленька — користувач просив «маленьким непомітним текстом». */
-  .rate-meta { margin-top: 3px; font-size: 10.5px; line-height: 1.45; color: var(--text-secondary); opacity: .85; }
-  .rate-meta-admin { opacity: .7; }
+  /* Дрібна приписка під курсами. Навмисно тьмяна й маленька — користувач просив
+     «маленьким непомітним текстом».
+     Ліва частина (дата курсу + хто міняв) стискається й ріжеться трьома крапками,
+     права («Прайс від …») притиснута до краю і не ріжеться ніколи: саме над нею стоїть
+     кнопка оновлення, і саме вона потрібна дилеру щодня. */
+  .rate-meta {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 3px;
+    font-size: 10.5px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    opacity: .85;
+  }
+  .rate-meta-main {
+    flex: 0 1 auto;
+    min-width: 0;          /* без цього flex-елемент не звузиться вужче за свій текст */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .rate-meta-price {
+    flex: 0 0 auto;
+    margin-left: auto;     /* завжди до правого краю, під кнопку ↻ */
+    white-space: nowrap;
+  }
 
   .rate-edit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
   .rate-field { display: flex; align-items: center; gap: 4px; font-weight: 600; }
@@ -2339,10 +2362,14 @@
      від самої шапки. */
   header.home-logo .header-top { position: static; }
   /* ↻ — у правому кінці рядка з курсами. */
+  /* ↻ — рівно НАД написом «Прайс від …», тобто в правому краю рядка з курсами.
+     Обидва притиснуті до right:16px, тому вони завжди один під одним, незалежно від
+     довжини тексту. bottom рахуємо від низу шапки: 7px нижній відступ + ~16px рядок
+     приписки + 3px проміжок ≈ 26px. */
   header.home-logo #refresh-icon {
     position: absolute;
     right: 16px;
-    bottom: 30px;
+    bottom: 26px;
     z-index: 2;
   }
   /* Текст — поверх знака (z-index), відступ зверху заданий вище. */
@@ -2352,12 +2379,9 @@
   header.home-logo .status-row { display: none; }
   /* Один рядок, без переносів: якщо в адміна текст задовгий — краще три крапки,
      ніж друга стрічка, яка розтягне шапку. Повний текст лишається в title. */
-  header.home-logo .rate-meta {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-right: 30px; /* щоб не заповзати під ↻ */
-  }
+  /* Скорочення й притискання правої частини задані в загальних правилах .rate-meta —
+     тут дублювати не треба. Відступу під ↻ теж не треба: кнопка стоїть НАД рядком,
+     а не в ньому. */
 
   /* ВНУТРІШНІ ЕКРАНИ: логотип маленький, у нижньому правому куті шапки, АБСОЛЮТНО —
      тобто поза потоком. Спершу пробували поставити його в рядок із заголовком, але
@@ -2536,7 +2560,14 @@
         </div>
         <p class="rate-edit-msg" id="rate-edit-msg"></p>
       </div>
-      <div class="rate-meta" id="rate-meta"></div>
+      <!-- Службовий рядок під курсами. Два окремі елементи, а не один текст, навмисно:
+           "Прайс від …" притиснутий до правого краю (саме над ним стоїть кнопка ↻) і
+           ніколи не скорочується, а зайве ріжеться з лівої частини — там лише дата
+           курсу й ім'я того, хто його міняв. -->
+      <div class="rate-meta" id="rate-meta">
+        <span class="rate-meta-main" id="rate-meta-main"></span>
+        <span class="rate-meta-price" id="rate-meta-price"></span>
+      </div>
     </div>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
@@ -4487,35 +4518,35 @@ function renderRateRow() {
   /* Приписка під курсами. Перший рядок бачать усі, другий — лише адміністратори.
      Кольором нічого не виділяємо: домовленість 2026-09-21 — ніякого червоного, лише
      спокійна підказка тим, хто може це виправити. */
-  /* ОДИН рядок під курсами — так попросив користувач. Тому не список рядків, а
-     частини, зшиті крапкою-розділювачем; якщо не вміщається, CSS обріже три крапками,
-     а повний текст лишиться в підказці (title). */
+  /* ОДИН рядок під курсами, порядок зліва направо (узгоджено з користувачем):
+     «курс від … · <хто міняв> ............ Прайс від …».
+     Права частина стоїть окремим елементом і притиснута до краю — над нею кнопка ↻.
+     Ліва частина стискається: якщо місця бракує, зріжеться саме ім'я адміністратора,
+     а не дати. Слово «змінив» і рік у даті навмисно прибрані — з ними рядок не
+     вміщався навіть на широкому телефоні (міряв: треба 433 px при доступних 383). */
   const meta = document.getElementById('rate-meta');
-  const parts = [];
-  if (rateEffectiveDate) parts.push('курс від ' + formatDateUa(rateEffectiveDate));
+  const mainEl = document.getElementById('rate-meta-main');
+  const priceEl = document.getElementById('rate-meta-price');
+  const left = [];
+  if (rateEffectiveDate) left.push('курс від ' + formatDateUa(rateEffectiveDate));
   if (rateViewerIsAdmin && (!usdRate || !rateEffectiveDate)) {
-    if (!usdRate && !rateEffectiveDate) parts.push('не вказано курс долара і дату');
-    else if (!usdRate) parts.push('не вказано курс долара — немає перерахунку в гривню');
-    else parts.push('не вказано дату, від якої діє курс');
+    if (!usdRate && !rateEffectiveDate) left.push('не вказано курс долара і дату');
+    else if (!usdRate) left.push('не вказано курс долара — немає перерахунку в гривню');
+    else left.push('не вказано дату, від якої діє курс');
   }
-  // Статус прайсу ("Прайс від 11.09.2026", "Завантаження…") — сюди ж, окремого рядка
-  // на головній більше немає.
-  if (catalogStatusText) parts.push(catalogStatusText);
-  /* Хто міняв курс — лише адміністраторам і САМИМ ОСТАННІМ. Порядок тут не випадковий:
-     рядок один, і якщо він не вміститься, CSS обріже саме хвіст. Тому спершу те, що
-     потрібно дилеру (дати), а потім службове. Слово «змінив» і рік навмисно прибрані —
-     з ними рядок переставав вміщатись навіть на широкому телефоні (вимірював: треба
-     було 433 px при доступних 383). */
   if (rateViewerIsAdmin && rateUpdatedByName) {
     const when = rateUpdatedAt ? new Date(rateUpdatedAt).toLocaleString('uk-UA', {
       hour: '2-digit', minute: '2-digit'
     }) : '';
-    parts.push(rateUpdatedByName + (when ? ', ' + when : ''));
+    left.push(rateUpdatedByName + (when ? ', ' + when : ''));
   }
-  const text = parts.join(' · ');
-  meta.textContent = text;
-  meta.title = text; // повний текст, якщо рядок обрізало
-  meta.style.display = text ? 'block' : 'none';
+  const leftText = left.join(' · ');
+  mainEl.textContent = leftText;
+  mainEl.title = leftText; // повний текст, якщо рядок обрізало
+  // Статус прайсу ("Прайс від 11.09.2026", "Завантаження…") — окремого рядка на
+  // головній більше немає, він живе тут, праворуч.
+  priceEl.textContent = catalogStatusText || '';
+  meta.style.display = (leftText || catalogStatusText) ? 'flex' : 'none';
 }
 
 /* Перемикання "перегляд ↔ редагування" курсів. */
