@@ -4405,13 +4405,17 @@ function renderRateRow() {
      спокійна підказка тим, хто може це виправити. */
   const meta = document.getElementById('rate-meta');
   const lines = [];
-  if (rateEffectiveDate) {
-    lines.push('діє від ' + escapeHtml(formatDateUa(rateEffectiveDate)));
-  } else if (rateViewerIsAdmin) {
-    lines.push('дату, від якої діє курс, не вказано');
-  }
+  if (rateEffectiveDate) lines.push('діє від ' + escapeHtml(formatDateUa(rateEffectiveDate)));
+  /* Одна підказка замість двох. Перша версія показувала адміну окремо «дату не
+     вказано» і окремо «вкажіть курс і дату» — два рядки про одне й те саме. Помітив
+     це на живому сайті після заливки. */
   if (rateViewerIsAdmin && (!usdRate || !rateEffectiveDate)) {
-    lines.push('вкажіть курс і дату — без курсу в калькуляторі немає перерахунку в гривню');
+    let hint;
+    if (!usdRate && !rateEffectiveDate) hint = 'не вказано курс долара і дату, від якої він діє';
+    else if (!usdRate) hint = 'не вказано курс долара';
+    else hint = 'не вказано дату, від якої діє курс';
+    if (!usdRate) hint += ' — у калькуляторі немає перерахунку в гривню';
+    lines.push(hint);
   }
   if (rateViewerIsAdmin && rateUpdatedByName) {
     const when = rateUpdatedAt ? new Date(rateUpdatedAt).toLocaleString('uk-UA', {
