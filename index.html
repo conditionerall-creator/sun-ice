@@ -3015,7 +3015,13 @@ const SPLIT_MHI_LABELS = [
   { fromModel: 'SRR25ZS-W', label: 'Моделі канальні R32 DC PAM Inverter' },
   { fromModel: 'UT-BAT1EF', label: 'Комплект для забору повітря знизу (опція)' },
   { fromModel: 'FDTC25VH1', label: 'Моделі 4-х потокові компактні касети 600х600' },
-  { fromModel: 'RC-E5', label: 'Пульт для касетного блоку (опція)' }
+  // Excel-рядок над RC-E5 ("Пульт для касетного блоку замовляється додатково як опція!") —
+  // це попередження саме про касетні блоки вище по списку, а НЕ назва цього розділу: сам
+  // розділ охоплює різні пульти, шлюз (SC-BIKN2-E) і Wi-Fi адаптери (AM-MHI-01, WF-RAC), а
+  // не тільки касетні пульти. Підпис розділу — узагальнений "Пульти"; те попередження й
+  // так спливає без змін у вікні "детальніше" (ⓘ) — currentFullText бере цей рядок з
+  // прайсу як є (див. parseSheet, гілка labelMap).
+  { fromModel: 'RC-E5', label: 'Пульти' }
 ];
 
 /* Плитки головного екрану каталогу, у потрібному порядку.
@@ -3125,6 +3131,14 @@ let chillersCategory = null;
 let systemairSearchQuery = '';
 const SYSTEMAIR_BATCH = 200;
 let systemairRenderCount = SYSTEMAIR_BATCH;
+/* FRICO (аркуш "Повітряні завіси") — ~1000 позицій, той самий порядок величини, що й
+   SYSTEMAIR (обидва каталоги без групування, весь асортимент виробника). Без порційного
+   рендеру (як тут) синхронна побудова ~1000 DOM-рядків одразу при відкритті плитки й була
+   причиною помітної затримки, якої немає в інших розділах (там на порядок менше позицій).
+   REMAK (другий бренд цієї ж плитки) — рядків набагато менше за один батч, тому кнопка
+   "Показати ще" для нього просто ніколи не з'явиться, окремої гілки не треба. */
+const AIRCURTAINS_BATCH = 200;
+let aircurtainsRenderCount = AIRCURTAINS_BATCH;
 /* Плитка "Мультизональні VRF": для MHI — 3 перемикачі за вкладками прайсу (як activeBrand,
    без history.pushState), для GAL — 2 перемикачі (зовнішні/внутрішні). */
 let vrfMhiSource = 'outdoor'; // 'outdoor' | 'indoor_r410a' | 'indoor_kxze1w'
@@ -4968,6 +4982,8 @@ function renderCatalogMenu() {
       chillersCategory = null;
       systemairSearchQuery = '';
       systemairRenderCount = SYSTEMAIR_BATCH;
+      aircurtainsSearchQuery = '';
+      aircurtainsRenderCount = AIRCURTAINS_BATCH;
       vrfMhiSource = 'outdoor';
       vrfGalSide = 'outdoor';
       renderCatalogView();
@@ -5866,6 +5882,16 @@ function renderAirCurtainsList() {
     ? allItems.filter(it => matchesSearchQuery(it.model, q) || matchesSearchQuery(it.article, q))
     : allItems;
 
+  const visibleCount = Math.min(aircurtainsRenderCount, filtered.length);
+  const visible = filtered.slice(0, visibleCount);
+  // Калькулятор по рядку не просили для цієї плитки — лише загальний (checkbox
+  // "підбірка"), за спільним правилом "де є ціна (роздрібна теж) — загальний
+  // калькулятор додаємо". stagger:false — послідовна анімація на порційний рендер
+  // виглядала б як гальма.
+  // Один об'єкт на обидва місця рендеру рядків (перша порція і докрутка "Показати ще") —
+  // той самий підхід, що й у SYSTEMAIR, щоб опції не розходились між ними.
+  const opts = { cartSourceKey, tileLabel: 'Повітряні завіси', showCalc: false, priceNote: 'роздрібна', stagger: false };
+
   const searchHtml = `<div class="sticky-search"><div class="admin-search"><input type="text" id="aircurtains-search-input" placeholder="Пошук за маркуванням або артикулом..." value="${escapeHtml(aircurtainsSearchQuery)}"></div></div>`;
   let bodyHtml;
   if (allItems.length === 0) {
@@ -5873,22 +5899,46 @@ function renderAirCurtainsList() {
   } else if (filtered.length === 0) {
     bodyHtml = '<div class="empty">Нічого не знайдено</div>';
   } else {
-    // Калькулятор по рядку не просили для цієї плитки — лише загальний (checkbox
-    // "підбірка"), за спільним правилом "де є ціна (роздрібна теж) — загальний
-    // калькулятор додаємо". stagger:false — до ~1000 позицій, послідовна анімація
-    // виглядала б як гальма.
-    const opts = { cartSourceKey, tileLabel: 'Повітряні завіси', showCalc: false, priceNote: 'роздрібна', stagger: false };
+    // Порційний рендер (AIRCURTAINS_BATCH) — той самий підхід, що й SYSTEMAIR: FRICO
+    // сам по собі ~1000 позицій, і саме синхронна побудова стількох DOM-рядків одразу
+    // при відкритті плитки була причиною помітної затримки (див. коментар біля
+    // AIRCURTAINS_BATCH). REMAK — рядків менше за один батч, кнопка "Показати ще" для
+    // нього просто не з'явиться.
     const countText = (q.length >= 2 ? 'Знайдено: ' : 'Всього: ') + filtered.length;
-    bodyHtml = `<div class="count">${countText}</div>` + buildSimplePriceRowsHtml(filtered, opts);
+    const loadMoreHtml = visibleCount < filtered.length
+      ? `<button type="button" class="load-more-btn" id="aircurtains-load-more">Показати ще (${filtered.length - visibleCount})</button>`
+      : '';
+    bodyHtml = `<div class="count">${countText}</div><div id="aircurtains-rows">${buildSimplePriceRowsHtml(visible, opts)}</div>${loadMoreHtml}`;
   }
   main.innerHTML = brandToggleHtml + searchHtml + bodyHtml;
   attachBrandToggleHandlers(main);
   positionBrandSlider(main, activeBrand, prevBrandForSlider);
   syncStickyHeaderOffset();
+  const loadMoreBtn = document.getElementById('aircurtains-load-more');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', () => {
+      // Дописуємо лише НОВУ порцію рядків у кінець (не перемальовуємо все) — той самий
+      // підхід, що й у SYSTEMAIR, інакше клік внизу довгого списку підкидав би сторінку.
+      const prevCount = visibleCount;
+      aircurtainsRenderCount += AIRCURTAINS_BATCH;
+      const nextCount = Math.min(aircurtainsRenderCount, filtered.length);
+      const nextBatch = filtered.slice(prevCount, nextCount);
+      const rowsContainer = document.getElementById('aircurtains-rows');
+      if (rowsContainer) {
+        rowsContainer.insertAdjacentHTML('beforeend', buildSimplePriceRowsHtml(nextBatch, opts));
+      }
+      if (nextCount >= filtered.length) {
+        loadMoreBtn.remove();
+      } else {
+        loadMoreBtn.textContent = 'Показати ще (' + (filtered.length - nextCount) + ')';
+      }
+    });
+  }
   const input = document.getElementById('aircurtains-search-input');
   if (input) {
     input.addEventListener('input', () => {
       aircurtainsSearchQuery = stripQuotes(input.value); // див. коментар у пошуку Systemair
+      aircurtainsRenderCount = AIRCURTAINS_BATCH; // нова умова пошуку — пагінація з початку
       const caret = input.selectionStart;
       renderAirCurtainsList();
       const newInput = document.getElementById('aircurtains-search-input');
