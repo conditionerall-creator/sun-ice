@@ -3063,8 +3063,8 @@ const CATALOG_TILES = [
   {
     id: 'split', label: 'Спліт-системи', img: 'tile-images/tile-split.jpg',
     flipImg: 'tile-images/tile-split-galactic.jpg',
-    mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series', labelSequence: SPLIT_MHI_LABELS },
-    gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before', seriesLabelMode: 'first-sentence' }
+    mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series', labelSequence: SPLIT_MHI_LABELS, pairSplitOutdoor: true },
+    gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before', seriesLabelMode: 'first-sentence', pairSplitOutdoor: true }
   },
   {
     id: 'multisplit', label: 'Мульти спліт-системи', img: 'tile-images/tile-multisplit.jpg',
@@ -3122,6 +3122,24 @@ const VAPID_PUBLIC_KEY = 'BIoU6N899jbSOeI02wfVBgX5M4VUq6oM-Vz_TeDiUYxIdjgbW9w2Je
 /* ======================================================= */
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* Залишки з 1С — окремий файл stock.js (план і рішення: claude/stock-1c/00-ПЛАН-І-СТАТУС.md). Файл підвантажується
+   ЛИШЕ адмінам (regional_admin/super_admin): звичайні користувачі й гості його навіть не завантажують. Разом із
+   запитом до сервера це подвійний замок: бейдж не з'явиться без прав, а get_stock() сам відмовить неадміну.
+   Піднімай ?v= разом зі зміною stock.js. */
+const STOCK_JS_FILE = 'stock.js?v=20261002-1';
+let stockModuleLoading = false;
+function syncStockModule(isAdmin) {
+  if (!isAdmin) { if (window.Stock) window.Stock.reset(); return; } // вихід із акаунта/втрата прав — прибрати залишки з екрана
+  if (window.Stock) { window.Stock.refresh(); return; }
+  if (stockModuleLoading) return;
+  stockModuleLoading = true;
+  const el = document.createElement('script');
+  el.src = STOCK_JS_FILE;
+  el.onload = () => { stockModuleLoading = false; if (window.Stock) window.Stock.refresh(); };
+  el.onerror = () => { stockModuleLoading = false; }; // офлайн/збій — просто без залишків
+  document.head.appendChild(el);
+}
 
 /* Спільна перевірка prefers-reduced-motion для всіх анімацій застосунку (словник
    анімацій — CSS-класи всередині @media (prefers-reduced-motion: no-preference) в
@@ -3520,6 +3538,21 @@ function parseSheet(rows, highlightMode, opts) {
         if (parseNumber(nextRow[priceCol]) !== null) break; // уже наступний товар
         if (norm(nextRow[unitTypeCol]).includes('зовніш')) {
           item.outdoorModel = String(nextRow[modelCol] || '').trim() || null;
+          break;
+        }
+      }
+    }
+    // Спліт-системи (MHI «ПОБУТОВІ», GAL): під рядком «внутр.» у прайсі йде рядок «зовніш.» з маркуванням у колонці
+    // НАЙМЕНУВАННЯ БЛОКУ (колонка МОДЕЛЬ там порожня). Потрібно для залишків з 1С (stock.js): наявність і внутрішнього,
+    // і зовнішнього блока. Поле навмисно НЕ outdoorModel — його читає siteLinkKey() і зламав би посилання на сайт.
+    // Кольорові варіанти (-WT/-WB) зовнішнього рядка не мають — stock.js бере зовнішній «брата» з тією ж основою.
+    if (opts.pairSplitOutdoor && unitTypeCol !== -1 && item.unitType === 'indoor') {
+      for (let k = r + 1; k < rows.length && k <= r + 3; k++) {
+        const nextRow = rows[k] || [];
+        if (parseNumber(nextRow[priceCol]) !== null) break; // уже наступний товар
+        if (norm(nextRow[unitTypeCol]).includes('зовніш')) {
+          const outName = String((modelCol !== -1 && nextRow[modelCol]) || (blockNameCol !== -1 && nextRow[blockNameCol]) || '').trim();
+          item.splitOutdoor = outName || null;
           break;
         }
       }
@@ -4270,7 +4303,7 @@ function buildSheetsData(wb, previousData) {
       const sheet = wb.Sheets[cfg.sheet];
       let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (cfg.splitMarker) rows = sliceBySplitMarker(rows, cfg.splitMarker, cfg.splitSide);
-      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence, multisplitSections: cfg.multisplitSections, blockGrouping: cfg.blockGrouping, pairOutdoor: cfg.pairOutdoor });
+      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence, multisplitSections: cfg.multisplitSections, blockGrouping: cfg.blockGrouping, pairOutdoor: cfg.pairOutdoor, pairSplitOutdoor: cfg.pairSplitOutdoor });
       seriesRowGroupMaps[cfg.key] = result.rowGroupMap;
       if (result.items.length > 0) {
         if (cfg.baseAdjustPct) {
@@ -4319,7 +4352,7 @@ function buildSheetsData(wb, previousData) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 13; // 13: item.outdoorModel (semi_gal), прибрано productivityCooling/Heating
+const PARSER_VERSION = 14; // 14: item.splitOutdoor (пара внутр./зовн. у Спліт-системах, для залишків з 1С); 13: item.outdoorModel (semi_gal), прибрано productivityCooling/Heating
 
 /* Версія прайсу — це насправді ДАТА, закодована цифрами: 20260911 = 11.09.2026
    (правило користувача, підтверджене 2026-09-21). Показувати дилеру голе "версія
@@ -4520,7 +4553,7 @@ async function reportPriceDiagnostics(issues, newVersion) {
      цього рядка показуються як є.
    • Типи: error — розбіжність/поломка; warning — підозріло; info — примітка/відоме правило
      (не рахується проблемою). */
-const APP_BUILD = '2026-10-02.2'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
+const APP_BUILD = '2026-10-02.3'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
 const DIAG_MAX_LINES = 14;
 const DIAG_AREA = {
   excel: 'Звірка з Excel',
@@ -5115,6 +5148,7 @@ async function loadExchangeRate() {
     canEditRate = false;
     rateViewerIsAdmin = false;
   }
+  syncStockModule(canEditRate);
   renderRateRow();
 }
 
@@ -5927,6 +5961,7 @@ function closeCartPanel() {
    ?v= у адресі — service worker віддає статику кеш-спершу, без зміни адреси користувачі
    довго бачили б стару копію після оновлення файлу; міняти разом із файлом. */
 const SITE_LINKS_FILE = 'data/site-links.json?v=20261002-2';
+
 let siteLinks = null;          // null — ще не вантажили, об'єкт — готово, false — не вдалось
 let siteLinksPromise = null;
 function siteLinkKey(item) {
@@ -6080,6 +6115,7 @@ function renderCatalogList() {
             <button class="share-btn" type="button" aria-label="Поділитися">${ic('share-2', '')}</button>
           </div>
         </div>
+        ${window.Stock ? Stock.slotHtml(it, cfg.key) : ''}
         ${locked ? '' : '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, priceStr) + '</div>'}
       </div>
     `;
@@ -6087,6 +6123,7 @@ function renderCatalogList() {
 
   main.innerHTML = toggleHtml + countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
   applySiteLinks();
+  if (window.Stock) Stock.paint(main); // наявність з 1С (лише адміни; слот порожній, поки немає даних)
   attachBrandToggleHandlers(main);
   positionBrandSlider(main, activeBrand, prevBrandForSlider);
 }
