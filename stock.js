@@ -1,4 +1,4 @@
-/* Sun-ice — наявність товарів з 1С (бейдж у рядку прайсу + вікно «по складах»).
+/* Sun-ice — наявність товарів з 1С (кнопка в ряду кнопок рядка прайсу + плавно розкрита панель «по складах»).
    Підвантажується з index.html ДИНАМІЧНО і лише адмінам (regional_admin/super_admin) — звичайні
    користувачі й гості цей файл не завантажують. Рішення й план: claude/stock-1c/00-ПЛАН-І-СТАТУС.md.
 
@@ -181,20 +181,32 @@
 
   const esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 
+  /* Lucide «package» — у вшитому спрайті index.html такого гліфа нема, тож малюємо тут (штрих currentColor, як решта іконок). */
+  const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>' +
+    '<path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>';
+
   const CSS = '' +
-    '.stock-slot{display:none;margin-top:8px}.stock-slot.has{display:block}' +
-    '.stock-badge{display:inline-flex;align-items:center;gap:7px;max-width:100%;border:1px solid var(--border);background:var(--bg);border-radius:999px;padding:5px 12px 5px 10px;font:600 12.5px/1.25 inherit;font-family:inherit;color:var(--text);cursor:pointer;-webkit-appearance:none}' +
-    '.stock-badge:active{background:var(--accent-bg)}' +
-    '.stock-badge::before{content:"";flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:var(--stock-c,#8B8682)}' +
+    '.stock-slot{display:none}.stock-slot.has{display:block;line-height:0}' +
+    '.stock-btn{position:relative;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;padding:0;flex-shrink:0;-webkit-appearance:none;transition:background-color .2s,border-color .2s,color .2s}' +
+    '.stock-btn svg{width:17px;height:17px;display:block}' +
+    '.stock-btn:active{background:var(--accent-bg)}' +
+    '.stock-btn[aria-expanded="true"]{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}' +
+    '.stock-dot{position:absolute;top:-4px;right:-4px;width:11px;height:11px;border-radius:50%;background:var(--stock-c,#8B8682);border:2px solid var(--card);box-sizing:border-box}' +
     '.stock-ok{--stock-c:#4F8A5B}.stock-low{--stock-c:#C08A1C}.stock-out{--stock-c:var(--danger)}' +
-    '.stock-badge.stock-stale{opacity:.7;border-style:dashed}' +
-    '.stock-badge small{font-weight:500;color:var(--text-secondary);font-size:11.5px}' +
-    '.stock-sheet-body{white-space:normal}' +
-    '.stock-note{font-size:12px;color:var(--text-secondary);margin:0 0 10px;line-height:1.45}' +
-    '.stock-warn{background:var(--accent-bg);border-radius:10px;padding:8px 10px;color:var(--text);font-size:12.5px;margin-bottom:10px}' +
-    '.stock-part{margin-bottom:14px}' +
+    '.stock-btn.stock-stale .stock-dot{background:var(--card);border-color:var(--stock-c)}' +
+    '.stock-panel{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .28s ease,opacity .28s ease}' +
+    '.stock-panel.open{grid-template-rows:1fr;opacity:1}' +
+    '.stock-panel-clip{overflow:hidden;min-height:0}' +
+    '.stock-panel-in{padding-top:10px;font-size:13px;line-height:1.5;color:var(--text)}' +
+    '.stock-sum{display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;margin:0 0 2px}' +
+    '.stock-sum::before{content:"";flex:0 0 9px;width:9px;height:9px;border-radius:50%;background:var(--stock-c,#8B8682)}' +
+    '.stock-sum small{font-weight:500;color:var(--text-secondary);font-size:12px}' +
+    '.stock-note{font-size:12px;color:var(--text-secondary);margin:0 0 8px;line-height:1.45}' +
+    '.stock-warn{background:var(--accent-bg);border-radius:10px;padding:7px 10px;color:var(--text);font-size:12.5px;margin:6px 0 8px}' +
+    '.stock-part{margin-bottom:10px}' +
     '.stock-part-h{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary);margin:0 0 6px}' +
-    '.stock-var{border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px}' +
+    '.stock-var{border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:var(--bg)}' +
     '.stock-var-n{font-weight:600;font-size:13.5px;display:flex;justify-content:space-between;gap:8px}' +
     '.stock-var-n em{font-style:normal;font-weight:500;font-size:11px;color:var(--text-secondary)}' +
     '.stock-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2px 0}' +
@@ -211,53 +223,12 @@
 
   function listFor(listKey) { return (typeof sheetsData !== 'undefined' && sheetsData[listKey]) || []; }
 
-  /* Розмітка-«слот» для рядка прайсу (викликається з renderCatalogList). Порожня, доки немає даних. */
+  /* Місце для кнопки в ряду кнопок рядка прайсу (на початку .row-right; викликається з renderCatalogList). Порожнє, доки нема даних. */
   function slotHtml(it, listKey) {
     let parts;
     try { parts = partsFor(it, listKey, listFor(listKey)); } catch (e) { parts = []; }
     if (!parts.length) return '';
-    return '<div class="stock-slot" data-stock-parts="' + esc(encodeURIComponent(JSON.stringify(parts))) + '"></div>';
-  }
-
-  function badgeText(sm) {
-    const f = function (p) { return fmtQty(p.A); };
-    if (sm.parts.length >= 2) return sm.parts.map(f).join(' + ') + ' <small>вільно</small>';
-    return f(sm.parts[0]) + ' <small>вільно</small>';
-  }
-
-  function paint(rootEl) {
-    ensureCss();
-    const scope = rootEl || document;
-    const slots = scope.querySelectorAll ? scope.querySelectorAll('.stock-slot') : [];
-    const fr = freshness(data, fetchedAt, Date.now());
-    slots.forEach(function (slot) {
-      slot.classList.remove('has'); slot.innerHTML = '';
-      if (!data || !index || fr.state === 'none') return;
-      let parts; try { parts = JSON.parse(decodeURIComponent(slot.getAttribute('data-stock-parts'))); } catch (e) { return; }
-      const sm = summarizeParts(parts, index, data);
-      if (!sm.any) return; // у 1С такої позиції нема взагалі (пульти, аксесуари…) — кнопки немає
-      const stale = fr.state === 'stale';
-      slot.innerHTML = '<button type="button" class="stock-badge stock-' + sm.status + (stale ? ' stock-stale' : '') + '" aria-label="Наявність по складах">' +
-        (stale ? '⚠ ' : '') + badgeText(sm) + '</button>';
-      slot.classList.add('has');
-    });
-    if (Date.now() - fetchedAt > TTL_MS && data) refresh(); // тихо оновлюємо, якщо дані застарілі на пристрої
-  }
-
-  /* ---- вікно «по складах» ---- */
-  function ensureSheet() {
-    let el = document.getElementById('stock-sheet');
-    if (el) return el;
-    el = document.createElement('div');
-    el.id = 'stock-sheet'; el.className = 'info-sheet-overlay';
-    el.innerHTML = '<div class="info-sheet-backdrop"></div><div class="info-sheet-panel"><div class="info-sheet-header"><div class="info-sheet-title" id="stock-sheet-title"></div>' +
-      '<button type="button" class="info-sheet-close" aria-label="Закрити">✕</button></div><div class="info-sheet-body stock-sheet-body" id="stock-sheet-body"></div></div>';
-    document.body.appendChild(el);
-    const close = function () { el.classList.remove('show'); };
-    el.querySelector('.info-sheet-backdrop').addEventListener('click', close);
-    el.querySelector('.info-sheet-close').addEventListener('click', close);
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
-    return el;
+    return '<span class="stock-slot" data-stock-parts="' + esc(encodeURIComponent(JSON.stringify(parts))) + '"></span>';
   }
 
   const ROLE_LABEL = { indoor: 'Внутрішній блок', outdoor: 'Зовнішній блок' };
@@ -266,14 +237,12 @@
     return '<div class="stock-line' + (r.p <= 0 && r.a <= 0 ? ' zero' : '') + '"><span>' + esc(r.name) + '</span><span>всього ' + fmtQty(r.p) + ' · вільно ' + fmtQty(r.a) + '</span></div>';
   }
 
-  function openSheet(parts) {
-    if (!data || !index) return;
-    ensureCss();
+  /* Вміст розкритої панелі: підсумок «вільно», вік даних, по частинах (внутр./зовн.) → варіанти → склади, комплекти. */
+  function panelHtml(parts) {
     const m = sheetModel(parts, index, data);
     const fr = freshness(data, fetchedAt, Date.now());
-    const el = ensureSheet();
-    el.querySelector('#stock-sheet-title').textContent = parts.map(function (p) { return p.m; }).join(' + ');
-    let h = '';
+    let h = '<div class="stock-' + m.summary.status + '"><p class="stock-sum">Вільно: ' + m.parts.map(function (p) { return fmtQty(p.A); }).join(' + ') +
+      ' <small>· всього ' + m.parts.map(function (p) { return fmtQty(p.P); }).join(' + ') + '</small></p></div>';
     if (fr.state === 'stale') h += '<div class="stock-warn">Дані про залишки можуть бути неактуальними — востаннє підтверджено ' + esc(fmtAge(fr.ageMin)) + '.</div>';
     else h += '<p class="stock-note">Оновлено ' + esc(fmtAge(fr.ageMin)) + '</p>';
     m.parts.forEach(function (p) {
@@ -297,17 +266,62 @@
     if (m.parts.some(function (p) { return p.variants.some(function (v) { return !v.exact; }); })) {
       h += '<p class="stock-note">Показано всі позиції 1С з тим самим початком маркування (до «-W»/«-S»). Яку брати — вирішуйте самі.</p>';
     }
-    el.querySelector('#stock-sheet-body').innerHTML = h;
-    el.classList.add('show');
+    return h;
+  }
+
+  function fillPanel(panel, parts) { panel.querySelector('.stock-panel-in').innerHTML = panelHtml(parts); }
+
+  function partsOf(slot) { try { return JSON.parse(decodeURIComponent(slot.getAttribute('data-stock-parts'))); } catch (e) { return null; } }
+
+  function paint(rootEl) {
+    ensureCss();
+    const scope = rootEl || document;
+    const slots = scope.querySelectorAll ? scope.querySelectorAll('.stock-slot') : [];
+    const fr = freshness(data, fetchedAt, Date.now());
+    slots.forEach(function (slot) {
+      const row = slot.closest('.row');
+      const panel = row ? row.querySelector(':scope > .stock-panel') : null;
+      slot.classList.remove('has'); slot.innerHTML = '';
+      const parts = partsOf(slot);
+      let sm = null;
+      if (data && index && fr.state !== 'none' && parts) sm = summarizeParts(parts, index, data);
+      if (!sm || !sm.any) { if (panel) panel.remove(); return; } // у 1С такої позиції нема взагалі (пульти, аксесуари…) — кнопки нема
+      const open = !!(panel && panel.classList.contains('open'));
+      const stale = fr.state === 'stale';
+      slot.innerHTML = '<button type="button" class="stock-btn stock-' + sm.status + (stale ? ' stock-stale' : '') + '" aria-expanded="' + open + '" aria-label="Наявність по складах" title="Вільно: ' +
+        esc(sm.parts.map(function (p) { return fmtQty(p.A); }).join(' + ')) + (stale ? ' (дані можуть бути неактуальними)' : '') + '">' + ICON + '<i class="stock-dot"></i></button>';
+      slot.classList.add('has');
+      if (panel) fillPanel(panel, parts); // дані оновились, поки панель відкрита — перемальовуємо її вміст
+    });
+    if (Date.now() - fetchedAt > TTL_MS && data) refresh(); // тихо оновлюємо, якщо дані застарілі на пристрої
+  }
+
+  /* Розкриття/згортання панелі під рядком (плавно: grid-template-rows 0fr↔1fr, як калькулятор). */
+  function toggle(btn) {
+    const slot = btn.closest('.stock-slot'), row = btn.closest('.row');
+    if (!slot || !row || !data || !index) return;
+    const parts = partsOf(slot); if (!parts) return;
+    let panel = row.querySelector(':scope > .stock-panel');
+    if (!panel) {
+      panel = document.createElement('div');
+      panel.className = 'stock-panel';
+      panel.innerHTML = '<div class="stock-panel-clip"><div class="stock-panel-in"></div></div>';
+      const top = row.querySelector(':scope > .row-top');
+      (top || row.firstElementChild).insertAdjacentElement('afterend', panel);
+      fillPanel(panel, parts);
+      void panel.offsetHeight; // зафіксувати стартовий стан, щоб перехід відпрацював
+    }
+    const open = !panel.classList.contains('open');
+    if (open) fillPanel(panel, parts);
+    panel.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', String(open));
   }
 
   document.addEventListener('click', function (e) {
-    const b = e.target && e.target.closest && e.target.closest('.stock-badge');
+    const b = e.target && e.target.closest && e.target.closest('.stock-btn');
     if (!b) return;
-    const slot = b.closest('.stock-slot');
-    if (!slot) return;
     e.preventDefault(); e.stopPropagation();
-    try { openSheet(JSON.parse(decodeURIComponent(slot.getAttribute('data-stock-parts')))); } catch (err) { /* пошкоджений слот — ігноруємо */ }
+    toggle(b);
   });
 
   /* ---- завантаження ---- */
@@ -326,8 +340,8 @@
 
   function reset() {
     data = null; index = null; fetchedAt = 0;
-    const el = document.getElementById('stock-sheet'); if (el) el.classList.remove('show');
-    document.querySelectorAll('.stock-slot').forEach(function (s) { s.classList.remove('has'); s.innerHTML = ''; });
+    document.querySelectorAll('.stock-panel').forEach(function (p) { p.remove(); });
+    document.querySelectorAll('.stock-slot').forEach(function (sl) { sl.classList.remove('has'); sl.innerHTML = ''; });
   }
 
   /* ---- самодіагностика (CLAUDE.md: нова функція = нова перевірка) ---- */
@@ -382,5 +396,5 @@
     DIAG_CHECKS.push({ id: 'stock', label: 'Залишки з 1С', run: function (ctx) { return diagCheck(ctx); } });
   }
 
-  root.Stock = Object.assign({ slotHtml: slotHtml, paint: paint, refresh: refresh, reset: reset, openSheet: openSheet, diagCheck: diagCheck }, api);
+  root.Stock = Object.assign({ slotHtml: slotHtml, paint: paint, refresh: refresh, reset: reset, toggle: toggle, diagCheck: diagCheck }, api);
 })(typeof window !== 'undefined' ? window : globalThis);

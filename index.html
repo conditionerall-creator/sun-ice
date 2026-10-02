@@ -3127,7 +3127,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    ЛИШЕ адмінам (regional_admin/super_admin): звичайні користувачі й гості його навіть не завантажують. Разом із
    запитом до сервера це подвійний замок: бейдж не з'явиться без прав, а get_stock() сам відмовить неадміну.
    Піднімай ?v= разом зі зміною stock.js. */
-const STOCK_JS_FILE = 'stock.js?v=20261002-1';
+const STOCK_JS_FILE = 'stock.js?v=20261002-2';
 let stockModuleLoading = false;
 function syncStockModule(isAdmin) {
   if (!isAdmin) { if (window.Stock) window.Stock.reset(); return; } // вихід із акаунта/втрата прав — прибрати залишки з екрана
@@ -4553,7 +4553,7 @@ async function reportPriceDiagnostics(issues, newVersion) {
      цього рядка показуються як є.
    • Типи: error — розбіжність/поломка; warning — підозріло; info — примітка/відоме правило
      (не рахується проблемою). */
-const APP_BUILD = '2026-10-02.3'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
+const APP_BUILD = '2026-10-02.4'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
 const DIAG_MAX_LINES = 14;
 const DIAG_AREA = {
   excel: 'Звірка з Excel',
@@ -6107,6 +6107,7 @@ function renderCatalogList() {
             <p class="row-name">${escapeHtml(it.model)}</p>
           </div>
           <div class="row-right">
+            ${window.Stock ? Stock.slotHtml(it, cfg.key) : ''}
             <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${locked ? '' : it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
             <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
               ${ic('calculator', '')}
@@ -6115,7 +6116,6 @@ function renderCatalogList() {
             <button class="share-btn" type="button" aria-label="Поділитися">${ic('share-2', '')}</button>
           </div>
         </div>
-        ${window.Stock ? Stock.slotHtml(it, cfg.key) : ''}
         ${locked ? '' : '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, priceStr) + '</div>'}
       </div>
     `;
