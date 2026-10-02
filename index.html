@@ -705,9 +705,8 @@
     padding: 12px 14px;
     margin-bottom: 8px;
   }
-  /* Верхня частина рядка (назва + ціна/кнопки) — окремий блок, щоб зона кліку "пошук в
-     Google" (яка розтягується на всю висоту свого контейнера) НЕ перекривала форму
-     калькулятора, коли та розкрита нижче. */
+  /* Верхня частина рядка (назва + ціна/кнопки) — окремий блок: клікабельна назва
+     (.row-info.has-site-link) живе лише тут і не заходить у розкритий нижче калькулятор. */
   .row-top {
     position: relative;
     display: flex;
@@ -715,17 +714,20 @@
     align-items: flex-start;
     gap: 10px;
   }
-  /* Клікабельна зона в лівій чверті верхньої частини рядка (не весь рядок і не весь
-     напис, і не заходить у розкритий калькулятор нижче) — .row-click-zone: пошук у
-     Google (Спліт-системи), .row-info-zone: тип+продуктивність блоку (Мульти
-     спліт-системи MHI, внутрішні блоки) — той самий прямокутник, різна дія. */
-  .row-click-zone, .row-info-zone {
-    position: absolute;
-    top: 0; left: 0; bottom: 0;
-    width: 25%;
-    min-width: 60px;
-    cursor: pointer;
-    z-index: 1;
+  /* Тап по назві → картка товару на сайті (див. applySiteLinks). Клас вішається лише
+     рядкам, для яких картка є; решта рядків — звичайний текст. Значок ↗ після назви —
+     маска з inline-SVG (Lucide arrow-up-right), щоб не плодити розмітку в кожному рядку. */
+  .row-info.has-site-link { cursor: pointer; }
+  .row-info.has-site-link:active .row-name { opacity: 0.6; }
+  .row-info.has-site-link .row-name::after {
+    content: '';
+    display: inline-block;
+    width: 11px; height: 11px;
+    margin-left: 5px;
+    vertical-align: -1px;
+    background-color: var(--text-secondary);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E") center / contain no-repeat;
+            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E") center / contain no-repeat;
   }
   /* Форма калькулятора виводиться нижче row-top, притиснута праворуч — під ціною товару */
   .calc-panel-slot {
@@ -900,7 +902,6 @@
   .instr-note:last-child { margin-bottom: 0; }
   .row-info { min-width: 0; flex: 1; }
   .row-name { font-size: 14px; font-weight: 500; margin: 0; word-break: normal; overflow-wrap: break-word; position: relative; z-index: 0; }
-  .row-click-zone:active ~ .row-info .row-name, .row-info-zone:active ~ .row-info .row-name { opacity: 0.6; }
   .row-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding-top: 1px; }
   .row-price { font-size: 16px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
   /* Примітка типу "роздрібна" (Systemair/FRICO/VRF/теплові насоси) — окремим рядком під
@@ -1071,8 +1072,7 @@
     cursor: pointer;
   }
   /* ⓘ "детальніше" біля товару (склад комплекту "Теплові насоси", примітка VRF) — та сама
-     іконка-кнопка, що й .calc-toggle/.share-btn, щоб не заходити в ліву чверть рядка
-     (.row-click-zone), яка перекриває саме цю частину — див. застереження в 12.6 хендоффу. */
+     іконка-кнопка, що й .calc-toggle/.share-btn. */
   .kit-info-btn {
     width: 28px; height: 28px;
     border-radius: 8px;
@@ -2108,6 +2108,35 @@
     font-family: inherit;
     color: var(--text);
   }
+  /* Універсальна самодіагностика: розгортні рядки проблем, звіт покриття, кнопки «куди веде». */
+  .diag-summary { font-size: 12.5px; margin: 6px 0 4px; }
+  .diag-notes-title { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin: 12px 0 2px; text-transform: uppercase; letter-spacing: .05em; }
+  .diag-issue { border-top: 1px solid var(--border); padding: 2px 0; }
+  .diag-issue summary { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; cursor: pointer; list-style: none; }
+  .diag-issue summary::-webkit-details-marker { display: none; }
+  .diag-ico { flex-shrink: 0; font-size: 13px; line-height: 1.4; }
+  .diag-sum { flex: 1; min-width: 0; display: block; }
+  .diag-sum b { display: block; font-size: 12.5px; }
+  .diag-title { display: block; font-size: 12px; line-height: 1.4; color: var(--text); margin-top: 1px; overflow-wrap: anywhere; }
+  .diag-error .diag-sum b { color: var(--danger); }
+  .diag-warning .diag-sum b { color: #7C5B15; }
+  .diag-info .diag-sum b { color: var(--text-secondary); }
+  .diag-issue[open] summary { padding-bottom: 4px; }
+  .diag-body { padding: 0 0 10px 21px; }
+  .diag-line { font-size: 11.5px; line-height: 1.4; color: var(--text); padding: 2px 0; overflow-wrap: anywhere; border-top: 1px dashed var(--border); }
+  .diag-line:first-child { border-top: none; }
+  .diag-where { font-size: 11.5px; margin-top: 6px; color: var(--text-secondary); overflow-wrap: anywhere; }
+  .diag-where b { color: var(--text); font-weight: 600; }
+  .diag-go { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .diag-go-btn { padding: 6px 10px; border-radius: 8px; border: 1px solid var(--accent); background: transparent; color: var(--accent); font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .diag-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; }
+  .diag-coverage { margin: 4px 0 8px; font-size: 12px; }
+  .diag-coverage summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+  .diag-cov-row { display: flex; gap: 8px; padding: 3px 0; line-height: 1.35; }
+  .diag-cov-st { flex-shrink: 0; width: 18px; text-align: center; }
+  .diag-cov-detail { display: block; font-size: 11px; color: var(--text-secondary); }
+  .row.diag-flash { animation: diagFlash 1s ease-in-out 3; }
+  @keyframes diagFlash { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px var(--accent); } }
 
   /* Фільтри в адмін-панелі: пошук на весь рядок, під ним — роль (завжди) і регіон (тільки
      для super_admin — регіональний адмін і так бачить лише свій регіон завдяки RLS на
@@ -3047,7 +3076,7 @@ const CATALOG_TILES = [
     id: 'semi', label: 'Напівпромислові спліт-системи', img: 'tile-images/tile-semi.jpg',
     flipImg: 'tile-images/tile-semi-galactic.jpg',
     mhi: { key: 'semi_mhi', sheet: 'НАПІВПРОМ', highlight: 'category', baseAdjustPct: 20 },
-    gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category' }
+    gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category', pairOutdoor: true }
   },
   { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.jpg', flipImg: 'tile-images/tilevrf-galactic.jpg', custom: 'vrf' },
   { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.jpg', flipImg: 'tile-images/tile-kkb-mhi.jpg', custom: 'kkb' },
@@ -3479,21 +3508,20 @@ function parseSheet(rows, highlightMode, opts) {
       const blockName = blockNameCol !== -1 ? String(row[blockNameCol] || '').trim() : '';
       item.blockName = blockName || null;
       item.groupKey = (opts.blockGrouping && item.unitType === 'indoor') ? (blockName || null) : null;
-
-      // Продуктивність (охолодження/нагрів) — тільки для зовнішніх блоків MHI (на
-      // прохання користувача — спершу зробив для внутрішніх, потім попросили
-      // навпаки), показуємо за тапом на маркування (див. renderCatalogList). GAL
-      // має інші одиниці/семантику цих самих колонок (Вт, споживана потужність) —
-      // там ця інформація й не показується, тому не витягуємо.
-      // Зовнішній блок у прайсі займає ДВА фізичні рядки: у поточному —
-      // "Охолодження, кВт" (той самий стовпчик, що й НАЙМЕНУВАННЯ БЛОКУ + 1), у
-      // наступному (без маркування, продовження) — "Нагрів, кВт" у ТОМУ Ж
-      // стовпчику. Колонку "Коефіцієнт ефективності" (EER/COP) поруч — не чіпаємо,
-      // просили тільки ПРОДУКТИВНІСТЬ.
-      if (opts.blockGrouping && item.unitType === 'outdoor' && blockNameCol !== -1) {
-        const nextRowForProductivity = rows[r + 1] || [];
-        item.productivityCooling = row[blockNameCol + 1];
-        item.productivityHeating = nextRowForProductivity[blockNameCol + 1];
+    }
+    // Напівпромислові Galactic (Galactic LCAC): той самий внутрішній блок стоїть у прайсі
+    // кількома рядками — з різним зовнішнім (1 фаза/3 фази, звичайний/«7») і різною ціною.
+    // Сам зовнішній блок — у першому наступному рядку БЕЗ ціни з типом "зовніш." (між ними
+    // може бути рядок панелі). Без нього не відрізнити ці рядки, а від цього залежить, на
+    // яку картку сайту веде тап (див. SITE_LINKS_FILE); тому читаємо його вперед.
+    if (opts.pairOutdoor && unitTypeCol !== -1 && modelCol !== -1) {
+      for (let k = r + 1; k < rows.length && k <= r + 3; k++) {
+        const nextRow = rows[k] || [];
+        if (parseNumber(nextRow[priceCol]) !== null) break; // уже наступний товар
+        if (norm(nextRow[unitTypeCol]).includes('зовніш')) {
+          item.outdoorModel = String(nextRow[modelCol] || '').trim() || null;
+          break;
+        }
       }
     }
     if (highlightMode === 'series') rowGroupMap[r] = item.groupLabel || item.groupKey || undefined;
@@ -3836,8 +3864,9 @@ function parseRemakCurtainsSheet(wb) {
       дотику; через 300–800 мс після відповіді сервера він вважає це спливаючим вікном
       і ГАСИТЬ МОВЧКИ, без помилки в консолі. На iPhone і у встановленому застосунку —
       особливо жорстко. Підтверджено користувачем: тап по назві моделі (там window.open
-      викликається синхронно, див. .row-click-zone) відкриває Google нормально, а тап по
-      артикулу не робив нічого.
+      викликався синхронно — тоді це був пошук Google, тепер картка на сайті, див.
+      .row-info[data-site-url]) відкриває сторінку нормально, а тап по артикулу не
+      робив нічого.
       Тепер: порожня вкладка відкривається ПЕРШИМ рядком, ще до запиту, а вже потім їй
       підставляється знайдена адреса.
 
@@ -4241,7 +4270,7 @@ function buildSheetsData(wb, previousData) {
       const sheet = wb.Sheets[cfg.sheet];
       let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
       if (cfg.splitMarker) rows = sliceBySplitMarker(rows, cfg.splitMarker, cfg.splitSide);
-      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence, multisplitSections: cfg.multisplitSections, blockGrouping: cfg.blockGrouping });
+      const result = parseSheet(rows, cfg.highlight, { seriesLabelMode: cfg.seriesLabelMode, labelSequence: cfg.labelSequence, multisplitSections: cfg.multisplitSections, blockGrouping: cfg.blockGrouping, pairOutdoor: cfg.pairOutdoor });
       seriesRowGroupMaps[cfg.key] = result.rowGroupMap;
       if (result.items.length > 0) {
         if (cfg.baseAdjustPct) {
@@ -4290,7 +4319,7 @@ function buildSheetsData(wb, previousData) {
    Піднімай цю цифру щоразу, коли міняєш buildSheetsData/parseSheet так, що це впливає
    на те, що саме зберігається в sheetsData — інакше користувачі з уже завантаженим
    кешем не побачать змін, поки хтось не перезалить прайс на Supabase. */
-const PARSER_VERSION = 12;
+const PARSER_VERSION = 13; // 13: item.outdoorModel (semi_gal), прибрано productivityCooling/Heating
 
 /* Версія прайсу — це насправді ДАТА, закодована цифрами: 20260911 = 11.09.2026
    (правило користувача, підтверджене 2026-09-21). Показувати дилеру голе "версія
@@ -4401,7 +4430,7 @@ async function checkPriceVersion() {
 // явно викликачем (а не читається з глобальної priceVersion), бо в обох місцях виклику
 // (initCatalog/handleRefreshClick) priceVersion оновлюється ПІСЛЯ цього виклику — інакше
 // самодіагностика підписувала б знахідки старою версією.
-async function downloadAndParsePrice(newVersion) {
+async function downloadAndParsePrice(newVersion, opts) {
   const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const buf = await res.arrayBuffer();
@@ -4417,6 +4446,12 @@ async function downloadAndParsePrice(newVersion) {
     ? '<div class="warn">Не вдалося розпізнати: ' + escapeHtml(problems.join(', ')) + '</div>'
     : '';
   reportPriceDiagnostics(issues, newVersion);
+  // Універсальна самодіагностика (звірка з Excel, таблиця посилань): у фоні, поки workbook ще
+  // в пам'яті. Ручний прогін (кнопка «Перевірити зараз») сам запускає повний набір — тоді skipDiag.
+  if (!(opts && opts.skipDiag)) {
+    runDiagnostics({ manual: false, wb: wb, data: data, version: newVersion }).catch(function () {});
+  }
+  return { wb: wb, data: data };
 }
 
 /* Самодіагностика прайсу: тихо (без жодного UI, ніколи не блокує показ каталогу)
@@ -4463,6 +4498,565 @@ async function reportPriceDiagnostics(issues, newVersion) {
   }
 }
 
+/* ==================== САМОДІАГНОСТИКА ЗАСТОСУНКУ (універсальна) ====================
+   ОБОВ'ЯЗКОВА ВИМОГА ВЛАСНИКА (2026-10-02): будь-яка проблема застосунку має сама дійти до
+   супер-адміна через картку «Самодіагностика» в Кабінеті (кнопка «Перевірити зараз») — із
+   вказівкою, ДЕ проблема і КУДИ веде. Ціни й маркування мають ТОЧНО збігатися з Excel (жодних
+   «незначних відхилень»); у перевірки входять також ролі, зображення/файли, посилання на сайт.
+   Нова функція застосунку = нова перевірка тут (див. CLAUDE.md, розділ «Самодіагностика»).
+
+   Як це влаштовано:
+   • Перевірка — функція diagCheck*(ctx) → { issues: [...], checked: [...] }. issues — знайдені
+     проблеми; checked — усе, що перевірено (і справне теж): за ним автоматично «гаситься» те,
+     що виправлено, і будується звіт «що перевірено» в картці.
+   • Реєстр DIAG_CHECKS. auto:true — ще й тихо після кожного розбору нового прайсу на будь-якому
+     пристрої; решта — лише за кнопкою «Перевірити зараз» (мережа, зображення, ролі).
+   • Зберігання — наявна таблиця price_issues через RPC report_price_issue / resolve_price_issue_if_ok
+     без змін схеми. Унікальність там (version, tile_label, brand, kind) → ОДНА агрегована проблема
+     на (область, підрозділ, тип) із переліком позицій у message. tile_label = область (DIAG_AREA),
+     brand = підрозділ (ключ списку тощо).
+   • message: перший рядок — заголовок, далі деталі, останній рядок «@@{json}» — «куди веде»
+     (target: { app:{tile,brand,model}, site:url, excel:"аркуш, рядок", tab }). Старі записи без
+     цього рядка показуються як є.
+   • Типи: error — розбіжність/поломка; warning — підозріло; info — примітка/відоме правило
+     (не рахується проблемою). */
+const APP_BUILD = '2026-10-02.2'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
+const DIAG_MAX_LINES = 14;
+const DIAG_AREA = {
+  excel: 'Звірка з Excel',
+  links: 'Посилання на сайт',
+  files: 'Файли та зображення',
+  roles: 'Ролі та доступи',
+  rates: 'Курси валют',
+  build: 'Версія застосунку',
+  site: 'Сайт sun-ice.com.ua'
+};
+let lastDiagRun = null; // { at, checked, issues } — останній ручний прогін, для звіту в картці
+
+function diagIssue(area, sub, kind, title, lines, target) {
+  const all = lines || [];
+  const body = [title].concat(all.slice(0, DIAG_MAX_LINES));
+  if (all.length > DIAG_MAX_LINES) body.push('…та ще ' + (all.length - DIAG_MAX_LINES));
+  let msg = body.join('\n');
+  if (target) msg += '\n@@' + JSON.stringify(target);
+  return { tile: area, brand: sub, kind: kind, message: msg };
+}
+function diagParseMessage(message) {
+  const lines = String(message || '').split('\n');
+  let target = null;
+  if (lines.length && lines[lines.length - 1].indexOf('@@') === 0) {
+    try { target = JSON.parse(lines.pop().slice(2)); } catch (e) { target = null; }
+  }
+  return { title: lines[0] || '', lines: lines.slice(1), target: target };
+}
+function diagFmt(n) { return Number(n).toLocaleString('uk-UA', { maximumFractionDigits: 4 }); }
+
+/* ---- 1. Ціни й маркування = Excel ---- */
+/* Незалежна від parseSheet() друга проходка по сирих рядках аркуша: усі рядки, де в колонці ціни
+   число, мають бути в застосунку з тим самим маркуванням і тією самою ціною. Геометрію (де заголовок
+   ціни/моделі) шукаємо тими ж ключовими словами, але сам обхід, пропуски й множення — свої: так
+   ловляться пропущені рядки, зсунуті колонки, зіпсовані ціни та застарілий кеш. */
+function diagListGeometry(rows) {
+  const ph = findPriceHeader(rows);
+  if (!ph) return null;
+  let priceCol = ph.col, dataStart = ph.row + 1;
+  const nr = rows[ph.row + 1];
+  if (nr) {
+    for (let c = priceCol; c < nr.length; c++) {
+      if (cellContainsAny(nr[c], totalSubKeywords)) { priceCol = c; dataStart = ph.row + 2; break; }
+    }
+  }
+  const headerRow = rows[ph.row] || [], above = rows[ph.row - 1] || [];
+  let modelCol = findColumnInRow(headerRow, modelKeywords);
+  if (modelCol === -1) modelCol = findColumnInRow(above, modelKeywords);
+  return {
+    priceCol: priceCol, dataStart: dataStart, modelCol: modelCol,
+    internalCol: findColumnInRow(headerRow, internalKeywords),
+    externalCol: findColumnInRow(headerRow, externalKeywords),
+    currency: detectCurrency(ph.text), headerText: String(ph.text || '').replace(/\s+/g, ' ').trim()
+  };
+}
+function diagExpectedRows(rows, g, rowOffset) {
+  const expected = [], noModel = [];
+  for (let r = g.dataStart; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const price = parseNumber(row[g.priceCol]);
+    if (price === null) continue;
+    let model = g.modelCol !== -1 ? String(row[g.modelCol] == null ? '' : row[g.modelCol]).trim() : '';
+    if (!model && g.internalCol !== -1) {
+      const parts = [row[g.internalCol], g.externalCol !== -1 ? row[g.externalCol] : ''].filter(v => v && String(v).trim());
+      model = parts.map(v => String(v).trim()).join(' + ');
+    }
+    if (!model) noModel.push({ row: r + 1 + rowOffset, price: price });
+    else expected.push({ row: r + 1 + rowOffset, model: model, price: price });
+  }
+  return { expected: expected, noModel: noModel };
+}
+function diagCompareItems(expected, items, factor, extraKey) {
+  const r6 = n => Math.round(n * 1e6) / 1e6;
+  const ek = it => (extraKey ? '\u0001' + (extraKey(it) || '') : '');
+  const pool = new Map();
+  expected.forEach(e => {
+    const k = e.model + '\u0001' + r6(e.price * factor) + ek(e);
+    if (!pool.has(k)) pool.set(k, []);
+    pool.get(k).push(e);
+  });
+  const appOnly = [];
+  items.forEach(it => {
+    const k = it.model + '\u0001' + r6(it.price) + ek(it);
+    const arr = pool.get(k);
+    if (arr && arr.length) arr.shift(); else appOnly.push(it);
+  });
+  const excelOnly = [];
+  pool.forEach(arr => arr.forEach(e => excelOnly.push(e)));
+  excelOnly.sort((a, b) => a.row - b.row);
+  const priceDiff = [], missing = [];
+  excelOnly.forEach(e => {
+    const j = appOnly.findIndex(it => it.model === e.model);
+    if (j >= 0) { priceDiff.push({ e: e, it: appOnly[j] }); appOnly.splice(j, 1); } else missing.push(e);
+  });
+  return { priceDiff: priceDiff, missing: missing, extra: appOnly };
+}
+/* Перевірка САМОГО ВІДОБРАЖЕННЯ: число, яке бачить користувач (formatListPriceNumber), не має
+   відрізнятись від ціни з Excel більше ніж на 1 (правило власника про округлення, див. formatListPrice). */
+function diagVerifyDisplay(items) {
+  const bad = [];
+  items.forEach(it => {
+    if (it.priceText) return;
+    const shown = Number(formatListPriceNumber(it).replace(/[\s  ]/g, '').replace(',', '.'));
+    if (!(Math.abs(shown - it.price) <= 1)) bad.push(it.model + ': у списку «' + formatListPriceNumber(it) + '», у Excel ' + diagFmt(it.price) + ' — різниця понад 1');
+  });
+  return bad;
+}
+function diagSheetOffset(sheet) {
+  return sheet && sheet['!ref'] ? XLSX.utils.decode_range(sheet['!ref']).s.r : 0;
+}
+function diagReconcileList(out, label, listKey, sheetName, rows, rowOffset, g, items, factor, targetBase, ruleNote) {
+  const area = DIAG_AREA.excel;
+  const { expected, noModel } = diagExpectedRows(rows, g, rowOffset);
+  const cmp = diagCompareItems(expected, items, factor);
+  const bad = cmp.priceDiff.length + cmp.missing.length + cmp.extra.length;
+  const where = row => 'аркуш «' + sheetName + '», рядок ' + row;
+  const lines = [];
+  cmp.priceDiff.forEach(d => lines.push('ЦІНА · ' + where(d.e.row) + ' · ' + d.e.model + ': у Excel ' + diagFmt(d.e.price) +
+    (factor !== 1 ? ' (очікується ' + diagFmt(d.e.price * factor) + ')' : '') + ', у застосунку ' + diagFmt(d.it.price)));
+  cmp.missing.forEach(e => lines.push('НЕМАЄ В ЗАСТОСУНКУ · ' + where(e.row) + ' · ' + e.model + ' · ' + diagFmt(e.price)));
+  cmp.extra.forEach(it => lines.push('ЗАЙВЕ В ЗАСТОСУНКУ (у Excel такого рядка нема) · ' + it.model + ' · ' + diagFmt(it.price)));
+  const first = cmp.priceDiff[0] ? cmp.priceDiff[0].e : (cmp.missing[0] || null);
+  if (bad) {
+    out.issues.push(diagIssue(area, listKey, 'error',
+      label + ': розбіжностей з Excel — ' + bad + ' (ціни ' + cmp.priceDiff.length + ', немає в застосунку ' + cmp.missing.length + ', зайвих ' + cmp.extra.length + ')',
+      lines, Object.assign({}, targetBase, first ? { excel: where(first.row), app: Object.assign({}, targetBase.app, { model: first.model }) } : {})));
+  }
+  const warn = [];
+  if (noModel.length) {
+    noModel.forEach(n => warn.push(where(n.row) + ': є ціна ' + diagFmt(n.price) + ', але немає маркування — рядок пропущено'));
+  }
+  if (!g.currency) warn.push('Не вдалося визначити валюту з заголовка колонки ціни «' + g.headerText + '»');
+  else if (items.some(it => it.currency !== g.currency)) warn.push('Валюта позицій не збігається із заголовком колонки («' + g.headerText + '», ' + g.currency + ')');
+  if (warn.length) out.issues.push(diagIssue(area, listKey, 'warning', label + ': підозрілі рядки в прайсі', warn, targetBase));
+  const shown = diagVerifyDisplay(items);
+  if (shown.length) out.issues.push(diagIssue(area, listKey, 'error', label + ': показана ціна не збігається з Excel — ' + shown.length, shown, targetBase));
+  const notes = [];
+  if (factor !== 1) notes.push(ruleNote || ('До цін Excel застосовується коефіцієнт ' + diagFmt(factor)));
+  const rounded = items.filter(it => Math.abs(it.price - Math.round(it.price)) > 1e-9);
+  if (rounded.length) {
+    notes.push('Правило власника: ціни показуються цілими (округлення, якщо різниця ≤ 1). У ' + rounded.length + ' позицій це змінює число (напр. ' +
+      rounded[0].model + ': ' + diagFmt(rounded[0].price) + ' → ' + Math.round(rounded[0].price) + ')');
+  }
+  if (notes.length) out.issues.push(diagIssue(area, listKey, 'info', label + ': правила відображення цін', notes, targetBase));
+  out.checked.push({ area: area, sub: listKey, label: label,
+    detail: expected.length + ' позицій у Excel · колонка ' + XLSX.utils.encode_col(g.priceCol) + ' «' + g.headerText + '»' });
+}
+function diagCheckExcel(ctx) {
+  const out = { issues: [], checked: [] };
+  const wb = ctx.wb;
+  if (!wb) return out;
+  const area = DIAG_AREA.excel;
+  CATALOG_TILES.forEach(tile => {
+    ['mhi', 'gal'].forEach(brand => {
+      const cfg = tile[brand];
+      if (!cfg) return;
+      const label = tile.label + ' / ' + brand.toUpperCase();
+      const sheet = wb.Sheets[cfg.sheet];
+      if (!sheet) return; // відсутню вкладку вже репортить сам розбір (buildSheetsData)
+      const all = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      let rows = all;
+      if (cfg.splitMarker) rows = sliceBySplitMarker(all, cfg.splitMarker, cfg.splitSide);
+      const sliceOffset = (cfg.splitMarker && cfg.splitSide === 'after') ? all.length - rows.length : 0;
+      const g = diagListGeometry(rows);
+      const items = ctx.data[cfg.key] || [];
+      const targetBase = { app: { tile: tile.id, brand: brand }, excel: 'аркуш «' + cfg.sheet + '»' };
+      if (!g) {
+        out.issues.push(diagIssue(area, cfg.key, 'error', label + ': у прайсі не знайдено колонку з ціною — звірити неможливо', [], targetBase));
+        out.checked.push({ area: area, sub: cfg.key, label: label, detail: 'колонку ціни не знайдено' });
+        return;
+      }
+      const factor = cfg.baseAdjustPct ? 1 - cfg.baseAdjustPct / 100 : 1;
+      diagReconcileList(out, label, cfg.key, cfg.sheet, rows, diagSheetOffset(sheet) + sliceOffset, g, items, factor, targetBase,
+        'Ціна в застосунку = Excel мінус ' + cfg.baseAdjustPct + ' % (правило власника, baseAdjustPct у CATALOG_TILES; у Excel — «' + g.headerText + '»)');
+    });
+  });
+  // Плоскі списки "Артикул / Назва / Коментар / Роздрібна ціна": Systemair і FRICO
+  [{ key: 'systemair', sheet: 'SYSTEMAIR', label: 'Вентиляційне обладнання / Systemair', app: { tile: 'ventilation', brand: 'systemair' } },
+   { key: 'frico', sheet: 'FRICO', label: 'Повітряні завіси / FRICO', app: { tile: 'aircurtains', brand: 'mhi' } }].forEach(f => {
+    const sheet = wb.Sheets[f.sheet];
+    if (!sheet) return;
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    const off = diagSheetOffset(sheet);
+    const targetBase = { app: f.app, excel: 'аркуш «' + f.sheet + '»' };
+    const head = rows[7] || [];
+    const headOk = norm(head[0]).includes('артикул') && norm(head[1]).includes('назв') && norm(head[3]).includes('ціна');
+    if (!headOk) {
+      out.issues.push(diagIssue(area, f.key, 'error', f.label + ': структура аркуша змінилась — заголовок у рядку 8 має бути «Артикул / Назва / … / Роздрібна ціна»',
+        ['Зараз у рядку 8: ' + head.slice(0, 5).map(v => '«' + String(v).trim() + '»').join(' ')], targetBase));
+    }
+    const expected = [];
+    for (let r = 8; r < rows.length; r++) {
+      const row = rows[r] || [];
+      const model = String(row[1] == null ? '' : row[1]).trim();
+      const price = parseNumber(row[3]);
+      if (!model || price === null) continue;
+      expected.push({ row: r + 1 + off, model: model, price: price, article: String(row[0] == null ? '' : row[0]).trim() });
+    }
+    const items = ctx.data[f.key] || [];
+    const cmp = diagCompareItems(expected, items, 1, x => x.article);
+    const bad = cmp.priceDiff.length + cmp.missing.length + cmp.extra.length;
+    if (bad) {
+      const lines = [];
+      const where = row => 'аркуш «' + f.sheet + '», рядок ' + row;
+      cmp.priceDiff.forEach(d => lines.push('ЦІНА/АРТИКУЛ · ' + where(d.e.row) + ' · ' + d.e.model + ': Excel ' + diagFmt(d.e.price) + ' (арт. ' + d.e.article + '), застосунок ' + diagFmt(d.it.price) + ' (арт. ' + (d.it.article || '') + ')'));
+      cmp.missing.forEach(e => lines.push('НЕМАЄ В ЗАСТОСУНКУ · ' + where(e.row) + ' · ' + e.model + ' · ' + diagFmt(e.price)));
+      cmp.extra.forEach(it => lines.push('ЗАЙВЕ В ЗАСТОСУНКУ · ' + it.model + ' · ' + diagFmt(it.price)));
+      const first = cmp.priceDiff[0] ? cmp.priceDiff[0].e : cmp.missing[0];
+      out.issues.push(diagIssue(area, f.key, 'error', f.label + ': розбіжностей з Excel — ' + bad, lines,
+        Object.assign({}, targetBase, first ? { excel: where(first.row), app: Object.assign({}, f.app, { model: first.model }) } : {})));
+    }
+    const shownBad = diagVerifyDisplay(items);
+    if (shownBad.length) out.issues.push(diagIssue(area, f.key, 'error', f.label + ': показана ціна не збігається з Excel — ' + shownBad.length, shownBad, targetBase));
+    out.checked.push({ area: area, sub: f.key, label: f.label, detail: expected.length + ' позицій у Excel · колонка D «Роздрібна ціна, EUR»' });
+  });
+  return out;
+}
+
+/* ---- 2. Таблиця посилань на сайт (data/site-links.json) ---- */
+async function diagCheckSiteLinks(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.links;
+  const d = await loadSiteLinks();
+  if (!d || !d.links) {
+    out.issues.push(diagIssue(area, 'table', 'error', 'Файл посилань на сайт (data/site-links.json) не завантажився — тап по назві товару нікуди не веде',
+      ['Перевірте, що файл залитий у папку data/ репозиторію і відкривається за адресою застосунку.'], { tab: 'catalog' }));
+    out.checked.push({ area: area, sub: 'table', label: 'Файл посилань на сайт', detail: 'не завантажився' });
+    return out;
+  }
+  const age = d.built ? Math.floor((Date.now() - new Date(d.built).getTime()) / 86400000) : null;
+  out.checked.push({ area: area, sub: 'table', label: 'Файл посилань на сайт', detail: 'зібраний ' + (d.built || '?') + (age != null ? ' (' + age + ' дн. тому)' : '') });
+  if (age != null && age > 45) {
+    out.issues.push(diagIssue(area, 'table', 'warning', 'Таблицю посилань на сайт давно не оновлювали: ' + age + ' дн.',
+      ['Нові/змінені картки на сайті в ній не відображені. Попросіть Claude перебудувати (claude/site-catalog/build_site_links.py).'], { tab: 'catalog' }));
+  }
+  CATALOG_TILES.forEach(tile => {
+    ['mhi', 'gal'].forEach(brand => {
+      const cfg = tile[brand];
+      if (!cfg || !d.links[cfg.key]) return;
+      const label = tile.label + ' / ' + brand.toUpperCase();
+      const items = ctx.data[cfg.key] || [];
+      const keys = new Set(items.map(siteLinkKey));
+      const links = d.links[cfg.key], noCard = new Set((d.noCard && d.noCard[cfg.key]) || []);
+      const stale = Object.keys(links).filter(k => !keys.has(k));
+      const fresh = items.filter(it => { const k = siteLinkKey(it); return !links[k] && !noCard.has(k); });
+      const target = { app: { tile: tile.id, brand: brand } };
+      if (stale.length) {
+        out.issues.push(diagIssue(area, cfg.key, 'warning', label + ': посилань на сайт, яким у прайсі більше нема маркування — ' + stale.length,
+          stale.map(k => k + ' → ' + links[k]).concat(['Маркування в прайсі змінилось: тап по такій назві ніде не діє, а посилання зависло. Потрібна перебудова таблиці посилань.']), target));
+      }
+      if (fresh.length) {
+        out.issues.push(diagIssue(area, cfg.key, 'warning', label + ': нові позиції прайсу без картки на сайті — ' + fresh.length,
+          fresh.map(it => it.model + (it.outdoorModel ? ' + ' + it.outdoorModel : '')).concat(['Позицій не було, коли будували таблицю посилань: або картки ще нема на сайті, або таблицю треба перебудувати.']),
+          Object.assign({}, target, { app: Object.assign({}, target.app, { model: fresh[0].model }) })));
+      }
+      const linked = items.filter(it => links[siteLinkKey(it)]).length;
+      out.checked.push({ area: area, sub: cfg.key, label: label, detail: linked + ' з ' + items.length + ' позицій мають посилання' });
+    });
+  });
+  return out;
+}
+
+/* ---- 3. Зображення та файли застосунку ---- */
+function diagReferencedFiles() {
+  const text = document.documentElement.innerHTML;
+  const found = new Set();
+  const re = /(?:tile-images\/[\w.\-]+\.(?:jpg|jpeg|png|webp|svg|gif)|data\/[\w\-]+\.json|(?:icon|apple-touch-icon)[\w\-]*\.png|manifest\.json)/g;
+  let m;
+  while ((m = re.exec(text))) found.add(m[0]);
+  return Array.from(found).sort();
+}
+async function diagUrlStatus(url) {
+  try {
+    const r = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+    return r.ok ? 'ok' : 'http ' + r.status;
+  } catch (e) {
+    return 'network';
+  }
+}
+function diagImageLoads(url) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
+}
+async function diagCheckFiles(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.files;
+  const files = diagReferencedFiles();
+  const bad = [];
+  for (let i = 0; i < files.length; i += 8) {
+    const batch = files.slice(i, i + 8);
+    const res = await Promise.all(batch.map(f => diagUrlStatus(f)));
+    res.forEach((s, j) => { if (s !== 'ok') bad.push(batch[j] + ' — ' + (s === 'network' ? 'не вдалося перевірити (мережа)' : 'не знайдено (' + s + ')')); });
+  }
+  if (bad.length) out.issues.push(diagIssue(area, 'app-files', 'error', 'Файли, на які посилається застосунок, недоступні — ' + bad.length, bad.concat(['Залийте/поверніть ці файли в репозиторій (tile-images/, data/ тощо).']), { tab: 'catalog' }));
+  out.checked.push({ area: area, sub: 'app-files', label: 'Зображення плиток, іконки, довідкові файли застосунку', detail: files.length + ' файлів' });
+  // Зображення акцій (Supabase Storage)
+  try {
+    const { data: promos, error } = await sb.from('promotions').select('id,title,image_url,pdf_url,is_active');
+    if (error) throw error;
+    const badPromo = [];
+    let n = 0;
+    for (const p of (promos || []).filter(p => p.is_active)) {
+      for (const [field, url] of [['зображення', p.image_url], ['PDF', p.pdf_url]]) {
+        if (!url) continue;
+        n++;
+        let ok = (await diagUrlStatus(url)) === 'ok';
+        if (!ok && field === 'зображення') ok = await diagImageLoads(url);
+        if (!ok) badPromo.push('«' + p.title + '»: ' + field + ' не відкривається (' + url + ')');
+      }
+    }
+    if (badPromo.length) out.issues.push(diagIssue(area, 'promotions', 'error', 'Акції: файли, що не відкриваються — ' + badPromo.length, badPromo, { tab: 'promotions' }));
+    out.checked.push({ area: area, sub: 'promotions', label: 'Зображення та PDF активних акцій', detail: n + ' файлів' });
+  } catch (e) {
+    out.issues.push(diagIssue(area, 'promotions', 'warning', 'Не вдалося перевірити файли акцій: ' + (e && e.message ? e.message : e), [], { tab: 'promotions' }));
+  }
+  return out;
+}
+/* Зображення серій, вбудовані в Excel (показуються у вікні ⓘ Спліт-систем). Базова лінія — кількість
+   груп із фото, запам'ятана на пристрої супер-адміна: різке падіння = картинки зникли з Excel. */
+async function diagCheckSeriesImages(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.files;
+  try {
+    const counts = {};
+    for (const brand of ['mhi', 'gal']) {
+      const sheetName = brand === 'mhi' ? 'ПОБУТОВІ' : 'GALACTIC';
+      const rowGroupMap = await getRowGroupMapForSplitTile(brand);
+      const map = await extractSeriesImages(sheetName, row => rowGroupMap[row]);
+      counts[brand] = map.size;
+    }
+    let base = {};
+    try { base = JSON.parse(localStorage.getItem('sunice_diag_series_images') || '{}'); } catch (e) { base = {}; }
+    const lines = [];
+    ['mhi', 'gal'].forEach(b => {
+      if (counts[b] === 0) lines.push('Спліт-системи / ' + b.toUpperCase() + ': у Excel не знайдено жодного фото серій');
+      else if (base[b] && counts[b] < base[b] * 0.7) lines.push('Спліт-системи / ' + b.toUpperCase() + ': груп із фото було ' + base[b] + ', стало ' + counts[b]);
+    });
+    if (lines.length) out.issues.push(diagIssue(area, 'series-images', 'warning', 'Фото серій у Excel: зникли або їх стало помітно менше', lines, { tab: 'catalog', app: { tile: 'split', brand: 'mhi' } }));
+    else try { localStorage.setItem('sunice_diag_series_images', JSON.stringify(counts)); } catch (e) {}
+    out.checked.push({ area: area, sub: 'series-images', label: 'Фото серій, вбудовані в Excel (Спліт-системи)', detail: 'MHI: ' + counts.mhi + ' груп, GAL: ' + counts.gal + ' груп із фото' });
+  } catch (e) {
+    out.issues.push(diagIssue(area, 'series-images', 'warning', 'Не вдалося перевірити фото серій: ' + (e && e.message ? e.message : e), []));
+  }
+  return out;
+}
+
+/* ---- 4. Ролі та доступи (тільки супер-адмін бачить усі профілі завдяки RLS) ---- */
+async function diagCheckRoles(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.roles;
+  const { data: profiles, error } = await sb.from('profiles').select('id,full_name,phone,role,status,region_id,created_at');
+  if (error || !profiles) {
+    out.issues.push(diagIssue(area, 'profiles', 'warning', 'Не вдалося прочитати профілі для перевірки ролей', [error && error.message ? error.message : 'порожня відповідь'], { tab: 'cabinet' }));
+    return out;
+  }
+  const regions = await getRegions();
+  const who = p => (p.full_name || '(без імені)') + ' ' + (p.phone || '');
+  const issues = [];
+  const supers = profiles.filter(p => p.role === 'super_admin' && p.status === 'approved');
+  if (!supers.length) issues.push(['error', 'У системі немає жодного підтвердженого супер-адміна', []]);
+  const admins = profiles.filter(p => p.role !== 'user');
+  const noRegion = admins.filter(p => p.role === 'regional_admin' && !p.region_id);
+  if (noRegion.length) issues.push(['error', 'Регіональні адміни без регіону — вони не бачать жодної заявки: ' + noRegion.length, noRegion.map(who)]);
+  const inactive = admins.filter(p => p.status !== 'approved');
+  if (inactive.length) issues.push(['warning', 'Адміністратори зі статусом не «підтверджено» — ' + inactive.length, inactive.map(p => who(p) + ' · ' + p.role + ' · ' + p.status)]);
+  const orphanPending = profiles.filter(p => p.status === 'pending' && !p.region_id);
+  if (orphanPending.length) issues.push(['warning', 'Заявки без регіону — їх бачить лише супер-адмін: ' + orphanPending.length, orphanPending.map(who)]);
+  const uncovered = regions.filter(r => profiles.some(p => p.status === 'pending' && p.region_id === r.id) &&
+    !profiles.some(p => p.role === 'regional_admin' && p.status === 'approved' && p.region_id === r.id));
+  if (uncovered.length) issues.push(['warning', 'Є заявки в регіонах, де немає жодного підтвердженого регіонального адміна: ' + uncovered.length, uncovered.map(r => r.name)]);
+  const stale = profiles.filter(p => p.status === 'pending' && Date.now() - new Date(p.created_at).getTime() > 7 * 86400000);
+  if (stale.length) issues.push(['info', 'Заявки, що чекають понад 7 днів: ' + stale.length, stale.map(who)]);
+  issues.forEach((x, i) => out.issues.push(diagIssue(area, 'profiles', x[0], x[1], x[2], { tab: 'cabinet' })));
+  out.checked.push({ area: area, sub: 'profiles', label: 'Ролі, статуси та регіони користувачів',
+    detail: profiles.length + ' профілів · супер-адмінів ' + supers.length + ' · регіональних ' + profiles.filter(p => p.role === 'regional_admin').length });
+  return out;
+}
+
+/* ---- 5. Курси валют ---- */
+async function diagCheckRates(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.rates;
+  const { data, error } = await sb.from('app_settings').select('usd_rate,eur_rate,rate_effective_date').eq('id', 1).single();
+  if (error || !data) {
+    out.issues.push(diagIssue(area, 'rates', 'warning', 'Не вдалося прочитати курси валют', [error && error.message ? error.message : ''], { tab: 'catalog' }));
+    return out;
+  }
+  const lines = [];
+  if (!data.usd_rate) lines.push(['error', 'Не встановлено курс долара — калькулятор не може перерахувати в гривню']);
+  if (!data.eur_rate) lines.push(['warning', 'Не встановлено курс євро']);
+  // Термінів давності для курсу НЕМАЄ (рішення власника 2026-10-02): адміни самі міняють його, коли він
+  // змінюється. Перевіряємо лише, що курс і дата взагалі задані.
+  if (!data.rate_effective_date) lines.push(['warning', 'Не вказано дату, від якої діє курс']);
+  lines.forEach(l => out.issues.push(diagIssue(area, 'rates', l[0], l[1], [], { tab: 'catalog' })));
+  out.checked.push({ area: area, sub: 'rates', label: 'Курси $ і €, дата курсу', detail: '$ ' + (data.usd_rate || '—') + ' · € ' + (data.eur_rate || '—') });
+  return out;
+}
+
+/* ---- 6. Чи цей пристрій має найновішу версію застосунку ---- */
+async function diagCheckBuild(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.build;
+  try {
+    // Accept: text/html — інакше service worker віддасть із кешу (для нього це "статика", кеш-спершу)
+    // власну застарілу копію й перевірка нічого б не показала. З таким заголовком він іде в мережу.
+    const r = await fetch('index.html', { cache: 'no-store', headers: { Accept: 'text/html' } });
+    const m = (await r.text()).match(/const APP_BUILD = '([^']+)'/);
+    const live = m ? m[1] : null;
+    out.checked.push({ area: area, sub: 'build', label: 'Версія застосунку на цьому пристрої й на сервері', detail: 'тут ' + APP_BUILD + ' · на сервері ' + (live || '?') });
+    if (live && live !== APP_BUILD) {
+      out.issues.push(diagIssue(area, 'build', 'warning', 'Цей пристрій працює на застарілій версії застосунку (' + APP_BUILD + '), на сервері ' + live,
+        ['Закрийте застосунок повністю (прибрати зі списку запущених) і відкрийте знову; якщо не допомогло — очистіть дані сайту.'], { tab: 'catalog' }));
+    }
+  } catch (e) {
+    out.issues.push(diagIssue(area, 'build', 'info', 'Не вдалося звірити версію застосунку з сервером', [e && e.message ? e.message : ''], null));
+  }
+  return out;
+}
+
+/* ---- 7. Картки на sun-ice.com.ua ("наживо", з боку сервера) ----
+   Браузер не може читати сторінки сайту (немає CORS), тому перевірку робить Edge Function
+   check-site-links (claude/edge-functions/check-site-links). Вона повертає
+   { checked, problems: [{ kind, title, line, url, list, marking }], newCards: [...], note }.
+   Якщо функцію ще не задеплоєно — це не помилка, а примітка (info). */
+async function diagCheckSiteLive(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.site;
+  let res;
+  try {
+    const table = await loadSiteLinks();
+    if (!table || !table.links) throw new Error('таблицю посилань (data/site-links.json) не завантажено');
+    const r = await sb.functions.invoke('check-site-links', { body: { table: table } });
+    if (r.error) throw r.error;
+    res = r.data;
+  } catch (e) {
+    out.issues.push(diagIssue(area, 'live', 'info', 'Серверна перевірка карток на сайті не виконана',
+      ['Edge Function check-site-links не задеплоєна або недоступна: ' + (e && e.message ? e.message : e) + '. Поки її нема, зникнення/перейменування карток на сайті застосунок не помічає.'], null));
+    return out;
+  }
+  if (!res || !Array.isArray(res.problems)) {
+    out.issues.push(diagIssue(area, 'live', 'warning', 'Edge Function check-site-links повернула неочікувану відповідь', [], null));
+    return out;
+  }
+  const byKind = { error: [], warning: [], info: [] };
+  res.problems.forEach(p => (byKind[p.kind] || byKind.warning).push(p));
+  const mk = (kind, title) => {
+    const arr = byKind[kind];
+    if (!arr.length) return;
+    out.issues.push(diagIssue(area, 'live', kind, title + ': ' + arr.length,
+      arr.map(p => (p.list ? p.list + ' · ' : '') + (p.marking ? p.marking + ': ' : '') + p.line),
+      { site: arr[0].url || 'https://sun-ice.com.ua/',
+        app: arr[0].list && arr[0].marking ? { tile: String(arr[0].list).split('_')[0], brand: String(arr[0].list).split('_')[1], model: String(arr[0].marking).split(' + ')[0] } : undefined }));
+  };
+  mk('error', 'Картки на сайті, які зникли або змінились');
+  mk('warning', 'Картки на сайті, що потребують уваги');
+  mk('info', 'Примітки по сайту');
+  out.checked.push({ area: area, sub: 'live', label: 'Картки товарів на sun-ice.com.ua (сервер)', detail: (res.checked || 0) + ' карток перевірено' + (res.note ? ' · ' + res.note : '') });
+  return out;
+}
+
+/* Реєстр перевірок. auto — ще й тихо після кожного розбору нового прайсу; manualOnly — лише за кнопкою. */
+const DIAG_CHECKS = [
+  { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
+  { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },
+  { id: 'files', label: 'Зображення та файли застосунку', run: ctx => diagCheckFiles(ctx) },
+  { id: 'series-images', label: 'Фото серій з Excel', run: ctx => diagCheckSeriesImages(ctx) },
+  { id: 'roles', label: 'Ролі та доступи', run: ctx => diagCheckRoles(ctx) },
+  { id: 'rates', label: 'Курси валют', run: ctx => diagCheckRates(ctx) },
+  { id: 'build', label: 'Версія застосунку', run: ctx => diagCheckBuild(ctx) },
+  { id: 'site-live', label: 'Картки на сайті (сервер)', run: ctx => diagCheckSiteLive(ctx) }
+];
+
+/* Унікальність у БД — (version, tile_label, brand, kind): дві проблеми одного типу в одному підрозділі
+   затерли б одна одну. Тому перед відправкою зливаємо їх в один запис: заголовки через « · », а деталі
+   кожної — під своїм рядком «▸ заголовок». «Куди веде» береться від першої. */
+function diagMergeIssues(issues) {
+  const groups = new Map();
+  issues.forEach(i => {
+    const k = i.tile + '\u0001' + i.brand + '\u0001' + i.kind;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(i);
+  });
+  const out = [];
+  groups.forEach(arr => {
+    if (arr.length === 1) { out.push(arr[0]); return; }
+    const parsed = arr.map(i => diagParseMessage(i.message));
+    const lines = [];
+    parsed.forEach(p => { lines.push('▸ ' + p.title); p.lines.forEach(l => lines.push(l)); });
+    const target = (parsed.find(p => p.target) || {}).target || null;
+    let msg = parsed.map(p => p.title).join(' · ') + '\n' + lines.join('\n');
+    if (target) msg += '\n@@' + JSON.stringify(target);
+    out.push({ tile: arr[0].tile, brand: arr[0].brand, kind: arr[0].kind, message: msg });
+  });
+  return out;
+}
+async function diagReport(issues, checked, version) {
+  try {
+    const v = String(version != null ? version : '');
+    const keys = new Set(checked.map(c => c.area + '\u0001' + c.sub));
+    // спершу "гасимо" все по перевірених ключах, потім заново піднімаємо те, що знайдено зараз
+    await Promise.all(Array.from(keys).map(k => {
+      const p = k.split('\u0001');
+      return sb.rpc('resolve_price_issue_if_ok', { p_tile_label: p[0], p_brand: p[1] });
+    }));
+    for (const it of issues) {
+      await sb.rpc('report_price_issue', { p_version: v, p_tile_label: it.tile, p_brand: it.brand, p_kind: it.kind, p_message: it.message });
+    }
+  } catch (e) {
+    // тиха відмова: самодіагностика ніколи не заважає роботі застосунку
+  }
+}
+async function runDiagnostics(opts) {
+  const ctx = { wb: opts.wb || null, data: opts.data || sheetsData, manual: !!opts.manual, version: opts.version != null ? opts.version : priceVersion };
+  const issues = [], checked = [];
+  for (const chk of DIAG_CHECKS) {
+    if (!ctx.manual && !chk.auto) continue;
+    if (opts.onProgress) opts.onProgress(chk.label);
+    try {
+      const r = await chk.run(ctx);
+      issues.push.apply(issues, r.issues);
+      checked.push.apply(checked, r.checked);
+    } catch (e) {
+      issues.push(diagIssue('Самодіагностика', chk.id, 'error', 'Сама перевірка «' + chk.label + '» завершилась помилкою: ' + (e && e.message ? e.message : e), []));
+      checked.push({ area: 'Самодіагностика', sub: chk.id, label: chk.label, detail: 'збій перевірки' });
+    }
+  }
+  const merged = diagMergeIssues(issues);
+  await diagReport(merged, checked, ctx.version);
+  if (ctx.manual) lastDiagRun = { at: Date.now(), checked: checked, issues: merged };
+  return { issues: merged, checked: checked };
+}
+
 /* Останній текст статусу прайсу. Потрібен окремо, бо на ГОЛОВНІЙ він більше не
    живе у власному рядку: за проханням користувача (2026-09-21) усі написи під
    курсами зведені в ОДИН рядок, і статус малюється всередині нього (renderRateRow).
@@ -4494,7 +5088,9 @@ function setCatalogStatus(text) {
    ЄВРО — суто довідковий: позиції в євро в прайсі є (Systemair, FRICO, REMAK, витратні),
    але перерахунок для них користувач не замовляв. Якщо колись захоче — вмикати тут же,
    у buildCalcPanelHtml, за тим самим зразком, що й долар.
-   ДАТА «діє від» — вводить адміністратор руками, бачать усі.
+   ДАТА «діє від» — вводить адміністратор руками. Бачать тільки адміністратори (до
+   2026-09-30 бачили всі — користувач попросив звузити, звичайний користувач має
+   бачити лише самі курси, без службової інформації про те, коли й ким вони виставлені).
    ХТО І КОЛИ змінював — ставить тригер trg_stamp_rate_author у базі (підмінити з
    браузера неможливо), бачать лише адміністратори. */
 async function loadExchangeRate() {
@@ -4549,9 +5145,11 @@ function renderRateRow() {
 
   document.getElementById('rate-edit-btn').style.display = canEditRate ? 'flex' : 'none';
 
-  /* Приписка під курсами. Перший рядок бачать усі, другий — лише адміністратори.
-     Кольором нічого не виділяємо: домовленість 2026-09-21 — ніякого червоного, лише
-     спокійна підказка тим, хто може це виправити. */
+  /* Приписка під курсами. Уся ліва частина («курс від …» і «хто міняв») — лише для
+     адміністраторів (звужено 2026-09-30, до того дату бачили всі — див. коментар біля
+     loadExchangeRate). Звичайний користувач бачить тут тільки праву частину (статус
+     прайсу) або взагалі нічого. Кольором нічого не виділяємо: домовленість 2026-09-21 —
+     ніякого червоного, лише спокійна підказка тим, хто може це виправити. */
   /* ОДИН рядок під курсами, порядок зліва направо (узгоджено з користувачем):
      «курс від … · <хто міняв> ............ Прайс від …».
      Права частина стоїть окремим елементом і притиснута до краю — над нею кнопка ↻.
@@ -4562,7 +5160,7 @@ function renderRateRow() {
   const mainEl = document.getElementById('rate-meta-main');
   const priceEl = document.getElementById('rate-meta-price');
   const left = [];
-  if (rateEffectiveDate) left.push('курс від ' + formatDateUa(rateEffectiveDate));
+  if (rateViewerIsAdmin && rateEffectiveDate) left.push('курс від ' + formatDateUa(rateEffectiveDate));
   if (rateViewerIsAdmin && (!usdRate || !rateEffectiveDate)) {
     if (!usdRate && !rateEffectiveDate) left.push('не вказано курс долара і дату');
     else if (!usdRate) left.push('не вказано курс долара — немає перерахунку в гривню');
@@ -4604,6 +5202,7 @@ function closeRateEditor() {
 async function initCatalog() {
   document.getElementById('refresh-icon').style.display = 'flex';
   loadExchangeRate();
+  loadSiteLinks(); // прогрів: до моменту, коли користувач зайде в розділ, файл уже в кеші
   const hadCache = loadProcessedCache();
   if (hadCache) {
     renderCatalogView();
@@ -5023,6 +5622,23 @@ function formatCalcAmount(amount, cur) {
   const suffix = cur === 'UAH' ? ' ₴' : (cur ? ' ' + cur : '');
   return Math.round(amount).toLocaleString('uk-UA') + suffix;
 }
+/* Ціна позиції В СПИСКУ. ПРАВИЛО ВЛАСНИКА (2026-10-02): якщо ціну треба показати цілим числом —
+   округляємо; якщо округлення дало б різницю понад 1 долар — не округляємо. (Округлення до найближчого
+   дає ≤ 0,5, тож запобіжник спрацює лише для нестандартних значень; він є, щоб правило виконувалось
+   буквально.) Дані (it.price) лишаються ТОЧНИМИ — як в Excel; округляється лише показ. Калькулятор і
+   кошик (formatCalcAmount) власник просив не чіпати. Самодіагностика (diagVerifyDisplay) перевіряє,
+   що показане число відрізняється від Excel не більше ніж на 1. */
+function roundPriceForDisplay(p) {
+  const r = Math.round(p);
+  return Math.abs(r - p) > 1 ? p : r;
+}
+function formatListPriceNumber(it) {
+  const v = roundPriceForDisplay(it.price);
+  return Number.isInteger(v) ? v.toLocaleString('uk-UA') : v.toLocaleString('uk-UA', { maximumFractionDigits: 2 });
+}
+function formatListPrice(it) {
+  return formatListPriceNumber(it) + (it.currency ? ' ' + it.currency : '');
+}
 // Чотири режими калькулятора: відняти %, додати %, відняти суму, додати суму. За
 // замовчуванням завжди −% (найчастіший випадок — знижка) — решта ховаються у спливаючому
 // меню (див. CSS .calc-mode-popup) і не займають місця, поки не потрібні.
@@ -5298,6 +5914,50 @@ function closeCartPanel() {
   if (overlay) overlay.classList.remove('show');
 }
 
+/* ---------- Тап по назві → картка товару на sun-ice.com.ua ----------
+   Розділи: Спліт-системи, Мульти спліт-системи, Напівпромислові (MHI і GAL) — усі йдуть
+   через renderCatalogList(). Адреси карток лежать у data/site-links.json:
+   { base, links: { <ключ списку>: { <маркування>: <slug картки> } } }.
+   Ключ списку — cfg.key плитки (split_mhi, semi_gal, ...). Маркування — siteLinkKey():
+   великі літери, без пробілів; для напівпрому Galactic до нього додається зовнішній блок
+   ("GBZ36MLQ-W+GCZ36MLNQ-W"), бо той самий внутрішній блок стоїть у прайсі кілька разів.
+   Рядок без запису (пульт, адаптер, немає картки на сайті) — тап нічого не робить.
+   Файл будується скриптом claude/site-catalog/build_site_links.py з карток сайту; лише
+   так: сайт не віддає CORS-заголовків, шукати картки "наживо" з браузера неможливо.
+   ?v= у адресі — service worker віддає статику кеш-спершу, без зміни адреси користувачі
+   довго бачили б стару копію після оновлення файлу; міняти разом із файлом. */
+const SITE_LINKS_FILE = 'data/site-links.json?v=20261002-2';
+let siteLinks = null;          // null — ще не вантажили, об'єкт — готово, false — не вдалось
+let siteLinksPromise = null;
+function siteLinkKey(item) {
+  return (String(item.model || '') + (item.outdoorModel ? '+' + item.outdoorModel : ''))
+    .toUpperCase().replace(/\s+/g, '');
+}
+function loadSiteLinks() {
+  if (!siteLinksPromise) {
+    siteLinksPromise = fetch(SITE_LINKS_FILE)
+      .then(r => { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(d => { siteLinks = d; return d; })
+      .catch(() => { siteLinks = false; siteLinksPromise = null; return false; }); // наступний рендер спробує ще раз
+  }
+  return siteLinksPromise;
+}
+/* Розставляє посилання на рядки, що зараз у DOM. Файл міг ще не доїхати до першого
+   рендеру — тоді рядки просто стають клікабельними трохи пізніше, без перемальовування. */
+function applySiteLinks() {
+  const run = d => {
+    if (!d || !d.links) return;
+    document.querySelectorAll('#main .row-info[data-site-key]').forEach(el => {
+      const list = d.links[el.getAttribute('data-site-list')];
+      const slug = list && list[el.getAttribute('data-site-key')];
+      if (!slug) return;
+      el.setAttribute('data-site-url', d.base + slug);
+      el.classList.add('has-site-link');
+    });
+  };
+  if (siteLinks) run(siteLinks); else loadSiteLinks().then(run);
+}
+
 function renderCatalogList() {
   // "Теплові насоси" і "Мультизональні VRF" мають нестандартну структуру (вкладені комплекти,
   // кілька вкладок прайсу під одним перемикачем) — рендеряться окремими функціями нижче,
@@ -5347,17 +6007,8 @@ function renderCatalogList() {
 
   const countHtml = '<div class="count">Всього: ' + filtered.length + '</div>';
   const showSegments = true;
-  // Пошук моделі в Google по тапу на назву — лишили тільки для "Спліт-системи"
-  // (на прохання користувача), для решти плиток каталогу зону кліку не малюємо.
-  const showGoogleSearch = activeTile === 'split';
   let lastKey = null;
   seriesInfoTexts = [];
-
-  // Мульти спліт-системи MHI: тап на маркування зовнішнього блоку показує його тип і
-  // продуктивність (охолодження/нагрів) — тих даних, що в самому рядку не вміщаються.
-  // Тільки MHI (на прохання користувача) і тільки для зовнішніх блоків (спершу
-  // зробив для внутрішніх, потім попросили навпаки).
-  const showBlockInfoZone = activeTile === 'multisplit' && activeBrand === 'mhi';
 
   const rowsHtml = filtered.map((it, rowIndex) => {
     let header = '';
@@ -5408,30 +6059,16 @@ function renderCatalogList() {
        завжди йшла цифра, і ховав її лише CSS-blur поверх. */
     const priceStr = locked
       ? PRICE_HIDDEN_TEXT
-      : (Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : ''));
+      : formatListPrice(it);
     const cartKey = activeTile + '|' + activeBrand + '|' + it.model;
     const cartQty = cartQtyFor(cartKey);
     const rowCls = 'row' + (locked ? ' row-locked' : '') + (animateRows ? ' tile-enter' : '');
     const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';border-right:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
 
-    let infoZoneHtml = '';
-    if (showBlockInfoZone && it.unitType === 'outdoor') {
-      const lines = [];
-      if (it.blockName) lines.push('Тип блоку: ' + it.blockName);
-      if (it.productivityCooling) lines.push('Охолодження: ' + String(it.productivityCooling).replace('.', ',') + ' кВт');
-      if (it.productivityHeating) lines.push('Нагрів: ' + String(it.productivityHeating).replace('.', ',') + ' кВт');
-      if (lines.length) {
-        const idx = seriesInfoTexts.length;
-        seriesInfoTexts.push({ title: it.model, text: lines.join('\n') });
-        infoZoneHtml = `<div class="row-info-zone" data-info-idx="${idx}" aria-label="Тип і продуктивність блоку"></div>`;
-      }
-    }
-
     return sectionLabelHtml + header + `
       <div class="${rowCls}" style="${rowStyle}">
         <div class="row-top">
-          ${showGoogleSearch ? `<div class="row-click-zone" data-model="${escapeHtml(it.model)}" aria-label="Пошук в Google"></div>` : infoZoneHtml}
-          <div class="row-info">
+          <div class="row-info" data-site-list="${cfg.key}" data-site-key="${escapeHtml(siteLinkKey(it))}">
             <p class="row-name">${escapeHtml(it.model)}</p>
           </div>
           <div class="row-right">
@@ -5449,6 +6086,7 @@ function renderCatalogList() {
   }).join('');
 
   main.innerHTML = toggleHtml + countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
+  applySiteLinks();
   attachBrandToggleHandlers(main);
   positionBrandSlider(main, activeBrand, prevBrandForSlider);
 }
@@ -5531,12 +6169,11 @@ function buildSimplePriceRowsHtml(items, opts) {
         ? `<div class="row-price">За запитом</div>`
         : `<button type="button" class="price-request-btn">За запитом</button>`;
     } else {
-      // priceText — готовий рядок ціни від парсера. Потрібен там, де ціна дробова
-      // (витратні матеріали: 1,58 EUR): звичайна гілка округляє до цілого, бо в решті
-      // прайсу копійок не буває. Порожній/відсутній — рахуємо як завжди.
+      // priceText — готовий рядок ціни від парсера (витратні матеріали: 1,58 EUR). Порожній/відсутній —
+      // formatListPrice(): копійки показуються, коли вони є в Excel.
       let priceStr = rowLocked
         ? PRICE_HIDDEN_TEXT
-        : (it.priceText || (Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '')));
+        : (it.priceText || formatListPrice(it));
       /* Примітка ("· роздрібна") без самої ціни сенсу не має — ховаємо разом з нею. */
       if (opts.priceNote && !rowLocked) priceStr += `<span class="row-price-note">${escapeHtml(opts.priceNote)}</span>`;
       const cartKey = cartSourceKey + '|' + it.model;
@@ -5567,7 +6204,7 @@ function buildSimplePriceRowsHtml(items, opts) {
           : `<p class="row-sub">Артикул: ${escapeHtml(it.article)}</p>`)
       : '';
     const calcSlotHtml = (showCalc && !it.onRequest && !it.priceUnknown && !rowLocked)
-      ? '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, Math.round(it.price).toLocaleString('uk-UA') + (it.currency ? ' ' + it.currency : '')) + '</div>'
+      ? '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, formatListPrice(it)) + '</div>'
       : '';
 
     const rowCls = 'row' + (rowLocked ? ' row-locked' : '') + (animateRows ? ' tile-enter' : '');
@@ -6530,24 +7167,17 @@ document.getElementById('main').addEventListener('click', function(e) {
     if (info) openSeriesInfo(info.title, info.text);
     return;
   }
-  // Тап на маркування внутрішнього блоку в Мульти спліт-системах MHI — тип блоку і
-  // продуктивність (охолодження/нагрів), той самий спливаючий блок "детальніше".
-  const blockInfoZone = e.target.closest('.row-info-zone');
-  if (blockInfoZone) {
-    const info = seriesInfoTexts[Number(blockInfoZone.getAttribute('data-info-idx'))];
-    if (info) openSeriesInfo(info.title, info.text);
-    return;
-  }
   // "За запитом" (VRF GALACTIC) — веде на вкладку "Контакти" замість ціни/калькулятора.
   if (e.target.closest('.price-request-btn')) {
     switchTab('contacts', true);
     renderCurrentTab();
     return;
   }
-  const zoneEl = e.target.closest('.row-click-zone');
-  if (zoneEl) {
-    const model = zoneEl.getAttribute('data-model');
-    if (model) window.open('https://www.google.com/search?q=' + encodeURIComponent(model), '_blank');
+  // Тап по назві товару (Спліт / Мульти спліт / Напівпромислові) — картка на sun-ice.com.ua.
+  // data-site-url ставить applySiteLinks() лише рядкам, для яких картка є.
+  const siteEl = e.target.closest('.row-info[data-site-url]');
+  if (siteEl) {
+    window.open(siteEl.getAttribute('data-site-url'), '_blank', 'noopener');
     return;
   }
   const articleLinkBtn = e.target.closest('.row-article-link');
@@ -8581,54 +9211,163 @@ async function loadPriceIssues() {
   }
 }
 
+/* Підпис «Область · Підрозділ» для рядка проблеми: нові записи мають DIAG_AREA у tile_label і ключ у
+   brand (показуємо читабельну назву), старі (з розбору прайсу) — «розділ / БРЕНД», як і було. */
+const DIAG_SUB_LABELS = {
+  split_mhi: 'Спліт-системи / MHI', split_gal: 'Спліт-системи / GAL',
+  multisplit_mhi: 'Мульти спліт-системи / MHI', multisplit_gal: 'Мульти спліт-системи / GAL',
+  semi_mhi: 'Напівпромислові / MHI', semi_gal: 'Напівпромислові / GAL',
+  systemair: 'Вентиляційне обладнання / Systemair', frico: 'Повітряні завіси / FRICO',
+  table: 'файл посилань', 'app-files': 'файли застосунку', promotions: 'акції', 'series-images': 'фото серій',
+  profiles: 'профілі', rates: 'курси', build: 'версія', live: 'картки на сайті'
+};
+function diagIssueLabel(issue) {
+  const isNew = Object.values(DIAG_AREA).indexOf(issue.tile_label) !== -1 || issue.tile_label === 'Самодіагностика';
+  if (isNew) return issue.tile_label + ' · ' + (DIAG_SUB_LABELS[issue.brand] || issue.brand);
+  return issue.tile_label + ' / ' + String(issue.brand || '').toUpperCase();
+}
+/* Одна проблема на (область, підрозділ, тип): старі версії прайсу могли лишити дублікати — беремо найсвіжішу. */
+function diagDedupe(issues) {
+  const m = new Map();
+  issues.forEach(i => {
+    const k = i.tile_label + '\u0001' + i.brand + '\u0001' + i.kind;
+    const prev = m.get(k);
+    if (!prev || new Date(i.updated_at || i.created_at) > new Date(prev.updated_at || prev.created_at)) m.set(k, i);
+  });
+  const rank = { error: 0, warning: 1, info: 2 };
+  return Array.from(m.values()).sort((a, b) => (rank[a.kind] ?? 1) - (rank[b.kind] ?? 1) || diagIssueLabel(a).localeCompare(diagIssueLabel(b), 'uk'));
+}
+function diagTargetHtml(t) {
+  if (!t) return '';
+  const parts = [];
+  if (t.app) {
+    parts.push('<div class="diag-where">Де в застосунку: <b>' + escapeHtml((DIAG_SUB_LABELS[t.app.tile + '_' + t.app.brand] || t.app.tile + ' / ' + t.app.brand) + (t.app.model ? ' · ' + t.app.model : '')) + '</b></div>');
+  }
+  if (t.excel) parts.push('<div class="diag-where">Де в Excel: <b>' + escapeHtml(t.excel) + '</b></div>');
+  if (t.site) parts.push('<div class="diag-where">Куди веде на сайті: <b>' + escapeHtml(t.site) + '</b></div>');
+  const btns = [];
+  if (t.app) btns.push('<button type="button" class="diag-go-btn" data-diag-go="app">Відкрити в застосунку</button>');
+  if (t.tab && !t.app) btns.push('<button type="button" class="diag-go-btn" data-diag-go="tab">Перейти в розділ</button>');
+  if (t.site) btns.push('<button type="button" class="diag-go-btn" data-diag-go="site">Відкрити на сайті</button>');
+  return parts.join('') + (btns.length ? '<div class="diag-go">' + btns.join('') + '</div>' : '');
+}
 function priceIssueRowHtml(issue) {
-  const kindClass = issue.kind === 'warning' ? 'price-issue-warning' : 'price-issue-error';
-  const kindIcon = issue.kind === 'warning' ? '⚠️' : '⛔';
+  const icon = issue.kind === 'warning' ? '⚠️' : issue.kind === 'info' ? 'ℹ️' : '⛔';
+  const p = diagParseMessage(issue.message);
+  const subLabel = DIAG_SUB_LABELS[issue.brand];
+  if (subLabel && p.title.indexOf(subLabel + ': ') === 0) p.title = p.title.slice(subLabel.length + 2); // назва вже в заголовку рядка
+  const lines = p.lines.map(l => '<div class="diag-line">' + escapeHtml(l) + '</div>').join('');
   return `
-    <div class="price-issue-row ${kindClass}">
-      <div class="price-issue-text">
-        <strong>${kindIcon} ${escapeHtml(issue.tile_label)} / ${escapeHtml(String(issue.brand || '').toUpperCase())}</strong>
-        <div class="price-issue-msg">${escapeHtml(issue.message)}</div>
-        <div class="price-issue-meta">версія ${escapeHtml(String(issue.version))} · ${new Date(issue.created_at).toLocaleString('uk-UA')}</div>
+    <details class="diag-issue diag-${escapeHtml(issue.kind)}" data-target="${escapeHtml(JSON.stringify(p.target || null))}"
+             data-tile="${escapeHtml(issue.tile_label)}" data-brand="${escapeHtml(issue.brand)}" data-kind="${escapeHtml(issue.kind)}">
+      <summary><span class="diag-ico">${icon}</span><span class="diag-sum"><b>${escapeHtml(diagIssueLabel(issue))}</b><span class="diag-title">${escapeHtml(p.title)}</span></span></summary>
+      <div class="diag-body">
+        ${lines}
+        ${diagTargetHtml(p.target)}
+        <div class="diag-foot">
+          <span class="price-issue-meta">версія ${escapeHtml(String(issue.version))} · ${new Date(issue.updated_at || issue.created_at).toLocaleString('uk-UA')}</span>
+          <button type="button" class="price-issue-resolve-btn" data-action="resolve-price-issue">Вирішено</button>
+        </div>
       </div>
-      <button type="button" class="price-issue-resolve-btn" data-action="resolve-price-issue" data-id="${issue.id}">Вирішено</button>
-    </div>`;
+    </details>`;
 }
 
 function priceIssuesListHtml(issues) {
-  return issues.length ? issues.map(priceIssueRowHtml).join('') : '<div class="price-diag-ok">Проблем не виявлено ✓</div>';
+  const list = diagDedupe(issues || []);
+  if (!list.length) return '<div class="price-diag-ok">Проблем не виявлено ✓</div>';
+  const problems = list.filter(i => i.kind !== 'info'), notes = list.filter(i => i.kind === 'info');
+  return '<div class="diag-summary">Проблем: <b>' + problems.length + '</b>' + (notes.length ? ' · приміток: ' + notes.length : '') + '</div>' +
+    problems.map(priceIssueRowHtml).join('') +
+    (notes.length ? '<div class="diag-notes-title">Примітки (не проблеми)</div>' + notes.map(priceIssueRowHtml).join('') : '');
+}
+
+/* Звіт «що саме перевірено» після ручного прогону: кожна перевірка зі своїм статусом, щоб було видно покриття. */
+function diagCoverageHtml(run) {
+  if (!run) return '';
+  const status = c => {
+    const mine = run.issues.filter(i => i.tile === c.area && i.brand === c.sub);
+    if (mine.some(i => i.kind === 'error')) return '⛔';
+    if (mine.some(i => i.kind === 'warning')) return '⚠️';
+    return '✓';
+  };
+  const rows = run.checked.map(c => '<div class="diag-cov-row"><span class="diag-cov-st">' + status(c) + '</span><span><b>' + escapeHtml(c.area) + ' · ' + escapeHtml(c.label) + '</b>' +
+    (c.detail ? '<span class="diag-cov-detail">' + escapeHtml(c.detail) + '</span>' : '') + '</span></div>').join('');
+  return '<details class="diag-coverage"><summary>Що перевірено: ' + run.checked.length + ' пунктів · ' + new Date(run.at).toLocaleString('uk-UA') + '</summary>' + rows + '</details>';
+}
+
+/* «Куди веде»: відкриває розділ застосунку на потрібному списку й підсвічує рядок. */
+function diagOpenApp(t) {
+  switchTab('catalog', true);
+  activeTile = t.tile;
+  activeBrand = t.brand === 'gal' ? 'gal' : 'mhi';
+  if (t.tile === 'ventilation') { ventilationBrand = 'systemair'; systemairSearchQuery = t.model || ''; systemairRenderCount = SYSTEMAIR_BATCH; }
+  if (t.tile === 'aircurtains') { aircurtainsSearchQuery = t.model || ''; aircurtainsRenderCount = AIRCURTAINS_BATCH; }
+  history.pushState({ tab: 'catalog', tile: t.tile }, '', '#' + encodeURIComponent(t.tile));
+  renderCatalogView();
+  if (!t.model) return;
+  setTimeout(function () {
+    const el = Array.from(document.querySelectorAll('#main .row-name')).find(e => e.textContent.trim() === t.model);
+    if (!el) return;
+    const row = el.closest('.row');
+    row.scrollIntoView({ block: 'center' });
+    row.classList.add('diag-flash');
+    setTimeout(function () { row.classList.remove('diag-flash'); }, 3000);
+  }, 300);
 }
 
 function wirePriceIssueButtons(profile) {
-  document.querySelectorAll('[data-action="resolve-price-issue"]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      await sb.from('price_issues').update({ resolved: true }).eq('id', btn.getAttribute('data-id'));
-      const issues = await loadPriceIssues();
+  const card = document.querySelector('.price-diag-card');
+  if (!card || card.__diagWired) return;
+  card.__diagWired = true; // делегований обробник: список перемальовується, а карта лишається
+  card.addEventListener('click', async e => {
+    const go = e.target.closest('[data-diag-go]');
+    const issueEl = e.target.closest('.diag-issue');
+    if (go && issueEl) {
+      let t = null;
+      try { t = JSON.parse(issueEl.getAttribute('data-target')); } catch (err) { t = null; }
+      if (!t) return;
+      const kind = go.getAttribute('data-diag-go');
+      if (kind === 'app' && t.app) diagOpenApp(t.app);
+      else if (kind === 'tab' && t.tab) { switchTab(t.tab, true); renderCurrentTab(); }
+      else if (kind === 'site' && t.site) window.open(t.site.indexOf('http') === 0 ? t.site : 'https://sun-ice.com.ua/' + t.site, '_blank', 'noopener');
+      return;
+    }
+    const res = e.target.closest('[data-action="resolve-price-issue"]');
+    if (res && issueEl) {
+      res.disabled = true;
+      await sb.from('price_issues').update({ resolved: true })
+        .eq('tile_label', issueEl.getAttribute('data-tile')).eq('brand', issueEl.getAttribute('data-brand'))
+        .eq('kind', issueEl.getAttribute('data-kind')).eq('resolved', false);
       const list = document.getElementById('price-issues-list');
-      if (list) list.innerHTML = priceIssuesListHtml(issues);
-      wirePriceIssueButtons(profile);
-    });
+      if (list) list.innerHTML = priceIssuesListHtml(await loadPriceIssues());
+    }
   });
 }
 
-// Ручна перевірка прайсу "на вимогу" — не чекаючи, поки хтось із клієнтів відкриє каталог
-// і сам про це не здогадається. Корисно одразу після заливання нового price.xlsx у Storage:
-// натиснув — і одразу видно, чи все розпізналось, і де саме проблема, якщо ні.
+// Ручна самодіагностика "на вимогу" — не чекаючи, поки хтось із клієнтів відкриє каталог. Завантажує
+// свіжий price.xlsx, перераховує його й проганяє ВСІ перевірки (DIAG_CHECKS): ціни/маркування проти
+// Excel, посилання на сайт, зображення й файли, ролі, курси, версію застосунку, картки на сайті.
 async function runManualPriceCheck(profile) {
   const statusEl = document.getElementById('price-diag-status');
   const btn = document.getElementById('price-check-btn');
   if (btn) btn.disabled = true;
-  if (statusEl) statusEl.textContent = 'Перевірка...';
+  if (statusEl) statusEl.textContent = 'Завантажую прайс...';
   try {
     const meta = await checkPriceVersion();
-    await downloadAndParsePrice(meta ? meta.version : priceVersion);
+    const version = meta ? meta.version : priceVersion;
+    const parsed = await downloadAndParsePrice(version, { skipDiag: true });
     if (meta) { priceVersion = meta.version; persistProcessedCache(priceVersion); }
-    const issues = await loadPriceIssues();
+    const run = await runDiagnostics({
+      manual: true, wb: parsed.wb, data: parsed.data, version: version,
+      onProgress: label => { if (statusEl) statusEl.textContent = 'Перевіряю: ' + label + '...'; }
+    });
     const list = document.getElementById('price-issues-list');
-    if (list) list.innerHTML = priceIssuesListHtml(issues);
+    if (list) list.innerHTML = priceIssuesListHtml(await loadPriceIssues());
+    const cov = document.getElementById('price-diag-coverage');
+    if (cov) cov.innerHTML = diagCoverageHtml(lastDiagRun);
     wirePriceIssueButtons(profile);
-    if (statusEl) statusEl.textContent = 'Перевірку завершено: ' + new Date().toLocaleString('uk-UA');
+    const problems = run.issues.filter(i => i.kind !== 'info').length;
+    if (statusEl) statusEl.textContent = 'Перевірку завершено ' + new Date().toLocaleString('uk-UA') + ' · перевірено ' + run.checked.length + ' пунктів · проблем: ' + problems;
   } catch (e) {
     if (statusEl) statusEl.textContent = 'Не вдалося перевірити — немає інтернету?';
   }
@@ -8769,10 +9508,11 @@ async function renderAdminPanel(profile) {
     html += `
       <div class="price-diag-card">
         <div class="price-diag-header">
-          <span>Діагностика прайсу</span>
+          <span>Самодіагностика застосунку</span>
           <button type="button" class="link-btn" id="price-check-btn">🔍 Перевірити зараз</button>
         </div>
-        <div class="price-diag-status-line" id="price-diag-status"></div>
+        <div class="price-diag-status-line" id="price-diag-status">Перевіряється: ціни й маркування проти Excel, посилання на сайт, картки на сайті, зображення й файли, ролі, курси, версія застосунку.</div>
+        <div id="price-diag-coverage">${diagCoverageHtml(lastDiagRun)}</div>
         <div id="price-issues-list">${priceIssuesListHtml(priceIssues)}</div>
       </div>`;
   }

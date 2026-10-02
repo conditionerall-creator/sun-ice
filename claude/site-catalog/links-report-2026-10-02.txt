@@ -1,0 +1,41 @@
+ok: 282
+search: 4
+ambiguous: 0
+missing: 26
+accessory: 77
+
+--- search ---
+semi_mhi: FDE50VH + SRC50ZSX-W2(3) -> пошук "FDE50VH SRC50ZSX" (2 картки)
+semi_mhi: FDE60VH + SRC60ZSX-W1(3) -> пошук "FDE60VH SRC60ZSX" (2 картки)
+semi_mhi: FDT50VH + SRC50ZSX-W2(3) -> пошук "FDT50VH SRC50ZSX" (2 картки)
+semi_mhi: FDT60VH + SRC60ZSX-W1(3) -> пошук "FDT60VH SRC60ZSX" (2 картки)
+
+--- ambiguous ---
+
+--- missing ---
+multisplit_gal: GMZ5-42M7-W
+multisplit_gal: GKZ09MG-WR
+multisplit_gal: GKZ12MG-WR
+multisplit_gal: GMZ2-14H-W
+multisplit_gal: GMZ2-18H-W
+multisplit_gal: GMZ3-24H-W
+multisplit_gal: GMZ4-28H-W
+multisplit_gal: GKM12H-W
+multisplit_gal: GMZ2-14H-S
+multisplit_gal: GMZ2-18H-S
+multisplit_gal: GMZ4-36H-S
+semi_gal: GBZ18MLQ7-W + GCZ18MLNQ-W
+semi_gal: GBZ24MLQ-W + GCZ24MLNQ7-W
+semi_gal: GBZ48MLQ-W + GCZ48MLSQ7-W
+semi_gal: GBZ60ML-W + GCZ48MLS-W
+semi_gal: GBZ60MLQ-W + GCZ60MLSQ7-W
+semi_gal: GDZ18MLQ7-W + GCZ18MLNQ-W
+semi_gal: GDZ24MLQ7-W + GCZ24MLNQ7-W
+semi_gal: GDZ36MLQ7-W + GCZ36MLNQ-W
+semi_gal: GDZ36MLQ7-W + GCZ36MLSQ-W
+semi_gal: GDZ48MLQ7-W + GCZ48MLSQ7-W
+semi_gal: GDZ60ML-W + GCZ48MLS-W
+semi_gal: GDZ60MLQ7-W + GCZ60MLSQ7-W
+semi_gal: GFZ24MLQ-W + GCZ24MLNQ7-W
+semi_gal: GFZ48MLQ-W + GCZ48MLSQ7-W
+semi_gal: GFZ60MLQ-W + GCZ60MLSQ7-W

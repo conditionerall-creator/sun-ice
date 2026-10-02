@@ -1,0 +1,5369 @@
+{
+ "_about": "Знімок карток товарів sun-ice.com.ua для розділів Спліт / Мульти спліт / Напівпромислові (категорії + усі multy-split-systema-*). Зібрано 2026-10-02 краулінгом сайту (OpenCart). Поля: slug (адреса = https://sun-ice.com.ua/<slug>), pid (product_id), h1 (заголовок картки), code (\"Код товару\" на картці), indoor/outdoor (з таблиці характеристик), listed_in (у лістингу якої категорії показується картка; порожньо = картка жива, але в лістингу не видна), matched_by (з якими розділами застосунку збіглась). НЕ є частиною застосунку, лише довідка для Claude.",
+ "collected": "2026-10-02",
+ "count": 292,
+ "products": [
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz07a-w-gcz07a-w-vega",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz07a-w-gcz07a-w-vega",
+   "pid": "2515",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ07A-W / GCZ07A-W VEGA",
+   "code": "GKZ07A-W / GCZ07A-W",
+   "indoor": [
+    "GKZ07A-W"
+   ],
+   "outdoor": [
+    "GCZ07A-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz07m-w-gcz07m-w-proxima",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz07m-w-gcz07m-w-proxima",
+   "pid": "2502",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ07M-W / GCZ07M-W Proxima",
+   "code": "GKZ07M-W / GCZ07M-W",
+   "indoor": [
+    "GKZ07M-W"
+   ],
+   "outdoor": [
+    "GCZ07M-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz09a-w-gcz09a-w-vega",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz09a-w-gcz09a-w-vega",
+   "pid": "2516",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ09A-W / GCZ09A-W VEGA",
+   "code": "GKZ09A-W / GCZ09A-W",
+   "indoor": [
+    "GKZ09A-W"
+   ],
+   "outdoor": [
+    "GCZ09A-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz09hf-s-gcz09hf-s-orient",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz09hf-s-gcz09hf-s-orient",
+   "pid": "1974",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ09HF-S / GCZ09HF-S Orient",
+   "code": "GKZ09HF-S / GCZ09HF-S",
+   "indoor": [
+    "GKZ09HF-S"
+   ],
+   "outdoor": [
+    "GCZ09HF-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz09m-w-gcz09m-w-proxima",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz09m-w-gcz09m-w-proxima",
+   "pid": "2503",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ09M-W / GCZ09M-W Proxima",
+   "code": "GKZ09M-W / GCZ09M-W",
+   "indoor": [
+    "GKZ09M-W"
+   ],
+   "outdoor": [
+    "GCZ09M-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz09sh-w-gcz09sh-w-infini",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz09sh-w-gcz09sh-w-infini",
+   "pid": "2003",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ09SH-W / GCZ09SH-W INFINI",
+   "code": "GKZ09SH-W / GCZ09SH-W",
+   "indoor": [
+    "GKZ09SH-W"
+   ],
+   "outdoor": [
+    "GCZ09SH-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz09sh-ws-gcz09sh-w-infini",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz09sh-ws-gcz09sh-w-infini",
+   "pid": "2001",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ09SH-WS / GCZ09SH-W INFINI",
+   "code": "GKZ09SH-WS / GCZ09SH-W",
+   "indoor": [
+    "GKZ09SH-WS"
+   ],
+   "outdoor": [
+    "GCZ09SH-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz12a-w-gcz12a-w-vega",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz12a-w-gcz12a-w-vega",
+   "pid": "2517",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ12A-W / GCZ12A-W VEGA",
+   "code": "GKZ12A-W / GCZ12A-W",
+   "indoor": [
+    "GKZ12A-W"
+   ],
+   "outdoor": [
+    "GCZ12A-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz12hf-s-gcz12hf-s-orient",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz12hf-s-gcz12hf-s-orient",
+   "pid": "1975",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ12HF-S / GCZ12HF-S Orient",
+   "code": "GKZ12HF-S / GCZ12HF-S",
+   "indoor": [
+    "GKZ12HF-S"
+   ],
+   "outdoor": [
+    "GCZ12HF-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz12m-w-gcz12m-w-proxima",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz12m-w-gcz12m-w-proxima",
+   "pid": "2504",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ12M-W / GCZ12M-W Proxima",
+   "code": "GKZ12M-W / GCZ12M-W",
+   "indoor": [
+    "GKZ12M-W"
+   ],
+   "outdoor": [
+    "GCZ12M-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz12sh-w-gcz12sh-w-infini",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz12sh-w-gcz12sh-w-infini",
+   "pid": "2484",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ12SH-W / GCZ12SH-W INFINI",
+   "code": "GKZ12SH-W / GCZ12SH-W",
+   "indoor": [
+    "GKZ12SH-W"
+   ],
+   "outdoor": [
+    "GCZ12SH-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz12sh-ws-gcz12sh-w-infini",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz12sh-ws-gcz12sh-w-infini",
+   "pid": "2002",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ12SH-WS / GCZ12SH-W INFINI",
+   "code": "GKZ12SH-WS / GCZ12SH-W",
+   "indoor": [
+    "GKZ12SH-WS"
+   ],
+   "outdoor": [
+    "GCZ12SH-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz18a-w-gcz18a-w-vega",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz18a-w-gcz18a-w-vega",
+   "pid": "2518",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ18A-W / GCZ18A-W VEGA",
+   "code": "GKZ18A-W / GCZ18A-W",
+   "indoor": [
+    "GKZ18A-W"
+   ],
+   "outdoor": [
+    "GCZ18A-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz18hf-s-gcz18hf-s-orient",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz18hf-s-gcz18hf-s-orient",
+   "pid": "1976",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ18HF-S / GCZ18HF-S Orient",
+   "code": "GKZ18HF-S / GCZ18HF-S",
+   "indoor": [
+    "GKZ18HF-S"
+   ],
+   "outdoor": [
+    "GCZ18HF-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz18m-w-gcz18m-w-proxima",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz18m-w-gcz18m-w-proxima",
+   "pid": "2505",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ18M-W / GCZ18M-W Proxima",
+   "code": "GKZ18M-W / GCZ18M-W",
+   "indoor": [
+    "GKZ18M-W"
+   ],
+   "outdoor": [
+    "GCZ18M-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz24a-w-gcz24a-w-vega",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz24a-w-gcz24a-w-vega",
+   "pid": "2519",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ24A-W / GCZ24A-W VEGA",
+   "code": "GKZ24A-W / GCZ24A-W",
+   "indoor": [
+    "GKZ24A-W"
+   ],
+   "outdoor": [
+    "GCZ24A-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz24hf-s-gcz24hf-s-orient",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz24hf-s-gcz24hf-s-orient",
+   "pid": "1977",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ24HF-S / GCZ24HF-S Orient",
+   "code": "GKZ24HF-S / GCZ24HF-S",
+   "indoor": [
+    "GKZ24HF-S"
+   ],
+   "outdoor": [
+    "GCZ24HF-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-gkz24m-w-gcz24m-w-proxima",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-gkz24m-w-gcz24m-w-proxima",
+   "pid": "2506",
+   "h1": "Кондиціонер GALACTIC інверторний GKZ24M-W / GCZ24M-W Proxima",
+   "code": "GKZ24M-W / GCZ24M-W",
+   "indoor": [
+    "GKZ24M-W"
+   ],
+   "outdoor": [
+    "GCZ24M-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kanalnyj-gdz18mlq-w-gcz18mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kanalnyj-gdz18mlq-w-gcz18mlnq-w",
+   "pid": "1999",
+   "h1": "Кондиціонер GALACTIC інверторний канальний GDZ18MLQ-W / GCZ18MLNQ-W",
+   "code": "GDZ18MLQ-W / GCZ18MLNQ-W",
+   "indoor": [
+    "GDZ18MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ18MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kanalnyj-gdz24mlq-w-gcz24mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kanalnyj-gdz24mlq-w-gcz24mlnq-w",
+   "pid": "2514",
+   "h1": "Кондиціонер GALACTIC інверторний канальний GDZ24MLQ-W / GCZ24MLNQ-W",
+   "code": "GDZ24MLQ-W / GCZ24MLNQ-W",
+   "indoor": [
+    "GDZ24MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ24MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kanalnyj-gdz36mlq-w-gcz36mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kanalnyj-gdz36mlq-w-gcz36mlnq-w",
+   "pid": "1980",
+   "h1": "Кондиціонер GALACTIC інверторний канальний GDZ36MLQ-W / GCZ36MLNQ-W",
+   "code": "GDZ36MLQ-W / GCZ36MLNQ-W",
+   "indoor": [
+    "GDZ36MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ36MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kanalnyj-gdz36mlq-w-gcz36mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kanalnyj-gdz36mlq-w-gcz36mlsq-w",
+   "pid": "2525",
+   "h1": "Кондиціонер GALACTIC інверторний канальний GDZ36MLQ-W / GCZ36MLSQ-W",
+   "code": "GDZ36MLQ-W / GCZ36MLSQ-W",
+   "indoor": [
+    "GDZ36MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ36MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kanalnyj-gdz48mlq-w-gcz48mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kanalnyj-gdz48mlq-w-gcz48mlsq-w",
+   "pid": "1981",
+   "h1": "Кондиціонер GALACTIC інверторний канальний GDZ48MLQ-W / GCZ48MLSQ-W",
+   "code": "GDZ48MLQ-W / GCZ48MLSQ-W",
+   "indoor": [
+    "GDZ48MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ48MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kanalnyj-gdz60mlq-w-gcz60mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kanalnyj-gdz60mlq-w-gcz60mlsq-w",
+   "pid": "2481",
+   "h1": "Кондиціонер GALACTIC інверторний канальний GDZ60MLQ-W / GCZ60MLSQ-W",
+   "code": "GDZ60MLQ-W / GCZ60MLSQ-W",
+   "indoor": [
+    "GDZ60MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ60MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kasetnyj-gbz18mlq-w-gcz18mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kasetnyj-gbz18mlq-w-gcz18mlnq-w",
+   "pid": "2475",
+   "h1": "Кондиціонер GALACTIC інверторний касетний GBZ18MLQ-W / GCZ18MLNQ-W",
+   "code": "GBZ18MLQ-W / GCZ18MLNQ-W",
+   "indoor": [
+    "GBZ18MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ18MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kasetnyj-gbz24mlq-w-gcz24mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kasetnyj-gbz24mlq-w-gcz24mlnq-w",
+   "pid": "2471",
+   "h1": "Кондиціонер GALACTIC інверторний касетний GBZ24MLQ-W / GCZ24MLNQ-W",
+   "code": "GBZ24MLQ-W / GCZ24MLNQ-W",
+   "indoor": [
+    "GBZ24MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ24MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kasetnyj-gbz36mlq-w-gcz36mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kasetnyj-gbz36mlq-w-gcz36mlnq-w",
+   "pid": "2477",
+   "h1": "Кондиціонер GALACTIC інверторний касетний GBZ36MLQ-W / GCZ36MLNQ-W",
+   "code": "GBZ36MLQ-W / GCZ36MLNQ-W",
+   "indoor": [
+    "GBZ36MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ36MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kasetnyj-gbz36mlq-w-gcz36mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kasetnyj-gbz36mlq-w-gcz36mlsq-w",
+   "pid": "2473",
+   "h1": "Кондиціонер GALACTIC інверторний касетний GBZ36MLQ-W / GCZ36MLSQ-W",
+   "code": "GBZ36MLQ-W / GCZ36MLSQ-W",
+   "indoor": [
+    "GBZ36MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ36MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kasetnyj-gbz48mlq-w-gcz48mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kasetnyj-gbz48mlq-w-gcz48mlsq-w",
+   "pid": "2474",
+   "h1": "Кондиціонер GALACTIC інверторний касетний GBZ48MLQ-W / GCZ48MLSQ-W",
+   "code": "GBZ48MLQ-W / GCZ48MLSQ-W",
+   "indoor": [
+    "GBZ48MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ48MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-kasetnyj-gbz60mlq-w-gcz60mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-kasetnyj-gbz60mlq-w-gcz60mlsq-w",
+   "pid": "2476",
+   "h1": "Кондиціонер GALACTIC інверторний касетний GBZ60MLQ-W / GCZ60MLSQ-W",
+   "code": "GBZ60MLQ-W / GCZ60MLSQ-W",
+   "indoor": [
+    "GBZ60MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ60MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz18mlq-w-gcz18mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz18mlq-w-gcz18mlnq-w",
+   "pid": "2175",
+   "h1": "Кондиціонер GALACTIC інверторний підлогово-стельовий GFZ18MLQ-W / GCZ18MLNQ-W",
+   "code": "GFZ18MLQ-W / GCZ18MLNQ-W",
+   "indoor": [
+    "GFZ18MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ18MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz24mlq-w-gcz24mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz24mlq-w-gcz24mlnq-w",
+   "pid": "2172",
+   "h1": "Кондиціонер GALACTIC інверторний підлогово-стельовий GFZ24MLQ-W / GCZ24MLNQ-W",
+   "code": "GFZ24MLQ-W / GCZ24MLNQ-W",
+   "indoor": [
+    "GFZ24MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ24MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz36mlq-w-gcz36mlnq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz36mlq-w-gcz36mlnq-w",
+   "pid": "2171",
+   "h1": "Кондиціонер GALACTIC інверторний підлогово-стельовий GFZ36MLQ-W / GCZ36MLNQ-W",
+   "code": "GFZ36MLQ-W / GCZ36MLNQ-W",
+   "indoor": [
+    "GFZ36MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ36MLNQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz36mlq-w-gcz36mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz36mlq-w-gcz36mlsq-w",
+   "pid": "2526",
+   "h1": "Кондиціонер GALACTIC інверторний підлогово-стельовий GFZ36MLQ-W / GCZ36MLSQ-W",
+   "code": "GFZ36MLQ-W / GCZ36MLSQ-W",
+   "indoor": [
+    "GFZ36MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ36MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz48mlq-w-gcz48mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz48mlq-w-gcz48mlsq-w",
+   "pid": "2173",
+   "h1": "Кондиціонер GALACTIC інверторний підлогово-стельовий GFZ48MLQ-W / GCZ48MLSQ-W",
+   "code": "GFZ48MLQ-W / GCZ48MLSQ-W",
+   "indoor": [
+    "GFZ48MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ48MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz60mlq-w-gcz60mlsq-w",
+   "url": "https://sun-ice.com.ua/kondycioner-galactic-invertornyj-pidlogovo-stelovyj-gfz60mlq-w-gcz60mlsq-w",
+   "pid": "2174",
+   "h1": "Кондиціонер GALACTIC інверторний підлогово-стельовий GFZ60MLQ-W / GCZ60MLSQ-W",
+   "code": "GFZ60MLQ-W / GCZ60MLSQ-W",
+   "indoor": [
+    "GFZ60MLQ-W"
+   ],
+   "outdoor": [
+    "GCZ60MLSQ-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_gal"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-dxk09z6-w1-dxc09z6-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-dxk09z6-w1-dxc09z6-w1",
+   "pid": "2528",
+   "h1": "Кондиціонер Mitsubishi Heavy DXK09Z6-W1 / DXC09Z6-W1",
+   "code": "DXK09Z6-W1 / DXC09Z6-W1",
+   "indoor": [
+    "DXK09Z6-W1"
+   ],
+   "outdoor": [
+    "DXC09Z6-W1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-dxk12z6-w1-dxc12z6-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-dxk12z6-w1-dxc12z6-w1",
+   "pid": "2530",
+   "h1": "Кондиціонер Mitsubishi Heavy DXK12Z6-W1 / DXC12Z6-W1",
+   "code": "DXK12Z6-W1 / DXC12Z6-W1",
+   "indoor": [
+    "DXK12Z6-W1"
+   ],
+   "outdoor": [
+    "DXC12Z6-W1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-dxk15z6-w1-dxc15z6-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-dxk15z6-w1-dxc15z6-w1",
+   "pid": "2531",
+   "h1": "Кондиціонер Mitsubishi Heavy DXK15Z6-W1 / DXC15Z6-W1",
+   "code": "DXK15Z6-W1 / DXC15Z6-W1",
+   "indoor": [
+    "DXK15Z6-W1"
+   ],
+   "outdoor": [
+    "DXC15Z6-W1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-dxk18z6-w1-dxc18z6-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-dxk18z6-w1-dxc18z6-w1",
+   "pid": "2532",
+   "h1": "Кондиціонер Mitsubishi Heavy DXK18Z6-W1 / DXC18Z6-W1",
+   "code": "DXK18Z6-W1 / DXC18Z6-W1",
+   "indoor": [
+    "DXK18Z6-W1"
+   ],
+   "outdoor": [
+    "DXC18Z6-W1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf100vh-fdc100vna-w-kolonnyj-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf100vh-fdc100vna-w-kolonnyj-micro-inverter",
+   "pid": "2230",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF100VH / FDC100VNA-W Колонний Micro Inverter",
+   "code": "FDF100VH / FDC100VNA-W",
+   "indoor": [
+    "FDF100VH"
+   ],
+   "outdoor": [
+    "FDC100VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf100vh-fdc100vnp-w-kolonnyj-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf100vh-fdc100vnp-w-kolonnyj-standard-inverter",
+   "pid": "2238",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF100VH / FDC100VNP-W Колонний Standard Inverter",
+   "code": "FDF100VH / FDC100VNP-W",
+   "indoor": [
+    "FDF100VH"
+   ],
+   "outdoor": [
+    "FDC100VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf100vh-fdc100vnx-w-kolonnyj-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf100vh-fdc100vnx-w-kolonnyj-hyper-inverter",
+   "pid": "2224",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF100VH / FDC100VNX-W Колонний Hyper Inverter",
+   "code": "FDF100VH / FDC100VNX-W",
+   "indoor": [
+    "FDF100VH"
+   ],
+   "outdoor": [
+    "FDC100VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf100vh-fdc100vsa-w-kolonnyj-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf100vh-fdc100vsa-w-kolonnyj-micro-inverter",
+   "pid": "2231",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF100VH / FDC100VSA-W Колонний Micro Inverter",
+   "code": "FDF100VH / FDC100VSA-W",
+   "indoor": [
+    "FDF100VH"
+   ],
+   "outdoor": [
+    "FDC100VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf100vh-fdc100vsx-w-kolonnyj-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf100vh-fdc100vsx-w-kolonnyj-hyper-inverter",
+   "pid": "2225",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF100VH / FDC100VSX-W Колонний Hyper Inverter",
+   "code": "FDF100VH / FDC100VSX-W",
+   "indoor": [
+    "FDF100VH"
+   ],
+   "outdoor": [
+    "FDC100VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf100vh-fdc90vnp-w-kolonnyj-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf100vh-fdc90vnp-w-kolonnyj-standard-inverter",
+   "pid": "2237",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF100VH / FDC90VNP-W Колонний Standard Inverter",
+   "code": "FDF100VH / FDC90VNP-W",
+   "indoor": [
+    "FDF100VH"
+   ],
+   "outdoor": [
+    "FDC90VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf125vh-fdc125vna-w-kolonnyj-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf125vh-fdc125vna-w-kolonnyj-micro-inverter",
+   "pid": "2232",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF125VH / FDC125VNA-W Колонний Micro Inverter",
+   "code": "FDF125VH / FDC125VNA-W",
+   "indoor": [
+    "FDF125VH"
+   ],
+   "outdoor": [
+    "FDC125VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf125vh-fdc125vnx-w-kolonnyj-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf125vh-fdc125vnx-w-kolonnyj-hyper-inverter",
+   "pid": "2226",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF125VH / FDC125VNX-W Колонний Hyper Inverter",
+   "code": "FDF125VH / FDC125VNX-W",
+   "indoor": [
+    "FDF125VH"
+   ],
+   "outdoor": [
+    "FDC125VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf125vh-fdc125vsa-w-kolonnyj-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf125vh-fdc125vsa-w-kolonnyj-micro-inverter",
+   "pid": "2233",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF125VH / FDC125VSA-W Колонний Micro Inverter",
+   "code": "FDF125VH / FDC125VSA-W",
+   "indoor": [
+    "FDF125VH"
+   ],
+   "outdoor": [
+    "FDC125VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf125vh-fdc125vsx-w-kolonnyj-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf125vh-fdc125vsx-w-kolonnyj-hyper-inverter",
+   "pid": "2227",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF125VH / FDC125VSX-W Колонний Hyper Inverter",
+   "code": "FDF125VH / FDC125VSX-W",
+   "indoor": [
+    "FDF125VH"
+   ],
+   "outdoor": [
+    "FDC125VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf140vh-fdc140vna-w-kolonnyj-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf140vh-fdc140vna-w-kolonnyj-micro-inverter",
+   "pid": "2234",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF140VH / FDC140VNA-W Колонний Micro Inverter",
+   "code": "FDF140VH / FDC140VNA-W",
+   "indoor": [
+    "FDF140VH"
+   ],
+   "outdoor": [
+    "FDC140VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf140vh-fdc140vnx-w-kolonnyj-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf140vh-fdc140vnx-w-kolonnyj-hyper-inverter",
+   "pid": "2228",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF140VH / FDC140VNX-W Колонний Hyper Inverter",
+   "code": "FDF140VH / FDC140VNX-W",
+   "indoor": [
+    "FDF140VH"
+   ],
+   "outdoor": [
+    "FDC140VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf140vh-fdc140vsa-w-kolonnyj-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf140vh-fdc140vsa-w-kolonnyj-micro-inverter",
+   "pid": "2235",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF140VH / FDC140VSA-W Колонний Micro Inverter",
+   "code": "FDF140VH / FDC140VSA-W",
+   "indoor": [
+    "FDF140VH"
+   ],
+   "outdoor": [
+    "FDC140VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf140vh-fdc140vsx-w-kolonnyj-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf140vh-fdc140vsx-w-kolonnyj-hyper-inverter",
+   "pid": "2229",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF140VH / FDC140VSX-W Колонний Hyper Inverter",
+   "code": "FDF140VH / FDC140VSX-W",
+   "indoor": [
+    "FDF140VH"
+   ],
+   "outdoor": [
+    "FDC140VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf71vh-fdc71vnp-w-kolonnyj-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf71vh-fdc71vnp-w-kolonnyj-standard-inverter",
+   "pid": "2236",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF71VH / FDC71VNP-W Колонний Standard Inverter",
+   "code": "FDF71VH / FDC71VNP-W",
+   "indoor": [
+    "FDF71VH"
+   ],
+   "outdoor": [
+    "FDC71VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdf71vh-fdc71vnx-w-kolonnyj-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdf71vh-fdc71vnx-w-kolonnyj-hyper-inverter",
+   "pid": "2223",
+   "h1": "Кондиціонер Mitsubishi Heavy FDF71VH / FDC71VNX-W Колонний Hyper Inverter",
+   "code": "FDF71VH / FDC71VNX-W",
+   "indoor": [
+    "FDF71VH"
+   ],
+   "outdoor": [
+    "FDC71VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdt125vh-fdc125vnp-w-kasetnyj-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdt125vh-fdc125vnp-w-kasetnyj-standard-inverter",
+   "pid": "2182",
+   "h1": "Кондиціонер Mitsubishi Heavy FDT125VH / FDC125VNP-W Касетний Standard Inverter",
+   "code": "FDT125VH / FDC125VNP-W",
+   "indoor": [
+    "FDT125VH"
+   ],
+   "outdoor": [
+    "FDC125VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdt140vh-fdc140vsa-w-kasetnyj-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdt140vh-fdc140vsa-w-kasetnyj-micro-inverter",
+   "pid": "2181",
+   "h1": "Кондиціонер Mitsubishi Heavy FDT140VH / FDC140VSA-W Касетний Micro Inverter",
+   "code": "FDT140VH / FDC140VSA-W",
+   "indoor": [
+    "FDT140VH"
+   ],
+   "outdoor": [
+    "FDC140VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu100vh-fdc100vna-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu100vh-fdc100vna-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2210",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU100VH / FDC100VNA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU100VH / FDC100VNA-W",
+   "indoor": [
+    "FDU100VH"
+   ],
+   "outdoor": [
+    "FDC100VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu100vh-fdc100vnp-w-kanalnyj-vysokogo-tysku-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu100vh-fdc100vnp-w-kanalnyj-vysokogo-tysku-standard-inverter",
+   "pid": "2221",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU100VH / FDC100VNP-W Канальний високого тиску Standard Inverter",
+   "code": "FDU100VH / FDC100VNP-W",
+   "indoor": [
+    "FDU100VH"
+   ],
+   "outdoor": [
+    "FDC100VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu100vh-fdc100vnx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu100vh-fdc100vnx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "pid": "2203",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU100VH / FDC100VNX-W Канальний високого тиску Hyper Inverter",
+   "code": "FDU100VH / FDC100VNX-W",
+   "indoor": [
+    "FDU100VH"
+   ],
+   "outdoor": [
+    "FDC100VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu100vh-fdc100vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu100vh-fdc100vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2211",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU100VH / FDC100VSA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU100VH / FDC100VSA-W",
+   "indoor": [
+    "FDU100VH"
+   ],
+   "outdoor": [
+    "FDC100VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu100vh-fdc100vsx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu100vh-fdc100vsx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "pid": "2204",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU100VH / FDC100VSX-W Канальний високого тиску Hyper Inverter",
+   "code": "FDU100VH / FDC100VSX-W",
+   "indoor": [
+    "FDU100VH"
+   ],
+   "outdoor": [
+    "FDC100VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu100vh-fdc90vnp-w-kanalnyj-vysokogo-tysku-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu100vh-fdc90vnp-w-kanalnyj-vysokogo-tysku-standard-inverter",
+   "pid": "2220",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU100VH / FDC90VNP-W Канальний високого тиску Standard Inverter",
+   "code": "FDU100VH / FDC90VNP-W",
+   "indoor": [
+    "FDU100VH"
+   ],
+   "outdoor": [
+    "FDC90VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu125vh-fdc125vna-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu125vh-fdc125vna-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2212",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU125VH / FDC125VNA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU125VH / FDC125VNA-W",
+   "indoor": [
+    "FDU125VH"
+   ],
+   "outdoor": [
+    "FDC125VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu125vh-fdc125vnp-w-kanalnyj-vysokogo-tysku-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu125vh-fdc125vnp-w-kanalnyj-vysokogo-tysku-standard-inverter",
+   "pid": "2222",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU125VH / FDC125VNP-W Канальний високого тиску Standard Inverter",
+   "code": "FDU125VH / FDC125VNP-W",
+   "indoor": [
+    "FDU125VH"
+   ],
+   "outdoor": [
+    "FDC125VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu125vh-fdc125vnx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu125vh-fdc125vnx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "pid": "2205",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU125VH / FDC125VNX-W Канальний високого тиску Hyper Inverter",
+   "code": "FDU125VH / FDC125VNX-W",
+   "indoor": [
+    "FDU125VH"
+   ],
+   "outdoor": [
+    "FDC125VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu125vh-fdc125vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu125vh-fdc125vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2213",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU125VH / FDC125VSA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU125VH / FDC125VSA-W",
+   "indoor": [
+    "FDU125VH"
+   ],
+   "outdoor": [
+    "FDC125VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu125vh-fdc125vsx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu125vh-fdc125vsx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "pid": "2206",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU125VH / FDC125VSX-W Канальний високого тиску Hyper Inverter",
+   "code": "FDU125VH / FDC125VSX-W",
+   "indoor": [
+    "FDU125VH"
+   ],
+   "outdoor": [
+    "FDC125VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu140vh-fdc140vna-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu140vh-fdc140vna-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2214",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU140VH / FDC140VNA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU140VH / FDC140VNA-W",
+   "indoor": [
+    "FDU140VH"
+   ],
+   "outdoor": [
+    "FDC140VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu140vh-fdc140vnx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu140vh-fdc140vnx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "pid": "2207",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU140VH / FDC140VNX-W Канальний високого тиску Hyper Inverter",
+   "code": "FDU140VH / FDC140VNX-W",
+   "indoor": [
+    "FDU140VH"
+   ],
+   "outdoor": [
+    "FDC140VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu140vh-fdc140vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu140vh-fdc140vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2215",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU140VH / FDC140VSA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU140VH / FDC140VSA-W",
+   "indoor": [
+    "FDU140VH"
+   ],
+   "outdoor": [
+    "FDC140VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu140vh-fdc140vsx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu140vh-fdc140vsx-w-kanalnyj-vysokogo-tysku-hyper-inverter",
+   "pid": "2209",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU140VH / FDC140VSX-W Канальний високого тиску Hyper Inverter",
+   "code": "FDU140VH / FDC140VSX-W",
+   "indoor": [
+    "FDU140VH"
+   ],
+   "outdoor": [
+    "FDC140VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu200vh-fdc200vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu200vh-fdc200vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2216",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU200VH / FDC200VSA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU200VH / FDC200VSA-W",
+   "indoor": [
+    "FDU200VH"
+   ],
+   "outdoor": [
+    "FDC200VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu250vh-fdc250vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu250vh-fdc250vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2217",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU250VH / FDC250VSA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU250VH / FDC250VSA-W",
+   "indoor": [
+    "FDU250VH"
+   ],
+   "outdoor": [
+    "FDC250VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu280vh-fdc280vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu280vh-fdc280vsa-w-kanalnyj-vysokogo-tysku-micro-inverter",
+   "pid": "2218",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU280VH / FDC280VSA-W Канальний високого тиску Micro Inverter",
+   "code": "FDU280VH / FDC280VSA-W",
+   "indoor": [
+    "FDU280VH"
+   ],
+   "outdoor": [
+    "FDC280VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdu71vh-fdc71vnp-w-kanalnyj-vysokogo-tysku-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdu71vh-fdc71vnp-w-kanalnyj-vysokogo-tysku-standard-inverter",
+   "pid": "2219",
+   "h1": "Кондиціонер Mitsubishi Heavy FDU71VH / FDC71VNP-W Канальний високого тиску Standard Inverter",
+   "code": "FDU71VH / FDC71VNP-W",
+   "indoor": [
+    "FDU71VH"
+   ],
+   "outdoor": [
+    "FDC71VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum100vh-fdc100vna-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum100vh-fdc100vna-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "pid": "2193",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM100VH / FDC100VNA-W Канальний середнього тиску Micro Inverter",
+   "code": "FDUM100VH / FDC100VNA-W",
+   "indoor": [
+    "FDUM100VH"
+   ],
+   "outdoor": [
+    "FDC100VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum100vh-fdc100vnp-w-kanalni-serednogo-tysku-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum100vh-fdc100vnp-w-kanalni-serednogo-tysku-standard-inverter",
+   "pid": "2201",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM100VH / FDC100VNP-W Канальні середнього тиску Standard Inverter",
+   "code": "FDUM100VH / FDC100VNP-W",
+   "indoor": [
+    "FDUM100VH"
+   ],
+   "outdoor": [
+    "FDC100VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum100vh-fdc100vnx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum100vh-fdc100vnx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "pid": "2186",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM100VH / FDC100VNX-W Канальний середнього тиску Hyper Inverter",
+   "code": "FDUM100VH / FDC100VNX-W",
+   "indoor": [
+    "FDUM100VH"
+   ],
+   "outdoor": [
+    "FDC100VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum100vh-fdc100vsa-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum100vh-fdc100vsa-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "pid": "2194",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM100VH / FDC100VSA-W Канальний середнього тиску Micro Inverter",
+   "code": "FDUM100VH / FDC100VSA-W",
+   "indoor": [
+    "FDUM100VH"
+   ],
+   "outdoor": [
+    "FDC100VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum100vh-fdc100vsx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum100vh-fdc100vsx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "pid": "2187",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM100VH / FDC100VSX-W Канальний середнього тиску Hyper Inverter",
+   "code": "FDUM100VH / FDC100VSX-W",
+   "indoor": [
+    "FDUM100VH"
+   ],
+   "outdoor": [
+    "FDC100VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum100vh-fdc90vnp-w-kanalnyj-serednogo-tysku-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum100vh-fdc90vnp-w-kanalnyj-serednogo-tysku-standard-inverter",
+   "pid": "2200",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM100VH / FDC90VNP-W Канальний середнього тиску Standard Inverter",
+   "code": "FDUM100VH / FDC90VNP-W",
+   "indoor": [
+    "FDUM100VH"
+   ],
+   "outdoor": [
+    "FDC90VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum125vh-fdc125vna-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum125vh-fdc125vna-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "pid": "2195",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM125VH / FDC125VNA-W Канальний середнього тиску Micro Inverter",
+   "code": "FDUM125VH / FDC125VNA-W",
+   "indoor": [
+    "FDUM125VH"
+   ],
+   "outdoor": [
+    "FDC125VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum125vh-fdc125vnp-w-kanalni-serednogo-tysku-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum125vh-fdc125vnp-w-kanalni-serednogo-tysku-standard-inverter",
+   "pid": "2202",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM125VH / FDC125VNP-W Канальні середнього тиску Standard Inverter",
+   "code": "FDUM125VH / FDC125VNP-W",
+   "indoor": [
+    "FDUM125V"
+   ],
+   "outdoor": [
+    "FDC125VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum125vh-fdc125vnx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum125vh-fdc125vnx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "pid": "2188",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM125VH / FDC125VNX-W Канальний середнього тиску Hyper Inverter",
+   "code": "FDUM125VH / FDC125VNX-W",
+   "indoor": [
+    "FDUM125VH"
+   ],
+   "outdoor": [
+    "FDC125VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum125vh-fdc125vsa-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum125vh-fdc125vsa-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "pid": "2196",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM125VH / FDC125VSA-W Канальний середнього тиску Micro Inverter",
+   "code": "FDUM125VH / FDC125VSA-W",
+   "indoor": [
+    "FDUM125VH"
+   ],
+   "outdoor": [
+    "FDC125VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum125vh-fdc125vsx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum125vh-fdc125vsx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "pid": "2189",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM125VH / FDC125VSX-W Канальний середнього тиску Hyper Inverter",
+   "code": "FDUM125VH / FDC125VSX-W",
+   "indoor": [
+    "FDUM125VH"
+   ],
+   "outdoor": [
+    "FDC125VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum140vh-fdc140vna-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum140vh-fdc140vna-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "pid": "2197",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM140VH / FDC140VNA-W Канальний середнього тиску Micro Inverter",
+   "code": "FDUM140VH / FDC140VNA-W",
+   "indoor": [
+    "FDUM140VH"
+   ],
+   "outdoor": [
+    "FDC140VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum140vh-fdc140vnx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum140vh-fdc140vnx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "pid": "2190",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM140VH / FDC140VNX-W Канальний середнього тиску Hyper Inverter",
+   "code": "FDUM140VH / FDC140VNX-W",
+   "indoor": [
+    "FDUM140VH"
+   ],
+   "outdoor": [
+    "FDC140VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum140vh-fdc140vsa-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum140vh-fdc140vsa-w-kanalnyj-serednogo-tysku-micro-inverter",
+   "pid": "2198",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM140VH / FDC140VSA-W Канальний середнього тиску Micro Inverter",
+   "code": "FDUM140VH / FDC140VSA-W",
+   "indoor": [
+    "FDUM140VH"
+   ],
+   "outdoor": [
+    "FDC140VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum140vh-fdc140vsx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum140vh-fdc140vsx-w-kanalnyj-serednogo-tysku-hyper-inverter",
+   "pid": "2192",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM140VH / FDC140VSX-W Канальний середнього тиску Hyper Inverter",
+   "code": "FDUM140VH / FDC140VSX-W",
+   "indoor": [
+    "FDUM140VH"
+   ],
+   "outdoor": [
+    "FDC140VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-fdum71vh-fdc71vnp-w-kanalni-serednogo-tysku-standard-inverter",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-fdum71vh-fdc71vnp-w-kanalni-serednogo-tysku-standard-inverter",
+   "pid": "2199",
+   "h1": "Кондиціонер Mitsubishi Heavy FDUM71VH / FDC71VNP-W Канальні середнього тиску Standard Inverter",
+   "code": "FDUM71VH / FDC71VNP-W",
+   "indoor": [
+    "FDUM71VH"
+   ],
+   "outdoor": [
+    "FDC71VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-fdu71vh-fdc71vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-fdu71vh-fdc71vnx-w",
+   "pid": "2141",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний FDU71VH / FDC71VNX-W",
+   "code": "FDU71VH / FDC71VNX-W",
+   "indoor": [
+    "FDU71VH"
+   ],
+   "outdoor": [
+    "FDC71VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-fdum40vh-src40zsx-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-fdum40vh-src40zsx-w1",
+   "pid": "2558",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний FDUM40VH / SRC40ZSX-W1",
+   "code": "FDUM40VH / SRC40ZSX-W1",
+   "indoor": [
+    "FDUM40VH"
+   ],
+   "outdoor": [
+    "SRC40ZSX-W1"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-fdum50vh-src50zsx-w3",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-fdum50vh-src50zsx-w3",
+   "pid": "2560",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний FDUM50VH / SRC50ZSX-W3",
+   "code": "FDUM50VH / SRC50ZSX-W3",
+   "indoor": [
+    "FDUM50VH"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-fdum60vh-src60zsx-w3",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-fdum60vh-src60zsx-w3",
+   "pid": "2184",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний FDUM60VH / SRC60ZSX-W3",
+   "code": "FDUM60VH / SRC60ZSX-W3",
+   "indoor": [
+    "FDUM60VH"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W3"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-fdum71vh-fdc71vnx-w-serednogo-tysku",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-fdum71vh-fdc71vnx-w-serednogo-tysku",
+   "pid": "2098",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний FDUM71VH / FDC71VNX-W середнього тиску",
+   "code": "FDUM71VH / FDC71VNX-W",
+   "indoor": [
+    "FDUM71VH"
+   ],
+   "outdoor": [
+    "FDC71VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-srr25zs-w-src25zs-w2",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-srr25zs-w-src25zs-w2",
+   "pid": "2463",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний SRR25ZS-W / SRC25ZS-W2",
+   "code": "SRR25ZS-W / SRC25ZS-W2",
+   "indoor": [
+    "SRR25ZS-W"
+   ],
+   "outdoor": [
+    "SRC25ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-srr35zs-w-src35zs-w2",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-srr35zs-w-src35zs-w2",
+   "pid": "2464",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний SRR35ZS-W / SRC35ZS-W2",
+   "code": "SRR35ZS-W / SRC35ZS-W2",
+   "indoor": [
+    "SRR35ZS-W"
+   ],
+   "outdoor": [
+    "SRC35ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-srr50zs-w-src50zsx-w3-invertorna-split-systema",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-srr50zs-w-src50zsx-w3-invertorna-split-systema",
+   "pid": "2089",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний SRR50ZS-W / SRC50ZSX-W3 Інверторна спліт-система",
+   "code": "SRR50ZS-W / SRC50ZSX-W3",
+   "indoor": [
+    "SRR50ZS-W"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kanalnyj-srr60zs-w-src60zsx-w3-invertorna-split-systema",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kanalnyj-srr60zs-w-src60zsx-w3-invertorna-split-systema",
+   "pid": "2511",
+   "h1": "Кондиціонер Mitsubishi Heavy канальний SRR60ZS-W / SRC60ZSX-W3 Інверторна спліт-система",
+   "code": "SRR60ZS-W / SRC60ZSX-W3",
+   "indoor": [
+    "SRR60ZS-W"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vna-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vna-w",
+   "pid": "2149",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT100VH / FDC100VNA-W",
+   "code": "FDT100VH / FDC100VNA-W",
+   "indoor": [
+    "FDT100VH"
+   ],
+   "outdoor": [
+    "FDC100VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vnp-w",
+   "pid": "2153",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT100VH / FDC100VNP-W",
+   "code": "FDT100VH / FDC100VNP-W",
+   "indoor": [
+    "FDT100VH"
+   ],
+   "outdoor": [
+    "FDC100VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vnx-w",
+   "pid": "2150",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT100VH / FDC100VNX-W",
+   "code": "FDT100VH / FDC100VNX-W",
+   "indoor": [
+    "FDT100VH"
+   ],
+   "outdoor": [
+    "FDC100VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vsa-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vsa-w",
+   "pid": "2148",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT100VH / FDC100VSA-W",
+   "code": "FDT100VH / FDC100VSA-W",
+   "indoor": [
+    "FDT100VH"
+   ],
+   "outdoor": [
+    "FDC100VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vsx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc100vsx-w",
+   "pid": "2151",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT100VH / FDC100VSX-W",
+   "code": "FDT100VH / FDC100VSX-W",
+   "indoor": [
+    "FDT100VH"
+   ],
+   "outdoor": [
+    "FDC100VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc90vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt100vh-fdc90vnp-w",
+   "pid": "2152",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT100VH / FDC90VNP-W",
+   "code": "FDT100VH / FDC90VNP-W",
+   "indoor": [
+    "FDT100VH"
+   ],
+   "outdoor": [
+    "FDC90VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt125vh-fdc125vna-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt125vh-fdc125vna-w",
+   "pid": "2145",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT125VH / FDC125VNA-W",
+   "code": "FDT125VH / FDC125VNA-W",
+   "indoor": [
+    "FDT125VH"
+   ],
+   "outdoor": [
+    "FDC125VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt125vh-fdc125vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt125vh-fdc125vnx-w",
+   "pid": "2144",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT125VH / FDC125VNX-W",
+   "code": "FDT125VH / FDC125VNX-W",
+   "indoor": [
+    "FDT125VH"
+   ],
+   "outdoor": [
+    "FDC125VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt125vh-fdc125vsa-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt125vh-fdc125vsa-w",
+   "pid": "2147",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT125VH / FDC125VSA-W",
+   "code": "FDT125VH / FDC125VSA-W",
+   "indoor": [
+    "FDT125VH"
+   ],
+   "outdoor": [
+    "FDC125VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt125vh-fdc125vsx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt125vh-fdc125vsx-w",
+   "pid": "2146",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT125VH / FDC125VSX-W",
+   "code": "FDT125VH / FDC125VSX-W",
+   "indoor": [
+    "FDT125VH"
+   ],
+   "outdoor": [
+    "FDC125VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt140vh-fdc140vna-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt140vh-fdc140vna-w",
+   "pid": "2142",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT140VH / FDC140VNA-W",
+   "code": "FDT140VH / FDC140VNA-W",
+   "indoor": [
+    "FDT140VH"
+   ],
+   "outdoor": [
+    "FDC140VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt140vh-fdc140vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt140vh-fdc140vnx-w",
+   "pid": "2143",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT140VH / FDC140VNX-W",
+   "code": "FDT140VH / FDC140VNX-W",
+   "indoor": [
+    "FDT140VH"
+   ],
+   "outdoor": [
+    "FDC140VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt140vh-fdc140vsx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt140vh-fdc140vsx-w",
+   "pid": "2100",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT140VH / FDC140VSX-W",
+   "code": "FDT140VH / FDC140VSX-W",
+   "indoor": [
+    "FDT140VH"
+   ],
+   "outdoor": [
+    "FDC140VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt40vh-src40zsx-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt40vh-src40zsx-w1",
+   "pid": "2158",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT40VH / SRC40ZSX-W1",
+   "code": "FDT40VH / SRC40ZSX-W1",
+   "indoor": [
+    "FDT40VH"
+   ],
+   "outdoor": [
+    "SRC40ZSX-W1"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt50vh-src50zsx-w2",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt50vh-src50zsx-w2",
+   "pid": "2554",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT50VH / SRC50ZSX-W2",
+   "code": "FDT50VH / SRC50ZSX-W2",
+   "indoor": [
+    "FDT50VH"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W2"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt50vh-src50zsx-w3",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt50vh-src50zsx-w3",
+   "pid": "2157",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT50VH / SRC50ZSX-W3",
+   "code": "FDT50VH / SRC50ZSX-W3",
+   "indoor": [
+    "FDT50VH"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt60vh-src60zsx-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt60vh-src60zsx-w1",
+   "pid": "2555",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT60VH / SRC60ZSX-W1",
+   "code": "FDT60VH / SRC60ZSX-W1",
+   "indoor": [
+    "FDT60VH"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W1"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt60vh-src60zsx-w3",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt60vh-src60zsx-w3",
+   "pid": "2156",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT60VH / SRC60ZSX-W3",
+   "code": "FDT60VH / SRC60ZSX-W3",
+   "indoor": [
+    "FDT60VH"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W3"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt71vh-fdc71vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt71vh-fdc71vnp-w",
+   "pid": "2154",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT71VH / FDC71VNP-W",
+   "code": "FDT71VH / FDC71VNP-W",
+   "indoor": [
+    "FDT71VH"
+   ],
+   "outdoor": [
+    "FDC71VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdt71vh-fdc71vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdt71vh-fdc71vnx-w",
+   "pid": "2155",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDT71VH / FDC71VNX-W",
+   "code": "FDT71VH / FDC71VNX-W",
+   "indoor": [
+    "FDT71VH"
+   ],
+   "outdoor": [
+    "FDC71VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdtc25vh1-src25zs-w2",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdtc25vh1-src25zs-w2",
+   "pid": "2461",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDTC25VH1 / SRC25ZS-W2",
+   "code": "FDTC25VH1 / SRC25ZS-W2",
+   "indoor": [
+    "FDTC25VH1"
+   ],
+   "outdoor": [
+    "SRC25ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdtc35vh1-src35zs-w2",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdtc35vh1-src35zs-w2",
+   "pid": "2462",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDTC35VH1 / SRC35ZS-W2",
+   "code": "FDTC35VH1 / SRC35ZS-W2",
+   "indoor": [
+    "FDTC35VH1"
+   ],
+   "outdoor": [
+    "SRC35ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdtc40vh-src40zsx-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdtc40vh-src40zsx-w1",
+   "pid": "2046",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDTC40VH / SRC40ZSX-W1",
+   "code": "FDTC40VH / SRC40ZSX-W1",
+   "indoor": [
+    "FDTC40VH"
+   ],
+   "outdoor": [
+    "SRC40ZSX-W1"
+   ],
+   "listed_in": [
+    "split",
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdtc50vh-src50zsx-w3",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdtc50vh-src50zsx-w3",
+   "pid": "2556",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDTC50VH / SRC50ZSX-W3",
+   "code": "FDTC50VH / SRC50ZSX-W3",
+   "indoor": [
+    "FDTC50VH"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "split",
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-kasetnyj-fdtc60vh-src60zsx-w3",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-kasetnyj-fdtc60vh-src60zsx-w3",
+   "pid": "2557",
+   "h1": "Кондиціонер Mitsubishi Heavy касетний FDTC60VH / SRC60ZSX-W3",
+   "code": "FDTC60VH / SRC60ZSX-W3",
+   "indoor": [
+    "FDTC60VH"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W3"
+   ],
+   "listed_in": [
+    "split",
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srf25zs-w-src25zs-w2-pidlogova-split-systema",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srf25zs-w-src25zs-w2-pidlogova-split-systema",
+   "pid": "2465",
+   "h1": "Кондиціонер Mitsubishi Heavy SRF25ZS-W / SRC25ZS-W2 ﻿Підлогова спліт-система",
+   "code": "SRF25ZS-W / SRC25ZS-W2",
+   "indoor": [
+    "SRF25ZS-W"
+   ],
+   "outdoor": [
+    "SRC25ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srf35zs-w-src35zs-w2-pidlogova-split-systema",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srf35zs-w-src35zs-w2-pidlogova-split-systema",
+   "pid": "2466",
+   "h1": "Кондиціонер Mitsubishi Heavy SRF35ZS-W / SRC35ZS-W2 Підлогова спліт-система",
+   "code": "SRF35ZS-W / SRC35ZS-W2",
+   "indoor": [
+    "SRF35ZS-W"
+   ],
+   "outdoor": [
+    "SRC35ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srf50zsx-w-src50zsx-w3-pidlogova-split-systema",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srf50zsx-w-src50zsx-w3-pidlogova-split-systema",
+   "pid": "2551",
+   "h1": "Кондиціонер Mitsubishi Heavy SRF50ZSX-W / SRC50ZSX-W3 Підлогова спліт-система",
+   "code": "SRF50ZSX-W / SRC50ZSX-W3",
+   "indoor": [
+    "SRF50ZSX-W"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vna-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vna-w",
+   "pid": "2137",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK100ZR-W / FDC100VNA-W",
+   "code": "SRK100ZR-W / FDC100VNA-W",
+   "indoor": [
+    "SRK100ZR-W"
+   ],
+   "outdoor": [
+    "FDC100VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vnp-w",
+   "pid": "2044",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK100ZR-W / FDC100VNP-W",
+   "code": "SRK100ZR-W / FDC100VNP-W",
+   "indoor": [
+    "SRK100ZR-W"
+   ],
+   "outdoor": [
+    "FDC100VNP-W"
+   ],
+   "listed_in": [
+    "split",
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vnx-w",
+   "pid": "2135",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK100ZR-W / FDC100VNX-W",
+   "code": "SRK100ZR-W / FDC100VNX-W",
+   "indoor": [
+    "SRK100ZR-W"
+   ],
+   "outdoor": [
+    "FDC100VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vsa-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vsa-w",
+   "pid": "2138",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK100ZR-W / FDC100VSA-W",
+   "code": "SRK100ZR-W / FDC100VSA-W",
+   "indoor": [
+    "SRK100ZR-W"
+   ],
+   "outdoor": [
+    "FDC100VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vsx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk100zr-w-fdc100vsx-w",
+   "pid": "2136",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK100ZR-W / FDC100VSX-W",
+   "code": "SRK100ZR-W / FDC100VSX-W",
+   "indoor": [
+    "SRK100ZR-W"
+   ],
+   "outdoor": [
+    "FDC100VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk15ztl-w-src15ztl-w-standard-plus-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk15ztl-w-src15ztl-w-standard-plus-series",
+   "pid": "2562",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK15ZTL-W / SRC15ZTL-W Standard Plus Series",
+   "code": "SRK15ZTL-W / SRC15ZTL-W",
+   "indoor": [
+    "SRK15ZTL-W"
+   ],
+   "outdoor": [
+    "SRC15ZTL-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zs-w-src20zs-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zs-w-src20zs-w-premium-series",
+   "pid": "2433",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZS-W / SRC20ZS-W Premium Series",
+   "code": "SRK20ZS-W / SRC20ZS-W",
+   "indoor": [
+    "SRK20ZS-W"
+   ],
+   "outdoor": [
+    "SRC20ZS-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zs-wb-src20zs-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zs-wb-src20zs-w-premium-series",
+   "pid": "2439",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZS-WB / SRC20ZS-W Premium Series",
+   "code": "SRK20ZS-WB / SRC20ZS-W",
+   "indoor": [
+    "SRK20ZS-WB"
+   ],
+   "outdoor": [
+    "SRC20ZS-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zs-wt-src20zs-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zs-wt-src20zs-w-premium-series",
+   "pid": "2026",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZS-WT / SRC20ZS-W Premium Series",
+   "code": "SRK20ZS-WT / SRC20ZS-W",
+   "indoor": [
+    "SRK20ZS-WT"
+   ],
+   "outdoor": [
+    "SRC20ZS-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zspr-s-src20zspr-s-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zspr-s-src20zspr-s-standard-series",
+   "pid": "2034",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZSPR-S / SRC20ZSPR-S Standard series",
+   "code": "SRK20ZSPR-S / SRC20ZSPR-S",
+   "indoor": [
+    "SRK20ZSPR-S"
+   ],
+   "outdoor": [
+    "SRC20ZSPR-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zsx-w-src20zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zsx-w-src20zsx-w-diamond-series",
+   "pid": "2446",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZSX-W / SRC20ZSX-W Diamond Series",
+   "code": "SRK20ZSX-W / SRC20ZSX-W",
+   "indoor": [
+    "SRK20ZSX-W"
+   ],
+   "outdoor": [
+    "SRC20ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zsx-wb-src20zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zsx-wb-src20zsx-w-diamond-series",
+   "pid": "2451",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZSX-WB / SRC20ZSX-W Diamond Series",
+   "code": "SRK20ZSX-WB / SRC20ZSX-W",
+   "indoor": [
+    "SRK20ZSX-WВ"
+   ],
+   "outdoor": [
+    "SRC20ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zsx-wt-src20zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zsx-wt-src20zsx-w-diamond-series",
+   "pid": "2450",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZSX-WT / SRC20ZSX-W Diamond Series",
+   "code": "SRK20ZSX-WT / SRC20ZSX-W",
+   "indoor": [
+    "SRK20ZSX-WТ"
+   ],
+   "outdoor": [
+    "SRC20ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zt-wf-src20zt-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zt-wf-src20zt-w-premium-series",
+   "pid": "2579",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZT-WF / SRC20ZT-W Premium Series",
+   "code": "SRK20ZT-WF / SRC20ZT-W",
+   "indoor": [
+    "SRK20ZT-WF"
+   ],
+   "outdoor": [
+    "SRC20ZT-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zt-wfb-src20zt-wb-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zt-wfb-src20zt-wb-premium-series",
+   "pid": "2587",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZT-WFB / SRC20ZT-WB Premium Series",
+   "code": "SRK20ZT-WFB / SRC20ZT-WB",
+   "indoor": [
+    "SRK20ZT-WFB"
+   ],
+   "outdoor": [
+    "SRC20ZT-WB"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20zt-wft-src20zt-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20zt-wft-src20zt-w-premium-series",
+   "pid": "2583",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZT-WFT / SRC20ZT-W Premium Series",
+   "code": "SRK20ZT-WFT / SRC20ZT-W",
+   "indoor": [
+    "SRK20ZT-WFT"
+   ],
+   "outdoor": [
+    "SRC20ZT-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk20ztl-w-src20ztl-w-standard-plus-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk20ztl-w-src20ztl-w-standard-plus-series",
+   "pid": "2563",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK20ZTL-W / SRC20ZTL-W Standard Plus Series",
+   "code": "SRK20ZTL-W / SRC20ZTL-W",
+   "indoor": [
+    "SRK20ZTL-W"
+   ],
+   "outdoor": [
+    "SRC20ZTL-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zs-w-src25zs-w2-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zs-w-src25zs-w2-premium-series",
+   "pid": "2535",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZS-W / SRC25ZS-W2 Premium Series",
+   "code": "SRK25ZS-W / SRC25ZS-W2",
+   "indoor": [
+    "SRK25ZS-W"
+   ],
+   "outdoor": [
+    "SRC25ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zs-wb-src25zs-w2-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zs-wb-src25zs-w2-premium-series",
+   "pid": "2538",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZS-WB / SRC25ZS-W2 Premium Series",
+   "code": "SRK25ZS-WB / SRC25ZS-W2",
+   "indoor": [
+    "SRK25ZS-WB"
+   ],
+   "outdoor": [
+    "SRC25ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zs-wt-src25zs-w2-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zs-wt-src25zs-w2-premium-series",
+   "pid": "2537",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZS-WT / SRC25ZS-W2 Premium Series",
+   "code": "SRK25ZS-WT / SRC25ZS-W2",
+   "indoor": [
+    "SRK25ZS-WT"
+   ],
+   "outdoor": [
+    "SRC25ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zsp-w-1-src25zsp-w-1-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zsp-w-1-src25zsp-w-1-standard-series",
+   "pid": "2521",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZSP-W1 / SRC25ZSP-W1 Standard series",
+   "code": "SRK25ZSP-W1 / SRC25ZSP-W1",
+   "indoor": [
+    "SRK25ZSP-W1"
+   ],
+   "outdoor": [
+    "SRC25ZSP-W1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zspr-s-src25zspr-s-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zspr-s-src25zspr-s-standard-series",
+   "pid": "2036",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZSPR-S / SRC25ZSPR-S Standard series",
+   "code": "SRK25ZSPR-S / SRC25ZSPR-S",
+   "indoor": [
+    "SRK25ZSPR-S"
+   ],
+   "outdoor": [
+    "SRC25ZSPR-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zsx-w-src25zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zsx-w-src25zsx-w-diamond-series",
+   "pid": "2447",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZSX-W / SRC25ZSX-W Diamond Series",
+   "code": "SRK25ZSX-W / SRC25ZSX-W",
+   "indoor": [
+    "SRK25ZSX-W"
+   ],
+   "outdoor": [
+    "SRC25ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zsx-wb-src25zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zsx-wb-src25zsx-w-diamond-series",
+   "pid": "2453",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZSX-WB / SRC25ZSX-W Diamond Series",
+   "code": "SRK25ZSX-WB / SRC25ZSX-W",
+   "indoor": [
+    "SRK25ZSX-WB"
+   ],
+   "outdoor": [
+    "SRC25ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zsx-wt-src25zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zsx-wt-src25zsx-w-diamond-series",
+   "pid": "2452",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZSX-WT / SRC25ZSX-W Diamond Series",
+   "code": "SRK25ZSX-WT / SRC25ZSX-W",
+   "indoor": [
+    "SRK25ZSX-WT"
+   ],
+   "outdoor": [
+    "SRC25ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zt-wf-src25zt-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zt-wf-src25zt-w-premium-series",
+   "pid": "2580",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZT-WF / SRC25ZT-W Premium Series",
+   "code": "SRK25ZT-WF / SRC25ZT-W",
+   "indoor": [
+    "SRK25ZT-WF"
+   ],
+   "outdoor": [
+    "SRC25ZT-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zt-wfb-src25zt-wb-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zt-wfb-src25zt-wb-premium-series",
+   "pid": "2588",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZT-WFB / SRC25ZT-WB Premium Series",
+   "code": "SRK25ZT-WFB / SRC25ZT-WB",
+   "indoor": [
+    "SRK25ZT-WFB"
+   ],
+   "outdoor": [
+    "SRC25ZT-WB"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25zt-wft-src25zt-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25zt-wft-src25zt-w-premium-series",
+   "pid": "2584",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZT-WFT / SRC25ZT-W Premium Series",
+   "code": "SRK25ZT-WFT / SRC25ZT-W",
+   "indoor": [
+    "SRK25ZT-WFT"
+   ],
+   "outdoor": [
+    "SRC25ZT-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk25ztl-w-src25ztl-w-standard-plus-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk25ztl-w-src25ztl-w-standard-plus-series",
+   "pid": "2564",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK25ZTL-W / SRC25ZTL-W Standard Plus Series",
+   "code": "SRK25ZTL-W / SRC25ZTL-W",
+   "indoor": [
+    "SRK25ZTL-W"
+   ],
+   "outdoor": [
+    "SRC25ZTL-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zs-w-src35zs-w2-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zs-w-src35zs-w2-premium-series",
+   "pid": "2536",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZS-W / SRC35ZS-W2 Premium Series",
+   "code": "SRK35ZS-W / SRC35ZS-W2",
+   "indoor": [
+    "SRK35ZS-W"
+   ],
+   "outdoor": [
+    "SRC35ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zs-wb-src35zs-w2-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zs-wb-src35zs-w2-premium-series",
+   "pid": "2540",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZS-WB / SRC35ZS-W2 Premium Series",
+   "code": "SRK35ZS-WB / SRC35ZS-W2",
+   "indoor": [
+    "SRK35ZS-WB"
+   ],
+   "outdoor": [
+    "SRC35ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zs-wt-src35zs-w2-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zs-wt-src35zs-w2-premium-series",
+   "pid": "2539",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZS-WT / SRC35ZS-W2 Premium Series",
+   "code": "SRK35ZS-WT / SRC35ZS-W2",
+   "indoor": [
+    "SRK35ZS-WT"
+   ],
+   "outdoor": [
+    "SRC35ZS-W2"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zsp-w-1-src35zsp-w-1-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zsp-w-1-src35zsp-w-1-standard-series",
+   "pid": "2522",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZSP-W1 / SRC35ZSP-W1 Standard series",
+   "code": "SRK35ZSP-W1 / SRC35ZSP-W1",
+   "indoor": [
+    "SRK35ZSP-W1"
+   ],
+   "outdoor": [
+    "SRC35ZSP-W1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zspr-s-src35zspr-s-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zspr-s-src35zspr-s-standard-series",
+   "pid": "2038",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZSPR-S / SRC35ZSPR-S Standard series",
+   "code": "SRK35ZSPR-S / SRC35ZSPR-S",
+   "indoor": [
+    "SRK35ZSPR-S"
+   ],
+   "outdoor": [
+    "SRC35ZSPR-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zsx-w-src35zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zsx-w-src35zsx-w-diamond-series",
+   "pid": "2448",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZSX-W / SRC35ZSX-W Diamond Series",
+   "code": "SRK35ZSX-W / SRC35ZSX-W",
+   "indoor": [
+    "SRK35ZSX-W"
+   ],
+   "outdoor": [
+    "SRC35ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zsx-wb-src35zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zsx-wb-src35zsx-w-diamond-series",
+   "pid": "2455",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZSX-WB / SRC35ZSX-W Diamond Series",
+   "code": "SRK35ZSX-WB / SRC35ZSX-W",
+   "indoor": [
+    "SRK35ZSX-WB"
+   ],
+   "outdoor": [
+    "SRC35ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zsx-wt-src35zsx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zsx-wt-src35zsx-w-diamond-series",
+   "pid": "2454",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZSX-WT / SRC35ZSX-W Diamond Series",
+   "code": "SRK35ZSX-WT / SRC35ZSX-W",
+   "indoor": [
+    "SRK35ZSX-WT"
+   ],
+   "outdoor": [
+    "SRC35ZSX-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zt-wf-src35zt-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zt-wf-src35zt-w-premium-series",
+   "pid": "2581",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZT-WF / SRC35ZT-W Premium Series",
+   "code": "SRK35ZT-WF / SRC35ZT-W",
+   "indoor": [
+    "SRK35ZT-WF"
+   ],
+   "outdoor": [
+    "SRC35ZT-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zt-wf-src35zt-w-premium-series-1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zt-wf-src35zt-w-premium-series-1",
+   "pid": "2585",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZT-WF / SRC35ZT-W Premium Series",
+   "code": "SRK35ZT-WFT / SRC35ZT-W",
+   "indoor": [
+    "SRK35ZT-WF"
+   ],
+   "outdoor": [
+    "SRC35ZT-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35zt-wfb-src35zt-wb-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35zt-wfb-src35zt-wb-premium-series",
+   "pid": "2589",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZT-WFB / SRC35ZT-WB Premium Series",
+   "code": "SRK35ZT-WFB / SRC35ZT-WB",
+   "indoor": [
+    "SRK35ZT-WFB"
+   ],
+   "outdoor": [
+    "SRC35ZT-WB"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk35ztl-w-src35ztl-w-standard-plus-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk35ztl-w-src35ztl-w-standard-plus-series",
+   "pid": "2565",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK35ZTL-W / SRC35ZTL-W Standard Plus Series",
+   "code": "SRK35ZTL-W / SRC35ZTL-W",
+   "indoor": [
+    "SRK35ZTL-W"
+   ],
+   "outdoor": [
+    "SRC35ZTL-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk45zsp-w-1-src45zsp-w-1-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk45zsp-w-1-src45zsp-w-1-standard-series",
+   "pid": "2523",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK45ZSP-W1 / SRC45ZSP-W1 Standard series",
+   "code": "SRK45ZSP-W1 / SRC45ZSP-W1",
+   "indoor": [
+    "SRK45ZSP-W1"
+   ],
+   "outdoor": [
+    "SRC45ZSP-W1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk45zspr-s-src45zspr-s-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk45zspr-s-src45zspr-s-standard-series",
+   "pid": "2039",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK45ZSPR-S / SRC45ZSPR-S Standard series",
+   "code": "SRK45ZSPR-S / SRC45ZSPR-S",
+   "indoor": [
+    "SRK45ZSPR-S"
+   ],
+   "outdoor": [
+    "SRC45ZSPR-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50he-s1-srs50he-s1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50he-s1-srs50he-s1",
+   "pid": "2176",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50HE-S1 / SRС50HE-S1",
+   "code": "SRK50HE-S1 / SRС50HE-S1",
+   "indoor": [
+    "SRK50HE-S1"
+   ],
+   "outdoor": [
+    "SRС50HE-S1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zs-w-src50zs-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zs-w-src50zs-w-premium-series",
+   "pid": "2025",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZS-W / SRC50ZS-W Premium Series",
+   "code": "SRK50ZS-W / SRC50ZS-W",
+   "indoor": [
+    "SRK50ZS-W"
+   ],
+   "outdoor": [
+    "SRC50ZS-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zs-wb-src50zs-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zs-wb-src50zs-w-premium-series",
+   "pid": "2445",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZS-WB / SRC50ZS-W Premium Series",
+   "code": "SRK50ZS-WB / SRC50ZS-W",
+   "indoor": [
+    "SRK50ZS-WB"
+   ],
+   "outdoor": [
+    "SRC50ZS-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zs-wt-src50zs-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zs-wt-src50zs-w-premium-series",
+   "pid": "2444",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZS-WT / SRC50ZS-W Premium Series",
+   "code": "SRK50ZS-WT / SRC50ZS-W",
+   "indoor": [
+    "SRK50ZS-WT"
+   ],
+   "outdoor": [
+    "SRC50ZS-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zsp-w1-src50zsp-w1-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zsp-w1-src50zsp-w1-standard-series",
+   "pid": "2529",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZSP-W1 / SRC50ZSP-W1 Standard series",
+   "code": "SRK50ZSP-W1 / SRC50ZSP-W1",
+   "indoor": [
+    "SRK50ZSP-W1"
+   ],
+   "outdoor": [
+    "SRC50ZSP-W1"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zsx-w-src50zsx-w3-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zsx-w-src50zsx-w3-diamond-series",
+   "pid": "2534",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZSX-W / SRC50ZSX-W3 Diamond Series",
+   "code": "SRK50ZSX-W / SRC50ZSX-W3",
+   "indoor": [
+    "SRK50ZSX-W"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zsx-wb-src50zsx-w3-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zsx-wb-src50zsx-w3-diamond-series",
+   "pid": "2546",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZSX-WB / SRC50ZSX-W3 Diamond Series",
+   "code": "SRK50ZSX-WB / SRC50ZSX-W3",
+   "indoor": [
+    "SRK50ZSX-WB"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zsx-wt-src50zsx-w3-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zsx-wt-src50zsx-w3-diamond-series",
+   "pid": "2544",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZSX-WT / SRC50ZSX-W3 Diamond Series",
+   "code": "SRK50ZSX-WT / SRC50ZSX-W3",
+   "indoor": [
+    "SRK50ZSX-WT"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zt-wf-src50zt-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zt-wf-src50zt-w-premium-series",
+   "pid": "2582",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZT-WF / SRC50ZT-W Premium Series",
+   "code": "SRK50ZT-WF / SRC50ZT-W",
+   "indoor": [
+    "SRK50ZT-WF"
+   ],
+   "outdoor": [
+    "SRC50ZT-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zt-wfb-src50zt-wb-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zt-wfb-src50zt-wb-premium-series",
+   "pid": "2590",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZT-WFB / SRC50ZT-WB Premium Series",
+   "code": "SRK50ZT-WFB / SRC50ZT-WB",
+   "indoor": [
+    "SRK50ZT-WFB"
+   ],
+   "outdoor": [
+    "SRC50ZT-WB"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50zt-wft-src50zt-w-premium-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50zt-wft-src50zt-w-premium-series",
+   "pid": "2586",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZT-WFT / SRC50ZT-W Premium Series",
+   "code": "SRK50ZT-WFT / SRC50ZT-W",
+   "indoor": [
+    "SRK50ZTT-WF"
+   ],
+   "outdoor": [
+    "SRC50ZT-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk50ztl-w-src50ztl-w-standard-plus-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk50ztl-w-src50ztl-w-standard-plus-series",
+   "pid": "2566",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK50ZTL-W / SRC50ZTL-W Standard Plus Series",
+   "code": "SRK50ZTL-W / SRC50ZTL-W",
+   "indoor": [
+    "SRK50ZTL-W"
+   ],
+   "outdoor": [
+    "SRC50ZTL-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk60zsx-w-src60zsx-w3-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk60zsx-w-src60zsx-w3-diamond-series",
+   "pid": "2542",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK60ZSX-W / SRC60ZSX-W3 Diamond Series",
+   "code": "SRK60ZSX-W / SRC60ZSX-W3",
+   "indoor": [
+    "SRK60ZSX-W"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk60zsx-wb-src60zsx-w3-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk60zsx-wb-src60zsx-w3-diamond-series",
+   "pid": "2550",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK60ZSX-WB / SRC60ZSX-W3 Diamond Series",
+   "code": "SRK60ZSX-WB / SRC60ZSX-W3",
+   "indoor": [
+    "SRK60ZSX-WB"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk60zsx-wt-src60zsx-w3-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk60zsx-wt-src60zsx-w3-diamond-series",
+   "pid": "2548",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK60ZSX-WT / SRC60ZSX-W3 Diamond Series",
+   "code": "SRK60ZSX-WT / SRC60ZSX-W3",
+   "indoor": [
+    "SRK60ZSX-WT"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W3"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk63zr-w-src63zr-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk63zr-w-src63zr-w-diamond-series",
+   "pid": "2037",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK63ZR-W / SRC63ZR-W Diamond Series",
+   "code": "SRK63ZR-W / SRC63ZR-W",
+   "indoor": [
+    "SRK63ZR-W"
+   ],
+   "outdoor": [
+    "SRC63ZR-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk63zspr-s-src63zspr-s-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk63zspr-s-src63zspr-s-standard-series",
+   "pid": "2057",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK63ZSPR-S / SRC63ZSPR-S Standard series",
+   "code": "SRK63ZSPR-S / SRC63ZSPR-S",
+   "indoor": [
+    "SRK63ZSPR-S"
+   ],
+   "outdoor": [
+    "SRC63ZSPR-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk63ztl-w-src63ztl-w-standard-plus-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk63ztl-w-src63ztl-w-standard-plus-series",
+   "pid": "2567",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK63ZTL-W / SRC63ZTL-W Standard Plus Series",
+   "code": "SRK63ZTL-W / SRC63ZTL-W",
+   "indoor": [
+    "SRK63ZTL-W"
+   ],
+   "outdoor": [
+    "SRC63ZTL-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk71zr-w-fdc71vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk71zr-w-fdc71vnp-w",
+   "pid": "2460",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK71ZR-W / FDC71VNP-W",
+   "code": "SRK71ZR-W / FDC71VNP-W",
+   "indoor": [
+    "SRK71ZR-W"
+   ],
+   "outdoor": [
+    "FDC71VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk71zr-w-fdc71vnx-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk71zr-w-fdc71vnx-w-diamond-series",
+   "pid": "2140",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK71ZR-W / FDC71VNX-W Diamond series",
+   "code": "SRK71ZR-W / FDC71VNX-W",
+   "indoor": [
+    "SRK71ZR-W"
+   ],
+   "outdoor": [
+    "FDC71VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk71zr-w-src71zr-w-diamond-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk71zr-w-src71zr-w-diamond-series",
+   "pid": "2040",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK71ZR-W / SRC71ZR-W Diamond Series",
+   "code": "SRK71ZR-W / SRC71ZR-W",
+   "indoor": [
+    "SRK71ZR-W"
+   ],
+   "outdoor": [
+    "SRC71ZR-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk71zspr-s-src71zspr-s-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk71zspr-s-src71zspr-s-standard-series",
+   "pid": "2058",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK71ZSPR-S / SRC71ZSPR-S Standard series",
+   "code": "SRK71ZSPR-S / SRC71ZSPR-S",
+   "indoor": [
+    "SRK71ZSPR-S"
+   ],
+   "outdoor": [
+    "SRC71ZSPR-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk71ztl-w-src71ztl-w-standard-plus-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk71ztl-w-src71ztl-w-standard-plus-series",
+   "pid": "2568",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK71ZTL-W / SRC71ZTL-W Standard Plus Series",
+   "code": "SRK71ZTL-W / SRC71ZTL-W",
+   "indoor": [
+    "SRK71ZTL-W"
+   ],
+   "outdoor": [
+    "SRC71ZTL-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk80zr-w-src80zr-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk80zr-w-src80zr-w",
+   "pid": "2041",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK80ZR-W / SRC80ZR-W",
+   "code": "SRK80ZR-W / SRC80ZR-W",
+   "indoor": [
+    "SRK80ZR-W"
+   ],
+   "outdoor": [
+    "SRC80ZR-W"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-srk80zspr-s-src80zspr-s-standard-series",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-srk80zspr-s-src80zspr-s-standard-series",
+   "pid": "2060",
+   "h1": "Кондиціонер Mitsubishi Heavy SRK80ZSPR-S / SRC80ZSPR-S Standard series",
+   "code": "SRK80ZSPR-S / SRC80ZSPR-S",
+   "indoor": [
+    "SRK80ZSPR-S"
+   ],
+   "outdoor": [
+    "SRC80ZSPR-S"
+   ],
+   "listed_in": [
+    "split"
+   ],
+   "matched_by": [
+    "split_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vna-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vna-w",
+   "pid": "2094",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE100VH / FDC100VNA-W",
+   "code": "FDE100VH / FDC100VNA-W",
+   "indoor": [
+    "FDE100VH"
+   ],
+   "outdoor": [
+    "FDC100VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vnp-w",
+   "pid": "2110",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE100VH / FDC100VNP-W",
+   "code": "FDE100VH / FDC100VNP-W",
+   "indoor": [
+    "FDE100VH"
+   ],
+   "outdoor": [
+    "FDC100VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vnx-w",
+   "pid": "2106",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE100VH / FDC100VNX-W",
+   "code": "FDE100VH / FDC100VNX-W",
+   "indoor": [
+    "FDE100VH"
+   ],
+   "outdoor": [
+    "FDC100VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vsa-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vsa-w",
+   "pid": "2114",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE100VH / FDC100VSA-W",
+   "code": "FDE100VH / FDC100VSA-W",
+   "indoor": [
+    "FDE100VH"
+   ],
+   "outdoor": [
+    "FDC100VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vsx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc100vsx-w",
+   "pid": "2103",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE100VH / FDC100VSX-W",
+   "code": "FDE100VH / FDC100VSX-W",
+   "indoor": [
+    "FDE100VH"
+   ],
+   "outdoor": [
+    "FDC100VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc90vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde100vh-fdc90vnp-w",
+   "pid": "2111",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE100VH / FDC90VNP-W",
+   "code": "FDE100VH / FDC90VNP-W",
+   "indoor": [
+    "FDE100VH"
+   ],
+   "outdoor": [
+    "FDC90VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vna-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vna-w",
+   "pid": "2116",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE125VH / FDC125VNA-W",
+   "code": "FDE125VH / FDC125VNA-W",
+   "indoor": [
+    "FDE125VH"
+   ],
+   "outdoor": [
+    "FDC125VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vnp-w",
+   "pid": "2179",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE125VH / FDC125VNP-W",
+   "code": "FDE125VH / FDC125VNP-W",
+   "indoor": [
+    "FDE125VH"
+   ],
+   "outdoor": [
+    "FDC125VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vnx-w",
+   "pid": "2105",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE125VH / FDC125VNX-W",
+   "code": "FDE125VH / FDC125VNX-W",
+   "indoor": [
+    "FDE125VH"
+   ],
+   "outdoor": [
+    "FDC125VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vsa-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vsa-w",
+   "pid": "2113",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE125VH / FDC125VSA-W",
+   "code": "FDE125VH / FDC125VSA-W",
+   "indoor": [
+    "FDE125VH"
+   ],
+   "outdoor": [
+    "FDC125VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vsx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde125vh-fdc125vsx-w",
+   "pid": "2102",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE125VH / FDC125VSX-W",
+   "code": "FDE125VH / FDC125VSX-W",
+   "indoor": [
+    "FDE125VH"
+   ],
+   "outdoor": [
+    "FDC125VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fdc140vna-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fdc140vna-w",
+   "pid": "2115",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE140VH / FDC140VNA-W",
+   "code": "FDE140VH / FDC140VNA-W",
+   "indoor": [
+    "FDE140VH"
+   ],
+   "outdoor": [
+    "FDC140VNA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fdc140vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fdc140vnx-w",
+   "pid": "2104",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE140VH / FDC140VNX-W",
+   "code": "FDE140VH / FDC140VNX-W",
+   "indoor": [
+    "FDE140VH"
+   ],
+   "outdoor": [
+    "FDC140VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fdc140vsa-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fdc140vsa-w",
+   "pid": "2112",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE140VH / FDC140VSA-W",
+   "code": "FDE140VH / FDC140VSA-W",
+   "indoor": [
+    "FDE140VH"
+   ],
+   "outdoor": [
+    "FDC140VSA-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fdc140vsx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fdc140vsx-w",
+   "pid": "2513",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE140VH / FDC140VSX-W",
+   "code": "FDE140VH / FDC140VSX-W",
+   "indoor": [
+    "FDE140VH"
+   ],
+   "outdoor": [
+    "FDC140VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fds140vsx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde140vh-fds140vsx-w",
+   "pid": "2101",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE140VH / FDС140VSX-W",
+   "code": "FDE140VH / FDС140VSX-W",
+   "indoor": [
+    "FDE140VH"
+   ],
+   "outdoor": [
+    "FDС140VSX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde40vh-src40zsx-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde40vh-src40zsx-w1",
+   "pid": "2109",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE40VH / SRC40ZSX-W1",
+   "code": "FDE40VH / SRC40ZSX-W1",
+   "indoor": [
+    "FDE40VH"
+   ],
+   "outdoor": [
+    "SRC40ZSX-W1"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde50vh-src50zsx-w2",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde50vh-src50zsx-w2",
+   "pid": "2552",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE50VH / SRC50ZSX-W2",
+   "code": "FDE50VH / SRC50ZSX-W2",
+   "indoor": [
+    "FDE50VH"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W2"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde50vh-src50zsx-w3",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde50vh-src50zsx-w3",
+   "pid": "2108",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE50VH / SRC50ZSX-W3",
+   "code": "FDE50VH / SRC50ZSX-W3",
+   "indoor": [
+    "FDE50VH"
+   ],
+   "outdoor": [
+    "SRC50ZSX-W3"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde60vh-src60zsx-w1",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde60vh-src60zsx-w1",
+   "pid": "2553",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE60VH / SRC60ZSX-W1",
+   "code": "FDE60VH / SRC60ZSX-W1",
+   "indoor": [
+    "FDE60VH"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W1"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde60vh-src60zsx-w3",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde60vh-src60zsx-w3",
+   "pid": "2107",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE60VH / SRC60ZSX-W3",
+   "code": "FDE60VH / SRC60ZSX-W3",
+   "indoor": [
+    "FDE60VH"
+   ],
+   "outdoor": [
+    "SRC60ZSX-W3"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": []
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde71vh-fdc71vnp-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde71vh-fdc71vnp-w",
+   "pid": "2095",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE71VH / FDC71VNP-W",
+   "code": "FDE71VH / FDC71VNP-W",
+   "indoor": [
+    "FDE71VH"
+   ],
+   "outdoor": [
+    "FDC71VNP-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "kondycioner-mitsubishi-heavy-stelovyj-fde71vh-fdc71vnx-w",
+   "url": "https://sun-ice.com.ua/kondycioner-mitsubishi-heavy-stelovyj-fde71vh-fdc71vnx-w",
+   "pid": "2093",
+   "h1": "Кондиціонер Mitsubishi Heavy стельовий FDE71VH / FDC71VNX-W",
+   "code": "FDE71VH / FDC71VNX-W",
+   "indoor": [
+    "FDE71VH"
+   ],
+   "outdoor": [
+    "FDC71VNX-W"
+   ],
+   "listed_in": [
+    "semi"
+   ],
+   "matched_by": [
+    "semi_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gbm12h-s-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gbm12h-s-vnutrishnij-blok",
+   "pid": "1931",
+   "h1": "Мульти спліт-система GALACTIC GBM12H-S Внутрішній блок",
+   "code": "GBM12H-S",
+   "indoor": [
+    "GBM12H-S"
+   ],
+   "outdoor": [],
+   "listed_in": [],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gdm09h-s-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gdm09h-s-vnutrishnij-blok",
+   "pid": "1930",
+   "h1": "Мульти спліт-система GALACTIC GDM09H-S Внутрішній блок",
+   "code": "GDM09H-S",
+   "indoor": [
+    "GDM09H-S"
+   ],
+   "outdoor": [],
+   "listed_in": [],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gdm12h-s-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gdm12h-s-vnutrishnij-blok",
+   "pid": "1933",
+   "h1": "Мульти спліт-система GALACTIC GDM12H-S Внутрішній блок",
+   "code": "GDM12H-S",
+   "indoor": [
+    "GDM12H-S"
+   ],
+   "outdoor": [],
+   "listed_in": [],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gdm18h-s-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gdm18h-s-vnutrishnij-blok",
+   "pid": "1934",
+   "h1": "Мульти спліт-система GALACTIC GDM18H-S Внутрішній блок",
+   "code": "GDM18H-S",
+   "indoor": [
+    "GDM18H-S"
+   ],
+   "outdoor": [],
+   "listed_in": [],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm09h-s-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm09h-s-vnutrishnij-blok",
+   "pid": "1907",
+   "h1": "Мульти спліт-система GALACTIC GKM09H-S Внутрішній блок",
+   "code": "GKM09H-S",
+   "indoor": [
+    "GKM09H-S"
+   ],
+   "outdoor": [],
+   "listed_in": [],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm09m-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm09m-w-vnutrishnij-blok",
+   "pid": "1997",
+   "h1": "Мульти спліт-система GALACTIC GKM09M-W Внутрішній блок",
+   "code": "GKM09M-W",
+   "indoor": [
+    "GKM09M-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm09m-wr-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm09m-wr-vnutrishnij-blok",
+   "pid": "2576",
+   "h1": "Мульти спліт-система GALACTIC GKM09M-WR Внутрішній блок",
+   "code": "GKM09M-WR",
+   "indoor": [
+    "GKM09M-WR"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm12h-s-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm12h-s-vnutrishnij-blok",
+   "pid": "1906",
+   "h1": "Мульти спліт-система GALACTIC GKM12H-S Внутрішній блок",
+   "code": "GKM12H-S",
+   "indoor": [
+    "GKM12H-S"
+   ],
+   "outdoor": [],
+   "listed_in": [],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm12m-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm12m-w-vnutrishnij-blok",
+   "pid": "1998",
+   "h1": "Мульти спліт-система GALACTIC GKM12M-W Внутрішній блок",
+   "code": "GKM12M-W",
+   "indoor": [
+    "GKM12M-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm12m-wr-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm12m-wr-vnutrishnij-blok",
+   "pid": "2577",
+   "h1": "Мульти спліт-система GALACTIC GKM12M-WR Внутрішній блок",
+   "code": "GKM12M-WR",
+   "indoor": [
+    "GKM12M-WR"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm18h-s-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm18h-s-vnutrishnij-blok",
+   "pid": "1908",
+   "h1": "Мульти спліт-система GALACTIC GKM18H-S Внутрішній блок",
+   "code": "GKM18H-S",
+   "indoor": [
+    "GKM18H-S"
+   ],
+   "outdoor": [],
+   "listed_in": [],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm18m-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm18m-w-vnutrishnij-blok",
+   "pid": "2000",
+   "h1": "Мульти спліт-система GALACTIC GKM18M-W Внутрішній блок",
+   "code": "GKM18M-W",
+   "indoor": [
+    "GKM18M-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gkm18m-wr-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gkm18m-wr-vnutrishnij-blok",
+   "pid": "2578",
+   "h1": "Мульти спліт-система GALACTIC GKM18M-WR Внутрішній блок",
+   "code": "GKM18M-WR",
+   "indoor": [
+    "GKM18M-WR"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gmz2-14m-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gmz2-14m-w-zovnishnij-blok",
+   "pid": "1993",
+   "h1": "Мульти спліт-система GALACTIC GMZ2-14M-W Зовнішній блок",
+   "code": "GMZ2-14M-W",
+   "indoor": [],
+   "outdoor": [
+    "GMZ2-14M-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gmz2-18m-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gmz2-18m-w-zovnishnij-blok",
+   "pid": "1995",
+   "h1": "Мульти спліт-система GALACTIC GMZ2-18M-W Зовнішній блок",
+   "code": "GMZ2-18M-W",
+   "indoor": [],
+   "outdoor": [
+    "GMZ2-18M-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gmz3-21m-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gmz3-21m-w-zovnishnij-blok",
+   "pid": "1996",
+   "h1": "Мульти спліт-система GALACTIC GMZ3-21M-W Зовнішній блок",
+   "code": "GMZ3-21M-W",
+   "indoor": [],
+   "outdoor": [
+    "GMZ3-21M-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gmz4-28m-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gmz4-28m-w-zovnishnij-blok",
+   "pid": "1994",
+   "h1": "Мульти спліт-система GALACTIC GMZ4-28M-W Зовнішній блок",
+   "code": "GMZ4-28M-W",
+   "indoor": [],
+   "outdoor": [
+    "GMZ4-28M-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-galactic-gmz5-42m-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-galactic-gmz5-42m-w-zovnishnij-blok",
+   "pid": "2570",
+   "h1": "Мульти спліт-система GALACTIC GMZ5-42M-W Зовнішній блок",
+   "code": "GMZ5-42M-W",
+   "indoor": [],
+   "outdoor": [
+    "GMZ5-42M-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_gal"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kanalna-fdum50vh-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kanalna-fdum50vh-vnutrishnij-blok",
+   "pid": "2468",
+   "h1": "Мульти спліт-система Mitsubishi Heavy канальна FDUM50VH Внутрішній блок",
+   "code": "FDUM50VH",
+   "indoor": [
+    "FDUM50VH"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kanalna-srr25zs-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kanalna-srr25zs-w-vnutrishnij-blok",
+   "pid": "2052",
+   "h1": "Мульти спліт-система Mitsubishi Heavy канальна SRR25ZS-W Внутрішній блок",
+   "code": "SRR25ZS-W",
+   "indoor": [
+    "SRR25ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kanalna-srr35zs-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kanalna-srr35zs-w-vnutrishnij-blok",
+   "pid": "2056",
+   "h1": "Мульти спліт-система Mitsubishi Heavy канальна SRR35ZS-W Внутрішній блок",
+   "code": "SRR35ZS-W",
+   "indoor": [
+    "SRR35ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kanalna-srr50zs-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kanalna-srr50zs-w-vnutrishnij-blok",
+   "pid": "2510",
+   "h1": "Мульти спліт-система Mitsubishi Heavy канальна SRR50ZS-W Внутрішній блок",
+   "code": "SRR50ZS-W",
+   "indoor": [
+    "SRR50ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kanalna-srr60zs-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kanalna-srr60zs-w-vnutrishnij-blok",
+   "pid": "2090",
+   "h1": "Мульти спліт-система Mitsubishi Heavy канальна SRR60ZS-W Внутрішній блок",
+   "code": "SRR60ZS-W",
+   "indoor": [
+    "SRR60ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kasetna-fdtc25vh1-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kasetna-fdtc25vh1-vnutrishnij-blok",
+   "pid": "2043",
+   "h1": "Мульти спліт-система Mitsubishi Heavy касетна FDTC25VH1 Внутрішній блок",
+   "code": "FDTC25VH1",
+   "indoor": [
+    "FDTC25VH1"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kasetna-fdtc35vh1-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kasetna-fdtc35vh1-vnutrishnij-blok",
+   "pid": "2045",
+   "h1": "Мульти спліт-система Mitsubishi Heavy касетна FDTC35VH1 Внутрішній блок",
+   "code": "FDTC35VH1",
+   "indoor": [
+    "FDTC35VH1"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kasetna-fdtc50vh-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kasetna-fdtc50vh-vnutrishnij-blok",
+   "pid": "2088",
+   "h1": "Мульти спліт-система Mitsubishi Heavy касетна FDTC50VH Внутрішній блок",
+   "code": "FDTC50VH",
+   "indoor": [
+    "FDTC50VH"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-kasetna-fdtc60vh-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-kasetna-fdtc60vh-vnutrishnij-blok",
+   "pid": "2087",
+   "h1": "Мульти спліт-система Mitsubishi Heavy касетна FDTC60VH Внутрішній блок",
+   "code": "FDTC60VH",
+   "indoor": [
+    "FDTC60VH"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pidlogova-srf25zs-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pidlogova-srf25zs-w-vnutrishnij-blok",
+   "pid": "2051",
+   "h1": "Мульти спліт-система Mitsubishi Heavy підлогова SRF25ZS-W Внутрішній блок",
+   "code": "SRF25ZS-W",
+   "indoor": [
+    "SRF25ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pidlogova-srf35zs-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pidlogova-srf35zs-w-vnutrishnij-blok-diamond-series",
+   "pid": "2053",
+   "h1": "Мульти спліт-система Mitsubishi Heavy підлогова SRF35ZS-W Внутрішній блок Diamond Series",
+   "code": "SRF35ZS-W",
+   "indoor": [
+    "SRF35ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pidlogova-srf50zsx-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pidlogova-srf50zsx-w-vnutrishnij-blok-diamond-series",
+   "pid": "2055",
+   "h1": "Мульти спліт-система Mitsubishi Heavy підлогова SRF50ZSX-W Внутрішній блок Diamond series",
+   "code": "SRF50ZSX-W",
+   "indoor": [
+    "SRF50ZSX-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-scm100zs-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-scm100zs-w-zovnishnij-blok",
+   "pid": "2133",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SCM100ZS-W Зовнішній блок",
+   "code": "SCM100ZS-W",
+   "indoor": [],
+   "outdoor": [
+    "SCM100ZS-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-scm125zm-s-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-scm125zm-s-zovnishnij-blok",
+   "pid": "2134",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SCM125ZM-S Зовнішній блок",
+   "code": "SCM125ZM-S",
+   "indoor": [],
+   "outdoor": [
+    "SCM125ZM-S"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-scm40zs-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-scm40zs-w-zovnishnij-blok",
+   "pid": "2054",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SCM40ZS-W Зовнішній блок",
+   "code": "SCM40ZS-W",
+   "indoor": [],
+   "outdoor": [
+    "SCM40ZS-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-scm45zs-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-scm45zs-w-zovnishnij-blok",
+   "pid": "2061",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SCM45ZS-W Зовнішній блок",
+   "code": "SCM45ZS-W",
+   "indoor": [],
+   "outdoor": [
+    "SCM45ZS-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-scm50zs-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-scm50zs-w-zovnishnij-blok",
+   "pid": "2062",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SCM50ZS-W Зовнішній блок",
+   "code": "SCM50ZS-W",
+   "indoor": [],
+   "outdoor": [
+    "SCM50ZS-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-scm60zs-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-scm60zs-w-zovnishnij-blok",
+   "pid": "2063",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SCM60ZS-W Зовнішній блок",
+   "code": "SCM60ZS-W",
+   "indoor": [],
+   "outdoor": [
+    "SCM60ZS-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-scm71zs-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-scm71zs-w-zovnishnij-blok",
+   "pid": "2064",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SCM71ZS-W Зовнішній блок",
+   "code": "SCM71ZS-W",
+   "indoor": [],
+   "outdoor": [
+    "SCM71ZS-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-scm80zs-w-zovnishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-scm80zs-w-zovnishnij-blok",
+   "pid": "2068",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SCM80ZS-W Зовнішній блок",
+   "code": "SCM80ZS-W",
+   "indoor": [],
+   "outdoor": [
+    "SCM80ZS-W"
+   ],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-skm20zsp-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-skm20zsp-w-vnutrishnij-blok",
+   "pid": "2096",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SKM20ZSP-W Внутрішній блок",
+   "code": "SKM20ZSP-W",
+   "indoor": [
+    "SKM20ZSP-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-skm25zsp-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-skm25zsp-w-vnutrishnij-blok",
+   "pid": "2119",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SKM25ZSP-W Внутрішній блок",
+   "code": "SKM25ZSP-W",
+   "indoor": [
+    "SKM25ZSP-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-skm35zsp-w-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-skm35zsp-w-vnutrishnij-blok",
+   "pid": "2120",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SKM35ZSP-W Внутрішній блок",
+   "code": "SKM35ZSP-W",
+   "indoor": [
+    "SKM35ZSP-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk20zs-w-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk20zs-w-vnutrishnij-blok-premium-series",
+   "pid": "2434",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK20ZS-W Внутрішній блок Premium Series",
+   "code": "SRK20ZS-W",
+   "indoor": [
+    "SRK20ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk20zs-wb-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk20zs-wb-vnutrishnij-blok-premium-series",
+   "pid": "2030",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK20ZS-WB Внутрішній блок Premium Series",
+   "code": "SRK20ZS-WB",
+   "indoor": [
+    "SRK20ZS-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk20zs-wt-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk20zs-wt-vnutrishnij-blok-premium-series",
+   "pid": "2438",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK20ZS-WT Внутрішній блок Premium Series",
+   "code": "SRK20ZS-WT",
+   "indoor": [
+    "SRK20ZS-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk20zsx-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk20zsx-w-vnutrishnij-blok-diamond-series",
+   "pid": "2010",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK20ZSX-W Внутрішній блок Diamond Series",
+   "code": "SRK20ZSX-W",
+   "indoor": [
+    "SRK20ZSX-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk20zsx-wb-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk20zsx-wb-vnutrishnij-blok-diamond-series",
+   "pid": "2017",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK20ZSX-WB Внутрішній блок Diamond Series",
+   "code": "SRK20ZSX-WB",
+   "indoor": [
+    "SRK20ZSX-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk20zsx-wt-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk20zsx-wt-vnutrishnij-blok-diamond-series",
+   "pid": "2012",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK20ZSX-WT Внутрішній блок Diamond Series",
+   "code": "SRK20ZSX-WT",
+   "indoor": [
+    "SRK20ZSX-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk25zs-w-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk25zs-w-vnutrishnij-blok-premium-series",
+   "pid": "2435",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK25ZS-W Внутрішній блок Premium Series",
+   "code": "SRK25ZS-W",
+   "indoor": [
+    "SRK25ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk25zs-wb-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk25zs-wb-vnutrishnij-blok-premium-series",
+   "pid": "2441",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK25ZS-WB Внутрішній блок Premium Series",
+   "code": "SRK25ZS-WB",
+   "indoor": [
+    "SRK25ZS-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk25zs-wt-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk25zs-wt-vnutrishnij-blok-premium-series",
+   "pid": "2440",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK25ZS-WT Внутрішній блок Premium Series",
+   "code": "SRK25ZS-WT",
+   "indoor": [
+    "SRK25ZS-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk25zsx-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk25zsx-w-vnutrishnij-blok-diamond-series",
+   "pid": "2009",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK25ZSX-W Внутрішній блок Diamond Series",
+   "code": "SRK25ZSX-W",
+   "indoor": [
+    "SRK25ZSX-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk25zsx-wb-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk25zsx-wb-vnutrishnij-blok-diamond-series",
+   "pid": "2018",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK25ZSX-WB Внутрішній блок Diamond Series",
+   "code": "SRK25ZSX-WB",
+   "indoor": [
+    "SRK25ZSX-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk25zsx-wt-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk25zsx-wt-vnutrishnij-blok-diamond-series",
+   "pid": "2013",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK25ZSX-WT Внутрішній блок Diamond Series",
+   "code": "SRK25ZSX-WT",
+   "indoor": [
+    "SRK25ZSX-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk35zs-w-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk35zs-w-vnutrishnij-blok-premium-series",
+   "pid": "2436",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK35ZS-W Внутрішній блок Premium Series",
+   "code": "SRK35ZS-W",
+   "indoor": [
+    "SRK35ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk35zs-wb-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk35zs-wb-vnutrishnij-blok-premium-series",
+   "pid": "2032",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK35ZS-WB Внутрішній блок Premium Series",
+   "code": "SRK35ZS-WB",
+   "indoor": [
+    "SRK35ZS-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk35zs-wt-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk35zs-wt-vnutrishnij-blok-premium-series",
+   "pid": "2442",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK35ZS-WT Внутрішній блок Premium Series",
+   "code": "SRK35ZS-WT",
+   "indoor": [
+    "SRK35ZS-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk35zsx-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk35zsx-w-vnutrishnij-blok-diamond-series",
+   "pid": "2011",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK35ZSX-W Внутрішній блок Diamond Series",
+   "code": "SRK35ZSX-W",
+   "indoor": [
+    "SRK35ZSX-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk35zsx-wb-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk35zsx-wb-vnutrishnij-blok-diamond-series",
+   "pid": "2019",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK35ZSX-WB Внутрішній блок Diamond Series",
+   "code": "SRK35ZSX-WB",
+   "indoor": [
+    "SRK35ZSX-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk35zsx-wt-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk35zsx-wt-vnutrishnij-blok-diamond-series",
+   "pid": "2014",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK35ZSX-WT Внутрішній блок Diamond Series",
+   "code": "SRK35ZSX-WT",
+   "indoor": [
+    "SRK35ZSX-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk50zs-w-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk50zs-w-vnutrishnij-blok-premium-series",
+   "pid": "2437",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK50ZS-W Внутрішній блок Premium Series",
+   "code": "SRK50ZS-W",
+   "indoor": [
+    "SRK50ZS-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk50zs-wb-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk50zs-wb-vnutrishnij-blok-premium-series",
+   "pid": "2033",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK50ZS-WB Внутрішній блок Premium Series",
+   "code": "SRK50ZS-WB",
+   "indoor": [
+    "SRK50ZS-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk50zs-wt-vnutrishnij-blok-premium-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk50zs-wt-vnutrishnij-blok-premium-series",
+   "pid": "2029",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK50ZS-WT Внутрішній блок Premium Series",
+   "code": "SRK50ZS-WT",
+   "indoor": [
+    "SRK50ZS-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk50zsx-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk50zsx-w-vnutrishnij-blok-diamond-series",
+   "pid": "2008",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK50ZSX-W Внутрішній блок Diamond Series",
+   "code": "SRK50ZSX-W",
+   "indoor": [
+    "SRK50ZSX-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk50zsx-wb-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk50zsx-wb-vnutrishnij-blok-diamond-series",
+   "pid": "2020",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK50ZSX-WB Внутрішній блок Diamond Series",
+   "code": "SRK50ZSX-WB",
+   "indoor": [
+    "SRK50ZSX-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk50zsx-wt-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk50zsx-wt-vnutrishnij-blok-diamond-series",
+   "pid": "2015",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK50ZSX-WT Внутрішній блок Diamond Series",
+   "code": "SRK50ZSX-WT",
+   "indoor": [
+    "SRK50ZSX-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk60zsx-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk60zsx-w-vnutrishnij-blok-diamond-series",
+   "pid": "2007",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK60ZSX-W Внутрішній блок Diamond Series",
+   "code": "SRK60ZSX-W",
+   "indoor": [
+    "SRK60ZSX-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk60zsx-wb-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk60zsx-wb-vnutrishnij-blok-diamond-series",
+   "pid": "2021",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK60ZSX-WB Внутрішній блок Diamond Series",
+   "code": "SRK60ZSX-WB",
+   "indoor": [
+    "SRK60ZSX-WB"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk60zsx-wt-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk60zsx-wt-vnutrishnij-blok-diamond-series",
+   "pid": "2016",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK60ZSX-WT Внутрішній блок Diamond Series",
+   "code": "SRK60ZSX-WT",
+   "indoor": [
+    "SRK60ZSX-WT"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk71zr-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk71zr-w-vnutrishnij-blok-diamond-series",
+   "pid": "2139",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK71ZR-W Внутрішній блок Diamond Series",
+   "code": "SRK71ZR-W",
+   "indoor": [
+    "SRK71ZR-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-pobutova-srk80zr-w-vnutrishnij-blok-diamond-series",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-pobutova-srk80zr-w-vnutrishnij-blok-diamond-series",
+   "pid": "2527",
+   "h1": "Мульти спліт-система Mitsubishi Heavy побутова SRK80ZR-W Внутрішній блок Diamond Series",
+   "code": "SRK80ZR-W",
+   "indoor": [
+    "SRK80ZR-W"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  },
+  {
+   "slug": "multy-split-systema-mitsubishi-heavy-stelova-fde50vh-vnutrishnij-blok",
+   "url": "https://sun-ice.com.ua/multy-split-systema-mitsubishi-heavy-stelova-fde50vh-vnutrishnij-blok",
+   "pid": "2091",
+   "h1": "Мульти спліт-система Mitsubishi Heavy стельова FDE50VH Внутрішній блок",
+   "code": "FDE50VH",
+   "indoor": [
+    "FDE50VH"
+   ],
+   "outdoor": [],
+   "listed_in": [
+    "multi"
+   ],
+   "matched_by": [
+    "multisplit_mhi"
+   ]
+  }
+ ]
+}
