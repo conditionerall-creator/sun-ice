@@ -1795,31 +1795,31 @@
   }
 
   /* Auth (login/register) */
+  /* Вхід / Реєстрація — дві помітні кнопки (2026-10-06): активна залита акцентом, неактивна з
+     акцентною рамкою, щоб було зрозуміло, що способів два. Раніше неактивна була сірою на сірому. */
   .auth-toggle {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     margin-bottom: 16px;
-    background: var(--bg);
-    border-radius: 10px;
-    padding: 4px;
   }
   .auth-toggle button {
     flex: 1;
-    border: none;
-    background: transparent;
-    padding: 9px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
+    border: 1.5px solid var(--accent);
+    background: var(--card);
+    padding: 11px 9px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
     cursor: pointer;
     font-family: inherit;
   }
   .auth-toggle button.active {
-    background: var(--card);
-    color: var(--accent);
-    box-shadow: 0 1px 2px rgba(0,0,0,.06);
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15);
   }
+  .auth-switch-link { display: block; margin: 12px auto 0; font-size: 13px; }
   .logout-btn {
     width: 100%;
     padding: 11px;
@@ -4560,7 +4560,7 @@ async function reportPriceDiagnostics(issues, newVersion) {
      цього рядка показуються як є.
    • Типи: error — розбіжність/поломка; warning — підозріло; info — примітка/відоме правило
      (не рахується проблемою). */
-const APP_BUILD = '2026-10-06.1'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
+const APP_BUILD = '2026-10-06.2'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
 const DIAG_MAX_LINES = 14;
 const DIAG_AREA = {
   excel: 'Звірка з Excel',
@@ -7521,7 +7521,8 @@ document.getElementById('main').addEventListener('change', function(e) {
    renderCabinetTab() у потрібний момент (після того, як профіль справді збережено), тому
    на час свого виконання просять цей listener не втручатись. */
 let suppressCabinetAutoRerender = false;
-sb.auth.onAuthStateChange(function() {
+sb.auth.onAuthStateChange(function(event, session) {
+  if (session) markDeviceHadAccount();
   if (currentTab === 'cabinet' && !suppressCabinetAutoRerender) renderCabinetTab();
   ensureAccessFresh(true);
   autoAttachPushIfGranted();
@@ -8886,8 +8887,10 @@ function renderLoginForm() {
     </div>
     <button class="primary-btn" id="login-submit-btn">Увійти</button>
     <button type="button" class="link-btn" id="forgot-password-btn">Забули пароль? Зареєструватися повторно</button>
+    <button type="button" class="link-btn auth-switch-link" id="goto-register-btn">Вперше тут? Зареєструватися</button>
     <div id="login-error"></div>
   `;
+  document.getElementById('goto-register-btn').addEventListener('click', () => { cabinetMode = 'register'; renderAuthForms(); });
   attachDigitsOnlyFilter(document.getElementById('login-phone'));
   document.getElementById('login-submit-btn').addEventListener('click', handleLogin);
   document.getElementById('forgot-password-btn').addEventListener('click', () => { cabinetMode = 'reregister'; renderAuthForms(); });
@@ -8960,6 +8963,9 @@ async function renderRegisterForm() {
   const holder = document.getElementById('auth-form-holder');
   holder.innerHTML = '<div class="empty">Завантаження...</div>';
   const regions = await getRegions();
+  /* Поки вантажились регіони, людина могла піти з форми (наприклад, дотик по «Каталог» одразу
+     після запуску) — тоді малювати форму нікуди, інакше нижче впаде на відсутніх елементах. */
+  if (!holder.isConnected) return;
   const options = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
   holder.innerHTML = `
     ${JOKE_MODE ? '<div class="joke-banner">Зареєструйся і отримаєш винагороду 🎁</div>' : ''}
@@ -8980,9 +8986,11 @@ async function renderRegisterForm() {
       <select id="reg-region">${options}</select>
     </div>
     <button class="primary-btn" id="reg-submit-btn">Зареєструватися</button>
+    <button type="button" class="link-btn auth-switch-link" id="goto-login-btn">Вже є акаунт? Увійти</button>
     <div id="reg-error"></div>
   `;
   wireNameFieldsClear('reg');
+  document.getElementById('goto-login-btn').addEventListener('click', () => { cabinetMode = 'login'; renderAuthForms(); });
   attachDigitsOnlyFilter(document.getElementById('reg-phone'));
   document.getElementById('reg-submit-btn').addEventListener('click', handleRegister);
 }
@@ -10863,8 +10871,41 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function () {});
 }
 
-/* ---------- Старт ---------- */
-history.replaceState({ tab: 'catalog' }, '', '#catalog');
+/* ---------- Старт ----------
+   Правило (2026-10-06, узгоджено з власником):
+   • є збережена сесія (зареєстрований/увійшов) → ЗАВЖДИ каталог, хеш в адресі ігнорується;
+   • сесії немає → відкриваємо «Кабінет» одразу з формою: «Реєстрація» для пристрою, де акаунта ще не
+     було, і «Вхід» для пристрою, де вже входили (сесія злетіла/вихід) — щоб людина не реєструвалась
+     вдруге. Форма показується на КОЖНОМУ запуску, доки немає входу; нижнє меню не блокується —
+     пропустити можна одним дотиком по «Каталог».
+   Наявність сесії визначаємо синхронно за ключем Supabase у localStorage (sb-…-auth-token), щоб
+   не блимати каталогом, поки getSession() відповідає. Прострочений токен тут нічого не ламає:
+   каталог відкриється, а ensureAccessFresh() сам перевірить доступ. */
+const DEVICE_HAD_ACCOUNT_KEY = 'sunice_had_session';
+function markDeviceHadAccount() {
+  try { localStorage.setItem(DEVICE_HAD_ACCOUNT_KEY, '1'); } catch (e) {}
+}
+function deviceHasStoredSession() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && /^sb-.+-auth-token$/.test(k) && localStorage.getItem(k)) return true;
+    }
+  } catch (e) {}
+  return false;
+}
+(function chooseStartScreen() {
+  if (deviceHasStoredSession()) {
+    markDeviceHadAccount();
+    history.replaceState({ tab: 'catalog' }, '', '#catalog');
+    return;
+  }
+  let hadAccount = false;
+  try { hadAccount = localStorage.getItem(DEVICE_HAD_ACCOUNT_KEY) === '1'; } catch (e) {}
+  cabinetMode = hadAccount ? 'login' : 'register';
+  switchTab('cabinet', false);
+  history.replaceState({ tab: 'cabinet' }, '', '#cabinet');
+})();
 ensureAccessFresh(true);
 updateNavIndicator(document.querySelector('.nav-btn.active'));
 renderCurrentTab();
