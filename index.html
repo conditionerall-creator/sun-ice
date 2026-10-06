@@ -1760,6 +1760,10 @@
     color: var(--text);
   }
   .field textarea { resize: vertical; min-height: 70px; font-family: inherit; }
+  /* Підказка під полем імені/прізвища (реєстрація й «Забули пароль»): з'являється, коли поле порожнє. */
+  .field.invalid input { border-color: var(--danger); }
+  .field-hint { display: none; margin-top: 6px; font-size: 12.5px; line-height: 1.35; color: var(--danger); }
+  .field.invalid .field-hint { display: block; }
   .primary-btn {
     width: 100%;
     padding: 12px;
@@ -2110,6 +2114,9 @@
   }
   /* Універсальна самодіагностика: розгортні рядки проблем, звіт покриття, кнопки «куди веде». */
   .diag-summary { font-size: 12.5px; margin: 6px 0 4px; }
+  .diag-acked { margin-top: 10px; border-top: 1px solid var(--border); }
+  .diag-acked > summary { font-size: 12px; color: var(--text-secondary); padding: 8px 0; cursor: pointer; }
+  .diag-ack-all { margin: 8px 0 2px; font-size: 12px; }
   .diag-notes-title { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin: 12px 0 2px; text-transform: uppercase; letter-spacing: .05em; }
   .diag-issue { border-top: 1px solid var(--border); padding: 2px 0; }
   .diag-issue summary { display: flex; gap: 8px; align-items: flex-start; padding: 8px 0; cursor: pointer; list-style: none; }
@@ -4553,7 +4560,7 @@ async function reportPriceDiagnostics(issues, newVersion) {
      цього рядка показуються як є.
    • Типи: error — розбіжність/поломка; warning — підозріло; info — примітка/відоме правило
      (не рахується проблемою). */
-const APP_BUILD = '2026-10-05.1'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
+const APP_BUILD = '2026-10-06.1'; // міняти разом із кожною заливкою index.html (перевірка «пристрій застарів»)
 const DIAG_MAX_LINES = 14;
 const DIAG_AREA = {
   excel: 'Звірка з Excel',
@@ -7234,6 +7241,7 @@ document.getElementById('main').addEventListener('click', function(e) {
       if (!willOpen) closeCalcModePopups(panel);
       openCalcPanelEl = willOpen ? panel : null;
       calcPanelOpenedAt = Date.now();
+      calcScrollGestureUntil = 0; // «інерція» попереднього гортання не має закривати щойно відкриту панель
       if (willOpen) {
         const input = panel.querySelector('.calc-input');
         if (input) input.focus();
@@ -7320,10 +7328,34 @@ document.addEventListener('click', function(e) {
   openCalcPanelEl.classList.remove('open');
   openCalcPanelEl = null;
 }, true);
+/* Гортання списку закриває калькулятор лише коли його справді гортає ПАЛЕЦЬ/колесо.
+   Раніше будь-який scroll пізніше 400 мс після відкриття закривав панель — на повільних
+   телефонах (відео 2026-10-06) клавіатура виїздить довше, браузер сам прокручує сторінку до
+   поля вже після цього порогу, і калькулятор одразу ж згортався. Тепер: scroll без жесту
+   (авто-прокрутка від клавіатури) ігноруємо. Жест = рух пальця > 10 px (дотик-тап не рахується)
+   або колесо; після відпускання ще ~1.2 с «інерції» (fling). */
+let calcScrollGestureActive = false, calcScrollGestureUntil = 0, calcTouchX = 0, calcTouchY = 0, calcTouchMoved = false;
+document.addEventListener('touchstart', function(e) {
+  const t = e.touches[0];
+  calcTouchX = t.clientX; calcTouchY = t.clientY; calcTouchMoved = false;
+}, { passive: true, capture: true });
+document.addEventListener('touchmove', function(e) {
+  const t = e.touches[0];
+  if (!calcTouchMoved && Math.abs(t.clientX - calcTouchX) + Math.abs(t.clientY - calcTouchY) > 10) calcTouchMoved = true;
+  if (calcTouchMoved) calcScrollGestureActive = true;
+}, { passive: true, capture: true });
+function calcTouchEnd() {
+  if (calcTouchMoved) calcScrollGestureUntil = Date.now() + 1200;
+  calcScrollGestureActive = false; calcTouchMoved = false;
+}
+document.addEventListener('touchend', calcTouchEnd, { passive: true, capture: true });
+document.addEventListener('touchcancel', calcTouchEnd, { passive: true, capture: true });
+document.addEventListener('wheel', function() { calcScrollGestureUntil = Date.now() + 400; }, { passive: true, capture: true });
 window.addEventListener('scroll', function() {
   // Невелика затримка після відкриття — інакше авто-прокрутка сторінки до фокусу на
   // мобільній клавіатурі одразу ж закривала б щойно відкриту панель.
-  if (openCalcPanelEl && Date.now() - calcPanelOpenedAt > 400) {
+  const userScrolling = calcScrollGestureActive || Date.now() < calcScrollGestureUntil;
+  if (openCalcPanelEl && userScrolling && Date.now() - calcPanelOpenedAt > 400) {
     closeCalcModePopups(openCalcPanelEl);
     openCalcPanelEl.classList.remove('open');
     openCalcPanelEl = null;
@@ -8886,6 +8918,44 @@ async function handleLogin() {
   renderCabinetTab();
 }
 
+/* Ім'я та прізвище — два окремі поля (реєстрація й «Забули пароль»). Прізвище обов'язкове: раніше
+   люди вводили лише ім'я, і адміністратор не міг зрозуміти, хто є хто. У БД лишається одне поле
+   profiles.full_name = «Ім'я Прізвище» — схему й Edge Function reregister-user не чіпаємо. */
+function nameFieldsHtml(prefix) {
+  return `
+    <div class="field" id="${prefix}-firstname-field">
+      <label>Ім’я</label>
+      <input type="text" id="${prefix}-firstname" placeholder="Введіть ім’я" autocomplete="given-name" autocapitalize="words">
+      <div class="field-hint">Вкажіть ім’я.</div>
+    </div>
+    <div class="field" id="${prefix}-lastname-field">
+      <label>Прізвище</label>
+      <input type="text" id="${prefix}-lastname" placeholder="Введіть прізвище" autocomplete="family-name" autocapitalize="words">
+      <div class="field-hint">Вкажіть прізвище — так адміністратор зможе вас розпізнати й швидше підтвердити доступ.</div>
+    </div>`;
+}
+/* Перевіряє обидва поля, підсвічує порожні й повертає «Ім'я Прізвище» або '' (якщо чогось бракує). */
+function readFullNameOrMark(prefix) {
+  const norm = id => document.getElementById(id).value.replace(/\s+/g, ' ').trim();
+  const first = norm(prefix + '-firstname'), last = norm(prefix + '-lastname');
+  document.getElementById(prefix + '-firstname-field').classList.toggle('invalid', !first);
+  document.getElementById(prefix + '-lastname-field').classList.toggle('invalid', !last);
+  if (!first || !last) {
+    const bad = document.getElementById(prefix + (!first ? '-firstname' : '-lastname'));
+    if (bad) { try { bad.focus(); bad.scrollIntoView({ block: 'center' }); } catch (e) {} }
+    return '';
+  }
+  return first + ' ' + last;
+}
+function wireNameFieldsClear(prefix) {
+  ['firstname', 'lastname'].forEach(k => {
+    const input = document.getElementById(prefix + '-' + k);
+    input.addEventListener('input', () => {
+      if (input.value.trim()) document.getElementById(prefix + '-' + k + '-field').classList.remove('invalid');
+    });
+  });
+}
+
 async function renderRegisterForm() {
   const holder = document.getElementById('auth-form-holder');
   holder.innerHTML = '<div class="empty">Завантаження...</div>';
@@ -8893,10 +8963,7 @@ async function renderRegisterForm() {
   const options = regions.map(r => `<option value="${r.id}">${escapeHtml(r.name)}</option>`).join('');
   holder.innerHTML = `
     ${JOKE_MODE ? '<div class="joke-banner">Зареєструйся і отримаєш винагороду 🎁</div>' : ''}
-    <div class="field">
-      <label>Ім’я та прізвище</label>
-      <input type="text" id="reg-name" placeholder="Введіть ім’я">
-    </div>
+    ${nameFieldsHtml('reg')}
     <div class="field">
       <label>Номер телефону</label>
       <div class="phone-input-row">
@@ -8915,12 +8982,13 @@ async function renderRegisterForm() {
     <button class="primary-btn" id="reg-submit-btn">Зареєструватися</button>
     <div id="reg-error"></div>
   `;
+  wireNameFieldsClear('reg');
   attachDigitsOnlyFilter(document.getElementById('reg-phone'));
   document.getElementById('reg-submit-btn').addEventListener('click', handleRegister);
 }
 
 async function handleRegister() {
-  const name = document.getElementById('reg-name').value.trim();
+  const name = readFullNameOrMark('reg'); // '' — немає імені або прізвища (поле підсвічено з підказкою)
   const phone = fullPhoneFromLocalInput('reg-phone');
   const password = document.getElementById('reg-password').value;
   const regionSelect = document.getElementById('reg-region');
@@ -8928,7 +8996,11 @@ async function handleRegister() {
   const errEl = document.getElementById('reg-error');
   errEl.innerHTML = '';
 
-  if (!name || normalizePhoneDigits(phone).length <= 2 || !password || !regionId) {
+  if (!name) {
+    errEl.innerHTML = '<div class="error">Вкажіть ім’я та прізвище.</div>';
+    return;
+  }
+  if (normalizePhoneDigits(phone).length <= 2 || !password || !regionId) {
     errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
     return;
   }
@@ -9023,11 +9095,8 @@ async function renderReregisterForm() {
      винятком, і (б) це був би обхід самого правила. Тому регіон лишається той, що був;
      змінити його може тільки адміністратор. */
   holder.innerHTML = `
-    <p class="promo-doc-note" style="margin:-4px 0 4px;">Якщо ви забули пароль — введіть свій номер телефону, ім'я та новий пароль. Обліковий запис, ваші монтажі та інші дані зберігаються — зміниться лише пароль. Доступ до цін відновиться після підтвердження адміністратором.</p>
-    <div class="field">
-      <label>Ім’я та прізвище</label>
-      <input type="text" id="rereg-name" placeholder="Введіть ім’я">
-    </div>
+    <p class="promo-doc-note" style="margin:-4px 0 4px;">Якщо ви забули пароль — введіть свій номер телефону, ім'я, прізвище та новий пароль. Обліковий запис, ваші монтажі та інші дані зберігаються — зміниться лише пароль. Доступ до цін відновиться після підтвердження адміністратором.</p>
+    ${nameFieldsHtml('rereg')}
     <div class="field">
       <label>Номер телефону</label>
       <div class="phone-input-row">
@@ -9043,19 +9112,24 @@ async function renderReregisterForm() {
     <button type="button" class="link-btn" id="rereg-back-btn">Назад до входу</button>
     <div id="rereg-error"></div>
   `;
+  wireNameFieldsClear('rereg');
   attachDigitsOnlyFilter(document.getElementById('rereg-phone'));
   document.getElementById('rereg-submit-btn').addEventListener('click', handleReregister);
   document.getElementById('rereg-back-btn').addEventListener('click', () => { cabinetMode = 'login'; renderAuthForms(); });
 }
 
 async function handleReregister() {
-  const name = document.getElementById('rereg-name').value.trim();
+  const name = readFullNameOrMark('rereg'); // '' — немає імені або прізвища (поле підсвічено з підказкою)
   const phone = fullPhoneFromLocalInput('rereg-phone');
   const password = document.getElementById('rereg-password').value;
   const errEl = document.getElementById('rereg-error');
   errEl.innerHTML = '';
 
-  if (!name || normalizePhoneDigits(phone).length <= 2 || !password) {
+  if (!name) {
+    errEl.innerHTML = '<div class="error">Вкажіть ім’я та прізвище.</div>';
+    return;
+  }
+  if (normalizePhoneDigits(phone).length <= 2 || !password) {
     errEl.innerHTML = '<div class="error">Заповніть усі поля.</div>';
     return;
   }
@@ -9305,19 +9379,57 @@ function priceIssueRowHtml(issue) {
         ${diagTargetHtml(p.target)}
         <div class="diag-foot">
           <span class="price-issue-meta">версія ${escapeHtml(String(issue.version))} · ${new Date(issue.updated_at || issue.created_at).toLocaleString('uk-UA')}</span>
-          <button type="button" class="price-issue-resolve-btn" data-action="resolve-price-issue">Вирішено</button>
+          ${issue.kind === 'info'
+            ? '<button type="button" class="price-issue-resolve-btn" data-action="ack-note">Прийнято</button>'
+            : '<button type="button" class="price-issue-resolve-btn" data-action="resolve-price-issue">Вирішено</button>'}
         </div>
       </div>
     </details>`;
 }
 
+/* «Прийняті» примітки. Примітка (info) — не проблема, а відоме затверджене правило (наприклад,
+   округлення цін чи −20 % для Напівпромислових MHI). Після натискання «Прийнято» вона більше не
+   світиться в картці: ховається у згорнутий блок «Прийняті примітки». Прийняття прив'язане до
+   ТЕКСТУ примітки (відбиток): якщо правило чи перелік у примітці зміниться — вона з'явиться знову
+   як нова. Зберігається на цьому пристрої (localStorage). Проблеми (error/warning) це не стосується —
+   вони показуються щоразу, доки їх не виправлено. */
+const DIAG_ACK_KEY = 'diagAckNotes';
+let lastPriceIssues = []; // останній показаний список — з нього «Прийнято» бере поточний текст примітки
+function diagNoteKey(i) { return i.tile_label + '\u0001' + i.brand; }
+function diagNoteHash(i) {
+  const s = String(i.message || '');
+  let h = 5381;
+  for (let k = 0; k < s.length; k++) h = ((h * 33) ^ s.charCodeAt(k)) >>> 0;
+  return String(h);
+}
+function diagLoadAcks() {
+  try { return JSON.parse(localStorage.getItem(DIAG_ACK_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+function diagSaveAcks(acks) {
+  try { localStorage.setItem(DIAG_ACK_KEY, JSON.stringify(acks)); } catch (e) { /* без localStorage примітки просто показуватимуться знову */ }
+}
+
 function priceIssuesListHtml(issues) {
-  const list = diagDedupe(issues || []);
-  if (!list.length) return '<div class="price-diag-ok">Проблем не виявлено ✓</div>';
-  const problems = list.filter(i => i.kind !== 'info'), notes = list.filter(i => i.kind === 'info');
-  return '<div class="diag-summary">Проблем: <b>' + problems.length + '</b>' + (notes.length ? ' · приміток: ' + notes.length : '') + '</div>' +
-    problems.map(priceIssueRowHtml).join('') +
-    (notes.length ? '<div class="diag-notes-title">Примітки (не проблеми)</div>' + notes.map(priceIssueRowHtml).join('') : '');
+  lastPriceIssues = issues || [];
+  const list = diagDedupe(lastPriceIssues);
+  const acks = diagLoadAcks();
+  const problems = list.filter(i => i.kind !== 'info');
+  const notes = list.filter(i => i.kind === 'info');
+  const accepted = notes.filter(i => acks[diagNoteKey(i)] === diagNoteHash(i));
+  const fresh = notes.filter(i => acks[diagNoteKey(i)] !== diagNoteHash(i));
+  let html = '';
+  if (!problems.length && !fresh.length) html += '<div class="price-diag-ok">Проблем не виявлено ✓</div>';
+  else html += '<div class="diag-summary">Проблем: <b>' + problems.length + '</b>' + (fresh.length ? ' · нових приміток: ' + fresh.length : '') + '</div>';
+  html += problems.map(priceIssueRowHtml).join('');
+  if (fresh.length) {
+    html += '<div class="diag-notes-title">Нові примітки (не проблеми)</div>' + fresh.map(priceIssueRowHtml).join('') +
+      (fresh.length > 1 ? '<button type="button" class="link-btn diag-ack-all" data-action="ack-all-notes">Прийняти всі примітки</button>' : '');
+  }
+  if (accepted.length) {
+    html += '<details class="diag-acked"><summary>Прийняті примітки: ' + accepted.length + '</summary>' + accepted.map(priceIssueRowHtml).join('') +
+      '<button type="button" class="link-btn diag-ack-all" data-action="unack-notes">Показувати знову</button></details>';
+  }
+  return html;
 }
 
 /* Звіт «що саме перевірено» після ручного прогону: кожна перевірка зі своїм статусом, щоб було видно покриття. */
@@ -9369,6 +9481,22 @@ function wirePriceIssueButtons(profile) {
       if (kind === 'app' && t.app) diagOpenApp(t.app);
       else if (kind === 'tab' && t.tab) { switchTab(t.tab, true); renderCurrentTab(); }
       else if (kind === 'site' && t.site) window.open(t.site.indexOf('http') === 0 ? t.site : 'https://sun-ice.com.ua/' + t.site, '_blank', 'noopener');
+      return;
+    }
+    const ackAct = e.target.closest('[data-action="ack-note"], [data-action="ack-all-notes"], [data-action="unack-notes"]');
+    if (ackAct) {
+      const act = ackAct.getAttribute('data-action');
+      const acks = diagLoadAcks();
+      const notes = diagDedupe(lastPriceIssues).filter(i => i.kind === 'info');
+      if (act === 'unack-notes') notes.forEach(i => { delete acks[diagNoteKey(i)]; });
+      else notes.forEach(i => {
+        // «Прийнято» — лише ця примітка (її рядок); «Прийняти всі» — усі, що зараз показані
+        if (act === 'ack-note' && !(issueEl && issueEl.getAttribute('data-tile') === i.tile_label && issueEl.getAttribute('data-brand') === i.brand)) return;
+        acks[diagNoteKey(i)] = diagNoteHash(i);
+      });
+      diagSaveAcks(acks);
+      const list = document.getElementById('price-issues-list');
+      if (list) list.innerHTML = priceIssuesListHtml(lastPriceIssues);
       return;
     }
     const res = e.target.closest('[data-action="resolve-price-issue"]');
