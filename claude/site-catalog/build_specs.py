@@ -69,16 +69,29 @@ def main():
     ap.add_argument('--site', default='claude/site-catalog/site-products.json')
     ap.add_argument('--out', required=True)
     ap.add_argument('--limit', type=int, default=0)
+    ap.add_argument('--slugs', default='', help='через кому: добрати ці картки й ДОПИСАТИ у наявний --out '
+                                                '(для карток, що є в site-links.json, але не потрапили '
+                                                'у свою групу в site-products.json)')
     ap.add_argument('--delay', type=float, default=1.0, help='пауза між картками, сек')
     a = ap.parse_args()
 
-    db = json.load(open(a.site, encoding='utf-8'))
-    cards = [p for p in db['products'] if a.group in (p.get('matched_by') or [])]
-    if a.limit:
-        cards = cards[:a.limit]
-    print('карток до збору:', len(cards))
-
     specs, fails = {}, []
+    if a.slugs:
+        # добираємо точкові картки й ДОПИСУЄМО у наявний файл, нічого не втрачаючи
+        base = 'https://sun-ice.com.ua/'
+        cards = [{'slug': s.strip(), 'url': base + s.strip()} for s in a.slugs.split(',') if s.strip()]
+        try:
+            old = json.load(open(a.out, encoding='utf-8'))
+            specs = old.get('specs', {})
+            print('у наявному файлі вже:', len(specs), 'карток')
+        except Exception:
+            pass
+    else:
+        db = json.load(open(a.site, encoding='utf-8'))
+        cards = [p for p in db['products'] if a.group in (p.get('matched_by') or [])]
+        if a.limit:
+            cards = cards[:a.limit]
+    print('карток до збору:', len(cards))
     for i, c in enumerate(cards, 1):
         try:
             tables = parse_tables(fetch(c['url']))

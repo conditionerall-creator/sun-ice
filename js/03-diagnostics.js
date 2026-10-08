@@ -25,7 +25,7 @@
      цього рядка показуються як є.
    • Типи: error — розбіжність/поломка; warning — підозріло; info — примітка/відоме правило
      (не рахується проблемою). */
-const APP_BUILD = '2026-10-08.17'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-08.21'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const DIAG_MAX_LINES = 14;
 const DIAG_AREA = {
   excel: 'Звірка з Excel',
@@ -35,7 +35,8 @@ const DIAG_AREA = {
   rates: 'Курси валют',
   build: 'Версія застосунку',
   site: 'Сайт sun-ice.com.ua',
-  modules: 'Модулі застосунку'
+  modules: 'Модулі застосунку',
+  specs: 'Характеристики товарів'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -473,6 +474,54 @@ async function diagCheckBuild(ctx) {
   return out;
 }
 
+/* ---- 10. Характеристики товарів (data/specs-*.json) ----
+   Новий зовнішній джерело даних = нова перевірка (вимога CLAUDE.md). Характеристики
+   беруться з сайту офлайн-скриптом, тож розійтися з дійсністю можуть тихо: на сайті
+   з'явилась нова картка або змінилось маркування в прайсі — а файл лишився старим, і
+   панель товару просто мовчки показує «характеристик не знайшлось».
+   Перевіряємо три речі: файли взагалі вантажаться; чи не застаріли; скільки позицій
+   прайсу мають картку на сайті, але не мають характеристик. */
+async function diagCheckSpecs(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.specs;
+  const FIX = 'Перезібрати: python claude/site-catalog/build_specs.py --group <розділ> --out data/specs-<розділ>.json';
+  const links = await loadSiteLinks();
+  if (!links || !links.links) {
+    out.issues.push(diagIssue(area, 'specs', 'info', 'Таблиця посилань на сайт не завантажилась — перевірку характеристик пропущено', [], null));
+    return out;
+  }
+  for (const key of Object.keys(SPECS_FILES)) {
+    const label = DIAG_SUB_LABELS[key] || key;
+    let specs = null;
+    try { specs = await loadSpecs(key); } catch (e) { specs = null; }
+    if (!specs || !Object.keys(specs).length) {
+      out.issues.push(diagIssue(area, key, 'error', label + ': файл характеристик не завантажився',
+        ['Панель товару в цьому розділі показуватиме порожні характеристики.', FIX], { app: { tile: key.split('_')[0], brand: key.split('_')[1] } }));
+      continue;
+    }
+    const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
+    const map = links.links[key] || {};
+    let withCard = 0, missing = [];
+    items.forEach(it => {
+      const slug = map[siteLinkKey(it)];
+      if (!slug) return;
+      withCard++;
+      // шлях пошуку (index.php?...) — це не картка, характеристик для нього й не буває
+      if (slug.indexOf('index.php') === 0) return;
+      if (!specs[slug]) missing.push(it.model);
+    });
+    out.checked.push({ area: area, sub: key, label: label,
+      detail: (withCard - missing.length) + ' з ' + withCard + ' позицій із карткою мають характеристики' });
+    if (missing.length) {
+      out.issues.push(diagIssue(area, key, 'warning',
+        label + ': позицій із карткою на сайті, але без характеристик — ' + missing.length,
+        missing.concat(['Картка на сайті є, а характеристик для неї не зібрано: або картка нова, або маркування в прайсі змінилось.', FIX]),
+        { app: { tile: key.split('_')[0], brand: key.split('_')[1] } }));
+    }
+  }
+  return out;
+}
+
 /* ---- 9. Модулі застосунку (код у js/*.js) ----
    З 2026-10-08 код застосунку живе не всередині index.html, а в js/*.js. Три речі
    мусять збігатися ТОЧНО: теги <script> в index.html, список APP_SHELL у sw.js і
@@ -589,6 +638,7 @@ async function diagCheckSiteLive(ctx) {
 /* Реєстр перевірок. auto — ще й тихо після кожного розбору нового прайсу; manualOnly — лише за кнопкою. */
 const DIAG_CHECKS = [
   { id: 'modules', label: 'Модулі застосунку', auto: true, run: ctx => diagCheckModules(ctx) },
+  { id: 'specs', label: 'Характеристики товарів', run: ctx => diagCheckSpecs(ctx) },
   { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
   { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },
   { id: 'files', label: 'Зображення та файли застосунку', run: ctx => diagCheckFiles(ctx) },

@@ -615,6 +615,18 @@
   .load-error-btn:active { transform: scale(.99); }
 
   /* ---------- Панель товару (П-9) ---------- */
+  /* Ціна і «Наявність» — в одному ряду: кнопку бачать лише адміни, тож серед нижніх
+     кнопок вона була б четвертою зайвою для всіх інших. */
+  .ps-price-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ps-stock-btn {
+    display: flex; align-items: center; gap: 7px;
+    min-height: 44px; padding: 0 14px;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--card); color: var(--text);
+    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer; flex-shrink: 0;
+  }
+  .ps-stock-btn .ic { width: 17px; height: 17px; vertical-align: 0; color: var(--text-secondary); }
+  .ps-stock-btn:active { transform: scale(.98); }
   .ps-price { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 2px; }
   .ps-price-locked {
     display: flex; align-items: center; gap: 8px;
@@ -3260,18 +3272,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-08.17"></script>
-<script src="js/02-price-parse.js?v=2026-10-08.17"></script>
-<script src="js/03-diagnostics.js?v=2026-10-08.17"></script>
-<script src="js/04-catalog.js?v=2026-10-08.17"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-08.17"></script>
-<script src="js/06-cart-promo.js?v=2026-10-08.17"></script>
-<script src="js/07-access-info.js?v=2026-10-08.17"></script>
-<script src="js/08-info-tables.js?v=2026-10-08.17"></script>
-<script src="js/09-cabinet.js?v=2026-10-08.17"></script>
-<script src="js/10-crmontage.js?v=2026-10-08.17"></script>
-<script src="js/11-shell.js?v=2026-10-08.17"></script>
-<script src="js/12-product-sheet.js?v=2026-10-08.17"></script>
-<script src="js/13-start.js?v=2026-10-08.17"></script>
+<script src="js/01-config.js?v=2026-10-08.21"></script>
+<script src="js/02-price-parse.js?v=2026-10-08.21"></script>
+<script src="js/03-diagnostics.js?v=2026-10-08.21"></script>
+<script src="js/04-catalog.js?v=2026-10-08.21"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-08.21"></script>
+<script src="js/06-cart-promo.js?v=2026-10-08.21"></script>
+<script src="js/07-access-info.js?v=2026-10-08.21"></script>
+<script src="js/08-info-tables.js?v=2026-10-08.21"></script>
+<script src="js/09-cabinet.js?v=2026-10-08.21"></script>
+<script src="js/10-crmontage.js?v=2026-10-08.21"></script>
+<script src="js/11-shell.js?v=2026-10-08.21"></script>
+<script src="js/12-product-sheet.js?v=2026-10-08.21"></script>
+<script src="js/13-start.js?v=2026-10-08.21"></script>
 </body>
 </html>

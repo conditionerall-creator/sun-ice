@@ -12,8 +12,17 @@
    claude/site-catalog/build_specs.py, бо сайт не віддає CORS. Вантажимо ЛИШЕ коли
    людина вперше відкрила панель у цьому розділі: на всі 286 карток вийшло б ~1.3 МБ,
    і класти це в стартове завантаження не можна. */
+/* Версію файлів НЕ пишемо руками: беремо APP_BUILD, який піднімає set-build.py разом
+   з усім іншим. Інакше легко перезібрати дані й забути підняти ?v= — браузер і далі
+   віддаватиме стару копію, а в застосунку буде видно вчорашні характеристики
+   (наступали на це двічі за 2026-10-08). */
 const SPECS_FILES = {
-  split_gal: 'data/specs-split-gal.json?v=2026-10-08.1'
+  split_mhi:      'data/specs-split-mhi.json',
+  split_gal:      'data/specs-split-gal.json',
+  multisplit_mhi: 'data/specs-multisplit-mhi.json',
+  multisplit_gal: 'data/specs-multisplit-gal.json',
+  semi_mhi:       'data/specs-semi-mhi.json',
+  semi_gal:       'data/specs-semi-gal.json'
 };
 const specsCache = {};      // cfgKey -> { slug: {основні, додаткові} }
 const specsLoading = {};    // cfgKey -> Promise
@@ -22,7 +31,7 @@ function loadSpecs(cfgKey) {
   if (specsCache[cfgKey]) return Promise.resolve(specsCache[cfgKey]);
   if (!SPECS_FILES[cfgKey]) return Promise.resolve(null);
   if (specsLoading[cfgKey]) return specsLoading[cfgKey];
-  specsLoading[cfgKey] = fetch(SPECS_FILES[cfgKey])
+  specsLoading[cfgKey] = fetch(SPECS_FILES[cfgKey] + '?v=' + APP_BUILD)
     .then(r => r.ok ? r.json() : null)
     .then(j => { specsCache[cfgKey] = (j && j.specs) || {}; return specsCache[cfgKey]; })
     .catch(() => { specsCache[cfgKey] = {}; return specsCache[cfgKey]; });
@@ -36,18 +45,35 @@ function loadSpecs(cfgKey) {
 const SPEC_PRIORITY_DEFAULT = [
   'Холодопродуктивн', 'Теплопродуктивн', 'Рекомендована площа',
   'Клас енергоефективності охолодження', 'Внутрішній блок, охолодження',
-  'Розмір внутрішнього блоку', 'Тип фреону'
+  'Максимальна кількість внутрішніх блоків', 'Максимальна довжина магістралі',
+  'Статичний тиск', 'Розмір внутрішнього блоку', 'Розмір зовнішнього блоку', 'Тип фреону'
 ];
+/* Те, що ніколи не варто ставити в головні шість: це не допомагає обирати модель. */
+const SPEC_SKIP_IN_KEY = ['Гарантія', 'Країна виробник', 'Модель внутрішнього блоку',
+  'Модель зовнішнього блоку', 'Серія', 'Повітряний фільтр'];
 
+/* «Головні шість» мусять відрізнятись за типом блока: у настінного важить шум, у
+   канального — напір, у зовнішнього блока мультиспліту немає ні площі, ні класу.
+   Тому спершу йдемо за пріоритетним списком, а якщо набралось менше шести —
+   доповнюємо першими рядками таблиці «Основні» в тому порядку, як їх подає сайт
+   (він сам ставить головне першим), пропускаючи завідомо непотрібне.
+   Так будь-який тип обладнання отримує осмислену шістку без ручного списку на кожен. */
 function pickKeySpecs(spec) {
   const flat = [];
   (spec['основні'] || []).forEach(g => g.rows.forEach(r => flat.push(r)));
   const out = [];
   SPEC_PRIORITY_DEFAULT.forEach(pat => {
     if (out.length >= 6) return;
-    const hit = flat.find(r => r[0].indexOf(pat) === 0 && !out.includes(r));
+    const hit = flat.find(r => r[0].indexOf(pat) === 0 && out.indexOf(r) < 0);
     if (hit) out.push(hit);
   });
+  if (out.length < 6) {
+    flat.forEach(r => {
+      if (out.length >= 6 || out.indexOf(r) >= 0) return;
+      if (SPEC_SKIP_IN_KEY.some(s => r[0].indexOf(s) === 0)) return;
+      out.push(r);
+    });
+  }
   return out;
 }
 
@@ -106,9 +132,15 @@ function openProductSheet(cfgKey, model, tileLabel) {
   const body = document.getElementById('product-sheet-body');
 
   const locked = !hasFullAccess;
+  /* «Наявність» стоїть у ряд із ціною, а не серед кнопок знизу: її бачать лише адміни
+     (stock.js підвантажується тільки їм), тож серед трьох кнопок вона була б четвертою
+     зайвою для всіх інших. Рішення власника 2026-10-08. */
+  const stockHtml = (!locked && window.Stock)
+    ? `<button type="button" class="ps-stock-btn" data-ps-act="stock">${ic('factory', '')}<span>Наявність</span></button>`
+    : '';
   const priceHtml = locked
-    ? `<div class="ps-price ps-price-locked">${ic('lock', '—')}<span>Ціна доступна після входу</span></div>`
-    : `<div class="ps-price">${escapeHtml(formatListPrice(it))}</div>`;
+    ? `<div class="ps-price-row"><div class="ps-price ps-price-locked">${ic('lock', '—')}<span>Ціна доступна після входу</span></div></div>`
+    : `<div class="ps-price-row"><div class="ps-price">${escapeHtml(formatListPrice(it))}</div>${stockHtml}</div>`;
 
   const siteUrl = (typeof siteLinks === 'object' && siteLinks && siteLinks.links && siteLinks.links[cfgKey])
     ? siteLinks.links[cfgKey][siteLinkKey(it)] : null;
@@ -116,13 +148,14 @@ function openProductSheet(cfgKey, model, tileLabel) {
     ? `<a class="ps-site-link" href="${escapeHtml((siteLinks.base || 'https://sun-ice.com.ua/') + siteUrl)}" target="_blank" rel="noopener">Відкрити картку на сайті ↗</a>`
     : '';
 
-  /* Кнопки, що переїхали з рядка (П-10). Кольори різні свідомо: головна дія —
-     акцентна, довідкові — спокійні, щоб у панелі одразу було видно головне. */
+  /* Порядок кнопок — рішення власника 2026-10-08: Характеристики, Поділитись, Розрахунок.
+     «Характеристики» перша й акцентна, бо саме заради них панель найчастіше й відкривають;
+     сам розділ показується розгорнутим, а кнопка його згортає/розгортає. */
   const actions = locked ? '' : `
     <div class="ps-actions">
-      <button type="button" class="ps-btn ps-btn-main" data-ps-act="calc">${ic('calculator', '')}<span>Розрахувати</span></button>
-      <button type="button" class="ps-btn" data-ps-act="share">${ic('share-2', '')}<span>Поділитися</span></button>
-      ${window.Stock ? `<button type="button" class="ps-btn" data-ps-act="stock">${ic('factory', '')}<span>Наявність</span></button>` : ''}
+      <button type="button" class="ps-btn ps-btn-main" data-ps-act="specs" aria-expanded="true">${ic('info', '')}<span>Характеристики</span></button>
+      <button type="button" class="ps-btn" data-ps-act="share">${ic('share-2', '')}<span>Поділитись</span></button>
+      <button type="button" class="ps-btn" data-ps-act="calc">${ic('calculator', '')}<span>Розрахунок</span></button>
     </div>`;
 
   body.innerHTML = priceHtml + actions + '<div id="ps-specs"><div class="ps-loading">Завантажуємо характеристики…</div></div>' + siteHtml;

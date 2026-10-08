@@ -712,6 +712,16 @@ document.getElementById('product-sheet-body').addEventListener('click', function
   const btn = e.target.closest('[data-ps-act]');
   if (!btn) return;
   const body = document.getElementById('product-sheet-body');
+  /* «Характеристики» — не дія в рядку, а згортання/розгортання розділу просто тут.
+     Розділ показується розгорнутим (рішення власника), кнопка його ховає. */
+  if (btn.getAttribute('data-ps-act') === 'specs') {
+    const holder = document.getElementById('ps-specs');
+    const hidden = holder.hasAttribute('hidden');
+    if (hidden) holder.removeAttribute('hidden'); else holder.setAttribute('hidden', '');
+    btn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
+    btn.classList.toggle('ps-btn-main', hidden);
+    return;
+  }
   const model = body.getAttribute('data-ps-model');
   const row = document.querySelector('.row[data-row-model="' + (window.CSS && CSS.escape ? CSS.escape(model) : model) + '"]');
   if (!row) return;
