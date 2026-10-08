@@ -46,6 +46,19 @@ document.getElementById('main').addEventListener('click', function(e) {
   // Ціна захована (немає повного доступу) — дотик на саму ціну, калькулятор чи галочку
   // "в підбірку" (усі вони працюють із ціною) показує пропозицію зареєструватись замість
   // звичайної дії. Решта рядка (назва, пошук у Google, "поділитися") лишається робочою.
+  /* Єдина дія під замком — кнопка в пояснювальній смужці над списком. У самих рядках
+     кнопок більше немає (до 2026-10-08 їх було чотири, і всі вели сюди ж).
+     Куди саме вести: пристрій, де вже входили, отримує форму входу, новий — реєстрацію. */
+  if (e.target.closest('#access-note-cta')) {
+    let hadAccount = false;
+    try { hadAccount = localStorage.getItem(DEVICE_HAD_ACCOUNT_KEY) === '1'; } catch (err) {}
+    cabinetMode = hadAccount ? 'login' : 'register';
+    switchTab('cabinet', true);
+    renderCurrentTab();
+    return;
+  }
+  /* Запасний шлях: у розділах із власним парсингом (VRF, ККБ, вентиляція, завіси…)
+     кнопки в заблокованому рядку ще лишаються — там працює старе вікно реєстрації. */
   if (!hasFullAccess && e.target.closest('.row-locked') && e.target.closest('.row-price-locked, .calc-toggle, .cart-check-btn, .share-btn')) {
     showRegisterGate();
     return;

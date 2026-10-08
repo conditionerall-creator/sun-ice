@@ -20,7 +20,7 @@ function buildSimplePriceRowsHtml(items, opts) {
   const animateRows = opts.stagger !== false; // той самий stagger, що й у звичайному списку прайсу
   let lastKey = null;
 
-  return items.map((it, rowIndex) => {
+  const rowsHtml = items.map((it, rowIndex) => {
     let header = '';
     const effectiveKey = it.groupLabel || it.groupKey;
     if (effectiveKey && effectiveKey !== lastKey) {
@@ -68,7 +68,7 @@ function buildSimplePriceRowsHtml(items, opts) {
       // priceText — готовий рядок ціни від парсера (витратні матеріали: 1,58 EUR). Порожній/відсутній —
       // formatListPrice(): копійки показуються, коли вони є в Excel.
       let priceStr = rowLocked
-        ? PRICE_HIDDEN_TEXT
+        ? ic('lock', PRICE_HIDDEN_TEXT)
         : (it.priceText || formatListPrice(it));
       /* Примітка ("· роздрібна") без самої ціни сенсу не має — ховаємо разом з нею. */
       if (opts.priceNote && !rowLocked) priceStr += `<span class="row-price-note">${escapeHtml(opts.priceNote)}</span>`;
@@ -88,7 +88,11 @@ function buildSimplePriceRowsHtml(items, opts) {
               </svg>
             </button>` : '';
       const shareBtnHtml = showShare ? `<button class="share-btn" type="button" aria-label="Поділитися">${ic('share-2', '')}</button>` : '';
-      rightHtml += `${cartBtnHtml}${calcBtnHtml}<div class="row-price${rowLocked ? ' row-price-locked' : ''}" aria-label="${rowLocked ? 'Ціна прихована' : ''}">${priceStr}</div>${shareBtnHtml}`;
+      /* Під замком кнопок не лишаємо: усі вони працюють із ціною, якої немає, і раніше
+         всі вели в одне й те саме вікно реєстрації. Дія одна — у смужці над списком. */
+      rightHtml += rowLocked
+        ? `<div class="row-price row-price-locked" aria-label="Ціна доступна після входу">${priceStr}</div>`
+        : `${cartBtnHtml}${calcBtnHtml}<div class="row-price">${priceStr}</div>${shareBtnHtml}`;
     }
 
     const powerHtml = it.power ? `<p class="row-sub">${escapeHtml(it.power)}</p>` : '';
@@ -119,6 +123,10 @@ function buildSimplePriceRowsHtml(items, opts) {
       </div>
     `;
   }).join('');
+  /* Пояснення «чому немає цін» — один раз зверху списку. opts.append — це дозавантаження
+     наступної порції (Systemair/завіси, кнопка «Показати ще»): там смужка не потрібна,
+     інакше вона вилізла б посеред списку при кожній порції. */
+  return (opts.append ? '' : accessNoticeHtml()) + rowsHtml;
 }
 
 /* ---------- "Мультизональні VRF" ---------- */
@@ -389,7 +397,7 @@ function renderVentilationList() {
       const nextBatch = filtered.slice(prevCount, nextCount);
       const rowsContainer = document.getElementById('systemair-rows');
       if (rowsContainer) {
-        rowsContainer.insertAdjacentHTML('beforeend', buildSimplePriceRowsHtml(nextBatch, rowOpts));
+        rowsContainer.insertAdjacentHTML('beforeend', buildSimplePriceRowsHtml(nextBatch, Object.assign({}, rowOpts, { append: true })));
       }
       if (nextCount >= filtered.length) {
         loadMoreBtn.remove();
@@ -476,7 +484,7 @@ function renderAirCurtainsList() {
       const nextBatch = filtered.slice(prevCount, nextCount);
       const rowsContainer = document.getElementById('aircurtains-rows');
       if (rowsContainer) {
-        rowsContainer.insertAdjacentHTML('beforeend', buildSimplePriceRowsHtml(nextBatch, opts));
+        rowsContainer.insertAdjacentHTML('beforeend', buildSimplePriceRowsHtml(nextBatch, Object.assign({}, opts, { append: true })));
       }
       if (nextCount >= filtered.length) {
         loadMoreBtn.remove();

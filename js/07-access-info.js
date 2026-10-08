@@ -33,6 +33,50 @@ let hasFullAccess = false;
 let lastAccessCheckAt = 0;
 let accessCheckInFlight = null;
 
+/* ЧОМУ ціни заховані. Раніше зберігався лише прапорець "доступу немає", і через це
+   застосунок не міг пояснити причину — усі бачили однакове тире. А випадки різні:
+   гостю треба пропонувати вхід, заблокованому дилеру вхід пропонувати безглуздо, він
+   уже всередині. Правила доступу це НЕ міняє (рішення власника 2026-10-08) — лише
+   пояснює їх людині.
+   'guest' — немає сесії; 'blocked'/'rejected' — адмін закрив доступ;
+   'pending-reset' — щойно змінено пароль, чекає підтвердження адміна; null — доступ є. */
+let accessDenyReason = null;
+
+/* Текст під замком: заголовок, пояснення і чи є сенс пропонувати вхід.
+   Нічого не обіцяємо наперед: формулювання описують те, що станеться СЬОГОДНІ за
+   чинними правилами. Якщо правила підтвердження колись зміняться — міняти й тут. */
+function accessNotice() {
+  if (accessDenyReason === 'blocked') {
+    return { title: 'Доступ до цін закрито', text: 'Зверніться до свого менеджера Sun-ice — відновити доступ може адміністратор.', cta: null };
+  }
+  if (accessDenyReason === 'rejected') {
+    return { title: 'Заявку відхилено', text: 'Ціни не показуються. Зверніться до свого менеджера Sun-ice, щоб з’ясувати причину.', cta: null };
+  }
+  if (accessDenyReason === 'pending-reset') {
+    return { title: 'Пароль змінено — чекаємо підтвердження', text: 'Ви нещодавно відновлювали доступ. Ціни з’являться, щойно адміністратор підтвердить заявку.', cta: null };
+  }
+  return {
+    title: 'Увійдіть, щоб бачити ціни',
+    text: 'Назви й характеристики обладнання доступні всім. Ціни, калькулятор і підбірка відкриваються після реєстрації — вона займає хвилину, доступ надається одразу.',
+    cta: 'Увійти або зареєструватися'
+  };
+}
+
+/* Смужка-пояснення над списком цін. Показується ОДИН раз зверху списку, а не кнопкою
+   в кожному рядку: у рядку лишається просто замок без дії. До 2026-10-08 було навпаки —
+   у кожному рядку чотири різні кнопки (ціна, калькулятор, підбірка, поділитися), і всі
+   вели в одне й те саме вікно реєстрації. */
+function accessNoticeHtml() {
+  if (hasFullAccess) return '';
+  const n = accessNotice();
+  return `
+    <div class="access-note">
+      <div class="access-note-title">${ic('lock', '🔒', 'ic-lead')}${escapeHtml(n.title)}</div>
+      <p class="access-note-text">${escapeHtml(n.text)}</p>
+      ${n.cta ? `<button type="button" class="access-note-btn" id="access-note-cta">${escapeHtml(n.cta)}</button>` : ''}
+    </div>`;
+}
+
 /* Те, що показується замість ціни, коли доступу немає. Саме текст у розмітці, а не
    CSS-ефект поверх цифри: справжньої ціни в DOM бути не повинно. */
 const PRICE_HIDDEN_TEXT = '—';
@@ -114,6 +158,7 @@ async function refreshAccessState(opts) {
       const session = sessionData ? sessionData.session : null;
       if (!session) {
         hasFullAccess = false;
+        accessDenyReason = 'guest';
         confirmed = true; // немає сесії — це певна відповідь, не збій зв'язку
       } else {
         const { data: profile, error } = await sb.from('profiles').select('status, reregistered_at').eq('id', session.user.id).single();
@@ -121,6 +166,14 @@ async function refreshAccessState(opts) {
           hasFullAccess = storedAccessAllows();
         } else {
           hasFullAccess = profileAllowsPrices(profile);
+          /* Причина потрібна лише щоб написати людині правду під замком; на сам доступ
+             не впливає. Профіль міг не прийти зовсім (PGRST116 — акаунт видалено). */
+          if (hasFullAccess) accessDenyReason = null;
+          else if (!profile) accessDenyReason = 'guest';
+          else if (profile.status === 'blocked') accessDenyReason = 'blocked';
+          else if (profile.status === 'rejected') accessDenyReason = 'rejected';
+          else if (profile.status === 'pending' && profile.reregistered_at) accessDenyReason = 'pending-reset';
+          else accessDenyReason = 'guest';
           confirmed = true;
         }
       }

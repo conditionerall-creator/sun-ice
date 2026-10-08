@@ -971,7 +971,7 @@ function renderCatalogList() {
     /* Справжня ціна не потрапляє в розмітку взагалі, якщо доступу немає. Раніше сюди
        завжди йшла цифра, і ховав її лише CSS-blur поверх. */
     const priceStr = locked
-      ? PRICE_HIDDEN_TEXT
+      ? ic('lock', PRICE_HIDDEN_TEXT)
       : formatListPrice(it);
     const cartKey = activeTile + '|' + activeBrand + '|' + it.model;
     const cartQty = cartQtyFor(cartKey);
@@ -986,12 +986,13 @@ function renderCatalogList() {
           </div>
           <div class="row-right">
             ${window.Stock ? Stock.slotHtml(it, cfg.key) : ''}
-            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${locked ? '' : it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
+            ${locked ? '' : `
+            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
             <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
               ${ic('calculator', '')}
-            </button>
-            <div class="row-price${locked ? ' row-price-locked' : ''}" aria-label="${locked ? 'Ціна прихована' : ''}">${priceStr}</div>
-            <button class="share-btn" type="button" aria-label="Поділитися">${ic('share-2', '')}</button>
+            </button>`}
+            <div class="row-price${locked ? ' row-price-locked' : ''}" aria-label="${locked ? 'Ціна доступна після входу' : ''}">${priceStr}</div>
+            ${locked ? '' : `<button class="share-btn" type="button" aria-label="Поділитися">${ic('share-2', '')}</button>`}
           </div>
         </div>
         ${locked ? '' : '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, priceStr) + '</div>'}
@@ -999,7 +1000,7 @@ function renderCatalogList() {
     `;
   }).join('');
 
-  main.innerHTML = toggleHtml + countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
+  main.innerHTML = toggleHtml + accessNoticeHtml() + countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
   applySiteLinks();
   if (window.Stock) Stock.paint(main); // наявність з 1С (лише адміни; слот порожній, поки немає даних)
   attachBrandToggleHandlers(main);
