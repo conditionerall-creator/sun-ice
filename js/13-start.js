@@ -106,6 +106,14 @@ document.getElementById('main').addEventListener('click', function(e) {
     window.open(siteEl.getAttribute('data-site-url'), '_blank', 'noopener');
     return;
   }
+  /* Дотик по ПОРОЖНЬОМУ місцю рядка — панель товару (П-9).
+     Перевірка йде ПІСЛЯ маркування (воно веде на сайт) і пропускає будь-які кнопки,
+     посилання й розгорнутий калькулятор, щоб панель не перехоплювала їхні дотики. */
+  const rowEl = e.target.closest('.row[data-row-model]');
+  if (rowEl && !e.target.closest('button, a, input, select, label, .calc-panel-slot')) {
+    openProductSheet(rowEl.getAttribute('data-row-cfg'), rowEl.getAttribute('data-row-model'), rowEl.getAttribute('data-row-tile'));
+    return;
+  }
   const articleLinkBtn = e.target.closest('.row-article-link');
   if (articleLinkBtn) {
     const sku = articleLinkBtn.getAttribute('data-sku');
@@ -376,6 +384,12 @@ sb.auth.onAuthStateChange(function(event, session) {
 window.addEventListener('popstate', function(event) {
   // Залишки (stock.js): «Назад» закриває відкриту панель/вікно наявності й більше нічого не робить
   if (window.Stock && window.Stock.onBack && window.Stock.onBack(event)) return;
+  /* Те саме для панелі товару: «Назад» на телефоні має закривати її, а не перемальовувати
+     список під відкритим листом (інакше панель лишалась би висіти поверх). */
+  if (document.getElementById('product-sheet-overlay').classList.contains('show')) {
+    closeProductSheet();
+    return;
+  }
   const state = event.state;
   if (state && state.tab) {
     switchTab(state.tab, false);
@@ -689,6 +703,25 @@ if ('serviceWorker' in navigator) {
    Спостерігач, а не виклик у кожному рендері: плитки малюються в 44 місцях трьох
    файлів, і будь-яке нове місце інакше довелось би не забути. childList без attributes —
    щоб проставляння самих атрибутів не викликало спостерігача повторно. */
+/* Панель товару: закриття й дії всередині. Кнопки «Розрахувати», «Поділитися» і
+   «Наявність» переїхали сюди з рядка прайсу — вони натискають ті самі елементи рядка,
+   що й раніше, тож уся перевірена механіка (калькулятор, share, 1С) лишається тією ж. */
+document.getElementById('product-sheet-close').addEventListener('click', closeProductSheet);
+document.getElementById('product-sheet-backdrop').addEventListener('click', closeProductSheet);
+document.getElementById('product-sheet-body').addEventListener('click', function (e) {
+  const btn = e.target.closest('[data-ps-act]');
+  if (!btn) return;
+  const body = document.getElementById('product-sheet-body');
+  const model = body.getAttribute('data-ps-model');
+  const row = document.querySelector('.row[data-row-model="' + (window.CSS && CSS.escape ? CSS.escape(model) : model) + '"]');
+  if (!row) return;
+  const act = btn.getAttribute('data-ps-act');
+  const sel = act === 'calc' ? '.calc-toggle' : (act === 'share' ? '.share-btn' : '.stock-btn, [class*="stock"] button');
+  const target = row.querySelector(sel);
+  closeProductSheet();
+  if (target) target.click();
+});
+
 markTilesAccessible(document);
 new MutationObserver(function () {
   markTilesAccessible(document.getElementById('main'));

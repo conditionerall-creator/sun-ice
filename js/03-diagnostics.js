@@ -25,7 +25,7 @@
      цього рядка показуються як є.
    • Типи: error — розбіжність/поломка; warning — підозріло; info — примітка/відоме правило
      (не рахується проблемою). */
-const APP_BUILD = '2026-10-08.16'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-08.17'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const DIAG_MAX_LINES = 14;
 const DIAG_AREA = {
   excel: 'Звірка з Excel',
@@ -54,7 +54,8 @@ const MODULE_ANCHORS = {
   '08-info-tables.js': 'searchMhiByCode',
   '09-cabinet.js': 'renderCabinetTab',
   '10-crmontage.js': 'renderInstallerTab',
-  '11-shell.js': 'showInstallGate'
+  '11-shell.js': 'showInstallGate',
+  '12-product-sheet.js': 'openProductSheet'
 };
 let lastDiagRun = null; // { at, checked, issues } — останній ручний прогін, для звіту в картці
 
@@ -494,7 +495,7 @@ async function diagCheckModules(ctx) {
   const started = !!(history.state && history.state.tab);
   if (!started) {
     out.issues.push(diagIssue(area, 'modules', 'error',
-      'Не виконався блок старту (js/12-start.js)',
+      'Не виконався блок старту (js/13-start.js)',
       ['Без нього не навішано жодного обробника — застосунок виглядає живим, але не реагує.', FIX], null));
   }
   out.checked.push({ area: area, sub: 'modules', label: 'Усі модулі коду завантажились',

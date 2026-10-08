@@ -1029,8 +1029,10 @@ function renderCatalogList() {
     const rowCls = 'row' + (locked ? ' row-locked' : '') + (animateRows ? ' tile-enter' : '');
     const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';border-right:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
 
+    /* data-row-* — щоб панель товару (П-9) знала, що саме відкривати: дотик приходить
+       по порожньому місцю рядка, а рядок сам по собі знає лише свою модель. */
     return sectionLabelHtml + header + `
-      <div class="${rowCls}" style="${rowStyle}">
+      <div class="${rowCls}" style="${rowStyle}" data-row-cfg="${escapeHtml(cfg.key)}" data-row-model="${escapeHtml(it.model)}" data-row-tile="${escapeHtml(tile.label)}">
         <div class="row-top">
           <div class="row-info" data-site-list="${cfg.key}" data-site-key="${escapeHtml(siteLinkKey(it))}">
             <p class="row-name">${escapeHtml(it.model)}</p>

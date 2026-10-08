@@ -613,6 +613,63 @@
     font-size: 14px; font-weight: 700; cursor: pointer;
   }
   .load-error-btn:active { transform: scale(.99); }
+
+  /* ---------- Панель товару (П-9) ---------- */
+  .ps-price { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 2px; }
+  .ps-price-locked {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 15px; font-weight: 600; color: var(--text-secondary);
+  }
+  .ps-price-locked .ic { width: 18px; height: 18px; vertical-align: 0; }
+  /* Кнопки, що переїхали з рядка. Головна дія — акцентна, довідкові спокійні:
+     у панелі має бути одразу видно, що тут головне. */
+  .ps-actions { display: flex; gap: 8px; margin: 14px 0 4px; flex-wrap: wrap; }
+  .ps-btn {
+    flex: 1 1 0; min-width: 96px; min-height: 48px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--card); color: var(--text);
+    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .ps-btn .ic { width: 19px; height: 19px; vertical-align: 0; color: var(--text-secondary); }
+  .ps-btn:active { transform: scale(.98); }
+  .ps-btn-main { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ps-btn-main .ic { color: #fff; }
+
+  .ps-section { margin-top: 18px; }
+  .ps-section-title {
+    font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--text-secondary); margin-bottom: 8px;
+  }
+  .ps-spec-row {
+    display: flex; justify-content: space-between; gap: 14px;
+    padding: 7px 0; border-bottom: 1px solid var(--border);
+    font-size: 13.5px; line-height: 1.35;
+  }
+  .ps-spec-name { color: var(--text-secondary); }
+  .ps-spec-val { color: var(--text); font-weight: 600; text-align: right; flex-shrink: 0; max-width: 54%; }
+  .ps-all { margin-top: 10px; }
+  .ps-all > summary, .ps-group > summary {
+    cursor: pointer; list-style: none;
+    min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-size: 13.5px; font-weight: 600; color: var(--accent);
+  }
+  .ps-all > summary::-webkit-details-marker, .ps-group > summary::-webkit-details-marker { display: none; }
+  .ps-group > summary { color: var(--text); border-bottom: 1px solid var(--border); }
+  .ps-group-n {
+    font-size: 11.5px; font-weight: 600; color: var(--text-secondary);
+    background: var(--bg); border-radius: 20px; padding: 2px 9px;
+  }
+  .ps-all-body { padding-top: 2px; }
+  .ps-site-link {
+    display: block; margin-top: 18px; min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border); border-radius: 10px;
+    font-size: 13.5px; font-weight: 600; color: var(--accent); text-decoration: none;
+  }
+  .ps-loading, .ps-empty {
+    margin-top: 18px; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 0;
+  }
   .menu-tile-wide-icon {
     display: flex; align-items: center; justify-content: center;
     width: 38px; height: 38px; flex: 0 0 38px;
@@ -2819,6 +2876,22 @@
   </div>
 </div>
 
+<!-- Панель товару (П-9). Відкривається дотиком по ПОРОЖНЬОМУ місцю рядка прайсу;
+     дотик по самому маркуванню, як і раніше, веде на картку sun-ice.com.ua.
+     Той самий info-sheet-патерн, що й у листів нижче — щоб жести закриття, висота й
+     поведінка «Назад» були однакові по всьому застосунку.
+     Вміст складається в JS (buildProductSheet) — він залежить від товару й ролі. -->
+<div class="info-sheet-overlay" id="product-sheet-overlay">
+  <div class="info-sheet-backdrop" id="product-sheet-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title" id="product-sheet-title"></div>
+      <button type="button" class="info-sheet-close" id="product-sheet-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="info-sheet-body" id="product-sheet-body"></div>
+  </div>
+</div>
+
 <div class="info-sheet-overlay" id="series-info-overlay">
   <div class="info-sheet-backdrop" id="series-info-backdrop"></div>
   <div class="info-sheet-panel">
@@ -3187,17 +3260,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-08.16"></script>
-<script src="js/02-price-parse.js?v=2026-10-08.16"></script>
-<script src="js/03-diagnostics.js?v=2026-10-08.16"></script>
-<script src="js/04-catalog.js?v=2026-10-08.16"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-08.16"></script>
-<script src="js/06-cart-promo.js?v=2026-10-08.16"></script>
-<script src="js/07-access-info.js?v=2026-10-08.16"></script>
-<script src="js/08-info-tables.js?v=2026-10-08.16"></script>
-<script src="js/09-cabinet.js?v=2026-10-08.16"></script>
-<script src="js/10-crmontage.js?v=2026-10-08.16"></script>
-<script src="js/11-shell.js?v=2026-10-08.16"></script>
-<script src="js/12-start.js?v=2026-10-08.16"></script>
+<script src="js/01-config.js?v=2026-10-08.17"></script>
+<script src="js/02-price-parse.js?v=2026-10-08.17"></script>
+<script src="js/03-diagnostics.js?v=2026-10-08.17"></script>
+<script src="js/04-catalog.js?v=2026-10-08.17"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-08.17"></script>
+<script src="js/06-cart-promo.js?v=2026-10-08.17"></script>
+<script src="js/07-access-info.js?v=2026-10-08.17"></script>
+<script src="js/08-info-tables.js?v=2026-10-08.17"></script>
+<script src="js/09-cabinet.js?v=2026-10-08.17"></script>
+<script src="js/10-crmontage.js?v=2026-10-08.17"></script>
+<script src="js/11-shell.js?v=2026-10-08.17"></script>
+<script src="js/12-product-sheet.js?v=2026-10-08.17"></script>
+<script src="js/13-start.js?v=2026-10-08.17"></script>
 </body>
 </html>
