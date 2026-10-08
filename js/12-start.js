@@ -685,6 +685,23 @@ if ('serviceWorker' in navigator) {
   switchTab('cabinet', false);
   history.replaceState({ tab: 'cabinet' }, '', '#cabinet');
 })();
+/* Доступність плиток меню з клавіатури.
+   Спостерігач, а не виклик у кожному рендері: плитки малюються в 44 місцях трьох
+   файлів, і будь-яке нове місце інакше довелось би не забути. childList без attributes —
+   щоб проставляння самих атрибутів не викликало спостерігача повторно. */
+markTilesAccessible(document);
+new MutationObserver(function () {
+  markTilesAccessible(document.getElementById('main'));
+}).observe(document.getElementById('main'), { childList: true, subtree: true });
+
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+  const t = e.target.closest && e.target.closest('[role="button"][data-tile], [role="button"][data-info-id], [role="button"][data-flip-tile]');
+  if (!t) return;
+  e.preventDefault(); // інакше пробіл прокрутив би сторінку
+  t.click();
+});
+
 ensureAccessFresh(true);
 updateNavIndicator(document.querySelector('.nav-btn.active'));
 renderCurrentTab();

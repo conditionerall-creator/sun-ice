@@ -248,6 +248,22 @@ async function handleNotifyBannerEnable() {
    Наявність сесії визначаємо синхронно за ключем Supabase у localStorage (sb-…-auth-token), щоб
    не блимати каталогом, поки getSession() відповідає. Прострочений токен тут нічого не ламає:
    каталог відкриється, а ensureAccessFresh() сам перевірить доступ. */
+/* Плитки меню намальовані як <div> у 44 різних місцях трьох файлів. Для миші й пальця
+   це працює, але з клавіатури на них не потрапити, а екранний диктор не каже, що це
+   кнопка. Переробляти 44 генератори на <button> ризиковано (плитки мають 3D-обгортку
+   перевороту й власну верстку), тому позначаємо їх ПІСЛЯ відмальовки: role="button" +
+   tabindex робить їх доступними, не змінюючи ні вигляду, ні жодного рядка розмітки.
+   :not([role]) — щоб не переставляти атрибути тим, кого вже позначили. */
+function markTilesAccessible(root) {
+  const scope = root || document;
+  if (!scope.querySelectorAll) return;
+  scope.querySelectorAll('[data-tile]:not([role]), [data-info-id]:not([role]), [data-flip-tile]:not([role])')
+    .forEach(function (el) {
+      el.setAttribute('role', 'button');
+      el.setAttribute('tabindex', '0');
+    });
+}
+
 const DEVICE_HAD_ACCOUNT_KEY = 'sunice_had_session';
 function markDeviceHadAccount() {
   try { localStorage.setItem(DEVICE_HAD_ACCOUNT_KEY, '1'); } catch (e) {}
