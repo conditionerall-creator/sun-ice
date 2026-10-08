@@ -614,6 +614,32 @@
   }
   .load-error-btn:active { transform: scale(.99); }
 
+  /* П-10: у рядку прайсу лишається тільки «Додати» (галочка підбірки) і ціна.
+     Калькулятор, «поділитися» й наявність переїхали в панель товару.
+
+     Чому саме сховані, а не вилучені з розмітки: їхні обробники читають DOM САМОГО
+     РЯДКА — назву, ціну, розгорнуту панель розрахунку, — а наявність узагалі малює
+     зовнішній stock.js. Вилучення означало б переписати три перевірені механізми
+     заради косметики. Тому панель натискає ці самі елементи програмно (клік працює й
+     по display:none), і вся логіка лишається тією, що працювала роками.
+     Стосується лише розділів, де панель є (спліт/мульти/напівпром — у них є
+     data-row-model); у решті розділів кнопки в рядку поки лишаються як були. */
+  .row[data-row-model] .calc-toggle,
+  .row[data-row-model] .share-btn,
+  /* Саме КНОПКУ наявності, а не весь .stock-slot: панель із залишками stock.js малює
+     ВСЕРЕДИНІ цього ж слота, і сховавши слот цілком ми сховали б і її (напоролись
+     живцем 2026-10-08 — кнопка в панелі товару спрацьовувала, але нічого не з'являлось). */
+  .row[data-row-model] .stock-slot > .stock-btn { display: none; }
+  /* «Додати» лишилась у рядку сама — тепер їй можна дати нормальний розмір.
+     Це той самий пункт П-6 (зона натискання 44px), який свідомо відклали до П-10:
+     поки кнопок було чотири поруч, розширені зони перекривали б одна одну. */
+  .row[data-row-model] .cart-check-btn { width: 32px; height: 32px; position: relative; }
+  .row[data-row-model] .cart-check-btn::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 44px; height: 44px; transform: translate(-50%, -50%);
+  }
+  .row[data-row-model] .cart-check-btn .cart-check-icon .ic { width: 17px; height: 17px; }
+
   /* ---------- Панель товару (П-9) ---------- */
   /* Ціна і «Наявність» — в одному ряду: кнопку бачать лише адміни, тож серед нижніх
      кнопок вона була б четвертою зайвою для всіх інших. */
@@ -3272,18 +3298,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-08.21"></script>
-<script src="js/02-price-parse.js?v=2026-10-08.21"></script>
-<script src="js/03-diagnostics.js?v=2026-10-08.21"></script>
-<script src="js/04-catalog.js?v=2026-10-08.21"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-08.21"></script>
-<script src="js/06-cart-promo.js?v=2026-10-08.21"></script>
-<script src="js/07-access-info.js?v=2026-10-08.21"></script>
-<script src="js/08-info-tables.js?v=2026-10-08.21"></script>
-<script src="js/09-cabinet.js?v=2026-10-08.21"></script>
-<script src="js/10-crmontage.js?v=2026-10-08.21"></script>
-<script src="js/11-shell.js?v=2026-10-08.21"></script>
-<script src="js/12-product-sheet.js?v=2026-10-08.21"></script>
-<script src="js/13-start.js?v=2026-10-08.21"></script>
+<script src="js/01-config.js?v=2026-10-08.24"></script>
+<script src="js/02-price-parse.js?v=2026-10-08.24"></script>
+<script src="js/03-diagnostics.js?v=2026-10-08.24"></script>
+<script src="js/04-catalog.js?v=2026-10-08.24"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-08.24"></script>
+<script src="js/06-cart-promo.js?v=2026-10-08.24"></script>
+<script src="js/07-access-info.js?v=2026-10-08.24"></script>
+<script src="js/08-info-tables.js?v=2026-10-08.24"></script>
+<script src="js/09-cabinet.js?v=2026-10-08.24"></script>
+<script src="js/10-crmontage.js?v=2026-10-08.24"></script>
+<script src="js/11-shell.js?v=2026-10-08.24"></script>
+<script src="js/12-product-sheet.js?v=2026-10-08.24"></script>
+<script src="js/13-start.js?v=2026-10-08.24"></script>
 </body>
 </html>

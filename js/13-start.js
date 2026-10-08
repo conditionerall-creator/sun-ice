@@ -726,9 +726,16 @@ document.getElementById('product-sheet-body').addEventListener('click', function
   const row = document.querySelector('.row[data-row-model="' + (window.CSS && CSS.escape ? CSS.escape(model) : model) + '"]');
   if (!row) return;
   const act = btn.getAttribute('data-ps-act');
-  const sel = act === 'calc' ? '.calc-toggle' : (act === 'share' ? '.share-btn' : '.stock-btn, [class*="stock"] button');
-  const target = row.querySelector(sel);
   closeProductSheet();
+  if (act === 'stock') {
+    /* У stock.js є публічний Stock.toggle(кнопка) — кличемо його напряму, а не
+       синтетичним кліком по схованій кнопці: так не залежимо від того, чи дійде
+       подія через делегування й чи видимий елемент. */
+    const btn = row.querySelector('.stock-slot .stock-btn');
+    if (btn && window.Stock && Stock.toggle) Stock.toggle(btn);
+    return;
+  }
+  const target = row.querySelector(act === 'calc' ? '.calc-toggle' : '.share-btn');
   if (target) target.click();
 });
 
