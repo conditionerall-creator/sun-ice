@@ -482,6 +482,8 @@
      повільній мережі. Висота 64px — вище за мінімальні 44px для зони натискання. */
   .menu-tile-wide {
     grid-column: 1 / -1;
+    position: relative;
+    overflow: hidden;
     flex-direction: row;
     align-items: center;
     gap: 14px;
@@ -491,6 +493,26 @@
     border-color: var(--accent);
     color: #fff;
   }
+  /* Логотип фоном, водяним знаком.
+     mix-blend-mode: soft-light — бо логотип наполовину помаранчевий, і на помаранчевій
+     плитці ця половина просто зникла б. Режим змішування кладе його як світлотінь:
+     читаються обидві половини, і жодна не б'є по білому тексту поверх.
+     Стоїть РІВНО, без обертання (рішення власника 2026-10-08): пробували повільний
+     оберт за 30 с — у кожен окремий момент логотип застигає під випадковим кутом і
+     читається не як «крутиться», а як «з'їхало»; рух помітний, лише якщо дивитись на
+     плитку кілька секунд, а на неї дивляться півсекунди. */
+  .menu-tile-wide-bg {
+    position: absolute;
+    right: -26px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 215px;
+    height: auto;
+    opacity: .6;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+  }
+  .menu-tile-wide > :not(.menu-tile-wide-bg) { position: relative; z-index: 1; }
   .menu-tile-wide-icon {
     display: flex; align-items: center; justify-content: center;
     width: 38px; height: 38px; flex: 0 0 38px;
@@ -3055,17 +3077,17 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-08.8"></script>
-<script src="js/02-price-parse.js?v=2026-10-08.8"></script>
-<script src="js/03-diagnostics.js?v=2026-10-08.8"></script>
-<script src="js/04-catalog.js?v=2026-10-08.8"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-08.8"></script>
-<script src="js/06-cart-promo.js?v=2026-10-08.8"></script>
-<script src="js/07-access-info.js?v=2026-10-08.8"></script>
-<script src="js/08-info-tables.js?v=2026-10-08.8"></script>
-<script src="js/09-cabinet.js?v=2026-10-08.8"></script>
-<script src="js/10-crmontage.js?v=2026-10-08.8"></script>
-<script src="js/11-shell.js?v=2026-10-08.8"></script>
-<script src="js/12-start.js?v=2026-10-08.8"></script>
+<script src="js/01-config.js?v=2026-10-08.10"></script>
+<script src="js/02-price-parse.js?v=2026-10-08.10"></script>
+<script src="js/03-diagnostics.js?v=2026-10-08.10"></script>
+<script src="js/04-catalog.js?v=2026-10-08.10"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-08.10"></script>
+<script src="js/06-cart-promo.js?v=2026-10-08.10"></script>
+<script src="js/07-access-info.js?v=2026-10-08.10"></script>
+<script src="js/08-info-tables.js?v=2026-10-08.10"></script>
+<script src="js/09-cabinet.js?v=2026-10-08.10"></script>
+<script src="js/10-crmontage.js?v=2026-10-08.10"></script>
+<script src="js/11-shell.js?v=2026-10-08.10"></script>
+<script src="js/12-start.js?v=2026-10-08.10"></script>
 </body>
 </html>

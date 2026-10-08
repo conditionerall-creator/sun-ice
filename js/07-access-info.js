@@ -512,6 +512,7 @@ function renderInfoMenu(items, onSelect) {
     if (item.wide) {
       return `
         <div class="menu-tile menu-tile-wide" data-info-id="${escapeHtml(item.id)}">
+          <img class="menu-tile-wide-bg" src="tile-images/sun-ice-logo-wide.webp" alt="" aria-hidden="true">
           <span class="menu-tile-wide-icon">${ic(item.icon || 'phone', '📞')}</span>
           <span class="menu-tile-wide-text">
             <span class="menu-tile-wide-title">${escapeHtml(item.label)}</span>
