@@ -49,6 +49,11 @@ document.getElementById('main').addEventListener('click', function(e) {
   /* Єдина дія під замком — кнопка в пояснювальній смужці над списком. У самих рядках
      кнопок більше немає (до 2026-10-08 їх було чотири, і всі вели сюди ж).
      Куди саме вести: пристрій, де вже входили, отримує форму входу, новий — реєстрацію. */
+  // «Спробувати ще раз» на екрані невдалого завантаження прайсу.
+  if (e.target.closest('#price-retry-btn')) {
+    initCatalog();
+    return;
+  }
   if (e.target.closest('#access-note-cta')) {
     let hadAccount = false;
     try { hadAccount = localStorage.getItem(DEVICE_HAD_ACCOUNT_KEY) === '1'; } catch (err) {}

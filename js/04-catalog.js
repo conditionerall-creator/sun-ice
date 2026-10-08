@@ -126,6 +126,11 @@ async function initCatalog() {
   loadSiteLinks(); // прогрів: до моменту, коли користувач зайде в розділ, файл уже в кеші
   const hadCache = loadProcessedCache();
   if (hadCache) {
+    /* Прайс узявся з кеша — отже стан «не вдалося» більше не дійсний. Без цього після
+       вдалої спроби «Спробувати ще раз» екран показував плитки, а всередині лишалось
+       priceLoadState === 'error' (знайдено при перевірці 2026-10-08). */
+    priceLoadState = 'ready';
+    priceLoadError = null;
     renderCatalogView();
     /* ДО 2026-09-21 тут стояв просто return: якщо на пристрої вже лежав прайс, версію
        в price_meta не звіряли ВЗАГАЛІ. Оновити прайс можна було лише вручну, кнопкою ↻
@@ -136,16 +141,29 @@ async function initCatalog() {
     checkPriceUpdateInBackground();
     return;
   }
-  setCatalogStatus('Завантаження прайсу...');
+  /* Етапи замість одного мовчазного «Завантаження...». Оболонка екрана малюється
+     одразу (renderCatalogView нижче), а далі заповнюється даними. */
+  priceLoadState = 'download';
+  priceLoadError = null;
+  setCatalogStatus('Завантажуємо прайс…');
   renderCatalogView();
   try {
     const meta = await checkPriceVersion();
-    await downloadAndParsePrice(meta ? meta.version : null);
+    await downloadAndParsePrice(meta ? meta.version : null, {
+      onStage: function (s) {
+        priceLoadState = s;
+        setCatalogStatus(s === 'parse' ? 'Готуємо каталог…' : 'Завантажуємо прайс…');
+        renderCatalogView();
+      }
+    });
     priceVersion = meta ? meta.version : 1;
     persistProcessedCache(priceVersion);
+    priceLoadState = 'ready';
     setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено');
   } catch (e) {
-    setCatalogStatus('Немає підключення до інтернету. Прайс ще не завантажено.');
+    priceLoadState = 'error';
+    priceLoadError = (e && e.message) ? e.message : '';
+    setCatalogStatus('');
   }
   renderCatalogView();
 }
@@ -432,12 +450,45 @@ function startFlipRotation(flipEls) {
   step(0);
 }
 
+/* Що показувати на місці каталогу, поки прайсу немає.
+   До 2026-10-08 тут був один рядок «Прайс ще не завантажено.» — і він висів однаково
+   і поки файл качався, і коли зв'язку не було зовсім. Людина не знала ні що відбувається,
+   ні що робити далі.
+   Тепер: поки вантажиться — оболонка з порожніми плитками й назвою етапу (екран одразу
+   має форму майбутнього каталогу, а не порожнечу); якщо не вийшло — пояснення саме тут,
+   біля потрібного місця, з кнопкою повтору. Навігація й решта розділів при цьому
+   лишаються робочими — помилка не перекриває застосунок. */
+function catalogPlaceholderHtml() {
+  if (priceLoadState === 'error') {
+    return `
+      <div class="load-error">
+        <div class="load-error-title">${ic('refresh-cw', '⚠️', 'ic-lead')}Не вдалося завантажити прайс</div>
+        <p class="load-error-text">Схоже, немає зв'язку з інтернетом. Збереженої копії прайсу на цьому пристрої ще немає, тому ціни показати нема з чого.</p>
+        <p class="load-error-text">Решта застосунку працює: контакти, акції та CRМонтаж відкриваються й без мережі.</p>
+        <button type="button" class="load-error-btn" id="price-retry-btn">Спробувати ще раз</button>
+      </div>`;
+  }
+  const stageText = priceLoadState === 'parse'
+    ? 'Готуємо каталог…'
+    : (priceLoadState === 'download' ? 'Завантажуємо прайс…' : 'Прайс ще не завантажено.');
+  const hint = priceLoadState === 'download'
+    ? '<p class="load-skeleton-hint">Файл прайсу важить близько 10 МБ — на повільному зв\'язку це може зайняти до хвилини.</p>'
+    : '';
+  const cells = new Array(CATALOG_TILES.length).fill('<div class="skeleton-tile"></div>').join('');
+  return `
+    <div class="load-skeleton">
+      <p class="load-skeleton-stage">${escapeHtml(stageText)}</p>
+      ${hint}
+      <div class="menu-grid">${cells}</div>
+    </div>`;
+}
+
 function renderCatalogMenu() {
   stopAllFlips();
   const main = document.getElementById('main');
   const hasData = Object.keys(sheetsData).length > 0;
   if (!hasData) {
-    main.innerHTML = '<div class="empty">Прайс ще не завантажено.</div>';
+    main.innerHTML = catalogPlaceholderHtml();
     return;
   }
   const animateEntrance = !catalogMenuSkipEnterAnim;

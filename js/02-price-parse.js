@@ -1234,11 +1234,23 @@ async function checkPriceVersion() {
 // (initCatalog/handleRefreshClick) priceVersion оновлюється ПІСЛЯ цього виклику — інакше
 // самодіагностика підписувала б знахідки старою версією.
 async function downloadAndParsePrice(newVersion, opts) {
+  /* onStage — щоб екран міг сказати людині, що саме зараз відбувається: файл прайсу
+     важить близько 10 МБ, і між «качаю» та «розбираю» на слабкому телефоні відчутна
+     різниця в часі. Без етапів обидва виглядали як однакове мовчазне «Завантаження...». */
+  const stage = (opts && opts.onStage) || function () {};
+  stage('download');
   const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const buf = await res.arrayBuffer();
   priceRawBuffer = buf; // для extractSeriesImages() — той самий буфер, без повторного качання
   seriesImageCache = {}; // новий файл прайсу — стара прив'язка картинок до серій більше не валідна
+  stage('parse');
+  /* Віддаємо браузеру кадр, щоб він УСПІВ намалювати «Готуємо каталог…».
+     XLSX.read синхронний і на 10 МБ блокує потік на кілька секунд — без цієї паузи
+     напис ставився б у DOM і ніколи не з'являвся на екрані: перемальовка починається
+     тільки після того, як розбір закінчився. Перевірено живцем 2026-10-08: етап не
+     показувався жодного разу, поки не додали цей рядок. */
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
   const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
   const previousData = sheetsData;
   const { data, problems, issues } = buildSheetsData(wb, previousData);

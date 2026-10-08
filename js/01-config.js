@@ -180,6 +180,15 @@ let aircurtainsRenderCount = AIRCURTAINS_BATCH;
 let vrfMhiSource = 'outdoor'; // 'outdoor' | 'indoor_r410a' | 'indoor_kxze1w'
 let vrfGalSide = 'outdoor';   // 'outdoor' | 'indoor'
 let priceVersion = null;
+
+/* На якому етапі зараз прайс. До 2026-10-08 застосунок не розрізняв «качаю»,
+   «розбираю» і «не зміг» — усюди був однаковий напис «Завантаження...», і при поганому
+   зв'язку людина дивилась на нього без жодної підказки, скільки ще чекати і що робити.
+   Відсотків свідомо НЕ показуємо: справжнього прогресу розбору ми не знаємо, а вигадана
+   цифра гірша за її відсутність — вона обіцяє те, чого ніхто не міряв.
+   'idle' | 'download' (качаємо файл) | 'parse' (розбираємо) | 'error' | 'ready' */
+let priceLoadState = 'idle';
+let priceLoadError = null; // текст останньої помилки, щоб показати її біля блоку, а не в нікуди
 let catalogInitDone = false;
 let usdRate = null;      // курс $ → грн (з app_settings), для перерахунку в калькуляторі
 let eurRate = null;      // курс € → грн. ДОВІДКОВИЙ: у розрахунках не бере участі (див. нижче)
