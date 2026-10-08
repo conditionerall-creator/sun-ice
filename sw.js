@@ -7,7 +7,7 @@ const APP_NAME = 'Sun-ice';
 /* Підвищуй цю версію, коли треба примусово скинути закешовану статику користувачам
    (наприклад, якщо після оновлення щось виглядає "старим") — старий кеш видаляється
    автоматично в 'activate'. */
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = 'sunice-shell-' + CACHE_VERSION;
 
 /* "Оболонка" застосунку — те, що потрібне, щоб сторінка відкрилась і показала хоч
@@ -20,6 +20,27 @@ const APP_SHELL = [
   new URL('manifest.json', self.registration.scope).href,
   new URL('icon-192.png', self.registration.scope).href,
   new URL('apple-touch-icon.png', self.registration.scope).href,
+  /* Код застосунку. З 2026-10-08 він живе в js/*.js, а не всередині index.html.
+     ?v= мусить збігатися з APP_BUILD і з тегами <script> в index.html ТОЧНО —
+     піднімати все разом однією командою:
+         python claude/split-index/set-build.py РРРР-ММ-ДД.N
+     Якщо розійдеться, сюди ляже один файл, а сторінка попросить інший, і офлайн
+     застосунок не підніметься. Перевірка «Модулі застосунку» в самодіагностиці
+     стежить за цим збігом. */
+  ...[
+    'js/01-config.js?v=2026-10-08.2',
+    'js/02-price-parse.js?v=2026-10-08.2',
+    'js/03-diagnostics.js?v=2026-10-08.2',
+    'js/04-catalog.js?v=2026-10-08.2',
+    'js/05-catalog-custom.js?v=2026-10-08.2',
+    'js/06-cart-promo.js?v=2026-10-08.2',
+    'js/07-access-info.js?v=2026-10-08.2',
+    'js/08-info-tables.js?v=2026-10-08.2',
+    'js/09-cabinet.js?v=2026-10-08.2',
+    'js/10-crmontage.js?v=2026-10-08.2',
+    'js/11-shell.js?v=2026-10-08.2',
+    'js/12-start.js?v=2026-10-08.2'
+  ].map((p) => new URL(p, self.registration.scope).href),
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
   /* Адреса ТОЧНО така сама, як у <script> в index.html (версія зафіксована 2026-09-21).
      Якщо розійдеться — сюди кешуватиметься один файл, а сторінка проситиме інший,
