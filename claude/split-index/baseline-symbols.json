@@ -1,11 +1,11 @@
 {
   "_призначення": "Еталонний набір глобальних символів ДО розділення index.html. Після розділення зняти так само і звірити: різниця має бути ПОРОЖНЯ в обидва боки.",
-  "знято": "2026-10-08",
+  "знято": "2026-10-08 (оновлено після П0)",
   "коміт": "9785ede",
-  "APP_BUILD": "2026-10-06.2",
+  "APP_BUILD": "2026-10-08.6",
   "_як_зняти_повторно": "Відкрити застосунок, виконати в консолі скрипт із 03-ПЕРЕВІРКА-СИМВОЛІВ.js",
   "window": {
-    "кількість": 299,
+    "кількість": 300,
     "_примітка": "Сюди входять і глобали сторонніх бібліотек із CDN (JSZip, XLSX, supabase, cptable, make_xlsx_lib, DO_NOT_EXPORT_CODEPAGE, setImmediate, clearImmediate) — вони мають лишитись після розділення так само.",
     "імена": [
       "DO_NOT_EXPORT_CODEPAGE",
@@ -65,6 +65,7 @@
       "diagCheckBuild",
       "diagCheckExcel",
       "diagCheckFiles",
+      "diagCheckModules",
       "diagCheckRates",
       "diagCheckRoles",
       "diagCheckSeriesImages",
@@ -310,7 +311,7 @@
     ]
   },
   "lexical": {
-    "кількість": 144,
+    "кількість": 145,
     "_примітка": "const/let/class верхнього рівня. У window НЕ потрапляють (живуть у спільній лексичній області всіх класичних скриптів), тому перевіряються окремо через typeof.",
     "відсутніх_на_момент_зняття": 0,
     "імена": [
@@ -350,6 +351,7 @@
       "JOKE_MODE",
       "MHI_BLINK_OPTIONS",
       "MHI_COMPAT_FOLDERS",
+      "MODULE_ANCHORS",
       "NOTIFY_BANNER_SNOOZE_KEY",
       "NOTIFY_BANNER_SNOOZE_MS",
       "PALETTE",
@@ -459,5 +461,10 @@
       "vrfMhiSource",
       "vrfRowGroupMapCache"
     ]
-  }
+  },
+  "_історія": [
+    "Знято ДО розділення index.html на коміті 9785ede: 299 window + 144 lexical = 443.",
+    "Після П0 свідомо додано diagCheckModules() і MODULE_ANCHORS (перевірка «Модулі застосунку»).",
+    "Інших змін набору символів розділення НЕ внесло — звірено, збіг був повний."
+  ]
 }

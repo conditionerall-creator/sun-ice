@@ -25,7 +25,7 @@
      цього рядка показуються як є.
    • Типи: error — розбіжність/поломка; warning — підозріло; info — примітка/відоме правило
      (не рахується проблемою). */
-const APP_BUILD = '2026-10-08.2'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-08.6'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const DIAG_MAX_LINES = 14;
 const DIAG_AREA = {
   excel: 'Звірка з Excel',
@@ -34,7 +34,27 @@ const DIAG_AREA = {
   roles: 'Ролі та доступи',
   rates: 'Курси валют',
   build: 'Версія застосунку',
-  site: 'Сайт sun-ice.com.ua'
+  site: 'Сайт sun-ice.com.ua',
+  modules: 'Модулі застосунку'
+};
+
+/* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
+   файлу: якщо модуль не завантажився, його якір буде undefined — і ми дізнаємось про
+   це одразу, а не тоді, коли дилер натисне кнопку в непрацюючому розділі.
+   12-start.js оголошень не має (він лише виконує), тому перевіряється за слідом
+   роботи блоку старту — history.state.tab, який ставить саме він. */
+const MODULE_ANCHORS = {
+  '01-config.js': 'phoneToEmail',
+  '02-price-parse.js': 'parseSheet',
+  '03-diagnostics.js': 'runDiagnostics',
+  '04-catalog.js': 'renderCatalogList',
+  '05-catalog-custom.js': 'renderVrfList',
+  '06-cart-promo.js': 'renderCartPanel',
+  '07-access-info.js': 'ensureAccessFresh',
+  '08-info-tables.js': 'searchMhiByCode',
+  '09-cabinet.js': 'renderCabinetTab',
+  '10-crmontage.js': 'renderInstallerTab',
+  '11-shell.js': 'showInstallGate'
 };
 let lastDiagRun = null; // { at, checked, issues } — останній ручний прогін, для звіту в картці
 
@@ -452,6 +472,78 @@ async function diagCheckBuild(ctx) {
   return out;
 }
 
+/* ---- 9. Модулі застосунку (код у js/*.js) ----
+   З 2026-10-08 код застосунку живе не всередині index.html, а в js/*.js. Три речі
+   мусять збігатися ТОЧНО: теги <script> в index.html, список APP_SHELL у sw.js і
+   APP_BUILD. Якщо розійдуться — телефон візьме суміш старих і нових файлів (і впаде
+   непередбачувано) або застосунок не підніметься офлайн.
+   Піднімати все разом однією командою:
+       python claude/split-index/set-build.py РРРР-ММ-ДД.N  */
+async function diagCheckModules(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.modules;
+  const FIX = 'Залити разом index.html, усю папку js/ і sw.js, піднявши версію: python claude/split-index/set-build.py РРРР-ММ-ДД.N';
+
+  // 1. Чи всі модулі справді завантажились
+  const dead = Object.keys(MODULE_ANCHORS).filter(f => typeof window[MODULE_ANCHORS[f]] !== 'function');
+  if (dead.length) {
+    out.issues.push(diagIssue(area, 'modules', 'error',
+      'Не завантажилось модулів застосунку: ' + dead.length,
+      dead.map(f => 'js/' + f + ' — немає ' + MODULE_ANCHORS[f] + '()').concat([FIX]), null));
+  }
+  const started = !!(history.state && history.state.tab);
+  if (!started) {
+    out.issues.push(diagIssue(area, 'modules', 'error',
+      'Не виконався блок старту (js/12-start.js)',
+      ['Без нього не навішано жодного обробника — застосунок виглядає живим, але не реагує.', FIX], null));
+  }
+  out.checked.push({ area: area, sub: 'modules', label: 'Усі модулі коду завантажились',
+    detail: (Object.keys(MODULE_ANCHORS).length + 1 - dead.length - (started ? 0 : 1)) + ' з ' + (Object.keys(MODULE_ANCHORS).length + 1) });
+
+  // 2. Чи всі теги мають ту саму версію, що й APP_BUILD
+  const tags = Array.from(document.querySelectorAll('script[src^="js/"]'))
+    .map(s => s.getAttribute('src'));
+  const bad = tags.filter(s => (s.split('?v=')[1] || '') !== APP_BUILD);
+  if (bad.length) {
+    out.issues.push(diagIssue(area, 'modules', 'error',
+      'Версія в тегах <script> не дорівнює APP_BUILD (' + APP_BUILD + ')',
+      bad.slice(0, 6).concat([FIX]), null));
+  }
+  out.checked.push({ area: area, sub: 'modules', label: 'Версія ?v= в усіх тегах = APP_BUILD',
+    detail: tags.length + ' тегів · ' + APP_BUILD });
+
+  // 3. Чи список у service worker збігається з тегами — від цього залежить офлайн
+  try {
+    const r = await fetch('sw.js', { cache: 'no-store', headers: { Accept: 'text/html' } });
+    const sw = await r.text();
+    /* Без мережі сюди приходить НЕ sw.js: service worker не знаходить його в кеші й
+       віддає запасну сторінку (index.html). Якби ми розбирали це як sw.js, вийшло б
+       «0 записів у APP_SHELL» і гучна фальшива тривога «офлайн не підніметься».
+       Тому спершу переконуємось, що це справді sw.js. */
+    if (sw.indexOf('CACHE_VERSION') < 0) {
+      out.checked.push({ area: area, sub: 'modules', label: 'Список у sw.js = теги в index.html',
+        detail: 'пропущено — немає зв\'язку' });
+      return out;
+    }
+    const shell = (sw.match(/'js\/[^']+'/g) || []).map(s => s.slice(1, -1));
+    const onlyTags = tags.filter(t => shell.indexOf(t) < 0);
+    const onlyShell = shell.filter(s => tags.indexOf(s) < 0);
+    if (onlyTags.length || onlyShell.length) {
+      out.issues.push(diagIssue(area, 'modules', 'error',
+        'Список модулів у sw.js не збігається з тегами в index.html',
+        onlyTags.map(t => 'є в index.html, немає в sw.js: ' + t)
+          .concat(onlyShell.map(s => 'є в sw.js, немає в index.html: ' + s))
+          .concat(['Через це застосунок не підніметься без інтернету.', FIX]), null));
+    }
+    out.checked.push({ area: area, sub: 'modules', label: 'Список у sw.js = теги в index.html',
+      detail: shell.length + ' записів у APP_SHELL' });
+  } catch (e) {
+    out.issues.push(diagIssue(area, 'modules', 'info', 'Не вдалося прочитати sw.js для звірки списку модулів',
+      [e && e.message ? e.message : ''], null));
+  }
+  return out;
+}
+
 /* ---- 7. Картки на sun-ice.com.ua ("наживо", з боку сервера) ----
    Браузер не може читати сторінки сайту (немає CORS), тому перевірку робить Edge Function
    check-site-links (claude/edge-functions/check-site-links). Вона повертає
@@ -495,6 +587,7 @@ async function diagCheckSiteLive(ctx) {
 
 /* Реєстр перевірок. auto — ще й тихо після кожного розбору нового прайсу; manualOnly — лише за кнопкою. */
 const DIAG_CHECKS = [
+  { id: 'modules', label: 'Модулі застосунку', auto: true, run: ctx => diagCheckModules(ctx) },
   { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
   { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },
   { id: 'files', label: 'Зображення та файли застосунку', run: ctx => diagCheckFiles(ctx) },

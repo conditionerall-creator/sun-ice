@@ -28,18 +28,18 @@ const APP_SHELL = [
      застосунок не підніметься. Перевірка «Модулі застосунку» в самодіагностиці
      стежить за цим збігом. */
   ...[
-    'js/01-config.js?v=2026-10-08.2',
-    'js/02-price-parse.js?v=2026-10-08.2',
-    'js/03-diagnostics.js?v=2026-10-08.2',
-    'js/04-catalog.js?v=2026-10-08.2',
-    'js/05-catalog-custom.js?v=2026-10-08.2',
-    'js/06-cart-promo.js?v=2026-10-08.2',
-    'js/07-access-info.js?v=2026-10-08.2',
-    'js/08-info-tables.js?v=2026-10-08.2',
-    'js/09-cabinet.js?v=2026-10-08.2',
-    'js/10-crmontage.js?v=2026-10-08.2',
-    'js/11-shell.js?v=2026-10-08.2',
-    'js/12-start.js?v=2026-10-08.2'
+    'js/01-config.js?v=2026-10-08.6',
+    'js/02-price-parse.js?v=2026-10-08.6',
+    'js/03-diagnostics.js?v=2026-10-08.6',
+    'js/04-catalog.js?v=2026-10-08.6',
+    'js/05-catalog-custom.js?v=2026-10-08.6',
+    'js/06-cart-promo.js?v=2026-10-08.6',
+    'js/07-access-info.js?v=2026-10-08.6',
+    'js/08-info-tables.js?v=2026-10-08.6',
+    'js/09-cabinet.js?v=2026-10-08.6',
+    'js/10-crmontage.js?v=2026-10-08.6',
+    'js/11-shell.js?v=2026-10-08.6',
+    'js/12-start.js?v=2026-10-08.6'
   ].map((p) => new URL(p, self.registration.scope).href),
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
   /* Адреса ТОЧНО така сама, як у <script> в index.html (версія зафіксована 2026-09-21).
@@ -50,14 +50,43 @@ const APP_SHELL = [
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
 ];
 
+/* ВАЖЛИВО: не cache.add(), а fetch з { cache: 'reload' }.
+   cache.add() бере копію зі ЗВИЧАЙНОГО HTTP-кеша браузера — тобто в офлайн-копію
+   могла лягти стара сторінка. Разом із прибиранням застарілих модулів (нижче) це
+   давало найгірший можливий збіг: закешований index.html просить версії js/*.js,
+   яких у кеші вже немає, і БЕЗ ІНТЕРНЕТУ ЗАСТОСУНОК НЕ ПІДНІМАЄТЬСЯ.
+   Напоролись на це 2026-10-08 під час перевірки офлайну — не повертати cache.add(). */
+function cacheFresh(cache, url) {
+  return fetch(url, { cache: 'reload' })
+    .then((res) => (res && res.ok ? cache.put(url, res) : null))
+    .catch(() => {});
+}
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(APP_SHELL.map((url) => cache.add(url).catch(() => {})))
+      Promise.all(APP_SHELL.map((url) => cacheFresh(cache, url)))
     )
   );
 });
+
+/* Прибирання застарілих модулів коду.
+   Кожна заливка міняє ?v= у js/*.js — тобто це НОВІ адреси, а старі лишались би в
+   тому самому кеші назавжди (видаляється лише кеш з іншим CACHE_VERSION). За рік
+   таких заливок на телефоні осіло б кілька мегабайт коду, який уже ніхто не попросить.
+   Тому при активації викидаємо з кеша все, що лежить у js/ і чого немає в APP_SHELL.
+   Решти (зображення, іконки, бібліотеки) це не чіпає. */
+function pruneStaleModules(cache) {
+  const keep = APP_SHELL.filter((u) => u.indexOf('/js/') >= 0);
+  return cache.keys().then((reqs) =>
+    Promise.all(
+      reqs
+        .filter((r) => r.url.indexOf('/js/') >= 0 && keep.indexOf(r.url) < 0)
+        .map((r) => cache.delete(r))
+    )
+  );
+}
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -65,7 +94,8 @@ self.addEventListener('activate', (event) => {
       self.clients.claim(),
       caches.keys().then((keys) =>
         Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-      )
+      ),
+      caches.open(CACHE_NAME).then(pruneStaleModules)
     ])
   );
 });
