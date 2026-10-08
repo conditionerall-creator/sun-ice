@@ -357,6 +357,20 @@ async function handleDeletePromo(id, imageUrl, pdfUrl) {
 
 
 /* ---------- Контакти ---------- */
+/* Єдина точка входу в контакти. Окремої вкладки "Контакти" в нижньому меню більше
+   немає (2026-10-08) — розділ живе в "Інфо". Сюди ведуть: плитка в "Інфо", кнопка
+   "За запитом" у VRF GALACTIC і старі посилання з хешем #contacts.
+   switchTab() скидає infoSection, тому ставимо його ПІСЛЯ виклику. */
+function openContacts(pushHistory) {
+  switchTab('info', false);
+  infoSection = 'contacts';
+  infoBrand = null;
+  const state = { tab: 'info', section: 'contacts', brand: null };
+  if (pushHistory) history.pushState(state, '', '#info-contacts');
+  else history.replaceState(state, '', '#info-contacts');
+  renderInfoTab();
+}
+
 async function renderContactsTab() {
   document.getElementById('title').textContent = 'Контакти';
   const main = document.getElementById('main');
@@ -377,7 +391,13 @@ async function renderContactsTab() {
 }
 
 /* ---------- Тех. інформація ---------- */
+/* «Контакти» — ПЕРШИМ і широкою низькою плиткою (рішення власника 2026-10-08):
+   контраст форми на тлі звичайних квадратних фото-плиток має зачепити око одразу,
+   бо розділ переїхав сюди з нижнього меню. Плитка графічна (колір + іконка), а не
+   фото: вантажиться миттєво, нового файлу не потребує, і суцільний колір серед фото
+   і є тим контрастом. */
 const INFO_SECTIONS = [
+  { id: 'contacts', label: 'Контакти', wide: true, icon: 'phone', sub: 'Адреси, телефони й пошта філій' },
   { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.webp' },
   { id: 'mhi-errors', label: 'Коди помилок MHI', img: 'tile-images/tile-error-codes.webp' },
   { id: 'mhi-compat', label: 'Сумісність блоків MHI', img: 'tile-images/tilecompat.webp', adminOnly: true },
@@ -444,6 +464,14 @@ async function renderInfoTab() {
     return;
   }
 
+  /* Контакти переїхали з нижнього меню сюди (2026-10-08). Сам екран не змінився —
+     це той самий renderContactsTab(), він ставить свій заголовок. */
+  if (infoSection === 'contacts') {
+    backBtn.style.display = 'flex';
+    await renderContactsTab();
+    return;
+  }
+
   if (infoSection === 'mhi-errors') {
     backBtn.style.display = 'flex';
     title.textContent = 'Коди помилок MHI';
@@ -479,6 +507,19 @@ async function renderInfoTab() {
 function renderInfoMenu(items, onSelect) {
   const main = document.getElementById('main');
   const tiles = items.map(item => {
+    /* Широка низька плитка (зараз це «Контакти»): на всю ширину сітки, суцільний
+       акцентний колір замість фото. Саме несхожість на решту й робить її помітною. */
+    if (item.wide) {
+      return `
+        <div class="menu-tile menu-tile-wide" data-info-id="${escapeHtml(item.id)}">
+          <span class="menu-tile-wide-icon">${ic(item.icon || 'phone', '📞')}</span>
+          <span class="menu-tile-wide-text">
+            <span class="menu-tile-wide-title">${escapeHtml(item.label)}</span>
+            ${item.sub ? `<span class="menu-tile-wide-sub">${escapeHtml(item.sub)}</span>` : ''}
+          </span>
+          <span class="menu-tile-wide-go">${ic('chevron-right', '›')}</span>
+        </div>`;
+    }
     if (item.img) {
       return `
         <div class="menu-tile menu-tile-photo" data-info-id="${escapeHtml(item.id)}">

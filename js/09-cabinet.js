@@ -1040,7 +1040,9 @@ function renderCurrentTab() {
     ensureAccessFresh(false);
   } else if (currentTab === 'promotions') renderPromotionsTab();
   else if (currentTab === 'cabinet') renderCabinetTab();
-  else if (currentTab === 'contacts') renderContactsTab();
+  /* Старий хеш #contacts (у когось міг лишитись у історії переходів або закладці):
+     вкладки більше немає, тому тихо перекидаємо в «Інфо» → «Контакти». */
+  else if (currentTab === 'contacts') openContacts(false);
   else if (currentTab === 'info') renderInfoTab();
   else if (currentTab === 'installer') renderInstallerTab();
 }

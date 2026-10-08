@@ -75,10 +75,10 @@ document.getElementById('main').addEventListener('click', function(e) {
     if (info) openSeriesInfo(info.title, info.text);
     return;
   }
-  // "За запитом" (VRF GALACTIC) — веде на вкладку "Контакти" замість ціни/калькулятора.
+  // "За запитом" (VRF GALACTIC) — веде до контактів замість ціни/калькулятора.
+  // З 2026-10-08 контакти живуть у розділі "Інфо", окремої вкладки більше немає.
   if (e.target.closest('.price-request-btn')) {
-    switchTab('contacts', true);
-    renderCurrentTab();
+    openContacts(true);
     return;
   }
   // Тап по назві товару (Спліт / Мульти спліт / Напівпромислові) — картка на sun-ice.com.ua.
