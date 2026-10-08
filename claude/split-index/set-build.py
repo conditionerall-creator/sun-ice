@@ -56,6 +56,25 @@ if n2:
     open(sw, 'wb').write(out)
 changed.append('sw.js (записів: %d)' % n2)
 
+# 4. список плиток у sw.js — перегенеровується з вмісту папки, щоб він не розійшовся
+#    з реальними файлами, коли плитки додають або прибирають
+imgs = sorted(os.path.basename(p) for p in glob.glob(os.path.join(root, 'tile-images', '*'))
+              if p.lower().endswith(('.webp', '.svg', '.png', '.jpg', '.jpeg')))
+raw = open(sw, 'rb').read().decode('utf-8')
+block = '\n'.join("    'tile-images/%s'%s" % (n, ',' if i < len(imgs) - 1 else '')
+                  for i, n in enumerate(imgs))
+new_raw, n3 = re.subn(
+    r'(/\* TILE-IMAGES-START \*/\r?\n).*?(\r?\n\s*/\* TILE-IMAGES-END \*/)',
+    lambda m: m.group(1) + block + m.group(2),
+    raw, flags=re.S)
+if n3:
+    eol = '\r\n' if '\r\n' in raw else '\n'
+    new_raw = new_raw.replace('\r\n', '\n').replace('\n', eol)
+    open(sw, 'wb').write(new_raw.encode('utf-8'))
+    changed.append('sw.js (плиток у предзавантаженні: %d)' % len(imgs))
+else:
+    changed.append('sw.js: !! маркери TILE-IMAGES-START/END не знайдено, список НЕ оновлено')
+
 print('версiя ->', new)
 for c in changed:
     print('  ', c)

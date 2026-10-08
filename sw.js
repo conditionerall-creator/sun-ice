@@ -28,18 +28,67 @@ const APP_SHELL = [
      застосунок не підніметься. Перевірка «Модулі застосунку» в самодіагностиці
      стежить за цим збігом. */
   ...[
-    'js/01-config.js?v=2026-10-08.6',
-    'js/02-price-parse.js?v=2026-10-08.6',
-    'js/03-diagnostics.js?v=2026-10-08.6',
-    'js/04-catalog.js?v=2026-10-08.6',
-    'js/05-catalog-custom.js?v=2026-10-08.6',
-    'js/06-cart-promo.js?v=2026-10-08.6',
-    'js/07-access-info.js?v=2026-10-08.6',
-    'js/08-info-tables.js?v=2026-10-08.6',
-    'js/09-cabinet.js?v=2026-10-08.6',
-    'js/10-crmontage.js?v=2026-10-08.6',
-    'js/11-shell.js?v=2026-10-08.6',
-    'js/12-start.js?v=2026-10-08.6'
+    'js/01-config.js?v=2026-10-08.7',
+    'js/02-price-parse.js?v=2026-10-08.7',
+    'js/03-diagnostics.js?v=2026-10-08.7',
+    'js/04-catalog.js?v=2026-10-08.7',
+    'js/05-catalog-custom.js?v=2026-10-08.7',
+    'js/06-cart-promo.js?v=2026-10-08.7',
+    'js/07-access-info.js?v=2026-10-08.7',
+    'js/08-info-tables.js?v=2026-10-08.7',
+    'js/09-cabinet.js?v=2026-10-08.7',
+    'js/10-crmontage.js?v=2026-10-08.7',
+    'js/11-shell.js?v=2026-10-08.7',
+    'js/12-start.js?v=2026-10-08.7'
+  ].map((p) => new URL(p, self.registration.scope).href),
+  /* Плитки каталогу. Раніше їх тут НЕ БУЛО — вони потрапляли в кеш лише після того,
+     як користувач їх побачив, а браузер на Android чистить сховище у рідко відкриваних
+     PWA. Звідси була скарга «після довгого невходження картинки підвантажуються».
+     Тепер кешуються одразу при встановленні: після стиснення в WebP це 0,9 МБ замість
+     4,3 МБ, і таке класти в предзавантаження вже можна.
+     Список ПЕРЕГЕНЕРОВУЄТЬСЯ з вмісту папки — не правити руками:
+         python claude/split-index/set-build.py РРРР-ММ-ДД.N  */
+  ...[
+    /* TILE-IMAGES-START */
+    'tile-images/catalog-preview-galactic.webp',
+    'tile-images/catalog-preview-mhi.webp',
+    'tile-images/heatguardlogo.svg',
+    'tile-images/heatpumps-ezyqton.webp',
+    'tile-images/heatpumpsmhi.webp',
+    'tile-images/sun-ice-logo-wide.webp',
+    'tile-images/sun-ice-logo.webp',
+    'tile-images/tile-aircurtains-frico.webp',
+    'tile-images/tile-aircurtains.webp',
+    'tile-images/tile-catalogs.webp',
+    'tile-images/tile-clint-commercial.webp',
+    'tile-images/tile-clint-condensing.webp',
+    'tile-images/tile-clint-hydronic.webp',
+    'tile-images/tile-clint-residential.webp',
+    'tile-images/tile-clint-rooftop.webp',
+    'tile-images/tile-clint-watercooled.webp',
+    'tile-images/tile-consumables-s30.webp',
+    'tile-images/tile-consumables.webp',
+    'tile-images/tile-error-codes.webp',
+    'tile-images/tile-kkb-mhi.webp',
+    'tile-images/tile-kkb.webp',
+    'tile-images/tile-multisplit-galactic.webp',
+    'tile-images/tile-multisplit.webp',
+    'tile-images/tile-semi-galactic.webp',
+    'tile-images/tile-semi.webp',
+    'tile-images/tile-split-galactic.webp',
+    'tile-images/tile-split.webp',
+    'tile-images/tile-systemair.webp',
+    'tile-images/tile-ventilation-save.webp',
+    'tile-images/tile-ventilation.webp',
+    'tile-images/tilecompat.webp',
+    'tile-images/tilecompathousehold.webp',
+    'tile-images/tilecompatsemi.webp',
+    'tile-images/tileheatpumps-qton.webp',
+    'tile-images/tileheatpumps.webp',
+    'tile-images/tilevrf-galactic.webp',
+    'tile-images/tilevrf.webp',
+    'tile-images/wineguardlogo.svg'
+    /* TILE-IMAGES-END */
   ].map((p) => new URL(p, self.registration.scope).href),
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap',
   /* Адреса ТОЧНО така сама, як у <script> в index.html (версія зафіксована 2026-09-21).

@@ -48,33 +48,33 @@ const SPLIT_MHI_LABELS = [
    Плитка без них — поки не наповнена, показується сірою "Скоро". */
 const CATALOG_TILES = [
   {
-    id: 'split', label: 'Спліт-системи', img: 'tile-images/tile-split.jpg',
-    flipImg: 'tile-images/tile-split-galactic.jpg',
+    id: 'split', label: 'Спліт-системи', img: 'tile-images/tile-split.webp',
+    flipImg: 'tile-images/tile-split-galactic.webp',
     mhi: { key: 'split_mhi', sheet: 'ПОБУТОВІ', highlight: 'series', labelSequence: SPLIT_MHI_LABELS, pairSplitOutdoor: true },
     gal: { key: 'split_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'before', seriesLabelMode: 'first-sentence', pairSplitOutdoor: true }
   },
   {
-    id: 'multisplit', label: 'Мульти спліт-системи', img: 'tile-images/tile-multisplit.jpg',
-    flipImg: 'tile-images/tile-multisplit-galactic.jpg',
+    id: 'multisplit', label: 'Мульти спліт-системи', img: 'tile-images/tile-multisplit.webp',
+    flipImg: 'tile-images/tile-multisplit-galactic.webp',
     mhi: { key: 'multisplit_mhi', sheet: 'МУЛЬТИСИСТЕМИ', highlight: 'series', multisplitSections: true, blockGrouping: true },
     gal: { key: 'multisplit_gal', sheet: 'GALACTIC', highlight: 'series', splitMarker: 'мульти-спліт систем', splitSide: 'after', multisplitSections: true }
   },
   {
-    id: 'semi', label: 'Напівпромислові спліт-системи', img: 'tile-images/tile-semi.jpg',
-    flipImg: 'tile-images/tile-semi-galactic.jpg',
+    id: 'semi', label: 'Напівпромислові спліт-системи', img: 'tile-images/tile-semi.webp',
+    flipImg: 'tile-images/tile-semi-galactic.webp',
     mhi: { key: 'semi_mhi', sheet: 'НАПІВПРОМ', highlight: 'category', baseAdjustPct: 20 },
     gal: { key: 'semi_gal', sheet: 'Galactic LCAC', highlight: 'category', pairOutdoor: true }
   },
-  { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.jpg', flipImg: 'tile-images/tilevrf-galactic.jpg', custom: 'vrf' },
-  { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.jpg', flipImg: 'tile-images/tile-kkb-mhi.jpg', custom: 'kkb' },
-  { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tileheatpumps.jpg', flipImg: 'tile-images/tileheatpumps-qton.jpg', custom: 'heatpumps' },
+  { id: 'vrf', label: 'Мультизональні VRF', img: 'tile-images/tilevrf.webp', flipImg: 'tile-images/tilevrf-galactic.webp', custom: 'vrf' },
+  { id: 'ccb', label: 'Компресорно-конденсаторні блоки (ККБ)', img: 'tile-images/tile-kkb.webp', flipImg: 'tile-images/tile-kkb-mhi.webp', custom: 'kkb' },
+  { id: 'heatpumps', label: 'Теплові насоси', img: 'tile-images/tileheatpumps.webp', flipImg: 'tile-images/tileheatpumps-qton.webp', custom: 'heatpumps' },
   // Чиллери — єдина плитка на статичних даних (CLINT_SERIES), не з прайсу: асортимент
   // Clint дилер тут лише оглядає, ціни всі "за запитом". Фото плитки — ті самі файли,
   // що й у сітці категорій усередині, щоб не тримати в репо дублі тих самих знімків.
-  { id: 'chillers', label: 'Чиллери', img: 'tile-images/tile-clint-commercial.jpg', flipImg: 'tile-images/tile-clint-watercooled.jpg', custom: 'chillers' },
-  { id: 'ventilation', label: 'Вентиляційне обладнання', img: 'tile-images/tile-ventilation.jpg', flipImg: 'tile-images/tile-ventilation-save.jpg', custom: 'ventilation' },
-  { id: 'aircurtains', label: 'Повітряні завіси', img: 'tile-images/tile-aircurtains.jpg', flipImg: 'tile-images/tile-aircurtains-frico.jpg', custom: 'aircurtains' },
-  { id: 'consumables', label: 'Витратні матеріали', img: 'tile-images/tile-consumables.jpg', flipImg: 'tile-images/tile-consumables-s30.jpg', custom: 'consumables' },
+  { id: 'chillers', label: 'Чиллери', img: 'tile-images/tile-clint-commercial.webp', flipImg: 'tile-images/tile-clint-watercooled.webp', custom: 'chillers' },
+  { id: 'ventilation', label: 'Вентиляційне обладнання', img: 'tile-images/tile-ventilation.webp', flipImg: 'tile-images/tile-ventilation-save.webp', custom: 'ventilation' },
+  { id: 'aircurtains', label: 'Повітряні завіси', img: 'tile-images/tile-aircurtains.webp', flipImg: 'tile-images/tile-aircurtains-frico.webp', custom: 'aircurtains' },
+  { id: 'consumables', label: 'Витратні матеріали', img: 'tile-images/tile-consumables.webp', flipImg: 'tile-images/tile-consumables-s30.webp', custom: 'consumables' },
   { id: 'convectors', label: 'Конвектори та обігрівачі' }
 ];
 

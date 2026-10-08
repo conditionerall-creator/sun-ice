@@ -303,7 +303,7 @@ function renderKkbList() {
 
 /* ---------- "Вентиляційне обладнання" ---------- */
 const VENTILATION_BRANDS = [
-  { key: 'systemair', label: 'Systemair', img: 'tile-images/tile-systemair.jpg' }
+  { key: 'systemair', label: 'Systemair', img: 'tile-images/tile-systemair.webp' }
 ];
 function renderVentilationList() {
   const main = document.getElementById('main');
@@ -522,19 +522,19 @@ function renderAirCurtainsList() {
 const CLINT_DELIVERY_NOTE = 'Термін доставки зі складу в Італії — від 6 до 12 тижнів залежно від моделі';
 
 const CLINT_CATEGORIES = [
-  { id: 'residential', label: 'Побутові та комерційні', img: 'tile-images/tile-clint-residential.jpg',
+  { id: 'residential', label: 'Побутові та комерційні', img: 'tile-images/tile-clint-residential.webp',
     url: 'https://clint.it/ru/products/europe/air-cooled-liquid-chillers-and-heat-pumps-for-residential-light-commercial-application/' },
-  { id: 'commercial', label: 'Комерційні та промислові', img: 'tile-images/tile-clint-commercial.jpg',
+  { id: 'commercial', label: 'Комерційні та промислові', img: 'tile-images/tile-clint-commercial.webp',
     url: 'https://clint.it/ru/products/europe/air-cooled-liquid-chillers-and-heat-pumps-for-commercial-industrial-application/' },
   // Коротко: повна назва ("...та виносні конденсатори") розсипалась на 4 рядки і в
   // підписі плитки, і в шапці екрана. Що саме входить — видно з підзаголовків усередині.
-  { id: 'watercooled', label: 'Водяне охолодження', img: 'tile-images/tile-clint-watercooled.jpg',
+  { id: 'watercooled', label: 'Водяне охолодження', img: 'tile-images/tile-clint-watercooled.webp',
     url: 'https://clint.it/ru/products/europe/water-cooled-condenserless-liquid-chillers-and-heat-pumps-for-commercial-industrial-application-remote-condensers/' },
-  { id: 'rooftop', label: 'Дахові кондиціонери', img: 'tile-images/tile-clint-rooftop.jpg',
+  { id: 'rooftop', label: 'Дахові кондиціонери', img: 'tile-images/tile-clint-rooftop.webp',
     url: 'https://clint.it/ru/products/europe/packaged-roof-top-units/' },
-  { id: 'condensing', label: 'Компресорно-конденсаторні блоки', img: 'tile-images/tile-clint-condensing.jpg',
+  { id: 'condensing', label: 'Компресорно-конденсаторні блоки', img: 'tile-images/tile-clint-condensing.webp',
     url: 'https://clint.it/ru/products/europe/condensing-units/' },
-  { id: 'hydronic', label: 'Гідравлічні модулі', img: 'tile-images/tile-clint-hydronic.jpg',
+  { id: 'hydronic', label: 'Гідравлічні модулі', img: 'tile-images/tile-clint-hydronic.webp',
     url: 'https://clint.it/ru/products/europe/hydronic-modules/' }
 ];
 
@@ -736,10 +736,10 @@ function renderConsumablesList() {
 // немає єдиної "картинки бренду"), а намальований логотип-напис (SVG), за проханням
 // користувача — "просто красивий текст великими літерами, як малюнок".
 const HEATPUMPS_BRANDS = [
-  { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumpsmhi.jpg' },
+  { key: 'mhi', label: 'MHI', img: 'tile-images/heatpumpsmhi.webp' },
   { key: 'heatguard', label: 'HeatGuard', img: 'tile-images/heatguardlogo.svg' },
   { key: 'wineguard', label: 'WineGuard', img: 'tile-images/wineguardlogo.svg' },
-  { key: 'ezyqton', label: 'MHI EZY / Q-ton', img: 'tile-images/heatpumps-ezyqton.jpg' }
+  { key: 'ezyqton', label: 'MHI EZY / Q-ton', img: 'tile-images/heatpumps-ezyqton.webp' }
 ];
 function renderHeatpumpsList() {
   const main = document.getElementById('main');

@@ -378,30 +378,30 @@ async function renderContactsTab() {
 
 /* ---------- Тех. інформація ---------- */
 const INFO_SECTIONS = [
-  { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.jpg' },
-  { id: 'mhi-errors', label: 'Коди помилок MHI', img: 'tile-images/tile-error-codes.jpg' },
-  { id: 'mhi-compat', label: 'Сумісність блоків MHI', img: 'tile-images/tilecompat.jpg', adminOnly: true },
+  { id: 'catalogs', label: 'Каталоги', img: 'tile-images/tile-catalogs.webp' },
+  { id: 'mhi-errors', label: 'Коди помилок MHI', img: 'tile-images/tile-error-codes.webp' },
+  { id: 'mhi-compat', label: 'Сумісність блоків MHI', img: 'tile-images/tilecompat.webp', adminOnly: true },
   { id: 'techinfo', label: 'Технічна інфа' }
 ];
 const MHI_COMPAT_FOLDERS = [
-  { id: 'household', label: 'Побутові та мультиспліти', img: 'tile-images/tilecompathousehold.jpg' },
-  { id: 'semi', label: 'Напівпром', img: 'tile-images/tilecompatsemi.jpg' }
+  { id: 'household', label: 'Побутові та мультиспліти', img: 'tile-images/tilecompathousehold.webp' },
+  { id: 'semi', label: 'Напівпром', img: 'tile-images/tilecompatsemi.webp' }
 ];
 const INFO_BRANDS = [
-  { id: 'mhi', label: 'Mitsubishi Heavy', img: 'tile-images/catalog-preview-mhi.jpg' },
-  { id: 'galactic', label: 'GALACTIC', img: 'tile-images/catalog-preview-galactic.jpg' }
+  { id: 'mhi', label: 'Mitsubishi Heavy', img: 'tile-images/catalog-preview-mhi.webp' },
+  { id: 'galactic', label: 'GALACTIC', img: 'tile-images/catalog-preview-galactic.webp' }
 ];
 /* Посилання на офіційні PDF-каталоги виробників (розділ Інфо → Каталоги) */
 const INFO_CATALOG_DOCS = {
   mhi: {
     text: 'Каталог побутових і напівпромислових кондиціонерів Mitsubishi H.I.',
     url: 'https://sun-ice.com.ua/download/catalog/mhi/catalog-mhi-rac-pac.pdf',
-    preview: 'tile-images/catalog-preview-mhi.jpg'
+    preview: 'tile-images/catalog-preview-mhi.webp'
   },
   galactic: {
     text: 'Актуальний каталог продукції Galactic',
     url: 'https://sun-ice.com.ua/pdf_catalogs/cat_Galactic.pdf',
-    preview: 'tile-images/catalog-preview-galactic.jpg'
+    preview: 'tile-images/catalog-preview-galactic.webp'
   }
 };
 /* Позначка "цей каталог уже відкривали на цьому пристрої" — суто локально (localStorage),
