@@ -382,7 +382,20 @@ window.addEventListener('popstate', function(event) {
   /* Те саме для панелі товару: «Назад» на телефоні має закривати її, а не перемальовувати
      список під відкритим листом (інакше панель лишалась би висіти поверх). */
   if (document.getElementById('product-sheet-overlay').classList.contains('show')) {
+    /* Мінус ОДНА дія: спершу згортаємо розгорнуті характеристики, і лише якщо згортати
+       нічого — закриваємо панель. Крок, який щойно витратили на згортання, повертаємо
+       назад в історію, щоб наступний «Назад» закрив панель, а не вистрибнув із розділу. */
+    if (psCollapseOpenDetails()) {
+      history.pushState({ tab: currentTab, tile: activeTile, sheet: 'product' }, '', location.hash);
+      return;
+    }
     closeProductSheet();
+    return;
+  }
+  /* Те саме для листа пошуку: «Назад» на телефоні має закривати його, а не вистрибувати
+     з каталогу з відкритим листом поверх. */
+  if (document.getElementById('global-search-overlay').classList.contains('show')) {
+    closeGlobalSearch();
     return;
   }
   const state = event.state;
@@ -703,10 +716,36 @@ new MutationObserver(function () {
   markTilesAccessible(document.getElementById('main'));
 }).observe(document.getElementById('main'), { childList: true, subtree: true });
 
+/* Загальний пошук по каталогу (П-8). Лупа в шапці → лист із полем і результатами;
+   клік по результату веде В РОЗДІЛ НА САМ РЯДОК (goToGlobalSearchHit → revealFoundRow),
+   а не на початок групи — саме через це минулу версію пошуку власник і видалив. */
+/* Рядок пошуку в шапці — справжній <button>, тож клавіатура працює сама. */
+document.getElementById('header-search').addEventListener('click', openGlobalSearch);
+document.getElementById('global-search-close').addEventListener('click', dismissGlobalSearch);
+document.getElementById('global-search-backdrop').addEventListener('click', dismissGlobalSearch);
+document.getElementById('global-search-input').addEventListener('input', function (e) {
+  renderGlobalSearchResults(e.target.value);
+});
+/* Enter на телефоні ховає клавіатуру й лишає результати перед очима; якщо знайдено
+   рівно одне — одразу ведемо туди, це найчастіший випадок точного маркування. */
+document.getElementById('global-search-input').addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  e.target.blur();
+  if (globalSearchHits.length === 1) goToGlobalSearchHit(globalSearchHits[0]);
+});
+document.getElementById('global-search-results').addEventListener('click', function (e) {
+  const hit = e.target.closest('[data-hit-idx]');
+  if (hit) goToGlobalSearchHit(globalSearchHits[Number(hit.getAttribute('data-hit-idx'))]);
+});
+
 /* Панель товару: закриття й дії всередині. Усе, що раніше жило кнопками в рядку прайсу
    (розрахунок, «поділитися», наявність), працює ТУТ — у рядку лишилась тільки «Додати». */
-document.getElementById('product-sheet-close').addEventListener('click', closeProductSheet);
-document.getElementById('product-sheet-backdrop').addEventListener('click', closeProductSheet);
+/* Хрестик і підложка йдуть ЧЕРЕЗ ІСТОРІЮ (dismiss), а не закривають панель напряму:
+   інакше запис, який зробило відкриття, лишався б в історії сміттям. Див. коментар
+   біля dismissProductSheet() у js/12-product-sheet.js. */
+document.getElementById('product-sheet-close').addEventListener('click', dismissProductSheet);
+document.getElementById('product-sheet-backdrop').addEventListener('click', dismissProductSheet);
 
 /* Усі дії панелі товару. З 2026-10-09 вони працюють ТУТ, а не натискають сховані
    кнопки рядка прайсу, як робив тимчасовий місток попередньої версії. */
@@ -716,14 +755,6 @@ document.getElementById('product-sheet-body').addEventListener('click', function
 
   const tabBtn = t.closest('[data-ps-tab]');
   if (tabBtn) { psState.tab = tabBtn.getAttribute('data-ps-tab'); psRenderTabBody(); psSyncTabs(); return; }
-
-  /* Наявність з 1С — кнопка вгорі, між ціною і «На сайт» (лише адміни). Розкривається
-     тут же, у панелі: до 2026-10-09 вона відкривала повноекранний лист і закривала панель. */
-  if (t.closest('[data-ps-stock]')) {
-    psState.stockOpen = !psState.stockOpen;
-    psRenderStock();
-    return;
-  }
 
   // «Додаткові розрахунки»: знижка сумою, націнка, кількість, скидання.
   if (t.closest('[data-ps-adv]')) {

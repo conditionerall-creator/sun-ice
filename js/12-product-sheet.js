@@ -346,6 +346,20 @@ function psTabBody() {
   if (s.tab === 'calc') {
     return s.locked ? '<div class="ps-empty">Розрахунок доступний після входу.</div>' : calcHtml();
   }
+  /* Наявність — ТРЕТЯ РІВНОПРАВНА ВКЛАДКА (рішення власника 2026-10-09, третя правка).
+     Була кнопкою в рядку з ціною: по-перше, «подорожувала» по рядку, бо ціни різної
+     довжини, по-друге, розкривалась НАД вкладками й затуляла їх собою. Тепер поводиться
+     рівно як дві інші: той самий вигляд, те саме місце, вміст міняється всередині.
+     data-stock-parts на обгортці — щоб кнопка «Повна інформація» всередині панелі
+     stock.js знайшла свої дані (рядка прайсу .row у панелі немає). */
+  if (s.tab === 'stock') {
+    if (!psHasStock()) return '<div class="ps-empty">Дані про залишки недоступні.</div>';
+    let inner;
+    try { inner = Stock.panelHtml(s.stockParts); }
+    catch (e) { return '<div class="ps-empty">Дані про залишки ще не завантажились.</div>'; }
+    return '<div class="ps-stock-wrap" data-stock-parts="' +
+      escapeHtml(encodeURIComponent(JSON.stringify(s.stockParts))) + '">' + inner + '</div>';
+  }
   /* Фото картки — над характеристиками (прохання власника 2026-10-09). */
   if (s.specs === undefined) return psPhotoHtml() + '<div class="ps-loading">Завантажуємо характеристики…</div>';
   return psPhotoHtml() + specsHtml(s.specs);
@@ -359,22 +373,6 @@ function psHasStock() {
   return !!(s && !s.locked && rateViewerIsAdmin && window.Stock && Stock.panelHtml && s.stockParts);
 }
 
-/* Наявність — КНОПКА ВГОРІ, між ціною і «На сайт» (рішення власника 2026-10-09,
-   друга правка). Вкладкою вона бути перестала: вкладка натякала, що це рівноправний
-   розділ для всіх, а бачать її лише адміни.
-   data-stock-parts на обгортці — щоб кнопка «Повна інформація» всередині панелі
-   stock.js знайшла свої дані: у панелі товару немає рядка прайсу (.row), з якого вона
-   їх брала раніше. */
-function psStockHtml() {
-  const s = psState;
-  if (!psHasStock() || !s.stockOpen) return '';
-  let inner;
-  try { inner = Stock.panelHtml(s.stockParts); }
-  catch (e) { inner = '<div class="ps-empty">Дані про залишки ще не завантажились.</div>'; }
-  return '<div class="ps-stock-wrap" data-stock-parts="' +
-    escapeHtml(encodeURIComponent(JSON.stringify(s.stockParts))) + '">' + inner + '</div>';
-}
-
 function psRender() {
   const s = psState;
   if (!s) return;
@@ -385,16 +383,14 @@ function psRender() {
   const tab = function (id, label) {
     return '<button type="button" class="ps-tab' + (s.tab === id ? ' on' : '') + '" data-ps-tab="' + id + '">' + label + '</button>';
   };
+  /* «Наявність» — ПОСЕРЕДИНІ стрічки (прохання власника: «нехай це буде по центру
+     рядка»). У адміна три кнопки однакового вигляду, у звичайного дилера — дві. */
   body.innerHTML =
     '<div class="ps-price-row">' + priceHtml +
-      (psHasStock()
-        ? '<button type="button" class="ps-stock-btn' + (s.stockOpen ? ' on' : '') + '" data-ps-stock ' +
-          'aria-expanded="' + (s.stockOpen ? 'true' : 'false') + '">Наявність<span class="ps-chev">▾</span></button>'
-        : '') +
       (s.siteUrl ? '<a class="ps-site-link" href="' + escapeHtml(s.siteUrl) + '" target="_blank" rel="noopener">На сайт ↗</a>' : '') +
     '</div>' +
-    '<div id="ps-stock-slot">' + psStockHtml() + '</div>' +
-    '<div class="ps-tabs">' + tab('calc', 'Розрахунок') + tab('specs', 'Характеристики') + '</div>' +
+    '<div class="ps-tabs">' + tab('calc', 'Розрахунок') +
+      (psHasStock() ? tab('stock', 'Наявність') : '') + tab('specs', 'Характеристики') + '</div>' +
     '<div class="ps-tabbody">' + psTabBody() + '</div>';
 }
 
@@ -411,16 +407,6 @@ function psSyncTabs() {
 function psRenderTabBody() {
   const el = document.querySelector('#product-sheet-body .ps-tabbody');
   if (el) el.innerHTML = psTabBody();
-}
-
-function psRenderStock() {
-  const slot = document.getElementById('ps-stock-slot');
-  if (slot) slot.innerHTML = psStockHtml();
-  const btn = document.querySelector('#product-sheet-body .ps-stock-btn');
-  if (btn) {
-    btn.classList.toggle('on', !!psState.stockOpen);
-    btn.setAttribute('aria-expanded', psState.stockOpen ? 'true' : 'false');
-  }
 }
 
 function openProductSheet(cfgKey, model, tileLabel) {
@@ -444,16 +430,15 @@ function openProductSheet(cfgKey, model, tileLabel) {
     disc: NaN, discKind: 'pct', mark: NaN, markKind: 'pct', qty: 1, adv: false, withLink: false,
     tab: hasFullAccess ? 'calc' : 'specs',   // умовчання — «Розрахунок» (рішення власника)
     specs: undefined, slug: slug || null, img: cardImageUrl(slug),
-    stockParts: stockParts, stockOpen: false,
+    stockParts: stockParts,
     siteUrl: slug ? ((siteLinks.base || 'https://sun-ice.com.ua/') + slug) : null
   };
 
   document.getElementById('product-sheet-title').textContent = it.model;
   psRender();
-  const ov = document.getElementById('product-sheet-overlay');
-  ov.classList.remove('sheet-tall');   // нова панель завжди відкривається звичайного розміру
-  ov.classList.add('show');
+  document.getElementById('product-sheet-overlay').classList.add('show');
   history.pushState({ tab: currentTab, tile: activeTile, sheet: 'product' }, '', location.hash);
+  psState.pushed = true;   // є свій запис в історії — закривати тільки через history.back()
 
   /* Фото картки: файл один на всі розділи, тому вантажимо раз і далі беремо з пам'яті. */
   if (slug && !cardImages) {
@@ -476,9 +461,37 @@ function openProductSheet(cfgKey, model, tileLabel) {
   });
 }
 
+/* ЗАКРИТТЯ ПАНЕЛІ — ДВА РІЗНІ ШЛЯХИ, і їх не можна плутати (виправлено 2026-10-09).
+   Відкриття робить history.pushState. Якщо хрестик і підложка просто ховали б панель
+   (саме так і було), запис в історії ЛИШАВСЯ Б. Відкрив-закрив панель кілька разів — і
+   в історії стільки ж порожніх записів; далі «Назад» відмотує їх по одному, щоразу
+   відновлюючи стару позицію прокрутки. Саме це власник і описав: «жмеш назад, екран
+   здвинеться, ще раз нажав, ще трохи».
+   dismissProductSheet() — коли закриває ЛЮДИНА: віддаємо команду історії, а панель
+   закриє вже обробник popstate. closeProductSheet() — власне закриття DOM, його
+   викликає лише popstate. */
+function dismissProductSheet() {
+  if (psState && psState.pushed) { history.back(); return; }
+  closeProductSheet();
+}
+
 function closeProductSheet() {
   const ov = document.getElementById('product-sheet-overlay');
   ov.classList.remove('show');
   ov.classList.remove('sheet-tall');
   psState = null;
+}
+
+/* «Назад» усередині панелі = мінус одна дія, а не вихід одразу (прохання власника).
+   Перший «Назад» згортає все, що розгорнуто в характеристиках, другий — закриває панель.
+   Свідомо НЕ робимо окремий крок історії на КОЖЕН розгорнутий блок: їх буває дванадцять,
+   і тоді щоб вийти з панелі довелось би тиснути «Назад» дюжину разів — це гірше за
+   проблему, яку лікуємо. Один крок згортає все розгорнуте разом. */
+function psCollapseOpenDetails() {
+  const open = document.querySelectorAll('#product-sheet-body details[open]');
+  if (!open.length) return false;
+  open.forEach(function (d) { d.open = false; });
+  const sc = document.querySelector('#product-sheet-body .ps-tabbody');
+  if (sc) sc.scrollTop = 0;
+  return true;
 }

@@ -1019,6 +1019,9 @@ function switchTab(tab, pushHistory) {
   closeCartPanel();
   renderCartBar();
   document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
+  // Рядок швидкого пошуку (П-7/П-8) живе за тим самим правилом, що й «оновити прайс»:
+  // шукати можна лише там, де є що шукати.
+  document.getElementById('header-search').style.display = tab === 'catalog' ? 'flex' : 'none';
   document.getElementById('shortcut-icon').style.display = tab === 'cabinet' ? 'flex' : 'none';
   if (tab !== 'catalog') {
     document.getElementById('th-ezy-instruction-btn').style.display = 'none';

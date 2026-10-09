@@ -158,7 +158,7 @@
 
   /* Header */
   header {
-    padding: calc(16px + env(safe-area-inset-top)) 16px 16px;
+    padding: calc(14px + env(safe-area-inset-top)) 16px 12px;
     /* overflow: hidden ПРИБРАНО 2026-09-21 — і це важливо, не косметика.
        Він стояв тут заради водяного знака-логотипа, який навмисно виходив за правий
        край ("обрізає його overflow самої шапки"). Знака більше немає.
@@ -631,13 +631,89 @@
   }
   .row[data-row-model] .cart-check-btn .cart-check-icon .ic { width: 17px; height: 17px; }
 
+  /* Рядок швидкого пошуку в шапці (П-7 + П-8, 2026-10-09). Спершу це була сама лише
+     іконка-лупа поряд з ↻ — власник: «кнопка поиска не видна», і це справедливо: сіра
+     іконка 18px серед інших іконок шапки нічого про себе не каже.
+     Тому тут повноцінний рядок із підказкою, ЩО робити. Сам він не поле вводу, а кнопка,
+     що відкриває лист пошуку з уже сфокусованим полем: так уся логіка пошуку лишається в
+     одному місці, а не дублюється в шапці, і клавіатура відкривається одразу. */
+  .header-search {
+    display: none;            /* показ вмикає switchTab/initCatalog — лише на «Каталозі» */
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 38px;
+    margin-top: 8px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--card);
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .header-search .ic { width: 16px; height: 16px; vertical-align: 0; flex-shrink: 0; }
+  .header-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .header-search:active { transform: scale(.995); }
+
+  /* ---------- Загальний пошук по каталогу (П-8) ---------- */
+  /* Поле — окремим блоком між шапкою листа й результатами, щоб воно лишалось на місці,
+     поки результати прокручуються. */
+  .gsearch-field { padding: 12px 16px 0; flex-shrink: 0; }
+  .gsearch-field input {
+    width: 100%; min-height: 46px; padding: 0 14px;
+    border: 1px solid var(--border); border-radius: 11px; background: var(--card);
+    font-size: 16px; font-family: inherit; color: var(--text);
+  }
+  /* 16px у полі — не випадковість: на iPhone поле з меншим шрифтом змушує Safari
+     збільшити всю сторінку при фокусі, і людина лишається на «зумленому» екрані. */
+  .gsearch-field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  /* .info-sheet-body успадковує white-space: pre-wrap (треба для звичайних текстових
+     листів) — тут він рвав би розмітку результатів. */
+  .gsearch-body { white-space: normal; padding-top: 10px; }
+  .gsearch-hint {
+    font-size: 13px; line-height: 1.5; color: var(--text-secondary);
+    text-align: center; padding: 18px 6px;
+  }
+  .gsearch-count { font-size: 11.5px; color: var(--text-secondary); padding: 0 2px 8px; }
+  .gsearch-hit {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    width: 100%; min-height: 54px; margin-bottom: 8px; padding: 10px 12px;
+    border: 1px solid var(--border); border-radius: 11px; background: var(--card);
+    font-family: inherit; text-align: left; cursor: pointer;
+  }
+  .gsearch-hit:active { transform: scale(.99); }
+  .gsearch-hit-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .gsearch-hit-model { font-size: 14px; font-weight: 700; color: var(--text); }
+  .gsearch-hit-sub { font-size: 11.5px; color: var(--text-secondary); }
+  .gsearch-hit .row-price { flex-shrink: 0; }
+
+  /* Підсвітка знайденого рядка. Саме через її відсутність пункт і провалився торік:
+     людина потрапляла в розділ і не розуміла, який саме рядок знайшовся. */
+  @keyframes rowFoundPulse {
+    0%   { box-shadow: 0 0 0 3px var(--accent); background: var(--accent-bg, rgba(200, 90, 28, .13)); }
+    72%  { box-shadow: 0 0 0 3px var(--accent); background: var(--accent-bg, rgba(200, 90, 28, .13)); }
+    100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); background: var(--card); }
+  }
+  .row.row-found { animation: rowFoundPulse 2.8s ease-out; }
+  /* Кому рух заважає — лишаємо саму рамку, без пульсації. */
+  @media (prefers-reduced-motion: reduce) {
+    .row.row-found { animation: none; box-shadow: 0 0 0 3px var(--accent); }
+  }
+
   /* ---------- Панель товару (П-9 … П-12) ---------- */
   /* ВИСОТА ФІКСОВАНА (2026-10-09, зауваження власника): панель не повинна стрибати,
      коли перемикаєш вкладки. Інакше при переході з короткого «Розрахунку» на довгі
      «Характеристики» вона рвучко виростала, а назад — падала. Тепер розмір один,
      змінюється лише вміст, який прокручується всередині. */
-  #product-sheet-overlay .info-sheet-panel { height: 80vh; }
-  #product-sheet-overlay.sheet-tall .info-sheet-panel { height: 96vh; }
+  /* ВІДКРИВАЄТЬСЯ ОДРАЗУ НА ПОВНИЙ РОЗМІР (прохання власника 2026-10-09, третя правка):
+     «щоб вікно було в тому розмірі, що зараз максимальний». Раніше панель починалась із
+     80vh і доростала до 96vh при прокрутці — тобто стрибала вже на першому русі пальця.
+     Один розмір назавжди: нічого не стрибає ні при прокрутці, ні при перемиканні вкладок,
+     прокручується лише вміст вкладки. */
+  #product-sheet-overlay .info-sheet-panel { height: 96vh; max-height: 96vh; }
   #product-sheet-body { display: flex; flex-direction: column; min-height: 0; }
 
   /* Ціна + «Наявність» (лише адміни) + «На сайт». wrap обов'язковий: на вузькому
@@ -647,16 +723,9 @@
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0;
   }
   .ps-price-row .ps-price, .ps-price-row .ps-price-locked { flex: 1 1 auto; }
-  /* Наявність з 1С — кнопка МІЖ ціною і «На сайт» (рішення власника 2026-10-09):
-     вкладкою вона натякала на рівноправний розділ для всіх, а бачать її лише адміни. */
-  .ps-stock-btn {
-    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
-    min-height: 40px; padding: 0 12px;
-    border: 1px solid var(--border); border-radius: 10px;
-    background: var(--bg); color: var(--text); white-space: nowrap;
-    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
-  }
-  .ps-stock-btn.on { border-color: var(--accent); color: var(--accent); }
+  /* «Наявність» — ТРЕТЯ РІВНОПРАВНА ВКЛАДКА, посередині стрічки (прохання власника).
+     Кнопкою в рядку з ціною вона «подорожувала» (ціни різної довжини) і, розкриваючись,
+     затуляла дві інші кнопки. Своїх стилів більше не має: виглядає як .ps-tab. */
   .ps-price { font-size: 26px; font-weight: 800; color: var(--text); }
   .ps-price-locked { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--text-secondary); }
   .ps-price-locked .ic { width: 18px; height: 18px; vertical-align: 0; }
@@ -671,9 +740,19 @@
     background: var(--bg); border: 1px solid var(--border); border-radius: 11px; padding: 4px;
   }
   .ps-tab {
-    flex: 1 1 0; min-height: 40px; border: none; border-radius: 8px;
+    /* flex-basis AUTO, не 0: при рівних частках («1 1 0») усі три кнопки отримували
+       однакову ширину, і найдовша назва «Характеристики» різалась трьома крапками на
+       320px, хоча в стрічці лишалось вільне місце. З basis:auto кожна кнопка спершу
+       бере свою ширину за текстом, а вільне місце ділиться вже понад неї. */
+    flex: 1 1 auto; min-width: 0; min-height: 40px; padding: 0 6px;
+    border: none; border-radius: 8px;
     background: transparent; color: var(--text-secondary);
-    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+    /* Розмір підібрано ПОМІРЯНО, а не на око: при 12.5px «Характеристики» не вміщались
+       рівно на 2px і різались трьома крапками (375px, найпоширеніша ширина телефона).
+       12px + вузький горизонтальний відступ дають запас і на 320px. Вимога власника —
+       щоб усі три кнопки було видно цілком. */
+    font-size: 12px; font-weight: 600; font-family: inherit; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .ps-tab.on { background: var(--accent); color: #fff; }
   /* Прокручується лише вміст вкладки — шапка з ціною й кнопки лишаються на місці. */
@@ -843,14 +922,20 @@
     display: flex; justify-content: space-between; gap: 12px;
     font-size: 13px; color: var(--text-secondary); padding: 3px 0;
   }
+  /* Підсумок: назва й число НЕ ріжуться й не переносяться всередині себе. Якщо разом
+     не вміщаються (320px: «Ціна з прайсу» + «2 512 $» + перемикач валют), права частина
+     цілком переходить на другий рядок. До цього назва ламалась на два рядки, а число
+     розривалось між «2 512» і «$» — виглядало як поломка верстки. */
   .ps-total-sum {
     display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    flex-wrap: wrap;
     font-size: 13.5px; font-weight: 600; color: var(--text);
   }
+  .ps-total-sum > span:first-child { white-space: nowrap; }
   .ps-result .ps-total-line + .ps-total-sum {
     margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border);
   }
-  .ps-sum-right { display: flex; align-items: center; gap: 10px; }
+  .ps-sum-right { display: flex; align-items: center; gap: 10px; margin-left: auto; white-space: nowrap; }
   .ps-total-sum b { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
   .ps-seg-cur button { min-width: 36px; min-height: 32px; font-size: 13px; }
 
@@ -878,11 +963,7 @@
   /* Наявність розкривається тут же, під ціною — не окремим повноекранним листом
      (той закривав панель і прибирав меню). «Повна інформація» всередині відкриває
      готовий екран stock.js поверх панелі. */
-  .ps-stock-wrap {
-    font-size: 13.5px; margin-top: 10px; padding: 10px 12px;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 11px;
-    max-height: 42vh; overflow-y: auto;
-  }
+  .ps-stock-wrap { font-size: 13.5px; }
   .ps-loading, .ps-empty {
     margin-top: 18px; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 0;
   }
@@ -2834,25 +2915,22 @@
      десктопному браузері вікно набагато ширше за 480px-колонку застосунку — без
      капа шапка розтягувалась на всю висоту вікна (звіт користувача 2026-09-28,
      скріншот app.sun-ice.com.ua у Chrome: логотип займав майже весь екран). */
-  header.home-logo {
-    padding-bottom: 7px;
-    min-height: calc(min(32.3vw, 155px) + env(safe-area-inset-top));
-  }
+  /* ЧЕТВЕРТА РЕДАКЦІЯ, 2026-10-09 (П-7, прохання власника: «зменшуй шапку або зроби її
+     так, щоб не заважала читабельності курсів і рядка пошуку»).
+     Знак більше НЕ фон на всю шапку, а звичайна картинка висотою 34px ліворуч. Через це:
+     • курси лягають на чисте тло, а не поверх артворку — читаються без жодних хитрощів;
+     • у шапці звільнилось місце під рядок пошуку, заради якого П-7 і робився;
+     • уся довга механіка «текст у нижню третину знака» (обчислення 21.5vw, 32.3vw,
+       перевірка, чи лишилась порожня нижня третина файлу) стала непотрібною і прибрана.
+     Якщо колись захочеться повернути великий знак — дивитись історію цього блоку в git:
+     там описано, чому текст поверх нього взагалі читався. */
+  header.home-logo { padding-bottom: 8px; }
   header.home-logo .header-logo-band {
-    position: absolute;
-    inset: 0;                 /* на всю ширину й висоту шапки */
-    display: block;
-    z-index: 0;
+    justify-content: flex-start;
+    height: 30px;
   }
-  header.home-logo .header-logo-band img {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;   /* на всю ширину, без обрізання: висота підбереться сама */
-    height: auto;
-  }
-  /* Текстовий блок починається там, де закінчується артворк знака. */
-  header.home-logo .rate-row { margin-top: max(44px, calc(min(21.5vw, 103px) - 16px)); }
+  header.home-logo .header-logo-band img { height: 100%; width: auto; }
+  header.home-logo .rate-row { margin-top: 6px; }
   /* Заголовка текстом на головній немає — логотип і є заголовком. */
   header.home-logo .header-top h1 { display: none; }
   /* position: static обов'язковий. Загальне правило `header > *` робить .header-top
@@ -2864,10 +2942,11 @@
      Обидва притиснуті до right:16px, тому вони завжди один під одним, незалежно від
      довжини тексту. bottom рахуємо від низу шапки: 7px нижній відступ + ~16px рядок
      приписки + 3px проміжок ≈ 26px. */
+  /* ↻ — у верхньому правому куті, на одній висоті зі зменшеним знаком. */
   header.home-logo #refresh-icon {
     position: absolute;
     right: 16px;
-    bottom: 26px;
+    top: calc(14px + env(safe-area-inset-top));
     z-index: 2;
   }
   /* Текст — поверх знака (z-index), відступ зверху заданий вище. */
@@ -2978,6 +3057,7 @@
   <symbol id="ic-factory" viewBox="0 0 24 24"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></symbol>
   <symbol id="ic-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
   <symbol id="ic-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
   <symbol id="ic-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
   <symbol id="ic-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
@@ -3069,6 +3149,13 @@
         <span class="rate-meta-price" id="rate-meta-price"></span>
       </div>
     </div>
+    <!-- Рядок швидкого пошуку (П-7 + П-8). Видимий лише на вкладці «Каталог» — і на
+         головній, і всередині розділів: шукати маркування потрібно саме там, де гортають
+         прайс. Показ вмикають switchTab() та initCatalog(). -->
+    <button type="button" class="header-search" id="header-search" style="display:none;">
+      <svg class="ic" data-fb="🔍" aria-hidden="true"><use href="#ic-search"></use></svg>
+      <span>Введіть маркування, напр. SRK71</span>
+    </button>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
     </div>
@@ -3130,6 +3217,22 @@
       <button type="button" class="info-sheet-close" id="product-sheet-close" aria-label="Закрити">✕</button>
     </div>
     <div class="info-sheet-body" id="product-sheet-body"></div>
+  </div>
+</div>
+
+<!-- Загальний пошук по каталогу (П-8). Той самий info-sheet-патерн, що й решта листів,
+     тому розкриття прокруткою, «Назад» і закриття працюють без окремого коду. -->
+<div class="info-sheet-overlay" id="global-search-overlay">
+  <div class="info-sheet-backdrop" id="global-search-backdrop"></div>
+  <div class="info-sheet-panel">
+    <div class="info-sheet-header">
+      <div class="info-sheet-title">Пошук за маркуванням</div>
+      <button type="button" class="info-sheet-close" id="global-search-close" aria-label="Закрити">✕</button>
+    </div>
+    <div class="gsearch-field">
+      <input type="search" id="global-search-input" placeholder="Напр. SRK71" autocomplete="off" enterkeyhint="search" aria-label="Пошук за маркуванням">
+    </div>
+    <div class="info-sheet-body gsearch-body" id="global-search-results"></div>
   </div>
 </div>
 
@@ -3501,18 +3604,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-09.15"></script>
-<script src="js/02-price-parse.js?v=2026-10-09.15"></script>
-<script src="js/03-diagnostics.js?v=2026-10-09.15"></script>
-<script src="js/04-catalog.js?v=2026-10-09.15"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-09.15"></script>
-<script src="js/06-cart-promo.js?v=2026-10-09.15"></script>
-<script src="js/07-access-info.js?v=2026-10-09.15"></script>
-<script src="js/08-info-tables.js?v=2026-10-09.15"></script>
-<script src="js/09-cabinet.js?v=2026-10-09.15"></script>
-<script src="js/10-crmontage.js?v=2026-10-09.15"></script>
-<script src="js/11-shell.js?v=2026-10-09.15"></script>
-<script src="js/12-product-sheet.js?v=2026-10-09.15"></script>
-<script src="js/13-start.js?v=2026-10-09.15"></script>
+<script src="js/01-config.js?v=2026-10-09.24"></script>
+<script src="js/02-price-parse.js?v=2026-10-09.24"></script>
+<script src="js/03-diagnostics.js?v=2026-10-09.24"></script>
+<script src="js/04-catalog.js?v=2026-10-09.24"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-09.24"></script>
+<script src="js/06-cart-promo.js?v=2026-10-09.24"></script>
+<script src="js/07-access-info.js?v=2026-10-09.24"></script>
+<script src="js/08-info-tables.js?v=2026-10-09.24"></script>
+<script src="js/09-cabinet.js?v=2026-10-09.24"></script>
+<script src="js/10-crmontage.js?v=2026-10-09.24"></script>
+<script src="js/11-shell.js?v=2026-10-09.24"></script>
+<script src="js/12-product-sheet.js?v=2026-10-09.24"></script>
+<script src="js/13-start.js?v=2026-10-09.24"></script>
 </body>
 </html>

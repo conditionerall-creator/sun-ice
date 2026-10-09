@@ -122,6 +122,10 @@ function closeRateEditor() {
 
 async function initCatalog() {
   document.getElementById('refresh-icon').style.display = 'flex';
+  /* Той самий показ, що й у switchTab: при старті одразу на каталозі switchTab не
+     викликається взагалі, і без цього рядка рядок пошуку не з'явився б до першого
+     перемикання вкладок. */
+  document.getElementById('header-search').style.display = 'flex';
   loadExchangeRate();
   loadSiteLinks(); // прогрів: до моменту, коли користувач зайде в розділ, файл уже в кеші
   const hadCache = loadProcessedCache();
@@ -1071,3 +1075,170 @@ function attachBrandToggleHandlers(main) {
   });
 }
 
+/* ---------- П-8. Загальний пошук по каталогу ----------
+   ⚠️ ТАКЕ ВЖЕ РОБИЛИ 2026-09-17 І ВЛАСНИК ВИДАЛИВ ЧЕРЕЗ ДЕНЬ. Причина — не сама ідея,
+   а недоробка, дослівно: «находило, но не строчку товара после клика, а переход в
+   группу товаров; если товар был значительно ниже по списку, то ничего не помогало его
+   найти». У тій версії goToGlobalSearchHit() просто виставляв розділ і перемальовував
+   список — тобто завжди кидав на ПОЧАТОК групи. Тому головне тут не сам пошук, а
+   revealFoundRow(): перехід саме на знайдений рядок + підсвітка. Якщо колись доведеться
+   це міняти — зберегти саме цю поведінку, інакше пункт повернеться туди, звідки прийшов.
+
+   Охоплення (рішення власника 2026-10-09): три «звичайні» розділи, MHI+GAL кожен.
+   Решта (VRF, ККБ, теплові насоси, чиллери, витратні) лишається поза пошуком, а два
+   найбільші — Вентиляційне (Systemair) і Повітряні завіси (FRICO) — мають власний
+   пошук усередині розділу, тож дублювати їх тут не треба.
+   Виводимо з CATALOG_TILES, а не дублюємо ключі руками: інакше розсинхронимось, щойно
+   ключі чи назви плиток зміняться. */
+const GLOBAL_SEARCH_TILES = CATALOG_TILES
+  .filter(t => ['split', 'multisplit', 'semi'].includes(t.id))
+  .flatMap(t => [
+    { tileId: t.id, tileLabel: t.label, brand: 'mhi', brandLabel: 'MHI', key: t.mhi.key },
+    { tileId: t.id, tileLabel: t.label, brand: 'gal', brandLabel: 'GALACTIC', key: t.gal.key }
+  ]);
+
+const GLOBAL_SEARCH_MIN = 3;    // менше — забагато сміття і зайва робота на кожну літеру
+const GLOBAL_SEARCH_MAX = 30;   // більше за один екран усе одно ніхто не переглядає
+let globalSearchHits = [];      // останній результат: з нього бере дані обробник кліку
+let globalSearchPushed = false; // лист має свій запис в історії — закривати через history.back()
+
+/* Ранжування: 0 — точний збіг, 1 — маркування починається з запиту, 2 — запит десь
+   усередині (менша позиція символу й коротше маркування — точніше). Позицію збігу
+   рахуємо тим самим regex, що й matchesSearchQuery (buildSearchPattern) — так пошук
+   лишається толерантним до розкладки клавіатури («ср» знайде «SR»), а не тільки сам
+   факт «знайдено». Пробіли не рахуються — normalizeSearchKey їх прибирає. */
+function computeGlobalSearchResults(query) {
+  const significant = normalizeSearchKey(query);
+  if (significant.length < GLOBAL_SEARCH_MIN) return [];
+  const patternSrc = buildSearchPattern(query);
+  let re = null;
+  try { re = patternSrc ? new RegExp(patternSrc) : null; } catch (e) { re = null; }
+  const hits = [];
+  GLOBAL_SEARCH_TILES.forEach(src => {
+    ((sheetsData && sheetsData[src.key]) || []).forEach(it => {
+      const normModel = normalizeSearchKey(it.model);
+      /* Два прочитання запиту, як і в matchesSearchQuery: транслітероване (забута
+         розкладка) АБО дослівне. Дослівне тут обов'язкове — у прайсі є позиції зі
+         справжніми українськими назвами («пульт», «панель»), і транслітерація їх не
+         знаходила взагалі. Беремо ту позицію, що ближче до початку: від неї залежить
+         ранжування. */
+      const posPlain = normModel.indexOf(significant);
+      let posRe = -1;
+      if (re) {
+        const m = normModel.match(re);
+        if (m) posRe = m.index;
+      }
+      if (posPlain < 0 && posRe < 0) return;
+      const pos = (posPlain < 0) ? posRe : (posRe < 0 ? posPlain : Math.min(posPlain, posRe));
+      hits.push({
+        tileId: src.tileId, tileLabel: src.tileLabel, brand: src.brand, brandLabel: src.brandLabel,
+        item: it, rank: normModel === significant ? 0 : (pos === 0 ? 1 : 2), pos: pos, len: normModel.length
+      });
+    });
+  });
+  hits.sort((a, b) => a.rank - b.rank || a.pos - b.pos || a.len - b.len);
+  return hits;
+}
+
+function renderGlobalSearchResults(query) {
+  const container = document.getElementById('global-search-results');
+  if (!container) return;
+  /* Прайс вантажиться окремо від оболонки: без цієї перевірки пошук мовчки нічого не
+     знаходив би, і це виглядало б як «нема такого товару». */
+  const ready = sheetsData && GLOBAL_SEARCH_TILES.some(s => (sheetsData[s.key] || []).length);
+  if (!ready) {
+    container.innerHTML = '<div class="gsearch-hint">Прайс ще завантажується — спробуйте за мить.</div>';
+    globalSearchHits = [];
+    return;
+  }
+  if (normalizeSearchKey(query).length < GLOBAL_SEARCH_MIN) {
+    container.innerHTML = '<div class="gsearch-hint">Введіть щонайменше ' + GLOBAL_SEARCH_MIN +
+      ' символи маркування — пробіли можна не рахувати.</div>';
+    globalSearchHits = [];
+    return;
+  }
+  const all = computeGlobalSearchResults(query);
+  globalSearchHits = all.slice(0, GLOBAL_SEARCH_MAX);
+  if (!globalSearchHits.length) {
+    container.innerHTML = '<div class="gsearch-hint">Нічого не знайдено за «' + escapeHtml(query) + '».<br>' +
+      'Пошук охоплює Спліт, Мульти спліт і Напівпромислові. У Вентиляційному обладнанні та ' +
+      'Повітряних завісах є власний пошук усередині розділу.</div>';
+    return;
+  }
+  const locked = !hasFullAccess;
+  container.innerHTML =
+    '<div class="gsearch-count">Знайдено: ' + all.length +
+      (all.length > globalSearchHits.length ? ' · показано перші ' + globalSearchHits.length : '') + '</div>' +
+    globalSearchHits.map((h, idx) => {
+      /* Ціна для того, хто не має доступу, у розмітку НЕ потрапляє взагалі — те саме
+         правило, що й у списку прайсу. Стара версія цього пошуку (2026-09) сюди
+         підставляла справжнє число й лише підфарбовувала його стилем. */
+      const priceHtml = locked
+        ? '<span class="row-price row-price-locked">' + ic('lock', PRICE_HIDDEN_TEXT) + '</span>'
+        : '<span class="row-price">' + escapeHtml(formatListPrice(h.item)) + '</span>';
+      return '<button type="button" class="gsearch-hit" data-hit-idx="' + idx + '">' +
+          '<span class="gsearch-hit-info">' +
+            '<span class="gsearch-hit-model">' + escapeHtml(h.item.model) + '</span>' +
+            '<span class="gsearch-hit-sub">' + escapeHtml(h.tileLabel) + ' · ' + escapeHtml(h.brandLabel) + '</span>' +
+          '</span>' + priceHtml +
+        '</button>';
+    }).join('');
+}
+
+/* ГОЛОВНЕ в усьому пункті: довести людину до САМОГО рядка, а не до початку розділу. */
+function revealFoundRow(model) {
+  /* Два кадри поспіль: після innerHTML браузер ще не порахував нову геометрію, і
+     scrollIntoView відпрацював би по старій — рядок опинявся б не там. */
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      const esc = (window.CSS && CSS.escape) ? CSS.escape(model) : model;
+      const row = document.querySelector('#main .row[data-row-model="' + esc + '"]');
+      if (!row) return;
+      row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      row.classList.remove('row-found');
+      void row.offsetWidth;          // перезапуск анімації, якщо клас уже був
+      row.classList.add('row-found');
+      setTimeout(function () { row.classList.remove('row-found'); }, 2800);
+    });
+  });
+}
+
+function goToGlobalSearchHit(hit) {
+  if (!hit) return;
+  closeGlobalSearch();
+  if (currentTab !== 'catalog') switchTab('catalog', false);
+  catalogRowsSkipStagger = true;   // стрибати до рядка, що саме «виїжджає», ні до чого
+  activeTile = hit.tileId;
+  activeBrand = hit.brand;
+  history.pushState({ tab: 'catalog', tile: hit.tileId }, '', '#' + encodeURIComponent(hit.tileId));
+  renderCatalogView();
+  revealFoundRow(hit.item.model);
+}
+
+function openGlobalSearch() {
+  const ov = document.getElementById('global-search-overlay');
+  if (!ov) return;
+  const input = document.getElementById('global-search-input');
+  input.value = '';               // завжди чистий пошук: залишений запит збивав би з пантелику
+  renderGlobalSearchResults('');
+  ov.classList.add('show');
+  /* Свій запис в історії — щоб «Назад» закривав лист, а не вистрибував із розділу, і щоб
+     закриття хрестиком не лишало в історії сміття (та сама пастка, що з панеллю товару:
+     саме через неї «Назад» відмотувався по півекрана за раз). */
+  history.pushState({ tab: currentTab, tile: activeTile, sheet: 'search' }, '', location.hash);
+  globalSearchPushed = true;
+  /* Тут фокус СТАВИМО свідомо (на відміну від панелі товару, де клавіатура заважала б):
+     людина натиснула лупу — вона прийшла друкувати. */
+  setTimeout(function () { input.focus(); }, 60);
+}
+
+function dismissGlobalSearch() {
+  if (globalSearchPushed) { history.back(); return; }
+  closeGlobalSearch();
+}
+
+function closeGlobalSearch() {
+  const ov = document.getElementById('global-search-overlay');
+  if (ov) ov.classList.remove('show');
+  globalSearchPushed = false;
+}

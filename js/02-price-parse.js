@@ -63,13 +63,24 @@ function buildSearchPattern(query) {
     return variants.length > 1 ? '[' + variants + ']' : variants;
   });
 }
+/* Збіг зараховуємо ЗА БУДЬ-ЯКИМ із двох прочитань запиту (виправлено 2026-10-09):
+   • транслітероване — «ср71» знаходить «SRK71», коли людина забула перемкнути розкладку;
+   • дослівне — бо в прайсі повно позицій із НАСПРАВДІ українськими назвами («пульт»,
+     «панель», «Wi-Fi модуль для…»). До цієї правки слово «пульт» перетворювалось на
+     «p[yu]lt» і не знаходило жодного пульта: транслітерація з'їдала саму себе.
+   Знайдено новою перевіркою «Пошук по каталогу» в самодіагностиці — вона вимагає, щоб
+   повністю введене маркування знаходило саме себе, і на цих позиціях падала. */
 function matchesSearchQuery(target, query) {
+  const norm = normalizeSearchKey(target);
+  const plain = normalizeSearchKey(query);
+  if (!plain) return true;
+  if (norm.indexOf(plain) >= 0) return true;
   const pattern = buildSearchPattern(query);
   if (!pattern) return true;
   try {
-    return new RegExp(pattern).test(normalizeSearchKey(target));
+    return new RegExp(pattern).test(norm);
   } catch (e) {
-    return normalizeSearchKey(target).includes(normalizeSearchKey(query));
+    return norm.includes(plain);
   }
 }
 function cellContainsAny(v, keywords) {

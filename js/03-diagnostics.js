@@ -35,7 +35,8 @@ const DIAG_AREA = {
   build: 'Версія застосунку',
   site: 'Сайт sun-ice.com.ua',
   modules: 'Модулі застосунку',
-  specs: 'Характеристики товарів'
+  specs: 'Характеристики товарів',
+  search: 'Пошук по каталогу'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -668,10 +669,60 @@ async function diagCheckSiteLive(ctx) {
   return out;
 }
 
+/* ---- 11. Загальний пошук по каталогу (П-8) ----
+   Нова функція = нова перевірка (вимога CLAUDE.md). Пошук може зламатись ТИХО, і це
+   найгірший його сценарій: поле є, людина вводить маркування, а результатів немає —
+   і вона робить висновок «такого товару в застосунку немає», замість того щоб шукати далі.
+   Два способи зламатись, які ця перевірка й ловить:
+   1) GLOBAL_SEARCH_TILES виводиться з CATALOG_TILES — якщо ключ плитки перейменують
+      (а таке вже бувало), розділ мовчки випаде з пошуку;
+   2) нормалізація/ранжування (normalizeSearchKey, buildSearchPattern) перестане знаходити
+      навіть точне маркування — наприклад, після зміни правил для «+» чи пробілів.
+   Тому перевіряємо не «чи є код», а наскрізний результат: беремо реальні маркування з
+   прайсу і вимагаємо, щоб пошук знайшов їх саме в тому розділі, де вони лежать. */
+async function diagCheckSearch(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.search;
+  const SAMPLE = 3;   // трьох вистачає: ламається нормалізація цілком, а не для одного рядка
+  for (const src of GLOBAL_SEARCH_TILES) {
+    const label = DIAG_SUB_LABELS[src.key] || src.key;
+    const items = (ctx.data && ctx.data[src.key]) || (sheetsData && sheetsData[src.key]) || [];
+    if (!items.length) {
+      out.issues.push(diagIssue(area, src.key, 'error', label + ': розділ не потрапляє в пошук',
+        ['У пошуку по цьому розділу немає жодної позиції — найімовірніше змінився ключ плитки в CATALOG_TILES.',
+         'Людина шукатиме товар цього розділу й вирішить, що його в застосунку немає.'],
+        { app: { tile: src.tileId, brand: src.brand } }));
+      continue;
+    }
+    /* Беремо позиції з РІЗНИХ кінців списку: якби вибірка завжди йшла з початку,
+       поломка, що зачіпає лише довгі чи парні маркування (напівпром — це «A + B»),
+       могла б не потрапити у вибірку взагалі. */
+    const idxs = [0, Math.floor(items.length / 2), items.length - 1].slice(0, Math.min(SAMPLE, items.length));
+    const failed = [];
+    idxs.forEach(i => {
+      const model = items[i].model;
+      let hits = [];
+      try { hits = computeGlobalSearchResults(model); } catch (e) { hits = []; }
+      const ok = hits.some(h => h.item.model === model && h.tileId === src.tileId && h.brand === src.brand);
+      if (!ok) failed.push(model);
+    });
+    if (failed.length) {
+      out.issues.push(diagIssue(area, src.key, 'error',
+        label + ': пошук не знаходить власні ж маркування — ' + failed.length + ' з ' + idxs.length,
+        failed.concat(['Введене повністю маркування мусить знаходитись завжди. Дивитись normalizeSearchKey / buildSearchPattern у js/02-price-parse.js і computeGlobalSearchResults у js/04-catalog.js.']),
+        { app: { tile: src.tileId, brand: src.brand } }));
+    }
+    out.checked.push({ area: area, sub: src.key, label: label,
+      detail: items.length + ' позицій у пошуку · вибірку з ' + idxs.length + ' маркувань знайдено' });
+  }
+  return out;
+}
+
 /* Реєстр перевірок. auto — ще й тихо після кожного розбору нового прайсу; manualOnly — лише за кнопкою. */
 const DIAG_CHECKS = [
   { id: 'modules', label: 'Модулі застосунку', auto: true, run: ctx => diagCheckModules(ctx) },
   { id: 'specs', label: 'Характеристики товарів', run: ctx => diagCheckSpecs(ctx) },
+  { id: 'search', label: 'Пошук по каталогу', auto: true, run: ctx => diagCheckSearch(ctx) },
   { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
   { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },
   { id: 'files', label: 'Зображення та файли застосунку', run: ctx => diagCheckFiles(ctx) },
