@@ -911,7 +911,7 @@ function loadSiteLinks() {
 function applySiteLinks() {
   const run = d => {
     if (!d || !d.links) return;
-    document.querySelectorAll('#main .row-info[data-site-key]').forEach(el => {
+    document.querySelectorAll('#main .row-name[data-site-key]').forEach(el => {
       const list = d.links[el.getAttribute('data-site-list')];
       const slug = list && list[el.getAttribute('data-site-key')];
       if (!slug) return;
@@ -1034,21 +1034,16 @@ function renderCatalogList() {
     return sectionLabelHtml + header + `
       <div class="${rowCls}" style="${rowStyle}" data-row-cfg="${escapeHtml(cfg.key)}" data-row-model="${escapeHtml(it.model)}" data-row-tile="${escapeHtml(tile.label)}">
         <div class="row-top">
-          <div class="row-info" data-site-list="${cfg.key}" data-site-key="${escapeHtml(siteLinkKey(it))}">
-            <p class="row-name">${escapeHtml(it.model)}</p>
+          <div class="row-info">
+            <p class="row-name" data-site-list="${cfg.key}" data-site-key="${escapeHtml(siteLinkKey(it))}">${modelHtml(it.model)}</p>
           </div>
           <div class="row-right">
             ${window.Stock ? Stock.slotHtml(it, cfg.key) : ''}
             ${locked ? '' : `
-            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>
-            <button class="calc-toggle" type="button" aria-label="Розрахувати ціну">
-              ${ic('calculator', '')}
-            </button>`}
+            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>`}
             <div class="row-price${locked ? ' row-price-locked' : ''}" aria-label="${locked ? 'Ціна доступна після входу' : ''}">${priceStr}</div>
-            ${locked ? '' : `<button class="share-btn" type="button" aria-label="Поділитися">${ic('share-2', '')}</button>`}
           </div>
         </div>
-        ${locked ? '' : '<div class="calc-panel-slot">' + buildCalcPanelHtml(it.price, it.currency, priceStr) + '</div>'}
       </div>
     `;
   }).join('');

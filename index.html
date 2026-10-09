@@ -614,21 +614,12 @@
   }
   .load-error-btn:active { transform: scale(.99); }
 
-  /* П-10: у рядку прайсу лишається тільки «Додати» (галочка підбірки) і ціна.
-     Калькулятор, «поділитися» й наявність переїхали в панель товару.
-
-     Чому саме сховані, а не вилучені з розмітки: їхні обробники читають DOM САМОГО
-     РЯДКА — назву, ціну, розгорнуту панель розрахунку, — а наявність узагалі малює
-     зовнішній stock.js. Вилучення означало б переписати три перевірені механізми
-     заради косметики. Тому панель натискає ці самі елементи програмно (клік працює й
-     по display:none), і вся логіка лишається тією, що працювала роками.
-     Стосується лише розділів, де панель є (спліт/мульти/напівпром — у них є
-     data-row-model); у решті розділів кнопки в рядку поки лишаються як були. */
-  .row[data-row-model] .calc-toggle,
-  .row[data-row-model] .share-btn,
-  /* Саме КНОПКУ наявності, а не весь .stock-slot: панель із залишками stock.js малює
-     ВСЕРЕДИНІ цього ж слота, і сховавши слот цілком ми сховали б і її (напоролись
-     живцем 2026-10-08 — кнопка в панелі товару спрацьовувала, але нічого не з'являлось). */
+  /* П-10/П-9: у рядку прайсу лишається тільки «Додати» і ціна. Калькулятор,
+     «поділитися» й наявність ЖИВУТЬ У ПАНЕЛІ ТОВАРУ — з 2026-10-09 вони не просто
+     сховані, а й прибрані з розмітки разом із цілим калькулятором на кожен рядок
+     (це було 84 прихованих калькулятори на екран).
+     .stock-slot лишається: з нього панель бере дані про залишки (data-stock-parts),
+     але сама кнопка схована — наявність відкривається з панелі. */
   .row[data-row-model] .stock-slot > .stock-btn { display: none; }
   /* «Додати» лишилась у рядку сама — тепер їй можна дати нормальний розмір.
      Це той самий пункт П-6 (зона натискання 44px), який свідомо відклали до П-10:
@@ -640,10 +631,13 @@
   }
   .row[data-row-model] .cart-check-btn .cart-check-icon .ic { width: 17px; height: 17px; }
 
-  /* ---------- Панель товару (П-9) ---------- */
-  /* Ціна і «Наявність» — в одному ряду: кнопку бачать лише адміни, тож серед нижніх
-     кнопок вона була б четвертою зайвою для всіх інших. */
+  /* ---------- Панель товару (П-9 … П-12) ---------- */
+  /* Ціна і «Наявність» — в одному ряду: кнопку бачать лише адміни, тож серед вкладок
+     вона була б четвертою зайвою для всіх інших. */
   .ps-price-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ps-price { font-size: 26px; font-weight: 800; color: var(--text); }
+  .ps-price-locked { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--text-secondary); }
+  .ps-price-locked .ic { width: 18px; height: 18px; vertical-align: 0; }
   .ps-stock-btn {
     display: flex; align-items: center; gap: 7px;
     min-height: 44px; padding: 0 14px;
@@ -653,54 +647,143 @@
   }
   .ps-stock-btn .ic { width: 17px; height: 17px; vertical-align: 0; color: var(--text-secondary); }
   .ps-stock-btn:active { transform: scale(.98); }
-  .ps-price { font-size: 26px; font-weight: 800; color: var(--text); margin-bottom: 2px; }
-  .ps-price-locked {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 15px; font-weight: 600; color: var(--text-secondary);
-  }
-  .ps-price-locked .ic { width: 18px; height: 18px; vertical-align: 0; }
-  /* Кнопки, що переїхали з рядка. Головна дія — акцентна, довідкові спокійні:
-     у панелі має бути одразу видно, що тут головне. */
-  .ps-actions { display: flex; gap: 8px; margin: 14px 0 4px; flex-wrap: wrap; }
-  .ps-btn {
-    flex: 1 1 0; min-width: 96px; min-height: 48px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-    border: 1px solid var(--border); border-radius: 10px;
-    background: var(--card); color: var(--text);
-    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
-  }
-  .ps-btn .ic { width: 19px; height: 19px; vertical-align: 0; color: var(--text-secondary); }
-  .ps-btn:active { transform: scale(.98); }
-  .ps-btn-main { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .ps-btn-main .ic { color: #fff; }
 
-  .ps-section { margin-top: 18px; }
-  .ps-section-title {
+  /* Вкладки. «Розрахунок» активний за замовчуванням (рішення власника 2026-10-09):
+     панель відкривають здебільшого щоб назвати клієнту ціну. */
+  .ps-tabs {
+    display: flex; gap: 4px; margin: 14px 0 0;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 11px; padding: 4px;
+  }
+  .ps-tab {
+    flex: 1 1 0; min-height: 40px; border: none; border-radius: 8px;
+    background: transparent; color: var(--text-secondary);
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .ps-tab.on { background: var(--accent); color: #fff; }
+  .ps-tabbody { padding-top: 14px; }
+
+  .ps-block-title {
     font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
     color: var(--text-secondary); margin-bottom: 8px;
   }
+
+  /* Характеристики. До 2026-10-09 назва тулилась до лівого краю, значення — до правого,
+     між ними зяяла порожнеча, і на 56 рядках око губило пару. Тепер це таблиця із
+     «зеброю»: рядок читається як одне ціле. */
+  .ps-spec-table { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .ps-spec-row {
-    display: flex; justify-content: space-between; gap: 14px;
-    padding: 7px 0; border-bottom: 1px solid var(--border);
-    font-size: 13.5px; line-height: 1.35;
+    display: grid; grid-template-columns: minmax(40%, 1fr) auto; gap: 12px; align-items: baseline;
+    padding: 9px 12px; font-size: 13.5px; line-height: 1.35;
   }
+  .ps-spec-row:nth-child(odd) { background: var(--bg); }
   .ps-spec-name { color: var(--text-secondary); }
-  .ps-spec-val { color: var(--text); font-weight: 600; text-align: right; flex-shrink: 0; max-width: 54%; }
-  .ps-all { margin-top: 10px; }
+  /* nowrap на значенні: без нього короткі значення рвались навпіл («64» / «- 71»,
+     «7.1» / «(3.2~8.0)») і це читалось як помилка верстки. Переносимо НАЗВУ, а не
+     число — назва для цього пристосована, число ні. */
+  .ps-spec-val {
+    color: var(--text); font-weight: 600; text-align: right;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+  .ps-all { margin-top: 12px; }
   .ps-all > summary, .ps-group > summary {
     cursor: pointer; list-style: none;
     min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    font-size: 13.5px; font-weight: 600; color: var(--accent);
+    font-size: 13.5px; font-weight: 600;
   }
+  .ps-all > summary { color: var(--accent); }
+  .ps-group > summary { color: var(--text); border-top: 1px solid var(--border); }
   .ps-all > summary::-webkit-details-marker, .ps-group > summary::-webkit-details-marker { display: none; }
-  .ps-group > summary { color: var(--text); border-bottom: 1px solid var(--border); }
   .ps-group-n {
     font-size: 11.5px; font-weight: 600; color: var(--text-secondary);
-    background: var(--bg); border-radius: 20px; padding: 2px 9px;
+    background: var(--bg); border-radius: 20px; padding: 2px 9px; flex-shrink: 0;
   }
-  .ps-all-body { padding-top: 2px; }
+  .ps-group > .ps-spec-table { border: none; border-radius: 0; margin-bottom: 8px; }
+
+  /* Калькулятор. Замість чотирьох кнопок «−% +% −сума +сума», які нічого не кажуть
+     новачку, — два зрозумілі вибори: ЩО робимо і ЧИМ. */
+  .ps-field { margin-top: 14px; }
+  .ps-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+  .ps-calc-base {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-size: 13px; color: var(--text-secondary);
+  }
+  .ps-calc-base b { font-size: 17px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .ps-seg {
+    display: inline-flex; gap: 3px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 9px; padding: 3px; flex-shrink: 0;
+  }
+  .ps-seg button {
+    min-height: 38px; min-width: 46px; padding: 0 14px;
+    border: none; border-radius: 7px; background: transparent;
+    color: var(--text-secondary); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .ps-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(10,10,10,.08); }
+  .ps-seg-wide { display: flex; }
+  .ps-seg-wide button { flex: 1 1 0; }
+  .ps-seg-cur button { min-width: 40px; padding: 0 10px; }
+  .ps-amount { display: flex; gap: 8px; align-items: stretch; }
+  .ps-amount-input {
+    flex: 1 1 auto; min-width: 0; min-height: 46px; padding: 0 14px;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
+    font-size: 19px; font-weight: 700; font-family: inherit; color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .ps-qty { display: flex; align-items: stretch; gap: 8px; }
+  .ps-qty-btn {
+    width: 46px; min-height: 46px; flex-shrink: 0;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
+    font-size: 20px; font-weight: 700; color: var(--text); font-family: inherit; cursor: pointer;
+  }
+  .ps-qty-btn:active { transform: scale(.97); }
+  .ps-qty-input {
+    flex: 1 1 auto; min-width: 0; min-height: 46px; text-align: center;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
+    font-size: 19px; font-weight: 700; font-family: inherit; color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  /* Прозорий підсумок (П-12): видно, з чого склалась цифра, а не лише саму цифру. */
+  .ps-total {
+    margin-top: 18px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px;
+  }
+  .ps-total-line {
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 13px; color: var(--text-secondary); padding: 3px 0;
+  }
+  .ps-total-sum {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border);
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+  }
+  .ps-total-sum b { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ps-reset {
+    width: 100%; min-height: 44px; margin-top: 10px;
+    border: none; border-radius: 9px; background: transparent;
+    color: var(--text-secondary); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+
+  /* Поділитись: спершу видно текст, який піде клієнту, і лише потім відправка. */
+  .ps-share-preview {
+    margin: 0; padding: 12px 14px; white-space: pre-wrap; word-break: break-word;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+    font-family: inherit; font-size: 13.5px; line-height: 1.55; color: var(--text);
+  }
+  .ps-share-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .ps-btn {
+    flex: 1 1 0; min-height: 48px;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--card); color: var(--text);
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .ps-btn .ic { width: 18px; height: 18px; vertical-align: 0; color: var(--text-secondary); }
+  .ps-btn:active { transform: scale(.98); }
+  .ps-btn-main { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ps-btn-main .ic { color: #fff; }
+  .ps-hint { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
+
   .ps-site-link {
-    display: block; margin-top: 18px; min-height: 44px;
+    margin-top: 18px; min-height: 44px;
     display: flex; align-items: center; justify-content: center;
     border: 1px solid var(--border); border-radius: 10px;
     font-size: 13.5px; font-weight: 600; color: var(--accent); text-decoration: none;
@@ -965,9 +1048,12 @@
   /* Тап по назві → картка товару на сайті (див. applySiteLinks). Клас вішається лише
      рядкам, для яких картка є; решта рядків — звичайний текст. Значок ↗ після назви —
      маска з inline-SVG (Lucide arrow-up-right), щоб не плодити розмітку в кожному рядку. */
-  .row-info.has-site-link { cursor: pointer; }
-  .row-info.has-site-link:active .row-name { opacity: 0.6; }
-  .row-info.has-site-link .row-name::after {
+  /* Клікабельний ЛИШЕ текст маркування, а не весь блок: .row-info має flex:1 і
+     розтягується на всю вільну ширину, тому дотик по порожньому місцю рядка потрапляв
+     у нього й вів на сайт замість панелі товару (знайдено власником 2026-10-09). */
+  .row-name.has-site-link { cursor: pointer; display: inline; }
+  .row-name.has-site-link:active { opacity: 0.6; }
+  .row-name.has-site-link::after {
     content: '';
     display: inline-block;
     width: 11px; height: 11px;
@@ -3298,18 +3384,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-08.24"></script>
-<script src="js/02-price-parse.js?v=2026-10-08.24"></script>
-<script src="js/03-diagnostics.js?v=2026-10-08.24"></script>
-<script src="js/04-catalog.js?v=2026-10-08.24"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-08.24"></script>
-<script src="js/06-cart-promo.js?v=2026-10-08.24"></script>
-<script src="js/07-access-info.js?v=2026-10-08.24"></script>
-<script src="js/08-info-tables.js?v=2026-10-08.24"></script>
-<script src="js/09-cabinet.js?v=2026-10-08.24"></script>
-<script src="js/10-crmontage.js?v=2026-10-08.24"></script>
-<script src="js/11-shell.js?v=2026-10-08.24"></script>
-<script src="js/12-product-sheet.js?v=2026-10-08.24"></script>
-<script src="js/13-start.js?v=2026-10-08.24"></script>
+<script src="js/01-config.js?v=2026-10-09.7"></script>
+<script src="js/02-price-parse.js?v=2026-10-09.7"></script>
+<script src="js/03-diagnostics.js?v=2026-10-09.7"></script>
+<script src="js/04-catalog.js?v=2026-10-09.7"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-09.7"></script>
+<script src="js/06-cart-promo.js?v=2026-10-09.7"></script>
+<script src="js/07-access-info.js?v=2026-10-09.7"></script>
+<script src="js/08-info-tables.js?v=2026-10-09.7"></script>
+<script src="js/09-cabinet.js?v=2026-10-09.7"></script>
+<script src="js/10-crmontage.js?v=2026-10-09.7"></script>
+<script src="js/11-shell.js?v=2026-10-09.7"></script>
+<script src="js/12-product-sheet.js?v=2026-10-09.7"></script>
+<script src="js/13-start.js?v=2026-10-09.7"></script>
 </body>
 </html>

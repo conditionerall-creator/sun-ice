@@ -28,19 +28,19 @@ const APP_SHELL = [
      застосунок не підніметься. Перевірка «Модулі застосунку» в самодіагностиці
      стежить за цим збігом. */
   ...[
-    'js/01-config.js?v=2026-10-08.24',
-    'js/02-price-parse.js?v=2026-10-08.24',
-    'js/03-diagnostics.js?v=2026-10-08.24',
-    'js/04-catalog.js?v=2026-10-08.24',
-    'js/05-catalog-custom.js?v=2026-10-08.24',
-    'js/06-cart-promo.js?v=2026-10-08.24',
-    'js/07-access-info.js?v=2026-10-08.24',
-    'js/08-info-tables.js?v=2026-10-08.24',
-    'js/09-cabinet.js?v=2026-10-08.24',
-    'js/10-crmontage.js?v=2026-10-08.24',
-    'js/11-shell.js?v=2026-10-08.24',
-    'js/12-product-sheet.js?v=2026-10-08.24',
-    'js/13-start.js?v=2026-10-08.24'
+    'js/01-config.js?v=2026-10-09.7',
+    'js/02-price-parse.js?v=2026-10-09.7',
+    'js/03-diagnostics.js?v=2026-10-09.7',
+    'js/04-catalog.js?v=2026-10-09.7',
+    'js/05-catalog-custom.js?v=2026-10-09.7',
+    'js/06-cart-promo.js?v=2026-10-09.7',
+    'js/07-access-info.js?v=2026-10-09.7',
+    'js/08-info-tables.js?v=2026-10-09.7',
+    'js/09-cabinet.js?v=2026-10-09.7',
+    'js/10-crmontage.js?v=2026-10-09.7',
+    'js/11-shell.js?v=2026-10-09.7',
+    'js/12-product-sheet.js?v=2026-10-09.7',
+    'js/13-start.js?v=2026-10-09.7'
   ].map((p) => new URL(p, self.registration.scope).href),
   /* Плитки каталогу. Раніше їх тут НЕ БУЛО — вони потрапляли в кеш лише після того,
      як користувач їх побачив, а браузер на Android чистить сховище у рідко відкриваних

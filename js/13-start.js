@@ -101,7 +101,7 @@ document.getElementById('main').addEventListener('click', function(e) {
   }
   // Тап по назві товару (Спліт / Мульти спліт / Напівпромислові) — картка на sun-ice.com.ua.
   // data-site-url ставить applySiteLinks() лише рядкам, для яких картка є.
-  const siteEl = e.target.closest('.row-info[data-site-url]');
+  const siteEl = e.target.closest('.row-name[data-site-url]');
   if (siteEl) {
     window.open(siteEl.getAttribute('data-site-url'), '_blank', 'noopener');
     return;
@@ -708,35 +708,81 @@ if ('serviceWorker' in navigator) {
    що й раніше, тож уся перевірена механіка (калькулятор, share, 1С) лишається тією ж. */
 document.getElementById('product-sheet-close').addEventListener('click', closeProductSheet);
 document.getElementById('product-sheet-backdrop').addEventListener('click', closeProductSheet);
+
+/* Усі дії панелі товару. З 2026-10-09 вони працюють ТУТ, а не натискають сховані
+   кнопки рядка прайсу, як робив тимчасовий місток попередньої версії. */
 document.getElementById('product-sheet-body').addEventListener('click', function (e) {
-  const btn = e.target.closest('[data-ps-act]');
-  if (!btn) return;
-  const body = document.getElementById('product-sheet-body');
-  /* «Характеристики» — не дія в рядку, а згортання/розгортання розділу просто тут.
-     Розділ показується розгорнутим (рішення власника), кнопка його ховає. */
-  if (btn.getAttribute('data-ps-act') === 'specs') {
-    const holder = document.getElementById('ps-specs');
-    const hidden = holder.hasAttribute('hidden');
-    if (hidden) holder.removeAttribute('hidden'); else holder.setAttribute('hidden', '');
-    btn.setAttribute('aria-expanded', hidden ? 'true' : 'false');
-    btn.classList.toggle('ps-btn-main', hidden);
+  if (!psState) return;
+  const t = e.target;
+
+  const tabBtn = t.closest('[data-ps-tab]');
+  if (tabBtn) { psState.tab = tabBtn.getAttribute('data-ps-tab'); psRender(); return; }
+
+  const curBtn = t.closest('[data-ps-cur]');
+  if (curBtn) {
+    const next = curBtn.getAttribute('data-ps-cur');
+    /* Якщо введена СУМА (а не відсоток) — переводимо і її. Інакше «знижка 15 $» при
+       перемиканні на гривню мовчки ставала «знижка 15 ₴», тобто в 45 разів меншою:
+       підсумок стрибав, і людина не розуміла чому. Відсотка це не стосується. */
+    if (psState.kind === 'flat' && !isNaN(psState.value) && psState.value > 0) {
+      psState.value = Math.round(convertAmount(psState.value, psState.cur, next, usdRate) * 100) / 100;
+    }
+    psState.cur = next;
+    psRenderTabBody();
     return;
   }
-  const model = body.getAttribute('data-ps-model');
-  const row = document.querySelector('.row[data-row-model="' + (window.CSS && CSS.escape ? CSS.escape(model) : model) + '"]');
-  if (!row) return;
-  const act = btn.getAttribute('data-ps-act');
-  closeProductSheet();
-  if (act === 'stock') {
-    /* У stock.js є публічний Stock.toggle(кнопка) — кличемо його напряму, а не
-       синтетичним кліком по схованій кнопці: так не залежимо від того, чи дійде
-       подія через делегування й чи видимий елемент. */
-    const btn = row.querySelector('.stock-slot .stock-btn');
-    if (btn && window.Stock && Stock.toggle) Stock.toggle(btn);
+
+  const dirBtn = t.closest('[data-ps-dir]');
+  if (dirBtn) { psState.dir = dirBtn.getAttribute('data-ps-dir'); psRenderTabBody(); return; }
+
+  const kindBtn = t.closest('[data-ps-kind]');
+  if (kindBtn) { psState.kind = kindBtn.getAttribute('data-ps-kind'); psRenderTabBody(); return; }
+
+  const qtyBtn = t.closest('[data-ps-qty]');
+  if (qtyBtn) {
+    psState.qty = Math.max(1, psState.qty + (qtyBtn.getAttribute('data-ps-qty') === '+' ? 1 : -1));
+    psRenderTabBody();
     return;
   }
-  const target = row.querySelector(act === 'calc' ? '.calc-toggle' : '.share-btn');
-  if (target) target.click();
+
+  if (t.closest('[data-ps-reset]')) { psState.value = NaN; psState.qty = 1; psRenderTabBody(); return; }
+
+  /* Наявність: кличемо готовий екран stock.js замість того, щоб малювати свій.
+     Панель закриваємо — інакше два листи поверх одного екрана. */
+  if (t.closest('[data-ps-stock]')) {
+    const parts = psState.stockParts;
+    closeProductSheet();
+    if (parts && window.Stock && Stock.openSheet) Stock.openSheet(parts);
+    return;
+  }
+
+  if (t.closest('[data-ps-send]')) {
+    const text = shareText();
+    if (navigator.share) navigator.share({ text: text }).catch(function () {});
+    else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { showHeaderToast('Скопійовано'); });
+    return;
+  }
+  if (t.closest('[data-ps-copy]')) {
+    const text = shareText();
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { showHeaderToast('Скопійовано'); });
+    return;
+  }
+});
+
+/* Ввід чисел — окремо від кліків: перемальовуємо лише підсумок, щоб у полі не
+   стрибав курсор і не закривалась екранна клавіатура. */
+document.getElementById('product-sheet-body').addEventListener('input', function (e) {
+  if (!psState) return;
+  if (e.target.id === 'ps-calc-value') {
+    psState.value = parseFloat(e.target.value);
+    psUpdateTotals();
+    return;
+  }
+  if (e.target.classList.contains('ps-qty-input')) {
+    const n = parseInt(e.target.value, 10);
+    psState.qty = (isNaN(n) || n < 1) ? 1 : n;
+    psUpdateTotals();
+  }
 });
 
 markTilesAccessible(document);
