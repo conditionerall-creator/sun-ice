@@ -4,6 +4,11 @@
    обов'язкові. Міняти порядок у index.html не можна. */
 
 /* ==================== НАЛАШТУВАННЯ ==================== */
+
+/* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
+   файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
+   ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
+const APP_BUILD = '2026-10-09.9'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
@@ -132,7 +137,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
    ЛИШЕ адмінам (regional_admin/super_admin): звичайні користувачі й гості його навіть не завантажують. Разом із
    запитом до сервера це подвійний замок: бейдж не з'явиться без прав, а get_stock() сам відмовить неадміну.
    Піднімай ?v= разом зі зміною stock.js. */
-const STOCK_JS_FILE = 'stock.js?v=20261005-1';
+/* Версію НЕ пишемо руками — беремо APP_BUILD, який піднімає set-build.py.
+   Своя захардкоджена версія вже підводила: правили stock.js, забували підняти
+   ?v=, і браузер віддавав стару копію (2026-10-09, четвертий раз за два дні). */
+const STOCK_JS_FILE = 'stock.js?v=' + APP_BUILD;
 let stockModuleLoading = false;
 function syncStockModule(isAdmin) {
   if (!isAdmin) { if (window.Stock) window.Stock.reset(); return; } // вихід із акаунта/втрата прав — прибрати залишки з екрана

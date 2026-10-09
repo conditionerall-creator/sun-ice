@@ -599,5 +599,9 @@
     DIAG_CHECKS.push({ id: 'stock', label: 'Залишки з 1С', run: function (ctx) { return diagCheck(ctx); } });
   }
 
-  root.Stock = Object.assign({ slotHtml: slotHtml, paint: paint, refresh: refresh, reset: reset, toggle: toggle, openSheet: openSheet, onBack: onBack, diagCheck: diagCheck }, api);
+    /* panelHtml відкрито назовні 2026-10-09: панель товару показує наявність ВСЕРЕДИНІ
+     себе, окремою вкладкою. Без цього довелось би або дублювати тут усю верстку
+     залишків, або закривати панель і відкривати повноекранний лист — а тоді
+     зникали б кнопки меню, на що власник і поскаржився. */
+  root.Stock = Object.assign({ slotHtml: slotHtml, paint: paint, refresh: refresh, reset: reset, toggle: toggle, openSheet: openSheet, onBack: onBack, diagCheck: diagCheck, panelHtml: panelHtml, hasData: function () { return !!(data && index); } }, api);
 })(typeof window !== 'undefined' ? window : globalThis);

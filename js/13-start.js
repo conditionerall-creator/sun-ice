@@ -716,7 +716,14 @@ document.getElementById('product-sheet-body').addEventListener('click', function
   const t = e.target;
 
   const tabBtn = t.closest('[data-ps-tab]');
-  if (tabBtn) { psState.tab = tabBtn.getAttribute('data-ps-tab'); psRender(); return; }
+  if (tabBtn) { psState.tab = tabBtn.getAttribute('data-ps-tab'); psRenderTabBody(); psSyncTabs(); return; }
+
+  // «Знижка» ⇄ «Націнка» одним дотиком: знижка — найчастіша дія, решта поруч.
+  if (t.closest('[data-ps-dirflip]')) {
+    psState.dir = psState.dir === 'sub' ? 'add' : 'sub';
+    psRenderTabBody();
+    return;
+  }
 
   const curBtn = t.closest('[data-ps-cur]');
   if (curBtn) {
@@ -732,27 +739,15 @@ document.getElementById('product-sheet-body').addEventListener('click', function
     return;
   }
 
-  const dirBtn = t.closest('[data-ps-dir]');
-  if (dirBtn) { psState.dir = dirBtn.getAttribute('data-ps-dir'); psRenderTabBody(); return; }
-
   const kindBtn = t.closest('[data-ps-kind]');
   if (kindBtn) { psState.kind = kindBtn.getAttribute('data-ps-kind'); psRenderTabBody(); return; }
 
   const qtyBtn = t.closest('[data-ps-qty]');
   if (qtyBtn) {
     psState.qty = Math.max(1, psState.qty + (qtyBtn.getAttribute('data-ps-qty') === '+' ? 1 : -1));
-    psRenderTabBody();
-    return;
-  }
-
-  if (t.closest('[data-ps-reset]')) { psState.value = NaN; psState.qty = 1; psRenderTabBody(); return; }
-
-  /* Наявність: кличемо готовий екран stock.js замість того, щоб малювати свій.
-     Панель закриваємо — інакше два листи поверх одного екрана. */
-  if (t.closest('[data-ps-stock]')) {
-    const parts = psState.stockParts;
-    closeProductSheet();
-    if (parts && window.Stock && Stock.openSheet) Stock.openSheet(parts);
+    const inp = document.querySelector('.ps-qty-input');
+    if (inp) inp.value = psState.qty;
+    psUpdateTotals();
     return;
   }
 
@@ -762,10 +757,16 @@ document.getElementById('product-sheet-body').addEventListener('click', function
     else if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { showHeaderToast('Скопійовано'); });
     return;
   }
-  if (t.closest('[data-ps-copy]')) {
-    const text = shareText();
-    if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { showHeaderToast('Скопійовано'); });
-    return;
+});
+
+/* Галочка «додати посилання» — change, а не click: так ловиться і клавіатура.
+   Перемальовуємо лише попередній перегляд, щоб нічого не стрибало. */
+document.getElementById('product-sheet-body').addEventListener('change', function (e) {
+  if (!psState) return;
+  if (e.target.matches('[data-ps-link]')) {
+    psState.withLink = e.target.checked;
+    const pv = document.getElementById('ps-share-preview');
+    if (pv) pv.textContent = shareText();
   }
 });
 

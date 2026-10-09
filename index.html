@@ -632,26 +632,25 @@
   .row[data-row-model] .cart-check-btn .cart-check-icon .ic { width: 17px; height: 17px; }
 
   /* ---------- Панель товару (П-9 … П-12) ---------- */
-  /* Ціна і «Наявність» — в одному ряду: кнопку бачать лише адміни, тож серед вкладок
-     вона була б четвертою зайвою для всіх інших. */
-  .ps-price-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  /* ВИСОТА ФІКСОВАНА (2026-10-09, зауваження власника): панель не повинна стрибати,
+     коли перемикаєш вкладки. Інакше при переході з короткого «Розрахунку» на довгі
+     «Характеристики» вона рвучко виростала, а назад — падала. Тепер розмір один,
+     змінюється лише вміст, який прокручується всередині. */
+  #product-sheet-overlay .info-sheet-panel { height: 80vh; }
+  #product-sheet-body { display: flex; flex-direction: column; min-height: 0; }
+
+  .ps-price-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
   .ps-price { font-size: 26px; font-weight: 800; color: var(--text); }
   .ps-price-locked { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--text-secondary); }
   .ps-price-locked .ic { width: 18px; height: 18px; vertical-align: 0; }
-  .ps-stock-btn {
-    display: flex; align-items: center; gap: 7px;
-    min-height: 44px; padding: 0 14px;
+  .ps-site-link {
+    min-height: 40px; padding: 0 14px; display: flex; align-items: center; flex-shrink: 0;
     border: 1px solid var(--border); border-radius: 10px;
-    background: var(--card); color: var(--text);
-    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer; flex-shrink: 0;
+    font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap;
   }
-  .ps-stock-btn .ic { width: 17px; height: 17px; vertical-align: 0; color: var(--text-secondary); }
-  .ps-stock-btn:active { transform: scale(.98); }
 
-  /* Вкладки. «Розрахунок» активний за замовчуванням (рішення власника 2026-10-09):
-     панель відкривають здебільшого щоб назвати клієнту ціну. */
   .ps-tabs {
-    display: flex; gap: 4px; margin: 14px 0 0;
+    display: flex; gap: 4px; margin: 14px 0 0; flex-shrink: 0;
     background: var(--bg); border: 1px solid var(--border); border-radius: 11px; padding: 4px;
   }
   .ps-tab {
@@ -660,16 +659,16 @@
     font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
   }
   .ps-tab.on { background: var(--accent); color: #fff; }
-  .ps-tabbody { padding-top: 14px; }
+  /* Прокручується лише вміст вкладки — шапка з ціною й кнопки лишаються на місці. */
+  .ps-tabbody { padding-top: 14px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
 
   .ps-block-title {
     font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
     color: var(--text-secondary); margin-bottom: 8px;
   }
 
-  /* Характеристики. До 2026-10-09 назва тулилась до лівого краю, значення — до правого,
-     між ними зяяла порожнеча, і на 56 рядках око губило пару. Тепер це таблиця із
-     «зеброю»: рядок читається як одне ціле. */
+  /* Характеристики: таблиця із «зеброю». До 2026-10-09 назва тулилась до лівого краю,
+     значення — до правого, і на 63 рядках око губило пару. */
   .ps-spec-table { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .ps-spec-row {
     display: grid; grid-template-columns: minmax(40%, 1fr) auto; gap: 12px; align-items: baseline;
@@ -677,9 +676,8 @@
   }
   .ps-spec-row:nth-child(odd) { background: var(--bg); }
   .ps-spec-name { color: var(--text-secondary); }
-  /* nowrap на значенні: без нього короткі значення рвались навпіл («64» / «- 71»,
-     «7.1» / «(3.2~8.0)») і це читалось як помилка верстки. Переносимо НАЗВУ, а не
-     число — назва для цього пристосована, число ні. */
+  /* nowrap на значенні: без нього короткі значення рвались навпіл («64» / «- 71»)
+     і це читалось як помилка верстки. Переносимо НАЗВУ, а не число. */
   .ps-spec-val {
     color: var(--text); font-weight: 600; text-align: right;
     white-space: nowrap; font-variant-numeric: tabular-nums;
@@ -699,51 +697,52 @@
   }
   .ps-group > .ps-spec-table { border: none; border-radius: 0; margin-bottom: 8px; }
 
-  /* Калькулятор. Замість чотирьох кнопок «−% +% −сума +сума», які нічого не кажуть
-     новачку, — два зрозумілі вибори: ЩО робимо і ЧИМ. */
-  .ps-field { margin-top: 14px; }
-  .ps-label { display: block; font-size: 12.5px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
-  .ps-calc-base {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    font-size: 13px; color: var(--text-secondary);
+  /* Калькулятор: один рядок «що робимо — скільки — чим». Знижка за замовчуванням,
+     бо це найчастіша дія дилера; «Націнка» — один дотик по тій самій кнопці. */
+  .ps-row1 { display: flex; gap: 8px; align-items: stretch; }
+  .ps-dir {
+    display: flex; align-items: center; gap: 5px; white-space: nowrap;
+    min-height: 48px; padding: 0 12px; flex-shrink: 0;
+    border: 1px solid var(--border-accent, var(--accent)); border-radius: 10px;
+    background: var(--accent-bg, var(--bg)); color: var(--accent);
+    font-size: 13.5px; font-weight: 700; font-family: inherit; cursor: pointer;
   }
-  .ps-calc-base b { font-size: 17px; color: var(--text); font-variant-numeric: tabular-nums; }
-  .ps-seg {
-    display: inline-flex; gap: 3px; background: var(--bg);
-    border: 1px solid var(--border); border-radius: 9px; padding: 3px; flex-shrink: 0;
-  }
-  .ps-seg button {
-    min-height: 38px; min-width: 46px; padding: 0 14px;
-    border: none; border-radius: 7px; background: transparent;
-    color: var(--text-secondary); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
-  }
-  .ps-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(10,10,10,.08); }
-  .ps-seg-wide { display: flex; }
-  .ps-seg-wide button { flex: 1 1 0; }
-  .ps-seg-cur button { min-width: 40px; padding: 0 10px; }
-  .ps-amount { display: flex; gap: 8px; align-items: stretch; }
+  .ps-dir-swap { font-size: 12px; opacity: .7; }
+  .ps-dir:active { transform: scale(.98); }
   .ps-amount-input {
-    flex: 1 1 auto; min-width: 0; min-height: 46px; padding: 0 14px;
-    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
-    font-size: 19px; font-weight: 700; font-family: inherit; color: var(--text);
+    flex: 1 1 auto; min-width: 0; min-height: 48px; padding: 0 14px; text-align: center;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--card);
+    font-size: 20px; font-weight: 700; font-family: inherit; color: var(--text);
     font-variant-numeric: tabular-nums;
   }
-  .ps-qty { display: flex; align-items: stretch; gap: 8px; }
+  .ps-seg {
+    display: inline-flex; gap: 3px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 10px; padding: 3px; flex-shrink: 0;
+  }
+  .ps-seg button {
+    min-height: 40px; min-width: 42px; padding: 0 10px;
+    border: none; border-radius: 7px; background: transparent;
+    color: var(--text-secondary); font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .ps-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(10,10,10,.08); }
+  .ps-row2 { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .ps-row2-label { font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
+  .ps-qty { display: flex; align-items: stretch; gap: 6px; flex: 1 1 auto; min-width: 0; }
   .ps-qty-btn {
-    width: 46px; min-height: 46px; flex-shrink: 0;
+    width: 44px; min-height: 44px; flex-shrink: 0;
     border: 1px solid var(--border); border-radius: 9px; background: var(--card);
     font-size: 20px; font-weight: 700; color: var(--text); font-family: inherit; cursor: pointer;
   }
   .ps-qty-btn:active { transform: scale(.97); }
   .ps-qty-input {
-    flex: 1 1 auto; min-width: 0; min-height: 46px; text-align: center;
+    flex: 1 1 auto; min-width: 0; min-height: 44px; text-align: center;
     border: 1px solid var(--border); border-radius: 9px; background: var(--card);
-    font-size: 19px; font-weight: 700; font-family: inherit; color: var(--text);
+    font-size: 17px; font-weight: 700; font-family: inherit; color: var(--text);
     font-variant-numeric: tabular-nums;
   }
   /* Прозорий підсумок (П-12): видно, з чого склалась цифра, а не лише саму цифру. */
   .ps-total {
-    margin-top: 18px; background: var(--bg);
+    margin-top: 14px; background: var(--bg);
     border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px;
   }
   .ps-total-line {
@@ -756,38 +755,29 @@
     font-size: 13.5px; font-weight: 600; color: var(--text);
   }
   .ps-total-sum b { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .ps-reset {
-    width: 100%; min-height: 44px; margin-top: 10px;
-    border: none; border-radius: 9px; background: transparent;
-    color: var(--text-secondary); font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
-  }
 
-  /* Поділитись: спершу видно текст, який піде клієнту, і лише потім відправка. */
+  /* Поділитись — тут, під щойно порахованою ціною, а не окремою вкладкою. */
+  .ps-share { margin-top: 14px; }
+  .ps-share-btn {
+    width: 100%; min-height: 48px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border: none; border-radius: 10px; background: var(--accent); color: #fff;
+    font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .ps-share-btn .ic { width: 18px; height: 18px; vertical-align: 0; color: #fff; }
+  .ps-share-btn:active { transform: scale(.99); }
+  .ps-link-check {
+    display: flex; align-items: center; gap: 9px; min-height: 44px; margin-top: 4px;
+    font-size: 13px; color: var(--text-secondary); cursor: pointer;
+  }
+  .ps-link-check input { width: 19px; height: 19px; accent-color: var(--accent); flex-shrink: 0; }
   .ps-share-preview {
-    margin: 0; padding: 12px 14px; white-space: pre-wrap; word-break: break-word;
+    margin: 4px 0 0; padding: 10px 12px; white-space: pre-wrap; word-break: break-word;
     background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-    font-family: inherit; font-size: 13.5px; line-height: 1.55; color: var(--text);
+    font-family: inherit; font-size: 13px; line-height: 1.5; color: var(--text-secondary);
   }
-  .ps-share-actions { display: flex; gap: 8px; margin-top: 12px; }
-  .ps-btn {
-    flex: 1 1 0; min-height: 48px;
-    display: flex; align-items: center; justify-content: center; gap: 7px;
-    border: 1px solid var(--border); border-radius: 10px;
-    background: var(--card); color: var(--text);
-    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
-  }
-  .ps-btn .ic { width: 18px; height: 18px; vertical-align: 0; color: var(--text-secondary); }
-  .ps-btn:active { transform: scale(.98); }
-  .ps-btn-main { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .ps-btn-main .ic { color: #fff; }
-  .ps-hint { margin: 10px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
 
-  .ps-site-link {
-    margin-top: 18px; min-height: 44px;
-    display: flex; align-items: center; justify-content: center;
-    border: 1px solid var(--border); border-radius: 10px;
-    font-size: 13.5px; font-weight: 600; color: var(--accent); text-decoration: none;
-  }
+  .ps-stock-wrap { font-size: 13.5px; }
   .ps-loading, .ps-empty {
     margin-top: 18px; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 0;
   }
@@ -3384,18 +3374,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-09.7"></script>
-<script src="js/02-price-parse.js?v=2026-10-09.7"></script>
-<script src="js/03-diagnostics.js?v=2026-10-09.7"></script>
-<script src="js/04-catalog.js?v=2026-10-09.7"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-09.7"></script>
-<script src="js/06-cart-promo.js?v=2026-10-09.7"></script>
-<script src="js/07-access-info.js?v=2026-10-09.7"></script>
-<script src="js/08-info-tables.js?v=2026-10-09.7"></script>
-<script src="js/09-cabinet.js?v=2026-10-09.7"></script>
-<script src="js/10-crmontage.js?v=2026-10-09.7"></script>
-<script src="js/11-shell.js?v=2026-10-09.7"></script>
-<script src="js/12-product-sheet.js?v=2026-10-09.7"></script>
-<script src="js/13-start.js?v=2026-10-09.7"></script>
+<script src="js/01-config.js?v=2026-10-09.9"></script>
+<script src="js/02-price-parse.js?v=2026-10-09.9"></script>
+<script src="js/03-diagnostics.js?v=2026-10-09.9"></script>
+<script src="js/04-catalog.js?v=2026-10-09.9"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-09.9"></script>
+<script src="js/06-cart-promo.js?v=2026-10-09.9"></script>
+<script src="js/07-access-info.js?v=2026-10-09.9"></script>
+<script src="js/08-info-tables.js?v=2026-10-09.9"></script>
+<script src="js/09-cabinet.js?v=2026-10-09.9"></script>
+<script src="js/10-crmontage.js?v=2026-10-09.9"></script>
+<script src="js/11-shell.js?v=2026-10-09.9"></script>
+<script src="js/12-product-sheet.js?v=2026-10-09.9"></script>
+<script src="js/13-start.js?v=2026-10-09.9"></script>
 </body>
 </html>
