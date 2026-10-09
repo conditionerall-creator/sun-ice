@@ -383,14 +383,22 @@ function psRender() {
   const tab = function (id, label) {
     return '<button type="button" class="ps-tab' + (s.tab === id ? ' on' : '') + '" data-ps-tab="' + id + '">' + label + '</button>';
   };
-  /* «Наявність» — ПОСЕРЕДИНІ стрічки (прохання власника: «нехай це буде по центру
-     рядка»). У адміна три кнопки однакового вигляду, у звичайного дилера — дві. */
+  /* РОЗКЛАДКА ЗА ДОСТУПОМ (рішення власника 2026-10-09, четверта правка).
+     «Розрахунок» і «Характеристики» — публічні дані, тому вони удвох і ділять нижню
+     стрічку порівну. «Наявність» бачать ЛИШЕ адміни, тому вона піднята вище, у рядок
+     із ціною, і стоїть рівно посередині того рядка.
+     Поводиться вона так само, як і дві інші кнопки (клас .ps-tab + data-ps-tab), тобто
+     лишається вкладкою: натиснув — її вміст з'явився в тому самому місці, сама кнопка
+     залилась акцентом. Змінилось тільки місце. */
   body.innerHTML =
-    '<div class="ps-price-row">' + priceHtml +
+    '<div class="ps-price-row' + (psHasStock() ? ' ps-price-row-3' : '') + '">' + priceHtml +
+      (psHasStock()
+        ? '<button type="button" class="ps-tab ps-stock-tab' + (s.tab === 'stock' ? ' on' : '') +
+          '" data-ps-tab="stock">Наявність</button>'
+        : '') +
       (s.siteUrl ? '<a class="ps-site-link" href="' + escapeHtml(s.siteUrl) + '" target="_blank" rel="noopener">На сайт ↗</a>' : '') +
     '</div>' +
-    '<div class="ps-tabs">' + tab('calc', 'Розрахунок') +
-      (psHasStock() ? tab('stock', 'Наявність') : '') + tab('specs', 'Характеристики') + '</div>' +
+    '<div class="ps-tabs">' + tab('calc', 'Розрахунок') + tab('specs', 'Характеристики') + '</div>' +
     '<div class="ps-tabbody">' + psTabBody() + '</div>';
 }
 

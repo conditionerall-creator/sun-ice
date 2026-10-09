@@ -8,7 +8,7 @@
 /* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
    файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
    ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
-const APP_BUILD = '2026-10-09.24'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-09.26'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
