@@ -99,16 +99,11 @@ document.getElementById('main').addEventListener('click', function(e) {
     openContacts(true);
     return;
   }
-  // Тап по назві товару (Спліт / Мульти спліт / Напівпромислові) — картка на sun-ice.com.ua.
-  // data-site-url ставить applySiteLinks() лише рядкам, для яких картка є.
-  const siteEl = e.target.closest('.row-name[data-site-url]');
-  if (siteEl) {
-    window.open(siteEl.getAttribute('data-site-url'), '_blank', 'noopener');
-    return;
-  }
-  /* Дотик по ПОРОЖНЬОМУ місцю рядка — панель товару (П-9).
-     Перевірка йде ПІСЛЯ маркування (воно веде на сайт) і пропускає будь-які кнопки,
-     посилання й розгорнутий калькулятор, щоб панель не перехоплювала їхні дотики. */
+  /* Дотик по рядку — панель товару (П-9). З 2026-10-09 це стосується ВСЬОГО рядка:
+     назви, ціни й порожнього місця (рішення власника — у рядка одна дія). Перехід на
+     сайт більше не висить на назві: він живе в панелі кнопкою «На сайт ↗».
+     Кнопки, посилання й поля пропускаємо, щоб панель не перехоплювала їхні дотики;
+     «Додати» (.cart-check-btn) — це button, тобто панель вона не відкриває. */
   const rowEl = e.target.closest('.row[data-row-model]');
   if (rowEl && !e.target.closest('button, a, input, select, label, .calc-panel-slot')) {
     openProductSheet(rowEl.getAttribute('data-row-cfg'), rowEl.getAttribute('data-row-model'), rowEl.getAttribute('data-row-tile'));
@@ -703,9 +698,8 @@ if ('serviceWorker' in navigator) {
    Спостерігач, а не виклик у кожному рендері: плитки малюються в 44 місцях трьох
    файлів, і будь-яке нове місце інакше довелось би не забути. childList без attributes —
    щоб проставляння самих атрибутів не викликало спостерігача повторно. */
-/* Панель товару: закриття й дії всередині. Кнопки «Розрахувати», «Поділитися» і
-   «Наявність» переїхали сюди з рядка прайсу — вони натискають ті самі елементи рядка,
-   що й раніше, тож уся перевірена механіка (калькулятор, share, 1С) лишається тією ж. */
+/* Панель товару: закриття й дії всередині. Усе, що раніше жило кнопками в рядку прайсу
+   (розрахунок, «поділитися», наявність), працює ТУТ — у рядку лишилась тільки «Додати». */
 document.getElementById('product-sheet-close').addEventListener('click', closeProductSheet);
 document.getElementById('product-sheet-backdrop').addEventListener('click', closeProductSheet);
 
@@ -718,9 +712,24 @@ document.getElementById('product-sheet-body').addEventListener('click', function
   const tabBtn = t.closest('[data-ps-tab]');
   if (tabBtn) { psState.tab = tabBtn.getAttribute('data-ps-tab'); psRenderTabBody(); psSyncTabs(); return; }
 
-  // «Знижка» ⇄ «Націнка» одним дотиком: знижка — найчастіша дія, решта поруч.
-  if (t.closest('[data-ps-dirflip]')) {
-    psState.dir = psState.dir === 'sub' ? 'add' : 'sub';
+  /* Наявність з 1С — кнопка вгорі, між ціною і «На сайт» (лише адміни). Розкривається
+     тут же, у панелі: до 2026-10-09 вона відкривала повноекранний лист і закривала панель. */
+  if (t.closest('[data-ps-stock]')) {
+    psState.stockOpen = !psState.stockOpen;
+    psRenderStock();
+    return;
+  }
+
+  // «Додаткові розрахунки»: знижка сумою, націнка, кількість, скидання.
+  if (t.closest('[data-ps-adv]')) {
+    psState.adv = !psState.adv;
+    psRenderTabBody();
+    return;
+  }
+
+  if (t.closest('[data-ps-reset]')) {
+    psState.disc = NaN; psState.mark = NaN; psState.qty = 1;
+    psState.discKind = 'pct'; psState.markKind = 'pct';
     psRenderTabBody();
     return;
   }
@@ -731,23 +740,28 @@ document.getElementById('product-sheet-body').addEventListener('click', function
     /* Якщо введена СУМА (а не відсоток) — переводимо і її. Інакше «знижка 15 $» при
        перемиканні на гривню мовчки ставала «знижка 15 ₴», тобто в 45 разів меншою:
        підсумок стрибав, і людина не розуміла чому. Відсотка це не стосується. */
-    if (psState.kind === 'flat' && !isNaN(psState.value) && psState.value > 0) {
-      psState.value = Math.round(convertAmount(psState.value, psState.cur, next, usdRate) * 100) / 100;
+    if (psState.discKind === 'flat' && !isNaN(psState.disc) && psState.disc > 0) {
+      psState.disc = Math.round(convertAmount(psState.disc, psState.cur, next, usdRate) * 100) / 100;
+    }
+    if (psState.markKind === 'flat' && !isNaN(psState.mark) && psState.mark > 0) {
+      psState.mark = Math.round(convertAmount(psState.mark, psState.cur, next, usdRate) * 100) / 100;
     }
     psState.cur = next;
     psRenderTabBody();
     return;
   }
 
-  const kindBtn = t.closest('[data-ps-kind]');
-  if (kindBtn) { psState.kind = kindBtn.getAttribute('data-ps-kind'); psRenderTabBody(); return; }
+  const dk = t.closest('[data-ps-disckind]');
+  if (dk) { psState.discKind = dk.getAttribute('data-ps-disckind'); psRenderTabBody(); return; }
+  const mk = t.closest('[data-ps-markkind]');
+  if (mk) { psState.markKind = mk.getAttribute('data-ps-markkind'); psRenderTabBody(); return; }
 
   const qtyBtn = t.closest('[data-ps-qty]');
   if (qtyBtn) {
     psState.qty = Math.max(1, psState.qty + (qtyBtn.getAttribute('data-ps-qty') === '+' ? 1 : -1));
     const inp = document.querySelector('.ps-qty-input');
     if (inp) inp.value = psState.qty;
-    psUpdateTotals();
+    psUpdateResult();
     return;
   }
 
@@ -770,33 +784,66 @@ document.getElementById('product-sheet-body').addEventListener('change', functio
   }
 });
 
-/* Ввід чисел — окремо від кліків: перемальовуємо лише підсумок, щоб у полі не
+/* Ввід чисел — окремо від кліків: перемальовуємо лише результат, щоб у полі не
    стрибав курсор і не закривалась екранна клавіатура. */
 document.getElementById('product-sheet-body').addEventListener('input', function (e) {
   if (!psState) return;
-  if (e.target.id === 'ps-calc-value') {
-    psState.value = parseFloat(e.target.value);
-    psUpdateTotals();
-    return;
-  }
+  if (e.target.id === 'ps-disc') { psState.disc = parseFloat(e.target.value); psUpdateResult(); return; }
+  if (e.target.id === 'ps-mark') { psState.mark = parseFloat(e.target.value); psUpdateResult(); return; }
   if (e.target.classList.contains('ps-qty-input')) {
     const n = parseInt(e.target.value, 10);
     psState.qty = (isNaN(n) || n < 1) ? 1 : n;
-    psUpdateTotals();
+    psUpdateResult();
   }
 });
 
-markTilesAccessible(document);
-new MutationObserver(function () {
-  markTilesAccessible(document.getElementById('main'));
-}).observe(document.getElementById('main'), { childList: true, subtree: true });
+/* «Усі характеристики» (і групи всередині) мусять ВІДРЕАГУВАТИ, а не тихо дописати
+   рядки за межами екрана — власник не бачив, що щось відкрилось (2026-10-09).
+   Три речі одразу: панель виростає на весь екран, розкритий блок плавно під'їжджає
+   під заголовок і коротко підсвічується. toggle не булькає, тому слухаємо в capture. */
+document.addEventListener('toggle', function (e) {
+  const d = e.target;
+  if (!d || !d.matches || !d.matches('#product-sheet-body details')) return;
+  const sc = document.querySelector('#product-sheet-body .ps-tabbody');
+  if (!d.open) return;
+  document.getElementById('product-sheet-overlay').classList.add('sheet-tall');
+  if (!sc) return;
+  // через getBoundingClientRect, а не offsetTop: offsetTop не враховує поточну
+  // прокрутку контейнера, і блок з'їжджав не туди
+  const top = sc.scrollTop + (d.getBoundingClientRect().top - sc.getBoundingClientRect().top) - 6;
+  if (sc.scrollTo) sc.scrollTo({ top: top, behavior: 'smooth' }); else sc.scrollTop = top;
+  const body = d.querySelector('.ps-all-body, .ps-spec-table');
+  if (body) {
+    body.classList.remove('ps-reveal');
+    void body.offsetWidth;            // перезапуск анімації, якщо клас уже був
+    body.classList.add('ps-reveal');
+  }
+}, true);
 
-document.addEventListener('keydown', function (e) {
-  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-  const t = e.target.closest && e.target.closest('[role="button"][data-tile], [role="button"][data-info-id], [role="button"][data-flip-tile]');
-  if (!t) return;
-  e.preventDefault(); // інакше пробіл прокрутив би сторінку
-  t.click();
+/* Прокрутка в будь-якому листі (панель товару, «детальніше», інструкції) — лист
+   розкривається вище й показує більше (прохання власника 2026-10-09). Повертається до
+   звичайного розміру, коли прокрутили назад догори. scroll не булькає — capture. */
+document.addEventListener('scroll', function (e) {
+  const sc = e.target;
+  if (!sc || !sc.closest) return;
+  const ov = sc.closest('.info-sheet-overlay');
+  if (!ov) return;
+  if (sc.scrollTop > 12) ov.classList.add('sheet-tall');
+  else if (sc.scrollTop <= 2) ov.classList.remove('sheet-tall');
+}, true);
+
+/* Лист, відкритий повторно, не повинен починатися вже розтягнутим: вміст у ньому
+   новий і прокрутка — на початку. Клас 'show' ставлять з півдесятка різних функцій,
+   тому стежимо за ним спостерігачем, а не правимо кожну. */
+document.querySelectorAll('.info-sheet-overlay').forEach(function (ov) {
+  let wasShown = ov.classList.contains('show');
+  new MutationObserver(function () {
+    const now = ov.classList.contains('show');
+    // скидаємо РІВНО в момент відкриття: інакше спостерігач ловив би й власне
+    // додавання 'sheet-tall' під час прокрутки й одразу його знімав
+    if (now && !wasShown) ov.classList.remove('sheet-tall');
+    wasShown = now;
+  }).observe(ov, { attributes: true, attributeFilter: ['class'] });
 });
 
 ensureAccessFresh(true);

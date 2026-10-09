@@ -3,8 +3,10 @@
    БЕЗ type="module"/defer/async — порядок файлів і спільна область видимості
    обов'язкові. Міняти порядок у index.html не можна.
 
-   Панель відкривається дотиком по ПОРОЖНЬОМУ місцю рядка прайсу; дотик по самому
-   маркуванню веде на картку sun-ice.com.ua.
+   Панель відкривається дотиком по рядку прайсу — по назві, ціні або порожньому місцю
+   (рішення власника 2026-10-09, друга частина): рядок має одну дію, а перехід на сайт
+   живе ВСЕРЕДИНІ панелі кнопкою «На сайт ↗». Окремо лишилась тільки «Додати» —
+   вона панель не відкриває.
 
    Головне правило цього файлу (рішення власника 2026-10-09): увесь функціонал кнопок
    живе ТУТ, усередині панелі. Раніше кнопки лише натискали сховані елементи рядка —
@@ -36,8 +38,35 @@ function loadSpecs(cfgKey) {
   return specsLoading[cfgKey];
 }
 
+/* Фото картки товару з сайту (2026-10-09, прохання власника: «у кожній картці зверху
+   характеристик — фото з картки товару на сайті»).
+   Окремий файл на всі шість розділів, а не поле в specs-*.json: інакше за фото
+   довелось би перезбирати всі 275 карток із таблицями. Будує
+   claude/site-catalog/build_card_images.py — там же пояснено, чому офлайн (сайт без CORS).
+   Самі зображення віддає sun-ice.com.ua; <img> для цього CORS не потрібен. */
+const CARD_IMAGES_FILE = 'data/card-images.json';
+let cardImages = null;
+let cardImagesPromise = null;
+
+function loadCardImages() {
+  if (cardImages) return Promise.resolve(cardImages);
+  if (!cardImagesPromise) {
+    cardImagesPromise = fetch(CARD_IMAGES_FILE + '?v=' + APP_BUILD)
+      .then(r => r.ok ? r.json() : null)
+      .then(j => { cardImages = j && j.images ? j : { base: '', images: {} }; return cardImages; })
+      .catch(() => { cardImages = { base: '', images: {} }; return cardImages; });
+  }
+  return cardImagesPromise;
+}
+
+function cardImageUrl(slug) {
+  if (!slug || !cardImages || !cardImages.images) return null;
+  const p = cardImages.images[slug];
+  return p ? ((cardImages.base || 'https://sun-ice.com.ua/') + p) : null;
+}
+
 /* Стан відкритої панелі. Скидається при кожному відкритті — калькулятор не повинен
-   «пам'ятати» націнку з попереднього товару, це була б тиха пастка. */
+   «пам'ятати» знижку з попереднього товару, це була б тиха пастка. */
 let psState = null;
 
 /* ---------- Характеристики ---------- */
@@ -91,6 +120,16 @@ function specRowsHtml(rows) {
   }).join('');
 }
 
+/* Фото картки — найперше у вкладці, над характеристиками. Якщо фото не завантажилось
+   (немає мережі, картинку на сайті перейменували) — блок прибирає себе сам, щоб замість
+   фото не висіла «порвана» іконка. */
+function psPhotoHtml() {
+  const s = psState;
+  if (!s || !s.img) return '';
+  return '<div class="ps-photo"><img src="' + escapeHtml(s.img) + '" alt="' + escapeHtml(s.model) +
+         '" loading="lazy" onerror="this.parentNode.remove()"></div>';
+}
+
 function specsHtml(spec) {
   if (!spec) return '<div class="ps-empty">Для цієї моделі характеристик на сайті не знайшлось.</div>';
   const key = pickKeySpecs(spec);
@@ -113,83 +152,152 @@ function specsHtml(spec) {
          '<div class="ps-all-body">' + groups.join('') + '</div></details>';
 }
 
-/* ---------- Калькулятор ---------- */
+/* ---------- Розрахунок ---------- */
 
-/* Лаконічна форма (перероблено 2026-10-09 за зауваженням власника).
-   Головне спостереження: найчастіша дія — ЗНИЖКА, дилер знає свій відсоток і просто
-   вводить його. Тому за замовчуванням «Знижка %», а решта режимів — поруч, одним
-   дотиком, без окремого екрана. Перший варіант із двома великими перемикачами
-   («Націнка/Знижка» + «%/сума») був надто громіздким для щоденної дії.
-   Математика та сама, що й у старому калькуляторі в рядку. */
-function calcUnit() {
+/* Перероблено 2026-10-09 (друга правка власника). Головне спостереження: щоденна дія
+   дилера — ОДНА, «відняти свою знижку від прайсу». Тому перший екран показує рівно це:
+   напис «Моя знижка», одне велике поле на відсотки й результат під ним. Поки знижку не
+   ввели, результат — ціна з прайсу (нічого не «обнуляється» й не зникає).
+   Усе інше (знижка сумою, націнка, кількість, скидання) — за кнопкою «Додаткові
+   розрахунки». Перший варіант показував це все одразу: перемикач знижка/націнка,
+   %/сума, кількість і валюту — для основної дії це була зайва вага.
+   Кнопки «Розрахувати» немає й не було: усе перераховується на ходу.
+   Математика та сама, що й у старому калькуляторі в рядку прайсу. */
+function psNum(v) { return (isNaN(v) || v < 0) ? 0 : v; }
+function psCurLabel() { return psState.cur === 'UAH' ? '₴' : (psState.cur || ''); }
+function psCanUah() { return psState.nativeCur === '$' && usdRate > 0; }
+function psBasePrice() {
   const s = psState;
-  const base = convertAmount(s.price, s.nativeCur, s.cur, usdRate);
-  const v = (isNaN(s.value) || s.value < 0) ? 0 : s.value;
-  let r;
-  if (s.dir === 'add') r = s.kind === 'pct' ? base * (1 + v / 100) : base + v;
-  else                 r = s.kind === 'pct' ? base * (1 - v / 100) : base - v;
+  return convertAmount(s.price, s.nativeCur, s.cur, usdRate);
+}
+/* Ціна після знижки. Націнка завжди йде ВІД ЦЬОГО числа — так, як рахує дилер:
+   спершу своя знижка від прайсу, потім своя націнка на те, що вийшло. Коли знижки
+   немає, це рівно ціна з прайсу, тому «пряма націнка на прайс» окремої кнопки не
+   потребує: лишаєш знижку порожньою — і націнка рахується від прайсу (підпис під
+   полем «Націнка» сам це й каже). */
+function psAfterDiscount() {
+  const s = psState, b = psBasePrice(), d = psNum(s.disc);
+  const r = s.discKind === 'pct' ? b * (1 - d / 100) : b - d;
+  return r < 0 ? 0 : r;
+}
+function calcUnit() {
+  const s = psState, a = psAfterDiscount(), m = psNum(s.mark);
+  const r = s.markKind === 'pct' ? a * (1 + m / 100) : a + m;
   return r < 0 ? 0 : r;
 }
 
 function calcHtml() {
   const s = psState;
-  const canUah = s.nativeCur === '$' && usdRate > 0;
-  const curLabel = s.cur === 'UAH' ? '₴' : (s.cur || '');
   return '' +
     '<div class="ps-calc">' +
-      '<div class="ps-row1">' +
-        '<button type="button" class="ps-dir" data-ps-dirflip>' +
-          (s.dir === 'sub' ? 'Знижка' : 'Націнка') + '<span class="ps-dir-swap">⇅</span></button>' +
-        '<input type="number" id="ps-calc-value" class="ps-amount-input" inputmode="decimal" min="0" step="any" ' +
-          'value="' + (isNaN(s.value) ? '' : s.value) + '" placeholder="0">' +
-        '<span class="ps-seg">' +
-          '<button type="button" data-ps-kind="pct"' + (s.kind === 'pct' ? ' class="on"' : '') + '>%</button>' +
-          '<button type="button" data-ps-kind="flat"' + (s.kind === 'flat' ? ' class="on"' : '') + '>' + escapeHtml(curLabel) + '</button>' +
-        '</span>' +
+      '<div class="ps-disc-head">' +
+        '<span class="ps-disc-label">Моя знижка</span>' +
+        '<button type="button" class="ps-adv-toggle' + (s.adv ? ' on' : '') + '" data-ps-adv ' +
+          'aria-expanded="' + (s.adv ? 'true' : 'false') + '">Додаткові розрахунки' +
+          '<span class="ps-chev">▾</span></button>' +
       '</div>' +
-      '<div class="ps-row2">' +
-        '<span class="ps-row2-label">Кількість</span>' +
+      '<div class="ps-disc-row">' +
+        '<input type="number" id="ps-disc" class="ps-amount-input" inputmode="decimal" ' +
+          'min="0" step="any" aria-label="Моя знижка" value="' + (isNaN(s.disc) ? '' : s.disc) + '">' +
+        '<span class="ps-disc-unit">' + escapeHtml(s.discKind === 'pct' ? '%' : psCurLabel()) + '</span>' +
+      '</div>' +
+      (s.adv ? psAdvHtml() : '') +
+      psResultHtml() +
+      psShareHtml() +
+    '</div>';
+}
+
+/* Перемикач «% / сума» — той самий вигляд, що й раніше, але тепер лише в додаткових
+   розрахунках: на першому екрані знижка в відсотках, бо так її дилеру й дають. */
+function psSegHtml(attr, cur) {
+  const cl = psCurLabel();
+  return '<span class="ps-seg">' +
+      '<button type="button" data-ps-' + attr + '="pct"' + (cur === 'pct' ? ' class="on"' : '') + '>%</button>' +
+      '<button type="button" data-ps-' + attr + '="flat"' + (cur === 'flat' ? ' class="on"' : '') + '>' +
+        escapeHtml(cl) + '</button>' +
+    '</span>';
+}
+
+function psAdvHtml() {
+  const s = psState;
+  return '<div class="ps-adv">' +
+      '<div class="ps-adv-row">' +
+        '<span class="ps-adv-label">Знижка<small>відсотком або сумою</small></span>' +
+        psSegHtml('disckind', s.discKind) +
+      '</div>' +
+      '<div class="ps-adv-row">' +
+        '<span class="ps-adv-label">Націнка<small id="ps-mark-basis">' + psMarkBasisText() + '</small></span>' +
+        '<input type="number" id="ps-mark" class="ps-adv-input" inputmode="decimal" min="0" step="any" ' +
+          'aria-label="Націнка" value="' + (isNaN(s.mark) ? '' : s.mark) + '">' +
+        psSegHtml('markkind', s.markKind) +
+      '</div>' +
+      '<div class="ps-adv-row">' +
+        '<span class="ps-adv-label">Кількість</span>' +
         '<div class="ps-qty">' +
           '<button type="button" class="ps-qty-btn" data-ps-qty="-" aria-label="Менше">−</button>' +
           '<input type="number" class="ps-qty-input" inputmode="numeric" min="1" step="1" value="' + s.qty + '" aria-label="Кількість">' +
           '<button type="button" class="ps-qty-btn" data-ps-qty="+" aria-label="Більше">+</button>' +
         '</div>' +
-        (canUah ? '<span class="ps-seg ps-seg-cur">' +
-            '<button type="button" data-ps-cur="$"' + (s.cur === '$' ? ' class="on"' : '') + '>$</button>' +
-            '<button type="button" data-ps-cur="UAH"' + (s.cur === 'UAH' ? ' class="on"' : '') + '>₴</button></span>' : '') +
       '</div>' +
-      psTotalsHtml() +
-      psShareHtml() +
+      '<button type="button" class="ps-reset" data-ps-reset>Скинути розрахунок</button>' +
     '</div>';
 }
 
-/* Підсумок окремо: при вводі числа перемальовуємо ЛИШЕ його, щоб у полі не стрибав
-   курсор і не закривалась екранна клавіатура на телефоні. */
-function psTotalsHtml() {
+/* Підпис під «Націнкою» мусить називати, НА ЩО саме йде відсоток — інакше незрозуміло,
+   від якої суми порахували (зауваження по першій версії). */
+function psMarkBasisText() {
+  return psNum(psState.disc) > 0 ? 'на ціну зі знижкою' : 'на ціну з прайсу';
+}
+
+/* Результат. Прозорий (П-12): видно, з чого склалась цифра, а не лише саму цифру.
+   Назва підсумку залежить від того, що порахували:
+   • нічого не ввели — «Ціна з прайсу» (вимога власника: поле порожнє → видно прайс);
+   • лише знижка — «Ціна зі знижкою» (НЕ «Ціна для клієнта»: після дилерської знижки
+     це закупівельна ціна самого дилера, і стара назва вводила в оману);
+   • є націнка — «Ціна для клієнта».
+   Перемикач $/₴ стоїть поруч із підсумком — там, де на нього дивляться. */
+function psResultHtml() {
   const s = psState;
-  const base = convertAmount(s.price, s.nativeCur, s.cur, usdRate);
-  const unit = calcUnit();
-  const total = unit * s.qty;
-  const valShown = isNaN(s.value) ? 0 : s.value;
-  const changed = valShown > 0;
-  const curLabel = s.cur === 'UAH' ? '₴' : (s.cur || '');
-  const unitTxt = s.kind === 'pct' ? '%' : (' ' + curLabel);
-  return '<div class="ps-total" id="ps-total">' +
-      '<div class="ps-total-line"><span>Ціна з прайсу</span><span>' + escapeHtml(formatCalcAmount(base, s.cur)) + '</span></div>' +
-      (changed
-        ? '<div class="ps-total-line"><span>' + (s.dir === 'add' ? 'Націнка ' : 'Знижка ') +
-          escapeHtml(String(valShown)) + escapeHtml(unitTxt) + '</span><span>' +
-          escapeHtml(formatCalcAmount(unit, s.cur)) + '</span></div>'
-        : '') +
-      (s.qty > 1 ? '<div class="ps-total-line"><span>Кількість</span><span>× ' + s.qty + '</span></div>' : '') +
-      '<div class="ps-total-sum"><span>' + (s.qty > 1 ? 'Разом' : 'Ціна для клієнта') + '</span>' +
-        '<b>' + escapeHtml(formatCalcAmount(total, s.cur)) + '</b></div>' +
+  const b = psBasePrice(), a = psAfterDiscount(), unit = calcUnit();
+  const d = psNum(s.disc), m = psNum(s.mark);
+  const f = function (v) { return escapeHtml(formatCalcAmount(v, s.cur)); };
+  const lines = [];
+  if (d > 0 || m > 0) lines.push(['Ціна з прайсу', f(b)]);
+  if (d > 0) {
+    lines.push(['Знижка ' + (s.discKind === 'pct' ? d + ' %' : f(d)), '− ' + f(b - a)]);
+  }
+  if (m > 0) {
+    lines.push(['Націнка ' + (s.markKind === 'pct' ? m + ' %' : f(m)) + ' ' + psMarkBasisText(),
+      '+ ' + f(unit - a)]);
+  }
+  let label = m > 0 ? 'Ціна для клієнта' : (d > 0 ? 'Ціна зі знижкою' : 'Ціна з прайсу');
+  if (s.qty > 1) {
+    lines.push([label + ' за 1 шт.', f(unit)]);
+    lines.push(['Кількість', '× ' + s.qty]);
+    label = 'Разом';
+  }
+  return '<div class="ps-result" id="ps-result">' +
+      lines.map(function (l) {
+        return '<div class="ps-total-line"><span>' + l[0] + '</span><span>' + l[1] + '</span></div>';
+      }).join('') +
+      '<div class="ps-total-sum"><span>' + label + '</span>' +
+        '<span class="ps-sum-right"><b>' + f(unit * s.qty) + '</b>' +
+        (psCanUah() ? '<span class="ps-seg ps-seg-cur">' +
+            '<button type="button" data-ps-cur="$"' + (s.cur === '$' ? ' class="on"' : '') + '>$</button>' +
+            '<button type="button" data-ps-cur="UAH"' + (s.cur === 'UAH' ? ' class="on"' : '') + '>₴</button>' +
+          '</span>' : '') +
+        '</span>' +
+      '</div>' +
     '</div>';
 }
 
-function psUpdateTotals() {
-  const el = document.getElementById('ps-total');
-  if (el) el.outerHTML = psTotalsHtml();
+/* При вводі числа перемальовуємо ЛИШЕ результат (і підпис основи націнки), щоб у полі
+   не стрибав курсор і не закривалась екранна клавіатура на телефоні. */
+function psUpdateResult() {
+  const el = document.getElementById('ps-result');
+  if (el) el.outerHTML = psResultHtml();
+  const basis = document.getElementById('ps-mark-basis');
+  if (basis) basis.textContent = psMarkBasisText();
   const pv = document.getElementById('ps-share-preview');
   if (pv) pv.textContent = shareText();
 }
@@ -200,7 +308,7 @@ function psUpdateTotals() {
    майже нічого не робила. Кнопка стоїть тут, під розрахунком — там, де щойно вивели
    ціну, яку й треба надіслати.
    Текст навмисно короткий: лише маркування й ціна, без підписів розділу та інших
-   поміток. Посилання на картку сайту — за галочкою, бо потрібне не завжди. */
+   поміток. Посилання на сайт — за галочкою, бо потрібне не завжди. */
 function shareText() {
   const s = psState;
   const lines = [s.model];
@@ -220,7 +328,7 @@ function psShareHtml() {
       '<button type="button" class="ps-share-btn" data-ps-send>' + ic('share-2', '') + '<span>Поділитись</span></button>' +
       (s.siteUrl
         ? '<label class="ps-link-check"><input type="checkbox" data-ps-link' + (s.withLink ? ' checked' : '') + '>' +
-          '<span>Додати посилання на картку</span></label>'
+          '<span>Додати посилання на сайт</span></label>'
         : '') +
       '<pre class="ps-share-preview" id="ps-share-preview">' + escapeHtml(shareText()) + '</pre>' +
     '</div>';
@@ -238,12 +346,33 @@ function psTabBody() {
   if (s.tab === 'calc') {
     return s.locked ? '<div class="ps-empty">Розрахунок доступний після входу.</div>' : calcHtml();
   }
-  if (s.tab === 'stock') {
-    try { return '<div class="ps-stock-wrap">' + Stock.panelHtml(s.stockParts) + '</div>'; }
-    catch (e) { return '<div class="ps-empty">Дані про залишки ще не завантажились.</div>'; }
-  }
-  if (s.specs === undefined) return '<div class="ps-loading">Завантажуємо характеристики…</div>';
-  return specsHtml(s.specs);
+  /* Фото картки — над характеристиками (прохання власника 2026-10-09). */
+  if (s.specs === undefined) return psPhotoHtml() + '<div class="ps-loading">Завантажуємо характеристики…</div>';
+  return psPhotoHtml() + specsHtml(s.specs);
+}
+
+/* Наявність з 1С бачать ЛИШЕ адміни (rateViewerIsAdmin = regional_admin/super_admin).
+   Технічно дані й так приходять тільки їм (RPC get_stock під RLS), але кнопка не
+   повинна з'являтись у звичайного дилера навіть на мить. */
+function psHasStock() {
+  const s = psState;
+  return !!(s && !s.locked && rateViewerIsAdmin && window.Stock && Stock.panelHtml && s.stockParts);
+}
+
+/* Наявність — КНОПКА ВГОРІ, між ціною і «На сайт» (рішення власника 2026-10-09,
+   друга правка). Вкладкою вона бути перестала: вкладка натякала, що це рівноправний
+   розділ для всіх, а бачать її лише адміни.
+   data-stock-parts на обгортці — щоб кнопка «Повна інформація» всередині панелі
+   stock.js знайшла свої дані: у панелі товару немає рядка прайсу (.row), з якого вона
+   їх брала раніше. */
+function psStockHtml() {
+  const s = psState;
+  if (!psHasStock() || !s.stockOpen) return '';
+  let inner;
+  try { inner = Stock.panelHtml(s.stockParts); }
+  catch (e) { inner = '<div class="ps-empty">Дані про залишки ще не завантажились.</div>'; }
+  return '<div class="ps-stock-wrap" data-stock-parts="' +
+    escapeHtml(encodeURIComponent(JSON.stringify(s.stockParts))) + '">' + inner + '</div>';
 }
 
 function psRender() {
@@ -256,15 +385,16 @@ function psRender() {
   const tab = function (id, label) {
     return '<button type="button" class="ps-tab' + (s.tab === id ? ' on' : '') + '" data-ps-tab="' + id + '">' + label + '</button>';
   };
-  /* «Наявність» — вкладка, а не окрема дія: до 2026-10-09 вона закривала панель і
-     відкривала повноекранний лист, через що зникали кнопки меню. */
-  const hasStock = !s.locked && window.Stock && Stock.panelHtml && s.stockParts;
   body.innerHTML =
     '<div class="ps-price-row">' + priceHtml +
+      (psHasStock()
+        ? '<button type="button" class="ps-stock-btn' + (s.stockOpen ? ' on' : '') + '" data-ps-stock ' +
+          'aria-expanded="' + (s.stockOpen ? 'true' : 'false') + '">Наявність<span class="ps-chev">▾</span></button>'
+        : '') +
       (s.siteUrl ? '<a class="ps-site-link" href="' + escapeHtml(s.siteUrl) + '" target="_blank" rel="noopener">На сайт ↗</a>' : '') +
     '</div>' +
-    '<div class="ps-tabs">' + tab('calc', 'Розрахунок') + tab('specs', 'Характеристики') +
-      (hasStock ? tab('stock', 'Наявність') : '') + '</div>' +
+    '<div id="ps-stock-slot">' + psStockHtml() + '</div>' +
+    '<div class="ps-tabs">' + tab('calc', 'Розрахунок') + tab('specs', 'Характеристики') + '</div>' +
     '<div class="ps-tabbody">' + psTabBody() + '</div>';
 }
 
@@ -281,6 +411,16 @@ function psSyncTabs() {
 function psRenderTabBody() {
   const el = document.querySelector('#product-sheet-body .ps-tabbody');
   if (el) el.innerHTML = psTabBody();
+}
+
+function psRenderStock() {
+  const slot = document.getElementById('ps-stock-slot');
+  if (slot) slot.innerHTML = psStockHtml();
+  const btn = document.querySelector('#product-sheet-body .ps-stock-btn');
+  if (btn) {
+    btn.classList.toggle('on', !!psState.stockOpen);
+    btn.setAttribute('aria-expanded', psState.stockOpen ? 'true' : 'false');
+  }
 }
 
 function openProductSheet(cfgKey, model, tileLabel) {
@@ -300,16 +440,29 @@ function openProductSheet(cfgKey, model, tileLabel) {
     cfgKey: cfgKey, model: model, tileLabel: tileLabel || '', item: it,
     locked: !hasFullAccess,
     price: it.price, nativeCur: it.currency || '', cur: it.currency || '',
-    dir: 'sub', kind: 'pct', value: NaN, qty: 1, withLink: false,  // знижка — найчастіша дія дилера
+    /* знижка відсотком — єдина дія першого екрана; решта за «Додатковими розрахунками» */
+    disc: NaN, discKind: 'pct', mark: NaN, markKind: 'pct', qty: 1, adv: false, withLink: false,
     tab: hasFullAccess ? 'calc' : 'specs',   // умовчання — «Розрахунок» (рішення власника)
-    specs: undefined, stockParts: stockParts,
+    specs: undefined, slug: slug || null, img: cardImageUrl(slug),
+    stockParts: stockParts, stockOpen: false,
     siteUrl: slug ? ((siteLinks.base || 'https://sun-ice.com.ua/') + slug) : null
   };
 
   document.getElementById('product-sheet-title').textContent = it.model;
   psRender();
-  document.getElementById('product-sheet-overlay').classList.add('show');
+  const ov = document.getElementById('product-sheet-overlay');
+  ov.classList.remove('sheet-tall');   // нова панель завжди відкривається звичайного розміру
+  ov.classList.add('show');
   history.pushState({ tab: currentTab, tile: activeTile, sheet: 'product' }, '', location.hash);
+
+  /* Фото картки: файл один на всі розділи, тому вантажимо раз і далі беремо з пам'яті. */
+  if (slug && !cardImages) {
+    loadCardImages().then(function () {
+      if (!psState || psState.model !== model) return;
+      psState.img = cardImageUrl(slug);
+      if (psState.tab === 'specs') psRenderTabBody();
+    });
+  }
 
   if (!SPECS_FILES[cfgKey]) {
     psState.specs = null;
@@ -324,6 +477,8 @@ function openProductSheet(cfgKey, model, tileLabel) {
 }
 
 function closeProductSheet() {
-  document.getElementById('product-sheet-overlay').classList.remove('show');
+  const ov = document.getElementById('product-sheet-overlay');
+  ov.classList.remove('show');
+  ov.classList.remove('sheet-tall');
   psState = null;
 }

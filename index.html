@@ -637,9 +637,26 @@
      «Характеристики» вона рвучко виростала, а назад — падала. Тепер розмір один,
      змінюється лише вміст, який прокручується всередині. */
   #product-sheet-overlay .info-sheet-panel { height: 80vh; }
+  #product-sheet-overlay.sheet-tall .info-sheet-panel { height: 96vh; }
   #product-sheet-body { display: flex; flex-direction: column; min-height: 0; }
 
-  .ps-price-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+  /* Ціна + «Наявність» (лише адміни) + «На сайт». wrap обов'язковий: на вузькому
+     телефоні три елементи в один рядок не влазять, і без переносу «На сайт» виїжджала
+     за край. */
+  .ps-price-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0;
+  }
+  .ps-price-row .ps-price, .ps-price-row .ps-price-locked { flex: 1 1 auto; }
+  /* Наявність з 1С — кнопка МІЖ ціною і «На сайт» (рішення власника 2026-10-09):
+     вкладкою вона натякала на рівноправний розділ для всіх, а бачать її лише адміни. */
+  .ps-stock-btn {
+    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    min-height: 40px; padding: 0 12px;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--bg); color: var(--text); white-space: nowrap;
+    font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .ps-stock-btn.on { border-color: var(--accent); color: var(--accent); }
   .ps-price { font-size: 26px; font-weight: 800; color: var(--text); }
   .ps-price-locked { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--text-secondary); }
   .ps-price-locked .ic { width: 18px; height: 18px; vertical-align: 0; }
@@ -661,6 +678,23 @@
   .ps-tab.on { background: var(--accent); color: #fff; }
   /* Прокручується лише вміст вкладки — шапка з ціною й кнопки лишаються на місці. */
   .ps-tabbody { padding-top: 14px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+
+  /* Фото картки товару з сайту — найперше у вкладці «Характеристики» (прохання
+     власника 2026-10-09). contain, а не cover: у кондиціонера важлива форма корпусу,
+     обрізати його не можна. Висота обмежена, щоб фото не з'їдало весь екран панелі. */
+  .ps-photo {
+    margin: 0 0 14px; border: 1px solid var(--border); border-radius: 12px;
+    background: #fff; overflow: hidden;
+  }
+  .ps-photo img { display: block; width: 100%; max-height: 190px; object-fit: contain; }
+
+  /* Коротка підсвітка щойно розкритого блоку характеристик — щоб було видно, що саме
+     з'явилось (без неї рядки тихо дописувались за межами екрана). */
+  @keyframes ps-reveal-flash {
+    from { background: var(--accent-bg, rgba(230, 126, 34, .14)); }
+    to   { background: transparent; }
+  }
+  .ps-reveal { animation: ps-reveal-flash .9s ease-out; border-radius: 10px; }
 
   .ps-block-title {
     font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
@@ -689,6 +723,14 @@
     font-size: 13.5px; font-weight: 600;
   }
   .ps-all > summary { color: var(--accent); }
+  /* Шеврон, що повертається — друга (миттєва) ознака того, що блок розкрився; перша —
+     лист сам виростає на весь екран, див. обробник 'toggle' у js/13-start.js. */
+  .ps-all > summary > span:first-child::after,
+  .ps-group > summary > span:first-child::after {
+    content: ' ▾'; display: inline-block; font-size: 11px; transition: transform .2s ease;
+  }
+  .ps-all[open] > summary > span:first-child::after,
+  .ps-group[open] > summary > span:first-child::after { transform: rotate(180deg); }
   .ps-group > summary { color: var(--text); border-top: 1px solid var(--border); }
   .ps-all > summary::-webkit-details-marker, .ps-group > summary::-webkit-details-marker { display: none; }
   .ps-group-n {
@@ -697,51 +739,103 @@
   }
   .ps-group > .ps-spec-table { border: none; border-radius: 0; margin-bottom: 8px; }
 
-  /* Калькулятор: один рядок «що робимо — скільки — чим». Знижка за замовчуванням,
-     бо це найчастіша дія дилера; «Націнка» — один дотик по тій самій кнопці. */
-  .ps-row1 { display: flex; gap: 8px; align-items: stretch; }
-  .ps-dir {
-    display: flex; align-items: center; gap: 5px; white-space: nowrap;
-    min-height: 48px; padding: 0 12px; flex-shrink: 0;
-    border: 1px solid var(--border-accent, var(--accent)); border-radius: 10px;
-    background: var(--accent-bg, var(--bg)); color: var(--accent);
-    font-size: 13.5px; font-weight: 700; font-family: inherit; cursor: pointer;
+  /* РОЗРАХУНОК (перероблено 2026-10-09, друга правка власника).
+     Перший екран — одна дія: напис «Моя знижка», одне велике поле на відсотки й
+     результат під ним. Усе інше за кнопкою «Додаткові розрахунки»: раніше одночасно
+     були видні перемикач знижка/націнка, %/сума, кількість і валюта — для щоденної дії
+     це зайва вага. Кнопки «Розрахувати» немає: усе перераховується на ходу. */
+  .ps-disc-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-bottom: 8px;
   }
-  .ps-dir-swap { font-size: 12px; opacity: .7; }
-  .ps-dir:active { transform: scale(.98); }
+  .ps-disc-label { font-size: 15px; font-weight: 700; color: var(--text); }
+  .ps-adv-toggle {
+    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    min-height: 36px; padding: 0 10px;
+    border: 1px solid var(--border); border-radius: 9px;
+    background: var(--bg); color: var(--text-secondary);
+    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .ps-adv-toggle.on { color: var(--accent); border-color: var(--accent); }
+  .ps-chev { font-size: 11px; transition: transform .2s ease; }
+  .ps-adv-toggle.on .ps-chev, .ps-stock-btn.on .ps-chev { transform: rotate(180deg); }
+
+  .ps-disc-row { display: flex; gap: 8px; align-items: stretch; }
   .ps-amount-input {
-    flex: 1 1 auto; min-width: 0; min-height: 48px; padding: 0 14px; text-align: center;
+    flex: 1 1 auto; min-width: 0; min-height: 52px; padding: 0 14px; text-align: center;
     border: 1px solid var(--border); border-radius: 10px; background: var(--card);
-    font-size: 20px; font-weight: 700; font-family: inherit; color: var(--text);
+    font-size: 24px; font-weight: 700; font-family: inherit; color: var(--text);
     font-variant-numeric: tabular-nums;
+  }
+  /* Стрілки-лічильники в полі числа: на телефоні їх і так немає, а на комп'ютері вони
+     тиснуть велику цифру вбік. Прибираємо — значення вводять із клавіатури. */
+  .ps-amount-input::-webkit-outer-spin-button, .ps-amount-input::-webkit-inner-spin-button,
+  .ps-adv-input::-webkit-outer-spin-button, .ps-adv-input::-webkit-inner-spin-button,
+  .ps-qty-input::-webkit-outer-spin-button, .ps-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .ps-amount-input, .ps-adv-input, .ps-qty-input { -moz-appearance: textfield; }
+  .ps-disc-unit {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    min-width: 52px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--bg); color: var(--text-secondary); font-size: 18px; font-weight: 700;
   }
   .ps-seg {
     display: inline-flex; gap: 3px; background: var(--bg);
     border: 1px solid var(--border); border-radius: 10px; padding: 3px; flex-shrink: 0;
   }
   .ps-seg button {
-    min-height: 40px; min-width: 42px; padding: 0 10px;
+    min-height: 36px; min-width: 40px; padding: 0 10px;
     border: none; border-radius: 7px; background: transparent;
     color: var(--text-secondary); font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
   }
   .ps-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(10,10,10,.08); }
-  .ps-row2 { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
-  .ps-row2-label { font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
-  .ps-qty { display: flex; align-items: stretch; gap: 6px; flex: 1 1 auto; min-width: 0; }
+
+  /* Додаткові розрахунки: знижка сумою, націнка (із підписом, ВІД ЧОГО вона), кількість,
+     скидання. Підпис основи націнки обов'язковий — без нього незрозуміло, до якої суми
+     застосовано відсоток. */
+  .ps-adv {
+    margin-top: 10px; padding: 10px 12px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 11px;
+  }
+  .ps-adv-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 0;
+  }
+  .ps-adv-row + .ps-adv-row { border-top: 1px solid var(--border); }
+  .ps-adv-label {
+    display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0;
+    font-size: 13px; font-weight: 600; color: var(--text);
+  }
+  .ps-adv-label small { font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+  .ps-adv-input {
+    width: 72px; flex-shrink: 0; min-height: 40px; text-align: center;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
+    font-size: 16px; font-weight: 700; font-family: inherit; color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .ps-qty { display: flex; align-items: stretch; gap: 6px; flex-shrink: 0; }
   .ps-qty-btn {
-    width: 44px; min-height: 44px; flex-shrink: 0;
+    width: 40px; min-height: 40px; flex-shrink: 0;
     border: 1px solid var(--border); border-radius: 9px; background: var(--card);
     font-size: 20px; font-weight: 700; color: var(--text); font-family: inherit; cursor: pointer;
   }
   .ps-qty-btn:active { transform: scale(.97); }
   .ps-qty-input {
-    flex: 1 1 auto; min-width: 0; min-height: 44px; text-align: center;
+    width: 56px; min-height: 40px; text-align: center;
     border: 1px solid var(--border); border-radius: 9px; background: var(--card);
-    font-size: 17px; font-weight: 700; font-family: inherit; color: var(--text);
+    font-size: 16px; font-weight: 700; font-family: inherit; color: var(--text);
     font-variant-numeric: tabular-nums;
   }
-  /* Прозорий підсумок (П-12): видно, з чого склалась цифра, а не лише саму цифру. */
-  .ps-total {
+  .ps-reset {
+    width: 100%; min-height: 40px; margin-top: 8px;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
+    color: var(--text-secondary); font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+
+  /* Прозорий результат (П-12): видно, з чого склалась цифра, а не лише саму цифру.
+     Перемикач $/₴ — поруч із підсумком, там, де на нього дивляться. */
+  .ps-result {
     margin-top: 14px; background: var(--bg);
     border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px;
   }
@@ -750,11 +844,15 @@
     font-size: 13px; color: var(--text-secondary); padding: 3px 0;
   }
   .ps-total-sum {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
     font-size: 13.5px; font-weight: 600; color: var(--text);
   }
-  .ps-total-sum b { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ps-result .ps-total-line + .ps-total-sum {
+    margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border);
+  }
+  .ps-sum-right { display: flex; align-items: center; gap: 10px; }
+  .ps-total-sum b { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ps-seg-cur button { min-width: 36px; min-height: 32px; font-size: 13px; }
 
   /* Поділитись — тут, під щойно порахованою ціною, а не окремою вкладкою. */
   .ps-share { margin-top: 14px; }
@@ -777,7 +875,14 @@
     font-family: inherit; font-size: 13px; line-height: 1.5; color: var(--text-secondary);
   }
 
-  .ps-stock-wrap { font-size: 13.5px; }
+  /* Наявність розкривається тут же, під ціною — не окремим повноекранним листом
+     (той закривав панель і прибирав меню). «Повна інформація» всередині відкриває
+     готовий екран stock.js поверх панелі. */
+  .ps-stock-wrap {
+    font-size: 13.5px; margin-top: 10px; padding: 10px 12px;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 11px;
+    max-height: 42vh; overflow-y: auto;
+  }
   .ps-loading, .ps-empty {
     margin-top: 18px; font-size: 13px; color: var(--text-secondary); text-align: center; padding: 10px 0;
   }
@@ -1035,24 +1140,12 @@
     align-items: flex-start;
     gap: 10px;
   }
-  /* Тап по назві → картка товару на сайті (див. applySiteLinks). Клас вішається лише
-     рядкам, для яких картка є; решта рядків — звичайний текст. Значок ↗ після назви —
-     маска з inline-SVG (Lucide arrow-up-right), щоб не плодити розмітку в кожному рядку. */
-  /* Клікабельний ЛИШЕ текст маркування, а не весь блок: .row-info має flex:1 і
-     розтягується на всю вільну ширину, тому дотик по порожньому місцю рядка потрапляв
-     у нього й вів на сайт замість панелі товару (знайдено власником 2026-10-09). */
-  .row-name.has-site-link { cursor: pointer; display: inline; }
-  .row-name.has-site-link:active { opacity: 0.6; }
-  .row-name.has-site-link::after {
-    content: '';
-    display: inline-block;
-    width: 11px; height: 11px;
-    margin-left: 5px;
-    vertical-align: -1px;
-    background-color: var(--text-secondary);
-    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E") center / contain no-repeat;
-            mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E") center / contain no-repeat;
-  }
+  /* До 2026-10-09 тап по назві вів на картку сайту, і назва була підкреслено
+     клікабельною (значок ↗). Тепер у рядка ОДНА дія: назва, ціна й порожнє місце
+     однаково відкривають панель товару, а перехід на сайт живе в панелі кнопкою
+     «На сайт ↗» (рішення власника). Тому власного вигляду в назви більше немає.
+     Клас .has-site-link лишається — applySiteLinks() ним же позначає рядки, для яких
+     картка на сайті існує. */
   /* Форма калькулятора виводиться нижче row-top, притиснута праворуч — під ціною товару */
   .calc-panel-slot {
     display: flex;
@@ -1106,16 +1199,22 @@
     justify-content: center;
   }
   .info-sheet-overlay.show { display: flex; }
+  .info-sheet-overlay.sheet-tall .info-sheet-panel { max-height: 96vh; border-radius: 14px 14px 0 0; }
   .info-sheet-backdrop {
     position: absolute;
     inset: 0;
     background: rgba(42, 39, 37, 0.46);
   }
+  /* Лист розкривається ВИЩЕ, коли в ньому починають прокручувати (прохання власника
+     2026-10-09): видно більше інформації, і це стосується всіх листів цього меню, не
+     лише панелі товару. Клас 'sheet-tall' на overlay ставить обробник прокрутки в
+     js/13-start.js; він же знімає його, коли прокрутили назад догори. */
   .info-sheet-panel {
     position: relative;
     width: 100%;
     max-width: 420px;
     max-height: 78vh;
+    transition: max-height .24s ease, height .24s ease;
     display: flex;
     flex-direction: column;
     background: var(--card);
@@ -3374,18 +3473,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-09.9"></script>
-<script src="js/02-price-parse.js?v=2026-10-09.9"></script>
-<script src="js/03-diagnostics.js?v=2026-10-09.9"></script>
-<script src="js/04-catalog.js?v=2026-10-09.9"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-09.9"></script>
-<script src="js/06-cart-promo.js?v=2026-10-09.9"></script>
-<script src="js/07-access-info.js?v=2026-10-09.9"></script>
-<script src="js/08-info-tables.js?v=2026-10-09.9"></script>
-<script src="js/09-cabinet.js?v=2026-10-09.9"></script>
-<script src="js/10-crmontage.js?v=2026-10-09.9"></script>
-<script src="js/11-shell.js?v=2026-10-09.9"></script>
-<script src="js/12-product-sheet.js?v=2026-10-09.9"></script>
-<script src="js/13-start.js?v=2026-10-09.9"></script>
+<script src="js/01-config.js?v=2026-10-09.12"></script>
+<script src="js/02-price-parse.js?v=2026-10-09.12"></script>
+<script src="js/03-diagnostics.js?v=2026-10-09.12"></script>
+<script src="js/04-catalog.js?v=2026-10-09.12"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-09.12"></script>
+<script src="js/06-cart-promo.js?v=2026-10-09.12"></script>
+<script src="js/07-access-info.js?v=2026-10-09.12"></script>
+<script src="js/08-info-tables.js?v=2026-10-09.12"></script>
+<script src="js/09-cabinet.js?v=2026-10-09.12"></script>
+<script src="js/10-crmontage.js?v=2026-10-09.12"></script>
+<script src="js/11-shell.js?v=2026-10-09.12"></script>
+<script src="js/12-product-sheet.js?v=2026-10-09.12"></script>
+<script src="js/13-start.js?v=2026-10-09.12"></script>
 </body>
 </html>

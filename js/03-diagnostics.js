@@ -271,7 +271,7 @@ async function diagCheckSiteLinks(ctx) {
   const area = DIAG_AREA.links;
   const d = await loadSiteLinks();
   if (!d || !d.links) {
-    out.issues.push(diagIssue(area, 'table', 'error', 'Файл посилань на сайт (data/site-links.json) не завантажився — тап по назві товару нікуди не веде',
+    out.issues.push(diagIssue(area, 'table', 'error', 'Файл посилань на сайт (data/site-links.json) не завантажився — у панелі товару немає кнопки «На сайт»',
       ['Перевірте, що файл залитий у папку data/ репозиторію і відкривається за адресою застосунку.'], { tab: 'catalog' }));
     out.checked.push({ area: area, sub: 'table', label: 'Файл посилань на сайт', detail: 'не завантажився' });
     return out;
@@ -516,6 +516,40 @@ async function diagCheckSpecs(ctx) {
         label + ': позицій із карткою на сайті, але без характеристик — ' + missing.length,
         missing.concat(['Картка на сайті є, а характеристик для неї не зібрано: або картка нова, або маркування в прайсі змінилось.', FIX]),
         { app: { tile: key.split('_')[0], brand: key.split('_')[1] } }));
+    }
+  }
+
+  /* Фото карток (data/card-images.json, з 2026-10-09 — фото зверху характеристик).
+     Те саме зовнішнє джерело й та сама тиха пастка: на сайті перейменували картинку
+     або з'явилась нова картка — файл лишився старим, і панель показує характеристики
+     без фото, нічого про це не сказавши. */
+  const FIX_IMG = 'Перезібрати: python claude/site-catalog/build_card_images.py';
+  let ci = null;
+  try { ci = await loadCardImages(); } catch (e) { ci = null; }
+  if (!ci || !ci.images || !Object.keys(ci.images).length) {
+    out.issues.push(diagIssue(area, 'photos', 'error',
+      'Файл фото карток (data/card-images.json) не завантажився',
+      ['Панель товару показуватиме характеристики без фото з сайту.', FIX_IMG], null));
+  } else {
+    let total = 0;
+    const noPhoto = [];
+    for (const key of Object.keys(SPECS_FILES)) {
+      const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
+      const map = links.links[key] || {};
+      items.forEach(it => {
+        const slug = map[siteLinkKey(it)];
+        if (!slug || slug.indexOf('index.php') === 0) return;
+        total++;
+        if (!ci.images[slug]) noPhoto.push((DIAG_SUB_LABELS[key] || key) + ': ' + it.model);
+      });
+    }
+    out.checked.push({ area: area, sub: 'photos', label: 'Фото карток товару з сайту',
+      detail: (total - noPhoto.length) + ' з ' + total + ' позицій із карткою мають фото' });
+    if (noPhoto.length) {
+      out.issues.push(diagIssue(area, 'photos', 'warning',
+        'Позицій із карткою на сайті, але без фото — ' + noPhoto.length,
+        noPhoto.concat(['Фото беремо з картки сайту; якщо його немає — картка нова або картинку на сайті перейменували.', FIX_IMG]),
+        null));
     }
   }
   return out;

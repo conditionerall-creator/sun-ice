@@ -498,6 +498,10 @@
     const el = ensureSheet();
     renderSheet();
     el.querySelector('#stock-sheet-body').scrollTop = 0;
+    /* Листи цього меню розкриваються вище, коли в них прокручують (клас 'sheet-tall',
+       обробник у js/13-start.js). Це вікно створюється динамічно, тому спостерігач
+       index.html його не бачить — скидаємо розмір тут, при кожному відкритті. */
+    el.classList.remove('sheet-tall');
     if (!el.classList.contains('show')) {
       el.classList.add('show');
       pushLayer({ type: 'sheet', close: function () { el.classList.remove('show'); }, alive: function () { return el.classList.contains('show'); } });
@@ -512,7 +516,12 @@
     const more = t.closest('.stock-more');
     if (more) {
       e.preventDefault(); e.stopPropagation();
-      const row = more.closest('.row'), slot = row && row.querySelector('.stock-slot'), parts = slot && partsOf(slot);
+      const row = more.closest('.row'), slot = row && row.querySelector('.stock-slot');
+      /* Другий шлях — панель товару: у ній рядка прайсу (.row) немає, і до 2026-10-09
+         кнопка «Повна інформація» там мовчки нічого не робила (знайдено власником).
+         Дані лежать на обгортці .ps-stock-wrap у тому самому data-stock-parts. */
+      const host = slot || more.closest('[data-stock-parts]');
+      const parts = host && partsOf(host);
       if (parts) openSheet(parts);
       return;
     }
