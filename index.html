@@ -1697,10 +1697,33 @@
   }
   .cart-toast.show { opacity: 1; transform: translateY(0); }
 
+  /* Кнопка підбірки (П-11, 2026-10-09): ЛІВИЙ край екрана, по середині висоти.
+     Була «шторкою» під шапкою по центру — власник: «не зовсім помітна». Тут вона й
+     помітна одразу, і не заважає ні навігації внизу, ні шапці.
+     left рахується від краю САМОГО ЗАСТОСУНКУ, а не вікна: .app має max-width 480px і
+     стоїть по центру, тож на комп'ютері «left: 0» відірвало б кнопку від колонки
+     застосунку на півекрана. max() дає 0 на телефоні й лівий край колонки на широкому
+     екрані. z-index нижчий за листи (2500) — панель товару має її перекривати. */
   .cart-fab {
     display: none;
+    position: fixed;
+    left: 0;
+    left: max(0px, calc(50% - 240px));
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1200;
+    flex-direction: column;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    gap: 2px;
+    /* Ширина 30px — не «на око»: текст маркування в рядку прайсу починається рівно за
+       30px від краю колонки (рядок має margin 12 + padding 14 + рамку). На 40px кнопка
+       з'їдала першу літеру артикула («SRK25…» читалось як «RK25…») — побачено на знімку
+       в режимі телефона 375px. Дилер читає маркування позначка за позначкою, тому
+       схована перша літера — це не косметика, а шлях до помилкового замовлення.
+       Висота 64px компенсує вузькість: зона натискання лишається великою. */
+    width: 30px;
+    min-height: 64px;
     border: none;
     /* Був гарячий оранжево-рожевий градієнт — у теплій приглушеній палітрі
        дизайн-системи він виглядав чужим, тому просто акцентний ember. */
@@ -1708,15 +1731,16 @@
     color: #fff;
     font-size: 13px;
     font-weight: 700;
-    padding: 7px 14px 9px;
-    border-radius: 0 0 14px 14px;
+    padding: 10px 5px;
+    border-radius: 0 14px 14px 0;
     cursor: pointer;
-    box-shadow: 0 6px 14px -3px rgba(200, 90, 28, 0.5);
+    box-shadow: 3px 4px 14px -3px rgba(200, 90, 28, 0.55);
   }
+  .cart-fab:active { transform: translateY(-50%) scale(.96); }
   .cart-fab-badge {
-    min-width: 18px; height: 18px;
-    padding: 0 5px;
-    border-radius: 9px;
+    min-width: 16px; height: 16px;
+    padding: 0 3px;
+    border-radius: 8px;
     background: rgba(255,255,255,0.3);
     color: #fff;
     font-size: 11px;
@@ -2885,7 +2909,7 @@
   .nav-btn .nav-icon .ic { vertical-align: 0; }
   .cart-check-btn .cart-check-icon { display: flex; }
   .cart-check-btn .cart-check-icon .ic { width: 14px; height: 14px; vertical-align: 0; stroke-width: 2.4; }
-  .cart-fab .ic { width: 16px; height: 16px; vertical-align: -0.22em; }
+  .cart-fab .ic { width: 17px; height: 17px; vertical-align: 0; }
 
   /* ГОЛОВНА ВКЛАДКА НИЖНЬОГО МЕНЮ ("Каталог") — за макетом BottomNav дизайн-системи.
      Каталог — єдиний екран, де дилер проводить увесь час, тому в макеті він виділений:
@@ -3049,16 +3073,20 @@
       <div class="status-text" id="status-text"></div>
     </div>
     <div id="error-block"></div>
-    <!-- "Підбірка" (кошик): ручка + підказка підв'язані до шапки (position: sticky) і
-         центровані по горизонталі — так ручка лягає в проміжок між кнопками MHI/GAL, а не
-         повністю на одну з них, і не заважає навігації. -->
+    <!-- Підказка «додано в підбірку» лишається підв'язаною до шапки й центрованою.
+         САМА кнопка підбірки переїхала ЗВІДСИ до лівого краю екрана (П-11) — див.
+         нижче, одразу за </header>. -->
     <div class="cart-hud" id="cart-hud">
-      <button type="button" class="cart-fab" id="cart-fab" style="display:none;" aria-label="Відкрити підбірку">
-        <svg class="ic" data-fb="🧾" aria-hidden="true"><use href="#ic-receipt"></use></svg><span class="cart-fab-badge" id="cart-fab-badge">0</span>
-      </button>
       <div class="cart-toast" id="cart-toast"></div>
     </div>
   </header>
+  <!-- Кнопка підбірки (П-11, 2026-10-09). Стоїть ТУТ, поза <header> і поза .cart-hud, і це
+       обов'язково: у шапки є backdrop-filter, а в .cart-hud — transform, і кожне з них
+       робить себе точкою відліку для position:fixed усередині. Усередині них кнопка
+       притискалась би до краю шапки, а не екрана. -->
+  <button type="button" class="cart-fab" id="cart-fab" style="display:none;" aria-label="Відкрити підбірку">
+    <svg class="ic" data-fb="🧾" aria-hidden="true"><use href="#ic-receipt"></use></svg><span class="cart-fab-badge" id="cart-fab-badge">0</span>
+  </button>
   <main id="main">
     <div class="empty">Завантаження...</div>
   </main>
@@ -3473,18 +3501,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-09.13"></script>
-<script src="js/02-price-parse.js?v=2026-10-09.13"></script>
-<script src="js/03-diagnostics.js?v=2026-10-09.13"></script>
-<script src="js/04-catalog.js?v=2026-10-09.13"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-09.13"></script>
-<script src="js/06-cart-promo.js?v=2026-10-09.13"></script>
-<script src="js/07-access-info.js?v=2026-10-09.13"></script>
-<script src="js/08-info-tables.js?v=2026-10-09.13"></script>
-<script src="js/09-cabinet.js?v=2026-10-09.13"></script>
-<script src="js/10-crmontage.js?v=2026-10-09.13"></script>
-<script src="js/11-shell.js?v=2026-10-09.13"></script>
-<script src="js/12-product-sheet.js?v=2026-10-09.13"></script>
-<script src="js/13-start.js?v=2026-10-09.13"></script>
+<script src="js/01-config.js?v=2026-10-09.15"></script>
+<script src="js/02-price-parse.js?v=2026-10-09.15"></script>
+<script src="js/03-diagnostics.js?v=2026-10-09.15"></script>
+<script src="js/04-catalog.js?v=2026-10-09.15"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-09.15"></script>
+<script src="js/06-cart-promo.js?v=2026-10-09.15"></script>
+<script src="js/07-access-info.js?v=2026-10-09.15"></script>
+<script src="js/08-info-tables.js?v=2026-10-09.15"></script>
+<script src="js/09-cabinet.js?v=2026-10-09.15"></script>
+<script src="js/10-crmontage.js?v=2026-10-09.15"></script>
+<script src="js/11-shell.js?v=2026-10-09.15"></script>
+<script src="js/12-product-sheet.js?v=2026-10-09.15"></script>
+<script src="js/13-start.js?v=2026-10-09.15"></script>
 </body>
 </html>
