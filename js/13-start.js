@@ -698,6 +698,11 @@ if ('serviceWorker' in navigator) {
    Спостерігач, а не виклик у кожному рендері: плитки малюються в 44 місцях трьох
    файлів, і будь-яке нове місце інакше довелось би не забути. childList без attributes —
    щоб проставляння самих атрибутів не викликало спостерігача повторно. */
+markTilesAccessible(document);
+new MutationObserver(function () {
+  markTilesAccessible(document.getElementById('main'));
+}).observe(document.getElementById('main'), { childList: true, subtree: true });
+
 /* Панель товару: закриття й дії всередині. Усе, що раніше жило кнопками в рядку прайсу
    (розрахунок, «поділитися», наявність), працює ТУТ — у рядку лишилась тільки «Додати». */
 document.getElementById('product-sheet-close').addEventListener('click', closeProductSheet);
