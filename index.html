@@ -760,8 +760,20 @@
     cursor: pointer;
   }
   .header-search .ic { width: 19px; height: 19px; vertical-align: 0; flex-shrink: 0; }
-  .header-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .header-search:active { transform: scale(.995); }
+  .header-search input {
+    flex: 1 1 auto; min-width: 0; border: none; background: none; outline: none;
+    /* 16px обов'язково: з меншим шрифтом Safari на iPhone збільшує всю сторінку при
+       фокусі, і людина лишається на «зумленому» екрані. */
+    font-size: 16px; font-family: inherit; color: var(--text);
+  }
+  .header-search input::placeholder { color: var(--text-secondary); }
+  .header-search input::-webkit-search-cancel-button { display: none; }
+  .header-search-clear {
+    flex-shrink: 0; width: 26px; height: 26px; padding: 0;
+    border: none; border-radius: 50%; background: var(--bg);
+    color: var(--text-secondary); font-size: 13px; cursor: pointer;
+  }
+  .header-search:focus-within { border-color: var(--accent); }
 
   /* ---------- Перемикач оформлення (2026-10-12) ---------- */
   /* Перемикач оформлення: НАГОРІ екрана, компактний, праворуч. Картки-рядка на всю
@@ -843,20 +855,6 @@
   }
 
   /* ---------- Загальний пошук по каталогу (П-8) ---------- */
-  /* Поле — окремим блоком між шапкою листа й результатами, щоб воно лишалось на місці,
-     поки результати прокручуються. */
-  .gsearch-field { padding: 12px 16px 0; flex-shrink: 0; }
-  .gsearch-field input {
-    width: 100%; min-height: 46px; padding: 0 14px;
-    border: 1px solid var(--border); border-radius: 11px; background: var(--card);
-    font-size: 16px; font-family: inherit; color: var(--text);
-  }
-  /* 16px у полі — не випадковість: на iPhone поле з меншим шрифтом змушує Safari
-     збільшити всю сторінку при фокусі, і людина лишається на «зумленому» екрані. */
-  .gsearch-field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  /* .info-sheet-body успадковує white-space: pre-wrap (треба для звичайних текстових
-     листів) — тут він рвав би розмітку результатів. */
-  .gsearch-body { white-space: normal; padding-top: 10px; }
   .gsearch-hint {
     font-size: 13px; line-height: 1.5; color: var(--text-secondary);
     text-align: center; padding: 18px 6px;
@@ -3164,11 +3162,9 @@
      Якщо колись захочеться повернути великий знак — дивитись історію цього блоку в git:
      там описано, чому текст поверх нього взагалі читався. */
   header.home-logo { padding-bottom: 8px; }
-  header.home-logo .header-logo-band {
-    justify-content: flex-start;
-    height: 30px;
-  }
-  header.home-logo .header-logo-band img { height: 100%; width: auto; }
+  /* Знак на головній — ТАКА САМА підложка, як у розділі (рішення власника 2026-10-12):
+     широка й напівпрозора. Спільні правила — нижче (header.tab-catalog). До того тут був
+     маленький непрозорий знак ліворуч, і головна відрізнялась від розділу. */
   header.home-logo .rate-row { margin-top: 6px; }
   /* Заголовка текстом на головній немає — логотип і є заголовком. */
   header.home-logo .header-top h1 { display: none; }
@@ -3229,14 +3225,15 @@
      одразу в каталозі, коли switchTab не викликається). Без цієї прив'язки селектор
      header:not(.home-logo) чіпляв УСІ внутрішні екрани, і знак виліз у Кабінеті, Інфо
      та CRМонтажі (знайдено власником 2026-10-12). */
-  header.tab-catalog:not(.home-logo) .header-logo-band {
+  header.tab-catalog .header-logo-band {
+    position: absolute;
     left: 0; right: 0; top: 0;
     bottom: auto;
     display: block;
     height: auto;
     opacity: .28;
   }
-  header.tab-catalog:not(.home-logo) .header-logo-band img { width: 100%; height: auto; }
+  header.tab-catalog .header-logo-band img { width: 100%; height: auto; }
 
   header > * { position: relative; z-index: 1; }
 
@@ -3418,10 +3415,17 @@
     <!-- Рядок швидкого пошуку (П-7 + П-8). Видимий лише на вкладці «Каталог» — і на
          головній, і всередині розділів: шукати маркування потрібно саме там, де гортають
          прайс. Показ вмикають switchTab() та initCatalog(). -->
-    <button type="button" class="header-search" id="header-search" style="display:none;">
+    <!-- СПРАВЖНЄ поле, а не кнопка (рішення власника 2026-10-12): шукаємо просто тут,
+         у шапці, і вона лишається на місці при прокрутці (header — position: sticky).
+         До того дотик відкривав спливаючий лист, і власник слушно назвав це «плаває по
+         екрану». Результати малюються в тіло сторінки, а не поверх неї. -->
+    <div class="header-search" id="header-search" style="display:none;">
       <svg class="ic" data-fb="🔍" aria-hidden="true"><use href="#ic-search"></use></svg>
-      <span>Модель або артикул</span>
-    </button>
+      <input type="search" id="header-search-input" placeholder="Модель або артикул"
+             autocomplete="off" enterkeyhint="search" aria-label="Пошук за маркуванням">
+      <button type="button" class="header-search-clear" id="header-search-clear"
+              aria-label="Очистити пошук" hidden>✕</button>
+    </div>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
     </div>
@@ -3483,22 +3487,6 @@
       <button type="button" class="info-sheet-close" id="product-sheet-close" aria-label="Закрити">✕</button>
     </div>
     <div class="info-sheet-body" id="product-sheet-body"></div>
-  </div>
-</div>
-
-<!-- Загальний пошук по каталогу (П-8). Той самий info-sheet-патерн, що й решта листів,
-     тому розкриття прокруткою, «Назад» і закриття працюють без окремого коду. -->
-<div class="info-sheet-overlay" id="global-search-overlay">
-  <div class="info-sheet-backdrop" id="global-search-backdrop"></div>
-  <div class="info-sheet-panel">
-    <div class="info-sheet-header">
-      <div class="info-sheet-title">Пошук за маркуванням</div>
-      <button type="button" class="info-sheet-close" id="global-search-close" aria-label="Закрити">✕</button>
-    </div>
-    <div class="gsearch-field">
-      <input type="search" id="global-search-input" placeholder="Напр. SRK71" autocomplete="off" enterkeyhint="search" aria-label="Пошук за маркуванням">
-    </div>
-    <div class="info-sheet-body gsearch-body" id="global-search-results"></div>
   </div>
 </div>
 
@@ -3870,18 +3858,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-12.19"></script>
-<script src="js/02-price-parse.js?v=2026-10-12.19"></script>
-<script src="js/03-diagnostics.js?v=2026-10-12.19"></script>
-<script src="js/04-catalog.js?v=2026-10-12.19"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-12.19"></script>
-<script src="js/06-cart-promo.js?v=2026-10-12.19"></script>
-<script src="js/07-access-info.js?v=2026-10-12.19"></script>
-<script src="js/08-info-tables.js?v=2026-10-12.19"></script>
-<script src="js/09-cabinet.js?v=2026-10-12.19"></script>
-<script src="js/10-crmontage.js?v=2026-10-12.19"></script>
-<script src="js/11-shell.js?v=2026-10-12.19"></script>
-<script src="js/12-product-sheet.js?v=2026-10-12.19"></script>
-<script src="js/13-start.js?v=2026-10-12.19"></script>
+<script src="js/01-config.js?v=2026-10-12.22"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.22"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.22"></script>
+<script src="js/04-catalog.js?v=2026-10-12.22"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.22"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.22"></script>
+<script src="js/07-access-info.js?v=2026-10-12.22"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.22"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.22"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.22"></script>
+<script src="js/11-shell.js?v=2026-10-12.22"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.22"></script>
+<script src="js/13-start.js?v=2026-10-12.22"></script>
 </body>
 </html>

@@ -266,6 +266,8 @@ function renderCatalogView() {
   /* Страхування: при старті одразу в каталозі switchTab() не викликається взагалі,
      а саме він ставить .tab-catalog (від якого залежить знак-підложка в шапці). */
   document.querySelector('header').classList.add('tab-catalog');
+  /* Поки в полі шапки щось є — замість каталогу показуємо результати пошуку. */
+  if (catalogSearchQuery.trim()) { renderGlobalSearchResults(catalogSearchQuery); return; }
 
   if (activeTile === null) {
     backBtn.style.display = 'none';
@@ -1122,7 +1124,7 @@ const GLOBAL_SEARCH_TILES = CATALOG_TILES
 const GLOBAL_SEARCH_MIN = 3;    // менше — забагато сміття і зайва робота на кожну літеру
 const GLOBAL_SEARCH_MAX = 30;   // більше за один екран усе одно ніхто не переглядає
 let globalSearchHits = [];      // останній результат: з нього бере дані обробник кліку
-let globalSearchPushed = false; // лист має свій запис в історії — закривати через history.back()
+let catalogSearchQuery = '';    // непорожній — замість каталогу показуємо результати пошуку
 
 /* Ранжування: 0 — точний збіг, 1 — маркування починається з запиту, 2 — запит десь
    усередині (менша позиція символу й коротше маркування — точніше). Позицію збігу
@@ -1162,8 +1164,11 @@ function computeGlobalSearchResults(query) {
   return hits;
 }
 
+/* Результати малюються В ТІЛО СТОРІНКИ (#main), а не поверх неї: поле лишається в
+   шапці, шапка липка, тому під час перегляду результатів видно, що саме шукали, і можна
+   дописати літеру, не закриваючи нічого. */
 function renderGlobalSearchResults(query) {
-  const container = document.getElementById('global-search-results');
+  const container = document.getElementById('main');
   if (!container) return;
   /* Прайс вантажиться окремо від оболонки: без цієї перевірки пошук мовчки нічого не
      знаходив би, і це виглядало б як «нема такого товару». */
@@ -1227,7 +1232,10 @@ function revealFoundRow(model) {
 
 function goToGlobalSearchHit(hit) {
   if (!hit) return;
-  closeGlobalSearch();
+  /* Поле спорожнюємо ПОВНІСТЮ: людина знайшла, що шукала, і далі дивиться розділ.
+     Залишений у полі запит суперечив би тому, що на екрані (видно розділ, а не
+     результати), і хрестик «очистити» при цьому вже схований. */
+  clearCatalogSearch(false);
   if (currentTab !== 'catalog') switchTab('catalog', false);
   catalogRowsSkipStagger = true;   // стрибати до рядка, що саме «виїжджає», ні до чого
   activeTile = hit.tileId;
@@ -1237,30 +1245,23 @@ function goToGlobalSearchHit(hit) {
   revealFoundRow(hit.item.model);
 }
 
-function openGlobalSearch() {
-  const ov = document.getElementById('global-search-overlay');
-  if (!ov) return;
-  const input = document.getElementById('global-search-input');
-  input.value = '';               // завжди чистий пошук: залишений запит збивав би з пантелику
-  renderGlobalSearchResults('');
-  ov.classList.add('show');
-  /* Свій запис в історії — щоб «Назад» закривав лист, а не вистрибував із розділу, і щоб
-     закриття хрестиком не лишало в історії сміття (та сама пастка, що з панеллю товару:
-     саме через неї «Назад» відмотувався по півекрана за раз). */
-  history.pushState({ tab: currentTab, tile: activeTile, sheet: 'search' }, '', location.hash);
-  globalSearchPushed = true;
-  /* Тут фокус СТАВИМО свідомо (на відміну від панелі товару, де клавіатура заважала б):
-     людина натиснула лупу — вона прийшла друкувати. */
-  setTimeout(function () { input.focus(); }, 60);
+/* Ввід у полі шапки. Порожній запит повертає звичайний каталог. */
+function onCatalogSearchInput(value) {
+  catalogSearchQuery = value || '';
+  const clear = document.getElementById('header-search-clear');
+  if (clear) clear.hidden = !catalogSearchQuery;
+  if (!catalogSearchQuery.trim()) { renderCatalogView(); return; }
+  renderGlobalSearchResults(catalogSearchQuery);
 }
 
-function dismissGlobalSearch() {
-  if (globalSearchPushed) { history.back(); return; }
-  closeGlobalSearch();
+/* Очистити пошук. keepValue=false — ще й спорожнити саме поле (хрестик, Escape);
+   true — лише вийти з режиму результатів, коли вже переходимо на знайдений товар. */
+function clearCatalogSearch(keepValue) {
+  catalogSearchQuery = '';
+  const input = document.getElementById('header-search-input');
+  if (input && !keepValue) input.value = '';
+  const clear = document.getElementById('header-search-clear');
+  if (clear) clear.hidden = true;
 }
 
-function closeGlobalSearch() {
-  const ov = document.getElementById('global-search-overlay');
-  if (ov) ov.classList.remove('show');
-  globalSearchPushed = false;
-}
+

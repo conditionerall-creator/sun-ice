@@ -392,10 +392,11 @@ window.addEventListener('popstate', function(event) {
     closeProductSheet();
     return;
   }
-  /* Те саме для листа пошуку: «Назад» на телефоні має закривати його, а не вистрибувати
-     з каталогу з відкритим листом поверх. */
-  if (document.getElementById('global-search-overlay').classList.contains('show')) {
-    closeGlobalSearch();
+  /* «Назад» у режимі пошуку спершу повертає звичайний каталог, а не вистрибує з розділу. */
+  if (catalogSearchQuery.trim()) {
+    clearCatalogSearch(false);
+    renderCatalogView();
+    history.pushState({ tab: currentTab, tile: activeTile }, '', location.hash);
     return;
   }
   const state = event.state;
@@ -716,9 +717,30 @@ new MutationObserver(function () {
   markTilesAccessible(document.getElementById('main'));
 }).observe(document.getElementById('main'), { childList: true, subtree: true });
 
-/* Загальний пошук по каталогу (П-8). Лупа в шапці → лист із полем і результатами;
-   клік по результату веде В РОЗДІЛ НА САМ РЯДОК (goToGlobalSearchHit → revealFoundRow),
-   а не на початок групи — саме через це минулу версію пошуку власник і видалив. */
+/* Пошук по каталогу. Поле живе в шапці й нікуди не спливає: шапка липка, тому під час
+   перегляду результатів видно, що саме шукали. Клік по результату веде В РОЗДІЛ НА САМ
+   РЯДОК (goToGlobalSearchHit -> revealFoundRow) — саме через відсутність цього минулу
+   версію пошуку власник і видалив. */
+document.getElementById('header-search-input').addEventListener('input', function (e) {
+  onCatalogSearchInput(e.target.value);
+});
+document.getElementById('header-search-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { clearCatalogSearch(false); renderCatalogView(); return; }
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  e.target.blur();   // ховаємо клавіатуру, результати лишаються перед очима
+  if (globalSearchHits.length === 1) goToGlobalSearchHit(globalSearchHits[0]);
+});
+document.getElementById('header-search-clear').addEventListener('click', function () {
+  clearCatalogSearch(false);
+  renderCatalogView();
+  document.getElementById('header-search-input').focus();
+});
+document.getElementById('main').addEventListener('click', function (e) {
+  const hit = e.target.closest('[data-hit-idx]');
+  if (hit) goToGlobalSearchHit(globalSearchHits[Number(hit.getAttribute('data-hit-idx'))]);
+});
+
 /* Перемикач оформлення. Нічого не перемальовує й не перезавантажує: міняється лише
    атрибут на <html>, а далі все роблять CSS-змінні. Тому введені числа, обрана валюта,
    прокрутка, підбірка й форма входу лишаються на місці — як і вимагає дизайн-схема.
@@ -754,26 +776,6 @@ document.getElementById('main').addEventListener('click', function (e) {
    повернення, а натискаємо наявну кнопку: вона єдина знає про історію й анімації. */
 document.getElementById('title').addEventListener('click', function (e) {
   if (e.target.closest('[data-crumb-root]')) document.getElementById('back-btn').click();
-});
-
-/* Рядок пошуку в шапці — справжній <button>, тож клавіатура працює сама. */
-document.getElementById('header-search').addEventListener('click', openGlobalSearch);
-document.getElementById('global-search-close').addEventListener('click', dismissGlobalSearch);
-document.getElementById('global-search-backdrop').addEventListener('click', dismissGlobalSearch);
-document.getElementById('global-search-input').addEventListener('input', function (e) {
-  renderGlobalSearchResults(e.target.value);
-});
-/* Enter на телефоні ховає клавіатуру й лишає результати перед очима; якщо знайдено
-   рівно одне — одразу ведемо туди, це найчастіший випадок точного маркування. */
-document.getElementById('global-search-input').addEventListener('keydown', function (e) {
-  if (e.key !== 'Enter') return;
-  e.preventDefault();
-  e.target.blur();
-  if (globalSearchHits.length === 1) goToGlobalSearchHit(globalSearchHits[0]);
-});
-document.getElementById('global-search-results').addEventListener('click', function (e) {
-  const hit = e.target.closest('[data-hit-idx]');
-  if (hit) goToGlobalSearchHit(globalSearchHits[Number(hit.getAttribute('data-hit-idx'))]);
 });
 
 /* Панель товару: закриття й дії всередині. Усе, що раніше жило кнопками в рядку прайсу
