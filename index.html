@@ -135,6 +135,11 @@
     --text: var(--on-chrome);
     --text-secondary: var(--on-chrome-muted);
     --card: var(--chrome-field-bg);
+    /* --bg теж обов'язково: п'ять елементів у шапці (кнопка «назад», іконки, поля курсу
+       й кнопки збереження) беруть фон саме з нього. Без цієї підміни вони лишались
+       молочними, а їхні іконки ставали світлими — виходив суцільний білий блок замість
+       стрілки «назад» (знайдено власником 2026-10-12). */
+    --bg: var(--chrome-field-bg);
     --border: var(--chrome-field-border);
     --accent: var(--accent-on-chrome);
   }
@@ -3201,14 +3206,23 @@
      знову отримує всю ширину, як було до появи логотипа.
      Саме нижній правий кут, а не верхній: угорі справа живуть ↻ та кнопки EZY/Q-TON.
      Унизу справа — порожнє місце поряд із коротким рядком «Прайс від …». */
+  /* ЗНАК У ШАПЦІ РОЗДІЛУ (2026-10-12, за скріном власника): широкий напівпрозорий
+     логотип угорі, поверх нього — крихти й пошук.
+     Чому тільки в РОЗДІЛАХ, а не на головній: на головній під шапкою стоять курси, і
+     саме через знак-підложку вони свого часу читались погано — цим і був викликаний
+     П-7. У розділі курсів немає, на знак лягає лише один рядок крихт, тому він не
+     заважає. Прозорість 0.28 підібрана так, щоб текст лишався контрастним; якщо знак
+     колись перемалюють — перевіряти саме цю цифру.
+     pointer-events: none успадковано від .header-logo-band — знак не перехоплює дотики. */
   header:not(.home-logo) .header-logo-band {
     position: absolute;
-    right: 16px;
-    bottom: 12px;
-    height: 19px;
-    z-index: 0; /* якщо на якомусь екрані текст усе ж дотягнеться сюди — він буде зверху */
+    left: 0; right: 0; top: 0;
+    display: block;
+    height: auto;
+    opacity: .28;
+    z-index: 0;
   }
-  header:not(.home-logo) .header-logo-band img { height: 100%; }
+  header:not(.home-logo) .header-logo-band img { width: 100%; height: auto; }
 
   header > * { position: relative; z-index: 1; }
 
@@ -3842,18 +3856,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-12.17"></script>
-<script src="js/02-price-parse.js?v=2026-10-12.17"></script>
-<script src="js/03-diagnostics.js?v=2026-10-12.17"></script>
-<script src="js/04-catalog.js?v=2026-10-12.17"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-12.17"></script>
-<script src="js/06-cart-promo.js?v=2026-10-12.17"></script>
-<script src="js/07-access-info.js?v=2026-10-12.17"></script>
-<script src="js/08-info-tables.js?v=2026-10-12.17"></script>
-<script src="js/09-cabinet.js?v=2026-10-12.17"></script>
-<script src="js/10-crmontage.js?v=2026-10-12.17"></script>
-<script src="js/11-shell.js?v=2026-10-12.17"></script>
-<script src="js/12-product-sheet.js?v=2026-10-12.17"></script>
-<script src="js/13-start.js?v=2026-10-12.17"></script>
+<script src="js/01-config.js?v=2026-10-12.18"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.18"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.18"></script>
+<script src="js/04-catalog.js?v=2026-10-12.18"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.18"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.18"></script>
+<script src="js/07-access-info.js?v=2026-10-12.18"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.18"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.18"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.18"></script>
+<script src="js/11-shell.js?v=2026-10-12.18"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.18"></script>
+<script src="js/13-start.js?v=2026-10-12.18"></script>
 </body>
 </html>
