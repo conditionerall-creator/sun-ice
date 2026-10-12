@@ -667,6 +667,28 @@ function pluralUa(n, one, few, many) {
   if (n10 >= 2 && n10 <= 4) return few;
   return many;
 }
+/* РЯДОК СТАНУ під картками (прохання власника 2026-10-12): коли обидва блоки згорнуті,
+   екран порожній, і сам по собі він нічого не підказує. Тут текстом сказано, що саме
+   зробити: «нова заявка — перевірте меню Заявки». Лічильник на картці показує СКІЛЬКИ,
+   а цей рядок — ЩО З ЦИМ РОБИТИ. */
+function adminStatusLineHtml(pendingCount, issues, isSuper) {
+  const list = diagDedupe(issues || []);
+  const problems = isSuper ? list.filter(i => i.kind !== 'info').length : 0;
+  const parts = [];
+  if (pendingCount) {
+    parts.push(pluralUa(pendingCount, 'Нова заявка', 'Нові заявки', 'Нові заявки') +
+      ' (' + pendingCount + ') — перевірте меню «Заявки»');
+  }
+  if (problems) {
+    parts.push(pluralUa(problems, 'Є проблема', 'Є проблеми', 'Є проблеми') +
+      ' (' + problems + ') — перевірте меню «Діагностика»');
+  }
+  if (!parts.length) {
+    return '<div class="admin-status-line admin-status-ok">Нових заявок і проблем немає</div>';
+  }
+  return '<div class="admin-status-line">' + parts.map(escapeHtml).join('<br>') + '</div>';
+}
+
 function adminAttentionHtml(pendingCount, issues, isSuper) {
   const list = diagDedupe(issues || []);
   const acks = diagLoadAcks();
@@ -960,7 +982,8 @@ async function renderAdminPanel(profile) {
        <option value="admin">Адміністратори</option>
        <option value="user">Користувачі</option>`;
 
-  let html = themeRowHtml() + adminAttentionHtml(pending.length, priceIssues, isSuper);
+  let html = themeRowHtml() + adminAttentionHtml(pending.length, priceIssues, isSuper) +
+    adminStatusLineHtml(pending.length, priceIssues, isSuper);
   /* ОБИДВА розкривні блоки стоять ОДРАЗУ під картками, що ними керують, і обидва
      закриті. Доти «Діагностика» була вгорі, а «Заявки» — аж під фільтрами, тому
      розкриття першої зсувало все, що нижче, разом зі списком користувачів.
@@ -978,15 +1001,15 @@ async function renderAdminPanel(profile) {
         <div id="price-issues-list">${priceIssuesListHtml(priceIssues)}</div>
       </div>`;
   }
+  /* Кнопка «Заявки» згортає ВСЮ роботу з людьми — і самі заявки, і фільтри, і список
+     користувачів (вимога власника: «повністю згортати всю інфу включно із списком»).
+     Тримати список користувачів окремо й завжди відкритим не можна: тоді згорнутий
+     Кабінет усе одно був би довгим, а власник просив порожній екран.
+     Фільтри лишились усередині блоку — вони керують обома списками, і без них список
+     користувачів у 21 рядок гортався б руками. */
   html += '<div id="admin-pending-block" hidden>';
   html += `<div class="admin-section-title">Заявки на розгляді (${pending.length})</div>`;
   html += '<div id="admin-pending-list">' + (pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>') + '</div>';
-  html += '</div>';
-  if (pushState.supported) {
-    html += pushState.enabled
-      ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
-      : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>';
-  }
   html += `
     <div class="admin-filters">
       <div class="admin-search"><input type="text" id="admin-search" placeholder="Пошук за іменем або телефоном"></div>
@@ -997,6 +1020,12 @@ async function renderAdminPanel(profile) {
     </div>`;
   html += `<div class="admin-section-title">Користувачі (${others.length})</div>`;
   html += '<div id="admin-users-list">' + (others.length ? others.map(u => userCardHtml(u, false)).join('') : '<div class="empty" style="padding:16px;">Користувачів немає</div>') + '</div>';
+  html += '</div>';
+  if (pushState.supported) {
+    html += pushState.enabled
+      ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
+      : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>';
+  }
   html += '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
 
   main.innerHTML = html;

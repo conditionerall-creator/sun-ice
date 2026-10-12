@@ -800,6 +800,20 @@
   /* Обрана тема залита акцентом — саме це робить маленький перемикач помітним. */
   .theme-pill.on { background: var(--accent); color: var(--on-accent); }
 
+  /* Рядок стану під картками: що саме зробити. Акцентна смуга ліворуч — щоб його не
+     сприймали як звичайну підказку, коли там справді є робота. */
+  .admin-status-line {
+    margin: 0 0 12px; padding: 10px 12px;
+    border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0;
+    background: var(--accent-bg, var(--bg));
+    font-size: 13px; line-height: 1.5; color: var(--text);
+  }
+  .admin-status-line.admin-status-ok {
+    border-left-color: var(--border);
+    background: var(--bg);
+    color: var(--text-secondary);
+  }
+
   /* ---------- Картки уваги вгорі Кабінету (2026-10-12) ---------- */
   .attn-row { display: flex; gap: 10px; margin-bottom: 12px; }
   .attn-card {
@@ -3865,18 +3879,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-12.23"></script>
-<script src="js/02-price-parse.js?v=2026-10-12.23"></script>
-<script src="js/03-diagnostics.js?v=2026-10-12.23"></script>
-<script src="js/04-catalog.js?v=2026-10-12.23"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-12.23"></script>
-<script src="js/06-cart-promo.js?v=2026-10-12.23"></script>
-<script src="js/07-access-info.js?v=2026-10-12.23"></script>
-<script src="js/08-info-tables.js?v=2026-10-12.23"></script>
-<script src="js/09-cabinet.js?v=2026-10-12.23"></script>
-<script src="js/10-crmontage.js?v=2026-10-12.23"></script>
-<script src="js/11-shell.js?v=2026-10-12.23"></script>
-<script src="js/12-product-sheet.js?v=2026-10-12.23"></script>
-<script src="js/13-start.js?v=2026-10-12.23"></script>
+<script src="js/01-config.js?v=2026-10-12.24"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.24"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.24"></script>
+<script src="js/04-catalog.js?v=2026-10-12.24"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.24"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.24"></script>
+<script src="js/07-access-info.js?v=2026-10-12.24"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.24"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.24"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.24"></script>
+<script src="js/11-shell.js?v=2026-10-12.24"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.24"></script>
+<script src="js/13-start.js?v=2026-10-12.24"></script>
 </body>
 </html>
