@@ -1161,7 +1161,7 @@ function loadProcessedCache() {
     sheetsData = cached.data;
     priceDataStripped = cached.stripped === true;
     priceVersion = cached.version || null;
-    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено');
+    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено', true); // тихий стан: лише адмінам
     return true;
   } catch (e) {
     return false;

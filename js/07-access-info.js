@@ -218,7 +218,7 @@ async function reloadPriceAfterAccessGranted() {
     await downloadAndParsePrice(meta ? meta.version : null);
     priceVersion = meta ? meta.version : priceVersion;
     persistProcessedCache(priceVersion);
-    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено');
+    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено', true); // тихий стан: лише адмінам
   } catch (e) {
     setCatalogStatus('Немає підключення. Ціни з\'являться після виходу в мережу.');
   } finally {

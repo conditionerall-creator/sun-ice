@@ -53,7 +53,10 @@ function formatDateUa(iso) {
 function renderRateRow() {
   const row = document.getElementById('rate-row');
   if (!row) return;
-  const show = currentTab === 'catalog' && activeTile === null;
+  /* З 2026-10-12 курси видно на ВСІЙ вкладці «Каталог», а не лише на головній:
+     за макетом власника вони стоять у центрі основного ряду шапки, який лишається
+     на місці й усередині розділу. Поза каталогом рядка немає — там нема що рахувати. */
+  const show = currentTab === 'catalog';
   row.style.display = show ? 'block' : 'none';
   if (!show) return;
 
@@ -66,44 +69,57 @@ function renderRateRow() {
 
   document.getElementById('rate-edit-btn').style.display = canEditRate ? 'flex' : 'none';
 
-  /* Приписка під курсами. Уся ліва частина («курс від …» і «хто міняв») — лише для
-     адміністраторів (звужено 2026-09-30, до того дату бачили всі — див. коментар біля
-     loadExchangeRate). Звичайний користувач бачить тут тільки праву частину (статус
-     прайсу) або взагалі нічого. Кольором нічого не виділяємо: домовленість 2026-09-21 —
-     ніякого червоного, лише спокійна підказка тим, хто може це виправити. */
-  /* ОДИН рядок під курсами, порядок зліва направо (узгоджено з користувачем):
-     «курс від … · <хто міняв> ............ Прайс від …».
-     Права частина стоїть окремим елементом і притиснута до краю — над нею кнопка ↻.
-     Ліва частина стискається: якщо місця бракує, зріжеться саме ім'я адміністратора,
-     а не дати. Слово «змінив» і рік у даті навмисно прибрані — з ними рядок не
-     вміщався навіть на широкому телефоні (міряв: треба 433 px при доступних 383). */
+  /* СЛУЖБОВІ ПІДПИСИ під курсами — лише для адміністраторів (вимога макета
+     2026-10-12; дату курсу звузили до адмінів ще 2026-09-30, тепер те саме правило
+     поширене й на стан прайсу та ім'я того, хто міняв курс). Звичайний користувач
+     нічого цього не бачить, і порожнього місця під підписи не лишається.
+     ВИНЯТОК, і він принциповий: НЕтиповий стан прайсу («Завантаження…», «Немає
+     підключення», «щойно оновлено») показуємо ВСІМ. Інакше дилер із порожнім
+     каталогом не мав би жодного пояснення, чому цін немає. Тихий, щоденний стан
+     («Прайс від 11.09.2026») позначений quiet — він службовий і йде лише адмінам.
+     Кольором нічого не виділяємо: домовленість 2026-09-21 — ніякого червоного.
+
+     ДВА РЯДКИ, а не один: «Курс 08.09.2026 · Прайс від 11.09.2026» плюс ім'я
+     адміністратора в один рядок не вміщаються навіть на 430px, а автоперенос зробив
+     би висоту шапки плаваючою. Тому дати — перший рядок, хто міняв — другий, обидва
+     ріжуться трьома крапками (повний текст лишається в title). */
   const meta = document.getElementById('rate-meta');
-  const mainEl = document.getElementById('rate-meta-main');
-  const priceEl = document.getElementById('rate-meta-price');
-  const left = [];
-  if (rateViewerIsAdmin && rateEffectiveDate) left.push('курс від ' + formatDateUa(rateEffectiveDate));
+  const datesEl = document.getElementById('rate-meta-dates');
+  const whoEl = document.getElementById('rate-meta-who');
+  const dates = [];
+  if (rateViewerIsAdmin && rateEffectiveDate) dates.push('Курс ' + formatDateUa(rateEffectiveDate));
   if (rateViewerIsAdmin && (!usdRate || !rateEffectiveDate)) {
-    if (!usdRate && !rateEffectiveDate) left.push('не вказано курс долара і дату');
-    else if (!usdRate) left.push('не вказано курс долара — немає перерахунку в гривню');
-    else left.push('не вказано дату, від якої діє курс');
+    if (!usdRate && !rateEffectiveDate) dates.push('не вказано курс долара і дату');
+    else if (!usdRate) dates.push('не вказано курс долара');
+    else dates.push('не вказано дату, від якої діє курс');
   }
+  /* Тихий (щоденний) стан прайсу дописуємо до дат — разом вони вміщаються в рядок.
+     НЕтихий («Завантаження…», «Немає підключення», «це найсвіжіший») займає ВЕСЬ
+     другий рядок: приклеєний до дат, він вилазив за край і різався на півслові
+     («…Прайс від 11.09.2026 · це най…») — саме те, заради чого людина й тиснула ↻. */
+  const loud = catalogStatusText && !catalogStatusQuiet ? catalogStatusText : '';
+  if (catalogStatusText && catalogStatusQuiet && rateViewerIsAdmin) dates.push(catalogStatusText);
+  let who = '';
   if (rateViewerIsAdmin && rateUpdatedByName) {
     const when = rateUpdatedAt ? new Date(rateUpdatedAt).toLocaleString('uk-UA', {
       hour: '2-digit', minute: '2-digit'
     }) : '';
-    left.push(rateUpdatedByName + (when ? ', ' + when : ''));
+    who = rateUpdatedByName + (when ? ', ' + when : '');
   }
-  const leftText = left.join(' · ');
-  mainEl.textContent = leftText;
-  mainEl.title = leftText; // повний текст, якщо рядок обрізало
-  // Статус прайсу ("Прайс від 11.09.2026", "Завантаження…") — окремого рядка на
-  // головній більше немає, він живе тут, праворуч.
-  priceEl.textContent = catalogStatusText || '';
-  meta.style.display = (leftText || catalogStatusText) ? 'flex' : 'none';
+  if (loud) who = loud;   // поки стан важливий, він важливіший за ім'я адміністратора
+  const datesText = dates.join(' · ');
+  datesEl.textContent = datesText;
+  datesEl.title = datesText;      // повний текст, якщо рядок обрізало
+  whoEl.textContent = who;
+  whoEl.title = who;
+  meta.style.display = (datesText || who) ? 'flex' : 'none';
 }
 
 /* Перемикання "перегляд ↔ редагування" курсів. */
 function openRateEditor() {
+  /* Форма не вміщається в центральну колонку ряду — на час редагування ряд віддає
+     їй усю ширину (CSS: .header-main.rate-editing ховає лупу й ↻). */
+  document.getElementById('header-main').classList.add('rate-editing');
   document.getElementById('rate-view').style.display = 'none';
   document.getElementById('rate-meta').style.display = 'none';
   const box = document.getElementById('rate-edit');
@@ -115,6 +131,7 @@ function openRateEditor() {
   document.getElementById('rate-input-usd').focus();
 }
 function closeRateEditor() {
+  document.getElementById('header-main').classList.remove('rate-editing');
   document.getElementById('rate-edit').style.display = 'none';
   document.getElementById('rate-view').style.display = 'flex';
   renderRateRow();
@@ -123,9 +140,9 @@ function closeRateEditor() {
 async function initCatalog() {
   document.getElementById('refresh-icon').style.display = 'flex';
   /* Той самий показ, що й у switchTab: при старті одразу на каталозі switchTab не
-     викликається взагалі, і без цього рядка рядок пошуку не з'явився б до першого
-     перемикання вкладок. */
-  document.getElementById('header-search').style.display = 'flex';
+     викликається взагалі, і без цього рядка основний ряд шапки (лупа, курси, ↻) не
+     з'явився б до першого перемикання вкладок. */
+  document.getElementById('header-main').style.display = 'flex';
   loadExchangeRate();
   loadSiteLinks(); // прогрів: до моменту, коли користувач зайде в розділ, файл уже в кеші
   const hadCache = loadProcessedCache();
@@ -163,7 +180,7 @@ async function initCatalog() {
     priceVersion = meta ? meta.version : 1;
     persistProcessedCache(priceVersion);
     priceLoadState = 'ready';
-    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено');
+    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено', true); // тихий стан: лише адмінам
   } catch (e) {
     priceLoadState = 'error';
     priceLoadError = (e && e.message) ? e.message : '';
@@ -1242,6 +1259,7 @@ function goToGlobalSearchHit(hit) {
      Залишений у полі запит суперечив би тому, що на екрані (видно розділ, а не
      результати), і хрестик «очистити» при цьому вже схований. */
   clearCatalogSearch(false);
+  closeHeaderSearch();             // поле згортається назад у кнопку-лупу
   if (currentTab !== 'catalog') switchTab('catalog', false);
   catalogRowsSkipStagger = true;   // стрибати до рядка, що саме «виїжджає», ні до чого
   activeTile = hit.tileId;
@@ -1249,6 +1267,37 @@ function goToGlobalSearchHit(hit) {
   history.pushState({ tab: 'catalog', tile: hit.tileId }, '', '#' + encodeURIComponent(hit.tileId));
   renderCatalogView();
   revealFoundRow(hit.item.model);
+}
+
+/* ---------- Розгортання поля пошуку в шапці (2026-10-12) ----------
+   У спокої в шапці стоїть лише кнопка-лупа 48×48, і основний ряд віддає всю ширину
+   курсам. Дотик по лупі плавно розгортає ТЕ САМЕ поле #header-search-input на весь
+   ряд — нового пошуку тут немає, лише інший показ наявного.
+   Поле лишається в DOM завжди (щоб не переприв'язувати обробники), тому згорнутим
+   його прибираємо з обходу клавіатурою через tabindex="-1". */
+function headerSearchIsOpen() {
+  const main = document.getElementById('header-main');
+  return !!(main && main.classList.contains('search-open'));
+}
+function openHeaderSearch() {
+  const main = document.getElementById('header-main');
+  const input = document.getElementById('header-search-input');
+  const btn = document.getElementById('header-search-btn');
+  if (!main || !input) return;
+  main.classList.add('search-open');
+  if (btn) btn.setAttribute('aria-expanded', 'true');
+  input.removeAttribute('tabindex');
+  input.focus();
+}
+function closeHeaderSearch() {
+  const main = document.getElementById('header-main');
+  const input = document.getElementById('header-search-input');
+  const btn = document.getElementById('header-search-btn');
+  if (!main || !input) return;
+  main.classList.remove('search-open');
+  if (btn) btn.setAttribute('aria-expanded', 'false');
+  input.setAttribute('tabindex', '-1');
+  input.blur();
 }
 
 /* Ввід у полі шапки. Порожній запит повертає звичайний каталог. */

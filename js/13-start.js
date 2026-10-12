@@ -725,16 +725,38 @@ document.getElementById('header-search-input').addEventListener('input', functio
   onCatalogSearchInput(e.target.value);
 });
 document.getElementById('header-search-input').addEventListener('keydown', function (e) {
-  if (e.key === 'Escape') { clearCatalogSearch(false); renderCatalogView(); return; }
+  if (e.key === 'Escape') { clearCatalogSearch(false); closeHeaderSearch(); renderCatalogView(); return; }
   if (e.key !== 'Enter') return;
   e.preventDefault();
   e.target.blur();   // ховаємо клавіатуру, результати лишаються перед очима
   if (globalSearchHits.length === 1) goToGlobalSearchHit(globalSearchHits[0]);
 });
+/* Кнопка-лупа працює як перемикач, але НІКОЛИ не втрачає набране: розгорнуте
+   порожнє поле вона згортає назад у кнопку (і повертає курси на місце), а якщо в полі
+   щось є — просто повертає в нього курсор. Інакше випадковий повторний дотик по лупі
+   стирав би запит разом із результатами на екрані. */
+document.getElementById('header-search-btn').addEventListener('click', function () {
+  if (!headerSearchIsOpen()) { openHeaderSearch(); return; }
+  if (catalogSearchQuery) document.getElementById('header-search-input').focus();
+  else closeHeaderSearch();
+});
+/* Хрестик показується лише тоді, коли в полі щось є (onCatalogSearchInput), тож тут
+   завжди саме «стерти й писати далі», а не «закрити пошук». */
 document.getElementById('header-search-clear').addEventListener('click', function () {
   clearCatalogSearch(false);
   renderCatalogView();
   document.getElementById('header-search-input').focus();
+});
+/* Пішли з порожнього поля — згортаємо його самі: порожнє поле на весь ряд ховало б
+   курси ні за що. Непорожній запит лишає поле розгорнутим: на екрані результати
+   пошуку, і видно, що саме шукали.
+   relatedTarget обов'язковий: дотик по хрестику теж знімає фокус із поля, і без цієї
+   перевірки ряд згортався б ДО того, як спрацює клік по хрестику. */
+document.getElementById('header-search-input').addEventListener('blur', function (e) {
+  if (catalogSearchQuery.trim()) return;
+  const next = e.relatedTarget;
+  if (next && next.closest && next.closest('.header-search')) return;
+  closeHeaderSearch();
 });
 document.getElementById('main').addEventListener('click', function (e) {
   const hit = e.target.closest('[data-hit-idx]');

@@ -1114,9 +1114,13 @@ function switchTab(tab, pushHistory) {
   closeCartPanel();
   renderCartBar();
   document.getElementById('refresh-icon').style.display = tab === 'catalog' ? 'flex' : 'none';
-  // Рядок швидкого пошуку (П-7/П-8) живе за тим самим правилом, що й «оновити прайс»:
-  // шукати можна лише там, де є що шукати.
-  document.getElementById('header-search').style.display = tab === 'catalog' ? 'flex' : 'none';
+  // Основний ряд шапки (лупа + курси + ↻) живе за тим самим правилом, що й «оновити
+  // прайс»: шукати й перераховувати можна лише там, де є що шукати.
+  document.getElementById('header-main').style.display = tab === 'catalog' ? 'flex' : 'none';
+  /* Ідемо з каталогу — згортаємо поле пошуку й скидаємо запит. Без скидання запит
+     лишився б у змінній, і при поверненні в каталог renderCatalogView() показав би
+     результати пошуку при згорнутому (тобто невидимому) полі. */
+  if (tab !== 'catalog') { closeHeaderSearch(); clearCatalogSearch(false); }
   document.getElementById('shortcut-icon').style.display = tab === 'cabinet' ? 'flex' : 'none';
   if (tab !== 'catalog') {
     document.getElementById('th-ezy-instruction-btn').style.display = 'none';

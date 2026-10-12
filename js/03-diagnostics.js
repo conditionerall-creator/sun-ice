@@ -36,7 +36,8 @@ const DIAG_AREA = {
   site: 'Сайт sun-ice.com.ua',
   modules: 'Модулі застосунку',
   specs: 'Характеристики товарів',
-  search: 'Пошук по каталогу'
+  search: 'Пошук по каталогу',
+  header: 'Шапка застосунку'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -730,10 +731,106 @@ async function diagCheckSearch(ctx) {
 }
 
 /* Реєстр перевірок. auto — ще й тихо після кожного розбору нового прайсу; manualOnly — лише за кнопкою. */
+/* ---------- ШАПКА ЗАСТОСУНКУ (2026-10-12) ----------
+   Шапку звели в один компактний ряд: [лупа 48×48] [курси + службові підписи] [↻].
+   Дві речі тут ламаються ТИХО, і саме їх ловить ця перевірка.
+
+   1. Вузли шапки. Перейменували id — пошук або курси просто перестають працювати, а
+      на екрані це виглядає як «шапка порожня», без жодної помилки в консолі.
+   2. Курси не вміщаються. Якщо тексту забагато, він не «вилазить» і не ламає верстку —
+      його ріже трьома крапками, і дилер бачить «$ 44,90 ₴ € 51,…» як нормальний стан.
+      Око такого не ловить, лінійка ловить. Міряємо справжню ширину тексту при
+      поточному шрифті й порівнюємо з тим, що лишається центральній колонці на
+      НАЙВУЖЧОМУ телефоні, який підтримуємо (360px) — тоді перевірка однаково чесна
+      і на телефоні супер-адміна, і на його ж комп'ютері.
+
+   Чого ця перевірка НЕ вміє: подивитись на шапку очима звичайного користувача.
+   Вона бачить лише роль того, хто її запустив. Правило «службові підписи — лише
+   адмінам» живе в renderRateRow() — якщо його колись зачеплять, тут буде тихо. */
+const DIAG_HEADER_MIN_W = 360;   // найвужчий телефон, який тримаємо
+function diagCheckHeader(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.header;
+  const FIX = 'Дивитись <header> в index.html і renderRateRow() у js/04-catalog.js.';
+  const headerEl = document.querySelector('header');
+  const ids = ['header-main', 'header-search', 'header-search-btn', 'header-search-input',
+    'header-search-clear', 'refresh-icon', 'rate-row', 'rate-view', 'rate-meta',
+    'rate-meta-dates', 'rate-meta-who'];
+  const missing = ids.filter(id => !document.getElementById(id));
+  if (!headerEl || missing.length) {
+    out.issues.push(diagIssue(area, 'markup', 'error',
+      'У шапці бракує елементів: ' + (headerEl ? missing.join(', ') : '<header>'),
+      ['Пошук, курси або кнопка оновлення в шапці не працюватимуть.', FIX], { tab: 'catalog' }));
+    return out;
+  }
+  out.checked.push({ area: area, sub: 'markup', label: 'Розмітка шапки',
+    detail: 'усі ' + ids.length + ' вузлів на місці' });
+
+  /* Скільки лишається центральній колонці на 360px: ширина екрана мінус бічні
+     відступи шапки, мінус лупа (48), мінус ↻ (22), мінус два проміжки ряду (2×10).
+     Числа беремо з живого CSS там, де можемо, щоб перевірка не розійшлась зі стилями. */
+  const cs = getComputedStyle(headerEl);
+  const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const searchW = document.getElementById('header-search').getBoundingClientRect().width || 48;
+  const avail = DIAG_HEADER_MIN_W - pad - searchW - 22 - 20;
+
+  function probe(cls, html) {
+    const d = document.createElement('div');
+    d.className = cls;
+    d.style.cssText = 'position:absolute;left:-9999px;top:0;display:inline-block;width:auto;max-width:none;white-space:nowrap;visibility:hidden;';
+    d.innerHTML = html;
+    headerEl.appendChild(d);
+    const w = d.getBoundingClientRect().width;
+    headerEl.removeChild(d);
+    return Math.ceil(w);
+  }
+  const rateW = probe('rate-line', document.getElementById('rate-view').innerHTML);
+  out.checked.push({ area: area, sub: 'rates', label: 'Курси вміщаються в ряд',
+    detail: 'потрібно ' + rateW + 'px, на екрані 360px лишається ' + Math.floor(avail) + 'px' });
+  if (rateW > avail) {
+    out.issues.push(diagIssue(area, 'rates', 'warning',
+      'Курси не вміщаються в шапку на вузькому телефоні (360px)',
+      ['Потрібно ' + rateW + 'px, лишається ' + Math.floor(avail) + 'px — текст обріжеться трьома крапками.',
+       'Спершу зменшувати проміжки (.rate-line gap, .rate-label-eur margin), шрифт курсів — в останню чергу і не нижче 17px.',
+       FIX], { tab: 'catalog' }));
+  }
+  /* Міряємо довший із двох службових рядків — ріжеться той, що не влізе. */
+  const metaTexts = [document.getElementById('rate-meta-dates').textContent || '',
+                     document.getElementById('rate-meta-who').textContent || ''];
+  const datesText = metaTexts.sort((a, b) => b.length - a.length)[0];
+  if (datesText) {
+    const metaW = probe('rate-meta', '<span>' + escapeHtml(datesText) + '</span>');
+    out.checked.push({ area: area, sub: 'meta', label: 'Службовий рядок вміщається',
+      detail: 'потрібно ' + metaW + 'px, лишається ' + Math.floor(avail) + 'px' });
+    if (metaW > avail) {
+      out.issues.push(diagIssue(area, 'meta', 'warning',
+        'Службовий рядок під курсами обрізається на вузькому телефоні (360px)',
+        ['«' + datesText + '» — потрібно ' + metaW + 'px, лишається ' + Math.floor(avail) + 'px.',
+         'Дати мають бути видні повністю; скорочувати сам текст, а не шрифт.', FIX], { tab: 'catalog' }));
+    }
+  }
+
+  /* Ширше за екран шапка бути не може. Міряємо САМЕ ШАПКУ, а не всю сторінку:
+     перехід «плитка → розділ» робить #main на 220 мс масштабованим (grow-fade), і в
+     цей момент scrollWidth усього документа більший за екран — перевірка всієї
+     сторінки давала б хибну тривогу. Шапка не анімується ніколи. */
+  if (headerEl.scrollWidth > headerEl.clientWidth + 1) {
+    out.issues.push(diagIssue(area, 'overflow', 'warning',
+      'Вміст шапки ширший за екран',
+      ['Потрібно ' + headerEl.scrollWidth + 'px при ширині ' + headerEl.clientWidth + 'px.',
+       'Найімовірніше щось у ряду не стискається (загубився min-width: 0 у .header-center).', FIX], { tab: 'catalog' }));
+  } else {
+    out.checked.push({ area: area, sub: 'overflow', label: 'Шапка не ширша за екран',
+      detail: 'екран ' + headerEl.clientWidth + 'px' });
+  }
+  return out;
+}
+
 const DIAG_CHECKS = [
   { id: 'modules', label: 'Модулі застосунку', auto: true, run: ctx => diagCheckModules(ctx) },
   { id: 'specs', label: 'Характеристики товарів', run: ctx => diagCheckSpecs(ctx) },
   { id: 'search', label: 'Пошук по каталогу', auto: true, run: ctx => diagCheckSearch(ctx) },
+  { id: 'header', label: 'Шапка застосунку', run: ctx => diagCheckHeader(ctx) },
   { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
   { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },
   { id: 'files', label: 'Зображення та файли застосунку', run: ctx => diagCheckFiles(ctx) },
@@ -809,6 +906,12 @@ async function runDiagnostics(opts) {
    курсами зведені в ОДИН рядок, і статус малюється всередині нього (renderRateRow).
    На внутрішніх екранах усе лишилось як було — свій рядок .status-row. */
 let catalogStatusText = '';
+/* quiet = «це звичайний щоденний стан» («Прайс від 11.09.2026»). Такий напис —
+   службова довідка, і з 2026-10-12 його бачать лише адміністратори (макет власника:
+   системні підписи — лише адмінові та суперадмінові).
+   НЕтихі стани («Завантаження…», «Немає підключення», «щойно оновлено») показуємо
+   всім: без них дилер із порожнім каталогом не мав би пояснення, що відбувається. */
+let catalogStatusQuiet = false;
 /* Малює статус там, де для нього місце на ПОТОЧНОМУ екрані. Винесено окремо від
    setCatalogStatus навмисно: статус приходить один раз (коли завантажився прайс, тобто
    зазвичай ще на головній), а показувати його треба й після переходу в категорію.
@@ -819,14 +922,18 @@ function applyCatalogStatusUi() {
   const row = document.getElementById('status-row');
   const el = document.getElementById('status-text');
   if (!row || !el) return;
-  const onHome = currentTab === 'catalog' && activeTile === null;
-  if (onHome) { row.style.display = 'none'; renderRateRow(); return; } // на головній — у спільний рядок під курсами
+  /* З 2026-10-12 курси (а з ними й службовий рядок) стоять у шапці на ВСІЙ вкладці
+     «Каталог», тож і статус прайсу йде туди ж — окремого .status-row у розділі
+     більше не потрібно. Поза каталогом (екран без доступу) усе як було. */
+  const onCatalog = currentTab === 'catalog';
+  if (onCatalog) { row.style.display = 'none'; renderRateRow(); return; }
   if (!catalogStatusText) { row.style.display = 'none'; return; }
   row.style.display = 'flex';
   el.textContent = catalogStatusText;
 }
-function setCatalogStatus(text) {
+function setCatalogStatus(text, quiet) {
   catalogStatusText = text || '';
+  catalogStatusQuiet = !!quiet;
   applyCatalogStatusUi();
 }
 

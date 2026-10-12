@@ -97,6 +97,17 @@
     --chrome-field-border: var(--border);
     --accent-on-chrome: var(--accent);     /* акцент поверх «хрому» */
     --on-accent: #FFFFFF;                  /* текст на акцентній заливці */
+    /* ---- ТЛО ШАПКИ (2026-10-12, макет власника) ----
+       М'яка заливка в кольорах лейби: ліворуч теплий оранж SUN, праворуч світлий
+       блакитний ICE, між ними майже біла середина. Світла навмисно: поверх неї
+       стоять курси (темний напівжирний текст) і дрібні службові підписи, і контраст
+       має лишатись впевненим без жодних підложок під текстом.
+       Якщо колись захочеться насиченіше — міняти ТІЛЬКИ ці стопи й перевіряти
+       читабельність саме дрібного рядка (10.5px), а не курсів: він здається першим. */
+    --chrome-gradient: linear-gradient(100deg, #FCD9B6 0%, #FDEBD8 30%, #F7F4EF 52%, #E0EDF9 78%, #C9E1F6 100%);
+    --chrome-btn-bg: rgba(255,255,255,0.72);   /* молочна підложка кнопок у шапці */
+    --chrome-btn-border: rgba(255,255,255,0.9);
+    --chrome-edge: rgba(42,39,37,0.10);        /* нижня межа шапки — лінія, а не рубець */
   }
   /* ================== ТЕМА «ТЕПЛИЙ ШОКОЛАД» (2026-10-12) ==================
      Палітра й ролі — з дизайн-схеми власника (Sun-ice_warm_chocolate_design.txt).
@@ -125,6 +136,13 @@
     --chrome-field-bg: #49372B;
     --chrome-field-border: #96816C;
     --accent-on-chrome: #F0B55B;
+    /* Шоколадна тема градієнта НЕ отримує: її «хром» — суцільний темний, так
+       затверджено в дизайн-схемі власника. Знак-підложку приглушуємо сильніше
+       (кольоровий логотип на темному інакше виглядає брудною плямою). */
+    --chrome-gradient: none;
+    --chrome-btn-bg: #49372B;
+    --chrome-btn-border: #96816C;
+    --chrome-edge: rgba(0,0,0,0.38);
   }
   /* «Хром» перефарбовується ЦІЛИМ БЛОКОМ, а не правилом на кожен елемент усередині:
      усередині шапки й меню підміняємо самі змінні, і всі вкладені правила, які й так
@@ -243,7 +261,10 @@
 
   /* Header */
   header {
-    padding: calc(14px + env(safe-area-inset-top)) 16px 12px;
+    /* Відступи зменшені 2026-10-12 (макет власника): основний вміст застосунку має
+       починатись якомога вище, тому шапка — рівно один компактний ряд плюс (у розділі)
+       стрічка «назад + назва». Було 14/16/12. */
+    padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
     /* overflow: hidden ПРИБРАНО 2026-09-21 — і це важливо, не косметика.
        Він стояв тут заради водяного знака-логотипа, який навмисно виходив за правий
        край ("обрізає його overflow самої шапки"). Знака більше немає.
@@ -255,11 +276,17 @@
        absolute — і шапка її з'їла. Користувач одразу помітив: "зникла шторка".
        Тепер працює як задумано автором: ручка висить ПІД шапкою, сама шапка не росте
        (92 px замість 165, як було б із position:relative). */
-    background: var(--chrome-bg);
+    /* Тло — одна м'яка заливка в кольорах лейби (--chrome-gradient), під нею
+       суцільний колір на випадок, якщо градієнт вимкнено темою. Розмитий знак лежить
+       ОКРЕМИМ шаром (.header-logo-band) — так розмиття не чіпає вміст шапки. */
+    background-color: var(--chrome-bg);
+    background-image: var(--chrome-gradient);
     color: var(--on-chrome);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--navy);
+    /* Була темна лінія var(--navy) — під світлою заливкою вона читалась як рубець.
+       Тепер ледь помітна межа, значення — в темі (--chrome-edge). */
+    border-bottom: 1px solid var(--chrome-edge);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -331,6 +358,30 @@
   }
   .install-gate-later-btn:active, .install-gate-skip-btn:active, .install-gate-back-btn:active { opacity: 1; }
   .header-top { display: flex; align-items: center; gap: 10px; }
+  /* ОСНОВНИЙ РЯД ШАПКИ (2026-10-12, макет власника): [лупа] [курси] [оновити].
+     Три частини в ОДИН ряд, без окремої стрічки над ними — головний екран має
+     починатись якомога вище. У розділі каталогу над цим рядом лишається .header-top
+     («назад» + крихти), і кнопка ↻ там НЕ дублюється: вона завжди тут.
+     margin-top працює лише тоді, коли .header-top справді щось показує; на головній
+     та стрічка схована (header.home-logo .header-top), і ряд стоїть першим. */
+  .header-main { display: none; align-items: center; gap: 10px; margin-top: 8px; }
+  header.home-logo .header-main { margin-top: 0; }
+  /* Центральна колонка: курси, під ними дрібні службові підписи. min-width: 0
+     обов'язковий — без нього flex-елемент не звузиться вужче за свій найдовший рядок,
+     і на 360px курси виштовхнули б кнопку ↻ за край. */
+  .header-center {
+    flex: 1 1 auto;
+    min-width: 0;
+    /* overflow: hidden обов'язковий, і це не косметика. Коли поле пошуку
+       розгортається, колонка стискається до нуля — але сам рядок курсів має
+       white-space: nowrap, тому ВМІСТ продовжував стирчати за правий край екрана й
+       давав горизонтальну прокрутку всієї сторінки (зловлено 2026-10-12 на 390px).
+       Тут же він просто обрізається — його в цей момент і так не видно (opacity: 0). */
+    overflow: hidden;
+    text-align: center;
+    transition: opacity .18s ease;
+  }
+  .header-main.search-open .header-center { opacity: 0; pointer-events: none; }
   /* Хлібні крихти в заголовку розділу каталогу (макет власника 2026-10-12).
      Поза каталогом #title лишається звичайним текстом — ці правила його не чіпають. */
   /* Крихти мають бути ОДНИМ рядком, як у макеті: загальне правило h1 (18px, 800,
@@ -410,12 +461,21 @@
   }
   input[type=file] { display: none; }
 
-  /* Блок курсів валют у шапці (лише головний екран каталогу). Рядок значень, під ним
-     дрібна сіра приписка, і замість усього цього — форма редагування для адмінів. */
-  .rate-row { margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
-  .rate-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .rate-label { font-weight: 600; }
-  .rate-label-eur { margin-left: 8px; }
+  /* Блок курсів валют — центральна частина основного ряду шапки (видимий на всій
+     вкладці «Каталог»: і на головній, і в розділі). Рядок значень, під ним дрібні
+     службові підписи (лише для адміністраторів), і замість усього цього — форма
+     редагування для адмінів.
+     18px напівжирним — це головне число в шапці; дрібніше його не роблять навіть
+     коли не вистачає місця: спершу ріжуться проміжки (див. @media нижче). */
+  .rate-row { font-size: 12.5px; color: var(--text-secondary); }
+  .rate-line {
+    display: flex; align-items: center; justify-content: center;
+    gap: 5px; flex-wrap: nowrap;
+    font-size: 18px; line-height: 1.2; color: var(--text);
+    white-space: nowrap;
+  }
+  .rate-label { font-weight: 700; }
+  .rate-label-eur { margin-left: 10px; }
   .rate-value { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
   /* Курс, якого немає: не «дірка», а чесний напис. Кнопку ₴ у калькуляторі в цьому
      випадку теж ховаємо — див. buildCalcPanelHtml. */
@@ -425,29 +485,34 @@
      Ліва частина (дата курсу + хто міняв) стискається й ріжеться трьома крапками,
      права («Прайс від …») притиснута до краю і не ріжеться ніколи: саме над нею стоїть
      кнопка оновлення, і саме вона потрібна дилеру щодня. */
+  /* Службові підписи під курсами: перший рядок — дати (курсу й прайсу), другий —
+     хто востаннє міняв курс. Два окремі рядки, а не один: разом вони не вміщаються
+     навіть на 430px, а переносити їх автоматично означало б плаваючу висоту шапки.
+     Бачать їх ЛИШЕ адміністратори (renderRateRow) — звичайному користувачеві сюди не
+     потрапляє нічого, і порожнього місця під це теж не лишається.
+     10.5px — свідомо найдрібніший текст застосунку: це довідка, а не зміст. */
   .rate-meta {
     display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin-top: 3px;
-    font-size: 12px; /* було 10.5px + opacity .85 — найдрібніший текст застосунку */
-    line-height: 1.45;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 1px;
+    font-size: 10.5px;
+    line-height: 1.3;
     color: var(--text-secondary);
   }
-  .rate-meta-main {
-    flex: 0 1 auto;
-    min-width: 0;          /* без цього flex-елемент не звузиться вужче за свій текст */
+  .rate-meta span {
+    max-width: 100%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .rate-meta-price {
-    flex: 0 0 auto;
-    margin-left: auto;     /* завжди до правого краю, під кнопку ↻ */
-    white-space: nowrap;
-  }
 
-  .rate-edit { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  .rate-edit { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+  /* Форма редагування курсів у центральну колонку (≈240px на екрані 360px) не
+     вміщається — на час редагування ряд віддає їй усю ширину, ховаючи лупу й ↻.
+     Клас ставить openRateEditor(), знімає closeRateEditor(). */
+  .header-main.rate-editing .header-search,
+  .header-main.rate-editing #refresh-icon { display: none; }
   .rate-field { display: flex; align-items: center; gap: 4px; font-weight: 600; }
   .rate-field input {
     font-variant-numeric: tabular-nums;
@@ -736,44 +801,62 @@
   }
   .row[data-row-model] .cart-check-btn .cart-check-icon .ic { width: 17px; height: 17px; }
 
-  /* Рядок швидкого пошуку в шапці (П-7 + П-8, 2026-10-09). Спершу це була сама лише
-     іконка-лупа поряд з ↻ — власник: «кнопка поиска не видна», і це справедливо: сіра
-     іконка 18px серед інших іконок шапки нічого про себе не каже.
-     Тому тут повноцінний рядок із підказкою, ЩО робити. Сам він не поле вводу, а кнопка,
-     що відкриває лист пошуку з уже сфокусованим полем: так уся логіка пошуку лишається в
-     одному місці, а не дублюється в шапці, і клавіатура відкривається одразу. */
+  /* ПОШУК У ШАПЦІ (П-7 + П-8). Три редакції, і кожну міняли з однієї причини:
+     1) сама лише іконка-лупа серед інших іконок — власник: «кнопка поиска не видна»;
+     2) кнопка, що відкривала спливаючий лист — власник: «плавает по экрану»;
+     3) поле вводу на всю ширину шапки — займало цілий ряд і відсувало вміст униз.
+     Тепер — ОДНА помітна кнопка 48×48 на молочній підложці в лівому куті основного
+     ряду; дотик плавно розгортає її в поле вводу на всю ширину ряду (клас
+     .search-open на .header-main), курси при цьому згасають. Логіка пошуку та сама:
+     те саме поле #header-search-input, ті самі обробники, результати так само
+     малюються в тіло сторінки, а не поверх неї. */
   .header-search {
-    display: none;            /* показ вмикає switchTab/initCatalog — лише на «Каталозі» */
+    display: flex;
     align-items: center;
-    gap: 10px;
-    width: 100%;
-    min-height: 46px;
-    margin-top: 10px;
-    padding: 0 14px;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    background: var(--card);
+    flex: 0 0 auto;
+    width: 48px;             /* розгорнуте значення — нижче, у .search-open */
+    height: 48px;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--chrome-btn-border);
+    border-radius: 14px;
+    background: var(--chrome-btn-bg);
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 15px;
-    text-align: left;
-    cursor: pointer;
+    /* Саме width, а не flex-basis: ширину браузери інтерполюють з calc() надійніше. */
+    transition: width .26s cubic-bezier(.4, 0, .2, 1), border-color .18s ease;
   }
-  .header-search .ic { width: 19px; height: 19px; vertical-align: 0; flex-shrink: 0; }
+  /* 42px = кнопка ↻ (22) + два проміжки ряду (2×10). Рівно стільки лишаємо праворуч,
+     решту ряду займає поле; центральна колонка стискається до нуля сама. */
+  .header-main.search-open .header-search { width: calc(100% - 42px); }
+  .header-main.search-open .header-search { border-color: var(--accent); }
+  /* Сама лупа — повноцінна кнопка 48×48 (мінімальна зона дотику з запасом). */
+  .header-search-btn {
+    flex: 0 0 48px;
+    width: 48px; height: 48px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; border: none; background: none;
+    color: var(--text); cursor: pointer; font-size: 18px;
+  }
+  .header-search .ic { width: 20px; height: 20px; vertical-align: 0; flex-shrink: 0; }
   .header-search input {
-    flex: 1 1 auto; min-width: 0; border: none; background: none; outline: none;
+    flex: 1 1 auto; min-width: 0; width: 0;
+    border: none; background: none; outline: none;
+    opacity: 0;
+    padding: 0;
     /* 16px обов'язково: з меншим шрифтом Safari на iPhone збільшує всю сторінку при
        фокусі, і людина лишається на «зумленому» екрані. */
     font-size: 16px; font-family: inherit; color: var(--text);
+    transition: opacity .18s ease .06s;
   }
+  .header-main.search-open .header-search input { opacity: 1; }
   .header-search input::placeholder { color: var(--text-secondary); }
   .header-search input::-webkit-search-cancel-button { display: none; }
   .header-search-clear {
-    flex-shrink: 0; width: 26px; height: 26px; padding: 0;
+    flex: 0 0 auto; width: 26px; height: 26px; padding: 0; margin-right: 11px;
     border: none; border-radius: 50%; background: var(--bg);
     color: var(--text-secondary); font-size: 13px; cursor: pointer;
   }
-  .header-search:focus-within { border-color: var(--accent); }
 
   /* ---------- Перемикач оформлення (2026-10-12) ---------- */
   /* Перемикач оформлення: НАГОРІ екрана, компактний, праворуч. Картки-рядка на всю
@@ -3109,152 +3192,56 @@
   /* Емодзі-запасний варіант, коли ICONS_LUCIDE = false */
   .ic-fb { font-style: normal; }
 
-  /* ЛОГОТИП У ШАПЦІ — переробка 2026-09-21 (узгоджено з користувачем, варіант «D»).
+  /* ЗНАК У ШАПЦІ — п'ята редакція, 2026-10-12 (макет власника).
 
-     ЯК БУЛО і ЧОМУ ЗМІНИЛИ. Логотип був водяним знаком: напівпрозорий (opacity .13),
-     притиснутий до правого краю і навмисно виходив за нього. Користувач попросив
-     зробити навпаки — щоб логотип було добре видно і щоб він займав шапку собою.
-     Спершу пробували буквально те, що просили: логотип на всю ширину в повний колір,
-     а курс і заголовок ПОВЕРХ нього (з матовою плівкою під текстом). Намалювали —
-     вийшло погано: плівка робить логотип каламутним, а текст усе одно лягає на синій
-     прямокутник «ICE» і не читається. Тому зупинились на варіанті, де логотип
-     НІЧИМ не перекритий, а текст стоїть під ним окремою смугою.
+     ІСТОРІЯ КОРОТКО, щоб не ходити по тих самих граблях (повний опис — у git):
+       • водяний знак за правим краєм (до 2026-09-21);
+       • великий знак на всю шапку, текст у його порожню нижню третину — шапка
+         виростала до 163px, власник: «задовга»;
+       • маленький знак 34px ліворуч (П-7) — звільнив місце під пошук;
+       • широкий напівпрозорий знак угорі розділу (opacity .28).
+     Тепер знак — ЧАСТИНА ТЛА: сильно збільшений і розмитий, «за матовим склом».
+     Окремого чіткого логотипа й напису SUN ICE у шапці більше немає.
 
-     ДВА РЕЖИМИ, перемикає клас .home-logo на <header> (ставиться на головному екрані
-     каталогу, див. renderCatalogView):
-       • головна — логотип великою смугою по центру, у повний колір; текстовий
-         заголовок тут не потрібен, логотип і є заголовком;
-       • решта екранів — той самий логотип, але маленький і в один рядок із заголовком,
-         бо інакше кожен екран прайсу втрачав би ~80 px висоти списку.
-
-     Логотип тепер окремий <img> у власній обгортці, а не фон у h1: h1 на кожному
-     екрані отримує textContent, тобто з ним логотип жив би лише на головній. */
+     ЩО ТУТ ВАЖЛИВО:
+     • Розмиття застосоване ЛИШЕ до цього шару, а не до шапки: вміст (курси, кнопки,
+       підписи) лишається різким. Саме тому знак — окремий <div>, а не фон <header>.
+     • overflow: hidden обов'язковий. У самої шапки overflow навмисно visible (під нею
+       висить «ручка» підбірки .cart-hud, див. коментар у header), тож без обрізки тут
+       розмита пляма вилізла б на вміст сторінки.
+     • Картинка свідомо ШИРША за шапку (165%): розмиті краї падають за межі обрізки,
+       і ніякої різкої лінії зрізу не видно.
+     • pointer-events: none — знак не перехоплює дотики по кнопках під ним. */
   .header-logo-band {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     pointer-events: none;
     user-select: none;
-  }
-  .header-logo-band img { display: block; height: auto; width: auto; }
-
-  /* ГОЛОВНА. Друга редакція, 2026-09-21: перша ставила логотип широкою смугою зверху,
-     а курс і дати під ним — шапка виходила 163 px, і користувач сказав, що вона задовга.
-     Тепер у два стовпці: ліворуч уся текстова колонка (курс, під ним дати й підказки),
-     праворуч логотип на всю висоту цієї колонки. Логотип абсолютом, а текст просто
-     отримує відступ праворуч на його ширину — так висота шапки визначається ТЕКСТОМ,
-     а логотип під неї підлаштовується, а не навпаки.
-     Ширина логотипа — в одній змінній: міняєш її, і відступ тексту та позиція ↻
-     їдуть за нею самі. */
-  /* ГОЛОВНА. Третя редакція, 2026-09-21 (на прохання користувача): логотип на всю
-     ширину І висоту шапки, курси одним рядком без слова «Курс» — самі знаки $ і €,
-     а решта написів — одним рядком одразу під курсами.
-
-     ЧОМУ ТЕКСТ ПОВЕРХ ЛОГОТИПА ТУТ ЧИТАЄТЬСЯ, хоча в першій спробі не читався:
-     логотип у файлі НЕ відцентрований по вертикалі. Поміряно по смугах —
-     артворк (помаранчевий SUN, метелик, синій ICE) займає приблизно 20–70 % висоти,
-     а нижні 30 % майже порожні (непрозорість 0.17 → 0.07 → 0.03). Тому обидва
-     текстові рядки ставимо в нижню третину — вони лягають на чисте тло, а не на
-     кольорові блоки, і ніякої підложки під текст не треба взагалі.
-
-     ЧОМУ САМЕ ТАКІ ЦИФРИ. Пропорція знака 3.10:1, тому на всю ширину екрана він має
-     висоту 100vw/3.10 = 32.3vw. Артворк усередині файлу закінчується приблизно на 70 %
-     цієї висоти, тобто на 22.6vw — нижче вже чисте тло. Звідси margin-top текстового
-     блоку: 21.5vw мінус верхній відступ шапки. min-height гарантує, що шапка ніколи не
-     буде нижчою за сам знак (інакше він вилазив би за неї — overflow у шапки тепер
-     visible заради ручки підбірки).
-     ЯКЩО ЛОГОТИП КОЛИСЬ ПЕРЕМАЛЮЮТЬ: перевірити, чи лишилась порожня нижня третина.
-     Якщо ні — або міняти ці відсотки, або вмикати світлу підложку під текстом
-     (градієнт, як на плитках каталогу, лише світлий). Пробував варіант із підложкою і
-     обрізаним знаком — виглядає гірше, знак ріжеться. */
-  /* min() з пікселем-еквівалентом на 480px (max-width контейнера .app, рядок ~69)
-     обов'язковий: vw рахується від ширини ВІКНА браузера, а не від фактичної
-     ширини .app. На телефоні вони збігаються (перевірено на 320/375/430), але в
-     десктопному браузері вікно набагато ширше за 480px-колонку застосунку — без
-     капа шапка розтягувалась на всю висоту вікна (звіт користувача 2026-09-28,
-     скріншот app.sun-ice.com.ua у Chrome: логотип займав майже весь екран). */
-  /* ЧЕТВЕРТА РЕДАКЦІЯ, 2026-10-09 (П-7, прохання власника: «зменшуй шапку або зроби її
-     так, щоб не заважала читабельності курсів і рядка пошуку»).
-     Знак більше НЕ фон на всю шапку, а звичайна картинка висотою 34px ліворуч. Через це:
-     • курси лягають на чисте тло, а не поверх артворку — читаються без жодних хитрощів;
-     • у шапці звільнилось місце під рядок пошуку, заради якого П-7 і робився;
-     • уся довга механіка «текст у нижню третину знака» (обчислення 21.5vw, 32.3vw,
-       перевірка, чи лишилась порожня нижня третина файлу) стала непотрібною і прибрана.
-     Якщо колись захочеться повернути великий знак — дивитись історію цього блоку в git:
-     там описано, чому текст поверх нього взагалі читався. */
-  header.home-logo { padding-bottom: 8px; }
-  /* Знак на головній — ТАКА САМА підложка, як у розділі (рішення власника 2026-10-12):
-     широка й напівпрозора. Спільні правила — нижче (header.tab-catalog). До того тут був
-     маленький непрозорий знак ліворуч, і головна відрізнялась від розділу. */
-  header.home-logo .rate-row { margin-top: 6px; }
-  /* Заголовка текстом на головній немає — логотип і є заголовком. */
-  header.home-logo .header-top h1 { display: none; }
-  /* position: static обов'язковий. Загальне правило `header > *` робить .header-top
-     позиціонованим, і тоді абсолютна іконка ↻ рахувала б координати від НЬОГО, а не
-     від самої шапки. */
-  header.home-logo .header-top { position: static; }
-  /* ↻ — у правому кінці рядка з курсами. */
-  /* ↻ — рівно НАД написом «Прайс від …», тобто в правому краю рядка з курсами.
-     Обидва притиснуті до right:16px, тому вони завжди один під одним, незалежно від
-     довжини тексту. bottom рахуємо від низу шапки: 7px нижній відступ + ~16px рядок
-     приписки + 3px проміжок ≈ 26px. */
-  /* ↻ — у верхньому правому куті, на одній висоті зі зменшеним знаком. */
-  header.home-logo #refresh-icon {
-    position: absolute;
-    right: 16px;
-    top: calc(14px + env(safe-area-inset-top));
-    z-index: 2;
-  }
-  /* Текст — поверх знака (z-index), відступ зверху заданий вище. */
-  header.home-logo .rate-row { position: relative; z-index: 2; }
-  /* На головній рядок статусу окремо не малюємо — його текст іде в спільний
-     рядок під курсами (див. setCatalogStatus / renderRateRow). */
-  header.home-logo .status-row { display: none; }
-  /* Один рядок, без переносів: якщо в адміна текст задовгий — краще три крапки,
-     ніж друга стрічка, яка розтягне шапку. Повний текст лишається в title. */
-  /* Скорочення й притискання правої частини задані в загальних правилах .rate-meta —
-     тут дублювати не треба. Відступу під ↻ теж не треба: кнопка стоїть НАД рядком,
-     а не в ньому. */
-
-  /* ВНУТРІШНІ ЕКРАНИ: логотип маленький, у нижньому правому куті шапки, АБСОЛЮТНО —
-     тобто поза потоком. Спершу пробували поставити його в рядок із заголовком, але
-     тоді він відбирав ширину в h1: «НАПІВПРОМИСЛОВІ СПЛІТ-СИСТЕМИ» ламалось на три
-     рядки і шапка росла з 75 до 100 px на КОЖНОМУ екрані прайсу. Поза потоком заголовок
-     знову отримує всю ширину, як було до появи логотипа.
-     Саме нижній правий кут, а не верхній: угорі справа живуть ↻ та кнопки EZY/Q-TON.
-     Унизу справа — порожнє місце поряд із коротким рядком «Прайс від …». */
-  /* ЗНАК У ШАПЦІ РОЗДІЛУ (2026-10-12, за скріном власника): широкий напівпрозорий
-     логотип угорі, поверх нього — крихти й пошук.
-     Чому тільки в РОЗДІЛАХ, а не на головній: на головній під шапкою стоять курси, і
-     саме через знак-підложку вони свого часу читались погано — цим і був викликаний
-     П-7. У розділі курсів немає, на знак лягає лише один рядок крихт, тому він не
-     заважає. Прозорість 0.28 підібрана так, щоб текст лишався контрастним; якщо знак
-     колись перемалюють — перевіряти саме цю цифру.
-     pointer-events: none успадковано від .header-logo-band — знак не перехоплює дотики. */
-  /* БАЗА для всіх внутрішніх екранів (Кабінет, Інфо, Акції, CRМонтаж) — маленький знак
-     у правому нижньому куті, як було до 2026-10-12. */
-  header:not(.home-logo) .header-logo-band {
-    position: absolute;
-    right: 16px;
-    bottom: 12px;
-    height: 19px;
     z-index: 0;
   }
-  header:not(.home-logo) .header-logo-band img { height: 100%; }
-  /* І ТІЛЬКИ в розділах каталогу — широкий напівпрозорий знак.
-     Клас .tab-catalog ставить switchTab() (і renderCatalogView() — на випадок старту
-     одразу в каталозі, коли switchTab не викликається). Без цієї прив'язки селектор
-     header:not(.home-logo) чіпляв УСІ внутрішні екрани, і знак виліз у Кабінеті, Інфо
-     та CRМонтажі (знайдено власником 2026-10-12). */
-  header.tab-catalog .header-logo-band {
-    position: absolute;
-    left: 0; right: 0; top: 0;
-    bottom: auto;
+  .header-logo-band img {
     display: block;
+    width: 165%;
+    max-width: none;
     height: auto;
-    opacity: .28;
+    filter: blur(17px);
+    opacity: .34;
   }
-  header.tab-catalog .header-logo-band img { width: 100%; height: auto; }
+  /* На темному «хромі» кольоровий знак навіть розмитий читається як брудна пляма —
+     тому в шоколадній темі він ледь помітний. */
+  html[data-theme="warm-chocolate"] .header-logo-band img { opacity: .16; }
+
+  /* ГОЛОВНИЙ ЕКРАН КАТАЛОГУ. Окремої стрічки над основним рядом тут немає взагалі:
+     заголовка текстом на головній не було й раніше (логотип і був заголовком), а
+     кнопки «назад» тут не буває. Порожній .header-top лишав би зайвий проміжок. */
+  header.home-logo .header-top { display: none; }
+  /* На головній рядок статусу окремо не малюємо — його текст іде в службовий рядок
+     під курсами (див. applyCatalogStatusUi / renderRateRow). */
+  header.home-logo .status-row { display: none; }
 
   header > * { position: relative; z-index: 1; }
 
@@ -3383,14 +3370,19 @@
 </div>
 <div class="app">
   <header>
-    <!-- Логотип. Прямий нащадок <header> — це важливо: на внутрішніх екранах він
-         позиціюється абсолютно відносно самої шапки (див. .header-logo-band у <style>),
-         а всередині .header-top це було б неможливо, бо той сам позиціонований. -->
-    <div class="header-logo-band"><img src="tile-images/sun-ice-logo-wide.webp" alt="Sun-ice"></div>
+    <!-- Тло шапки: сильно розмитий знак лейби «за матовим склом». Прямий нащадок
+         <header> — це важливо: він позиціюється абсолютно відносно самої шапки
+         (див. .header-logo-band у <style>), а всередині .header-top це було б
+         неможливо, бо той сам позиціонований. -->
+    <div class="header-logo-band" aria-hidden="true"><img src="tile-images/sun-ice-logo-wide.webp" alt=""></div>
+    <!-- СТРІЧКА «НАЗАД + НАЗВА». Потрібна лише там, де є куди повертатись або що
+         підписувати: у розділі каталогу, в Кабінеті, Інфо, Акціях, CRМонтажі.
+         На головній каталогу схована цілком (header.home-logo .header-top) — щоб над
+         основним рядом не лишалось порожнього місця. Кнопки ↻ тут НЕМАЄ: вона
+         живе в основному ряду нижче й не дублюється. -->
     <div class="header-top">
       <div class="back-btn" id="back-btn"><svg class="ic" data-fb="←" aria-hidden="true"><use href="#ic-arrow-left"></use></svg></div>
       <h1 id="title">Каталог Sun-Ice</h1>
-      <div class="icon-btn icon-btn-quiet" id="refresh-icon" title="Оновити прайс" style="display:none;"><svg class="ic" data-fb="↻" aria-hidden="true"><use href="#ic-refresh-cw"></use></svg></div>
       <!-- Обидві з'являються лише на плитці "Теплові насоси" → MHI EZY/Q-ton (перемикається
            в renderHeatpumpsList()) — кожна відкриває свій info-sheet з поясненням про
            відповідну машину (Hydrolution EZY і Q-ton — різні продукти під однією плиткою). -->
@@ -3398,54 +3390,57 @@
       <div class="icon-btn icon-btn-text" id="q-ton-instruction-btn" title="Інструкція — MHI Q-ton" style="display:none;">Q-TON</div>
       <div class="icon-btn icon-btn-text" id="shortcut-icon" title="Встановити застосунок на головний екран" style="display:none;">Встановити</div>
     </div>
-    <!-- КУРСИ ВАЛЮТ. Показуються лише на головному екрані каталогу.
-         $ бере участь у калькуляторі, € — суто довідковий (позиції в євро є, але
-         перерахунок для них не просили). Під курсами — дрібний сірий рядок: дата, від
-         якої курс діє (її вводить адміністратор), а для адміністраторів ще й хто та
-         коли вносив зміну востаннє (це ставить тригер у базі, підмінити не можна). -->
-    <div class="rate-row" id="rate-row" style="display:none;">
-      <!-- Без слова «Курс» — самі знаки валют (прохання користувача 2026-09-21).
-           aria-label лишаємо повними: для читалки екрана «$ 44,90 ₴» без пояснення
-           беззмістовне. -->
-      <div class="rate-line" id="rate-view">
-        <span class="rate-label" aria-hidden="true">$</span>
-        <span class="rate-value" id="rate-value" aria-label="Курс долара">—</span>
-        <span class="rate-label rate-label-eur" aria-hidden="true">€</span>
-        <span class="rate-value" id="rate-value-eur" aria-label="Курс євро">—</span>
-        <button type="button" class="rate-edit-btn" id="rate-edit-btn" style="display:none;" aria-label="Редагувати курси">✎</button>
+    <!-- ОСНОВНИЙ РЯД (макет власника 2026-10-12): [лупа] [курси] [оновити].
+         Видимий на вкладці «Каталог» — і на головній, і всередині розділу (показ
+         вмикають switchTab() та initCatalog()).
+         КУРСИ: $ бере участь у калькуляторі, € — суто довідковий (позиції в євро є,
+         але перерахунок для них не просили).
+         ПІД КУРСАМИ — дрібні СЛУЖБОВІ підписи: дата, від якої діє курс, стан прайсу
+         і хто востаннє міняв курс. Їх бачать ЛИШЕ адміністратори (renderRateRow);
+         звичайному користувачеві вони не малюються взагалі й місця під себе не
+         лишають. -->
+    <div class="header-main" id="header-main">
+      <div class="header-search" id="header-search">
+        <button type="button" class="header-search-btn" id="header-search-btn"
+                aria-label="Пошук за маркуванням" aria-expanded="false">
+          <svg class="ic" data-fb="&#128269;" aria-hidden="true"><use href="#ic-search"></use></svg>
+        </button>
+        <input type="search" id="header-search-input" placeholder="Модель або артикул"
+               autocomplete="off" enterkeyhint="search" aria-label="Пошук за маркуванням" tabindex="-1">
+        <button type="button" class="header-search-clear" id="header-search-clear"
+                aria-label="Очистити пошук" hidden>✕</button>
       </div>
-      <div class="rate-edit" id="rate-edit" style="display:none;">
-        <label class="rate-field"><span>$</span><input type="number" id="rate-input-usd" step="0.01" min="0" inputmode="decimal"></label>
-        <label class="rate-field"><span>€</span><input type="number" id="rate-input-eur" step="0.01" min="0" inputmode="decimal"></label>
-        <label class="rate-field rate-field-date"><span>діє від</span><input type="date" id="rate-input-date"></label>
-        <div class="rate-edit-actions">
-          <button type="button" class="rate-save-btn" id="rate-save-btn">Зберегти</button>
-          <button type="button" class="rate-cancel-btn" id="rate-cancel-btn">Скасувати</button>
+      <div class="header-center">
+        <div class="rate-row" id="rate-row" style="display:none;">
+          <!-- Без слова «Курс» — самі знаки валют (прохання користувача 2026-09-21).
+               aria-label лишаємо повними: для читалки екрана «$ 44,90 ₴» без пояснення
+               беззмістовне. -->
+          <div class="rate-line" id="rate-view">
+            <span class="rate-label" aria-hidden="true">$</span>
+            <span class="rate-value" id="rate-value" aria-label="Курс долара">—</span>
+            <span class="rate-label rate-label-eur" aria-hidden="true">€</span>
+            <span class="rate-value" id="rate-value-eur" aria-label="Курс євро">—</span>
+            <button type="button" class="rate-edit-btn" id="rate-edit-btn" style="display:none;" aria-label="Редагувати курси">✎</button>
+          </div>
+          <div class="rate-edit" id="rate-edit" style="display:none;">
+            <label class="rate-field"><span>$</span><input type="number" id="rate-input-usd" step="0.01" min="0" inputmode="decimal"></label>
+            <label class="rate-field"><span>€</span><input type="number" id="rate-input-eur" step="0.01" min="0" inputmode="decimal"></label>
+            <label class="rate-field rate-field-date"><span>діє від</span><input type="date" id="rate-input-date"></label>
+            <div class="rate-edit-actions">
+              <button type="button" class="rate-save-btn" id="rate-save-btn">Зберегти</button>
+              <button type="button" class="rate-cancel-btn" id="rate-cancel-btn">Скасувати</button>
+            </div>
+            <p class="rate-edit-msg" id="rate-edit-msg"></p>
+          </div>
+          <!-- Службові підписи, два рядки: дати (курсу й прайсу) і хто міняв курс.
+               Лише для адміністраторів — див. renderRateRow. -->
+          <div class="rate-meta" id="rate-meta">
+            <span class="rate-meta-dates" id="rate-meta-dates"></span>
+            <span class="rate-meta-who" id="rate-meta-who"></span>
+          </div>
         </div>
-        <p class="rate-edit-msg" id="rate-edit-msg"></p>
       </div>
-      <!-- Службовий рядок під курсами. Два окремі елементи, а не один текст, навмисно:
-           "Прайс від …" притиснутий до правого краю (саме над ним стоїть кнопка ↻) і
-           ніколи не скорочується, а зайве ріжеться з лівої частини — там лише дата
-           курсу й ім'я того, хто його міняв. -->
-      <div class="rate-meta" id="rate-meta">
-        <span class="rate-meta-main" id="rate-meta-main"></span>
-        <span class="rate-meta-price" id="rate-meta-price"></span>
-      </div>
-    </div>
-    <!-- Рядок швидкого пошуку (П-7 + П-8). Видимий лише на вкладці «Каталог» — і на
-         головній, і всередині розділів: шукати маркування потрібно саме там, де гортають
-         прайс. Показ вмикають switchTab() та initCatalog(). -->
-    <!-- СПРАВЖНЄ поле, а не кнопка (рішення власника 2026-10-12): шукаємо просто тут,
-         у шапці, і вона лишається на місці при прокрутці (header — position: sticky).
-         До того дотик відкривав спливаючий лист, і власник слушно назвав це «плаває по
-         екрану». Результати малюються в тіло сторінки, а не поверх неї. -->
-    <div class="header-search" id="header-search" style="display:none;">
-      <svg class="ic" data-fb="🔍" aria-hidden="true"><use href="#ic-search"></use></svg>
-      <input type="search" id="header-search-input" placeholder="Модель або артикул"
-             autocomplete="off" enterkeyhint="search" aria-label="Пошук за маркуванням">
-      <button type="button" class="header-search-clear" id="header-search-clear"
-              aria-label="Очистити пошук" hidden>✕</button>
+      <div class="icon-btn icon-btn-quiet" id="refresh-icon" title="Оновити прайс" style="display:none;"><svg class="ic" data-fb="↻" aria-hidden="true"><use href="#ic-refresh-cw"></use></svg></div>
     </div>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
@@ -3879,18 +3874,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-12.24"></script>
-<script src="js/02-price-parse.js?v=2026-10-12.24"></script>
-<script src="js/03-diagnostics.js?v=2026-10-12.24"></script>
-<script src="js/04-catalog.js?v=2026-10-12.24"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-12.24"></script>
-<script src="js/06-cart-promo.js?v=2026-10-12.24"></script>
-<script src="js/07-access-info.js?v=2026-10-12.24"></script>
-<script src="js/08-info-tables.js?v=2026-10-12.24"></script>
-<script src="js/09-cabinet.js?v=2026-10-12.24"></script>
-<script src="js/10-crmontage.js?v=2026-10-12.24"></script>
-<script src="js/11-shell.js?v=2026-10-12.24"></script>
-<script src="js/12-product-sheet.js?v=2026-10-12.24"></script>
-<script src="js/13-start.js?v=2026-10-12.24"></script>
+<script src="js/01-config.js?v=2026-10-12.30"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.30"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.30"></script>
+<script src="js/04-catalog.js?v=2026-10-12.30"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.30"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.30"></script>
+<script src="js/07-access-info.js?v=2026-10-12.30"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.30"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.30"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.30"></script>
+<script src="js/11-shell.js?v=2026-10-12.30"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.30"></script>
+<script src="js/13-start.js?v=2026-10-12.30"></script>
 </body>
 </html>
