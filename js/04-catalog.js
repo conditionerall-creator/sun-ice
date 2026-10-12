@@ -260,6 +260,26 @@ function tileActiveCfg(tile) {
   return tile[activeBrand] || tile.mhi || tile.gal || null;
 }
 
+/* Кнопки брендів — КАРТКИ З ЛОГОТИПАМИ (макет власника 2026-10-12), а не текст
+   «MHI»/«GAL». Логотипи — svg з сайту самої компанії (tile-images/brand-logo-*.svg),
+   тому це її власні матеріали, а не перемальовка чужих знаків.
+   «Бігунок», що переїжджав під текстом, прибрано: під картинками він лише смикав би
+   фон. positionBrandSlider() це переживе — вона виходить, якщо бігунка немає.
+   Спільна функція, бо той самий перемикач стоїть у чотирьох місцях прайсу: Спліт,
+   Мульти, Напівпром (js/04) плюс VRF і ККБ (js/05). Дублювати розмітку вчетверо означало б
+   рано чи пізно розійтись — власник просив однакові кнопки «по всьому прайсу». */
+function brandCardsHtml() {
+  const card = (brand, file, name) =>
+    '<button type="button" class="brand-card' + (activeBrand === brand ? ' active' : '') +
+      '" data-brand="' + brand + '" aria-pressed="' + (activeBrand === brand) + '">' +
+      '<img src="tile-images/' + file + '" alt="' + escapeHtml(name) + '" draggable="false">' +
+    '</button>';
+  return '<div class="brand-toggle brand-toggle-sliding">' +
+    card('mhi', 'brand-logo-mitsubishi.svg', 'Mitsubishi Heavy Industries') +
+    card('gal', 'brand-logo-galactic.svg', 'Galactic') +
+  '</div>';
+}
+
 function renderCatalogView() {
   const backBtn = document.getElementById('back-btn');
   const title = document.getElementById('title');
@@ -958,21 +978,7 @@ function renderCatalogList() {
 
   const hasBoth = !!(tile.mhi && tile.gal);
   const cfg = tileActiveCfg(tile);
-  /* Кнопки брендів — КАРТКИ З ЛОГОТИПАМИ (макет власника 2026-10-12), а не текст
-     «MHI»/«GAL». Логотипи — svg з сайту самої компанії (tile-images/brand-logo-*.svg),
-     тому це її власні матеріали, а не перемальовка чужих знаків.
-     «Бігунок», що переїжджав під текстом, прибрано: під картинками він лише смикав би
-     фон. positionBrandSlider() це переживе — вона виходить, якщо бігунка немає. */
-  const brandCard = (brand, file, name) =>
-    `<button type="button" class="brand-card${activeBrand === brand ? ' active' : ''}" data-brand="${brand}"
-       aria-pressed="${activeBrand === brand}">
-       <img src="tile-images/${file}" alt="${escapeHtml(name)}" draggable="false">
-     </button>`;
-  const toggleHtml = hasBoth ? `
-    <div class="brand-toggle brand-toggle-sliding">
-      ${brandCard('mhi', 'brand-logo-mitsubishi.svg', 'Mitsubishi Heavy Industries')}
-      ${brandCard('gal', 'brand-logo-galactic.svg', 'Galactic')}
-    </div>` : '';
+  const toggleHtml = hasBoth ? brandCardsHtml() : '';
 
   // Одноразово consume: чи це перше відкриття екрана (stagger рядків, бігунок просто
   // з'являється) чи перемикання MHI/GAL на місці (без stagger, бігунок "переїжджає" з

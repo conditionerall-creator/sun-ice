@@ -761,15 +761,27 @@ document.getElementById('main').addEventListener('click', function (e) {
 document.getElementById('main').addEventListener('click', function (e) {
   const card = e.target.closest('[data-attn]');
   if (!card) return;
-  const block = card.getAttribute('data-attn') === 'diag'
-    ? document.querySelector('.price-diag-card')
-    : document.getElementById('admin-pending-block');
+  const blockOf = function (name) {
+    return name === 'diag' ? document.querySelector('.price-diag-card')
+                           : document.getElementById('admin-pending-block');
+  };
+  const name = card.getAttribute('data-attn');
+  const block = blockOf(name);
   if (!block) return;
   const willOpen = block.hasAttribute('hidden');
+  /* АКОРДЕОН (вимога власника 2026-10-12): відкриття одного закриває другий. Інакше два
+     розгорнуті блоки разом відсувають список користувачів так далеко, що до нього треба
+     долистувати. */
+  document.querySelectorAll('#main [data-attn]').forEach(function (other) {
+    if (other === card) return;
+    const ob = blockOf(other.getAttribute('data-attn'));
+    if (ob) ob.setAttribute('hidden', '');
+    other.setAttribute('aria-expanded', 'false');
+    other.classList.add('attn-card-collapsed');
+  });
   if (willOpen) block.removeAttribute('hidden'); else block.setAttribute('hidden', '');
   card.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
   card.classList.toggle('attn-card-collapsed', !willOpen);
-  if (willOpen) block.scrollIntoView({ block: 'start', behavior: 'smooth' });
 });
 
 /* «Каталог» у хлібних крихтах = та сама дія, що й стрілка «назад». Не дублюємо логіку

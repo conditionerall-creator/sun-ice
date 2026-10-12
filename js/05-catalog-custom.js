@@ -148,12 +148,8 @@ function renderVrfList() {
   catalogRowsSkipStagger = false;
   brandSliderPrevBrand = null;
 
-  const brandToggleHtml = `
-    <div class="brand-toggle brand-toggle-sliding">
-      <div class="brand-toggle-slider"></div>
-      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
-      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
-    </div>`;
+  // Ті самі картки з логотипами, що в решті прайсу (brandCardsHtml у js/04-catalog.js).
+  const brandToggleHtml = brandCardsHtml();
 
   let subToggleHtml, items, cartSourceKey, opts;
   if (activeBrand === 'mhi') {
@@ -262,12 +258,8 @@ function renderKkbList() {
   catalogRowsSkipStagger = false;
   brandSliderPrevBrand = null;
 
-  const brandToggleHtml = `
-    <div class="brand-toggle brand-toggle-sliding">
-      <div class="brand-toggle-slider"></div>
-      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
-      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
-    </div>`;
+  // Ті самі картки з логотипами, що в решті прайсу (brandCardsHtml у js/04-catalog.js).
+  const brandToggleHtml = brandCardsHtml();
 
   let items, opts;
   if (activeBrand === 'mhi') {

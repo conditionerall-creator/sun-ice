@@ -677,8 +677,14 @@ function adminAttentionHtml(pendingCount, issues, isSuper) {
      розгорнутий — тобто кнопка нічим не керувала.
      Початковий стан — РОЗГОРНУТО: згортати заявки за замовчуванням не можна, це щоденна
      робота адміна, і вона не повинна зникати після оновлення застосунку. */
+  /* Початковий стан — ЗГОРНУТО (виправлено 2026-10-12 за зауваженням власника).
+     Доти обидва блоки були розгорнуті, і розкриття «Діагностики» зсувало список
+     користувачів униз — адмін щоразу шукав, де опинився список. Тепер Кабінет
+     відкривається компактним: перемикач теми, дві картки з лічильниками, фільтри й
+     список користувачів. Що саме потребує уваги, видно з лічильника, а не з того, що
+     блок розгорнутий. */
   const card = (target, icon, title, sub, count) =>
-    `<button type="button" class="attn-card${count ? ' attn-card-on' : ''}" data-attn="${target}" aria-expanded="true">
+    `<button type="button" class="attn-card attn-card-collapsed${count ? ' attn-card-on' : ''}" data-attn="${target}" aria-expanded="false">
        <span class="attn-icon">${ic(icon, '')}${count ? `<span class="attn-badge">${count > 99 ? '99+' : count}</span>` : ''}</span>
        <span class="attn-text"><span class="attn-title">${title}</span><span class="attn-sub">${sub}</span></span>
        <span class="attn-chev">▾</span>
@@ -955,14 +961,14 @@ async function renderAdminPanel(profile) {
        <option value="user">Користувачі</option>`;
 
   let html = themeRowHtml() + adminAttentionHtml(pending.length, priceIssues, isSuper);
-  if (pushState.supported) {
-    html += pushState.enabled
-      ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
-      : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>';
-  }
+  /* ОБИДВА розкривні блоки стоять ОДРАЗУ під картками, що ними керують, і обидва
+     закриті. Доти «Діагностика» була вгорі, а «Заявки» — аж під фільтрами, тому
+     розкриття першої зсувало все, що нижче, разом зі списком користувачів.
+     Відкритим може бути лише ОДИН блок (акордеон, вимога власника) — тож зсув
+     обмежений висотою одного блоку й завжди в одному й тому самому місці. */
   if (isSuper) {
     html += `
-      <div class="price-diag-card">
+      <div class="price-diag-card" hidden>
         <div class="price-diag-header">
           <span>Самодіагностика застосунку</span>
           <button type="button" class="link-btn" id="price-check-btn">🔍 Перевірити зараз</button>
@@ -972,6 +978,15 @@ async function renderAdminPanel(profile) {
         <div id="price-issues-list">${priceIssuesListHtml(priceIssues)}</div>
       </div>`;
   }
+  html += '<div id="admin-pending-block" hidden>';
+  html += `<div class="admin-section-title">Заявки на розгляді (${pending.length})</div>`;
+  html += '<div id="admin-pending-list">' + (pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>') + '</div>';
+  html += '</div>';
+  if (pushState.supported) {
+    html += pushState.enabled
+      ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
+      : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>';
+  }
   html += `
     <div class="admin-filters">
       <div class="admin-search"><input type="text" id="admin-search" placeholder="Пошук за іменем або телефоном"></div>
@@ -980,12 +995,6 @@ async function renderAdminPanel(profile) {
         ${isSuper ? `<div class="admin-region-filter"><select id="admin-region-filter"><option value="">Усі регіони</option>${regionOptionsHtml}</select></div>` : ''}
       </div>
     </div>`;
-  /* Обгортка навколо заголовка й списку — саме її згортає картка «Заявки». Згортати
-     лише список, лишаючи заголовок, було б дивно: заголовок сам по собі ні про що. */
-  html += '<div id="admin-pending-block">';
-  html += `<div class="admin-section-title">Заявки на розгляді (${pending.length})</div>`;
-  html += '<div id="admin-pending-list">' + (pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>') + '</div>';
-  html += '</div>';
   html += `<div class="admin-section-title">Користувачі (${others.length})</div>`;
   html += '<div id="admin-users-list">' + (others.length ? others.map(u => userCardHtml(u, false)).join('') : '<div class="empty" style="padding:16px;">Користувачів немає</div>') + '</div>';
   html += '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';

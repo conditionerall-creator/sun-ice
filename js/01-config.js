@@ -8,7 +8,7 @@
 /* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
    файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
    ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
-const APP_BUILD = '2026-10-12.22'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-12.23'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
@@ -89,9 +89,12 @@ const CATALOG_TILES = [
    Вибір зберігається на пристрої; читається він ДВІЧІ: інлайн-скриптом у <head> (щоб не
    було спалаху чужої теми до відмальовки) і тут — щоб намалювати перемикач у потрібному
    стані. Невідоме значення завжди зводиться до світлої. */
+/* id 'warm-chocolate' НЕ перейменовуємо на 'dark', хоч підпис тепер «Темна»: саме цей
+   рядок уже збережений на пристроях у localStorage, і зміна id скинула б вибір усім,
+   хто вже перемкнувся. Підпис і ключ — різні речі. */
 const THEMES = [
-  { id: 'light',          label: 'Світла',         meta: '#2A2725' },
-  { id: 'warm-chocolate', label: 'Теплий шоколад', meta: '#30251F' }
+  { id: 'light',          label: 'Світла', meta: '#2A2725' },
+  { id: 'warm-chocolate', label: 'Темна',  meta: '#30251F' }
 ];
 const THEME_KEY = 'sunice.theme';
 
@@ -117,7 +120,11 @@ function applyTheme(id) {
    пояснюють себе, а зайве слово тільки з'їдало ширину на телефоні. */
 function themeRowHtml() {
   const cur = currentTheme();
-  return '<div class="theme-row"><div class="theme-pills" role="group" aria-label="Оформлення">' +
+  /* Підпис зверху, під ним дві РІВНІ кнопки (рішення власника 2026-10-12). Доти підпису
+     не було взагалі, а кнопки мали різну ширину за довжиною тексту — виглядало як
+     випадкова пара, а не перемикач. */
+  return '<div class="theme-row"><span class="theme-row-title">Тема застосунку</span>' +
+    '<div class="theme-pills" role="group" aria-label="Тема застосунку">' +
     THEMES.map(t => '<button type="button" class="theme-pill' + (t.id === cur ? ' on' : '') +
       '" data-theme-id="' + t.id + '" aria-pressed="' + (t.id === cur) + '">' + t.label + '</button>').join('') +
     '</div></div>';

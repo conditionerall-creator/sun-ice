@@ -778,16 +778,23 @@
   /* ---------- Перемикач оформлення (2026-10-12) ---------- */
   /* Перемикач оформлення: НАГОРІ екрана, компактний, праворуч. Картки-рядка на всю
      ширину більше немає — це не щоденна дія, і займати нею цілий блок було завелико. */
-  .theme-row { display: flex; justify-content: flex-end; margin: 0 0 12px; }
+  /* Перемикач теми: підпис зверху, під ним дві РІВНІ кнопки. Блок компактний і
+     притиснутий праворуч — це не щоденна дія, щоб займати цілий рядок. */
+  .theme-row {
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    margin: 0 0 12px;
+  }
+  .theme-row-title { font-size: 11.5px; font-weight: 600; color: var(--text-secondary); }
   .theme-pills {
-    display: inline-flex; gap: 2px; max-width: 100%;
+    display: grid; grid-template-columns: 1fr 1fr;   /* рівні за визначенням, а не за текстом */
+    gap: 2px; width: 186px; max-width: 100%;
     background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 2px;
   }
   .theme-pill {
-    min-height: 30px; padding: 0 10px; min-width: 0;
+    min-height: 32px; padding: 0 8px; min-width: 0;
     border: none; border-radius: 7px; background: transparent;
     color: var(--text-secondary);
-    font-size: 11.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   /* Обрана тема залита акцентом — саме це робить маленький перемикач помітним. */
@@ -3858,18 +3865,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-12.22"></script>
-<script src="js/02-price-parse.js?v=2026-10-12.22"></script>
-<script src="js/03-diagnostics.js?v=2026-10-12.22"></script>
-<script src="js/04-catalog.js?v=2026-10-12.22"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-12.22"></script>
-<script src="js/06-cart-promo.js?v=2026-10-12.22"></script>
-<script src="js/07-access-info.js?v=2026-10-12.22"></script>
-<script src="js/08-info-tables.js?v=2026-10-12.22"></script>
-<script src="js/09-cabinet.js?v=2026-10-12.22"></script>
-<script src="js/10-crmontage.js?v=2026-10-12.22"></script>
-<script src="js/11-shell.js?v=2026-10-12.22"></script>
-<script src="js/12-product-sheet.js?v=2026-10-12.22"></script>
-<script src="js/13-start.js?v=2026-10-12.22"></script>
+<script src="js/01-config.js?v=2026-10-12.23"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.23"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.23"></script>
+<script src="js/04-catalog.js?v=2026-10-12.23"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.23"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.23"></script>
+<script src="js/07-access-info.js?v=2026-10-12.23"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.23"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.23"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.23"></script>
+<script src="js/11-shell.js?v=2026-10-12.23"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.23"></script>
+<script src="js/13-start.js?v=2026-10-12.23"></script>
 </body>
 </html>
