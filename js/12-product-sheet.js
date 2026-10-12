@@ -380,8 +380,11 @@ function psRender() {
   const priceHtml = s.locked
     ? '<div class="ps-price ps-price-locked">' + ic('lock', '—') + '<span>Ціна доступна після входу</span></div>'
     : '<div class="ps-price">' + escapeHtml(formatListPrice(s.item)) + '</div>';
-  const tab = function (id, label) {
-    return '<button type="button" class="ps-tab' + (s.tab === id ? ' on' : '') + '" data-ps-tab="' + id + '">' + label + '</button>';
+  /* Кнопка стрічки: ІКОНКА НАД ПІДПИСОМ, у рамці (вигляд за макетом власника 2026-10-12).
+     Підписи й функції ті самі, що були — змінився лише вигляд і порядок. */
+  const tab = function (id, label, icon) {
+    return '<button type="button" class="ps-tab' + (s.tab === id ? ' on' : '') + '" data-ps-tab="' + id + '">' +
+      ic(icon, '') + '<span>' + label + '</span></button>';
   };
   /* РОЗКЛАДКА ЗА ДОСТУПОМ (рішення власника 2026-10-09, четверта правка).
      «Розрахунок» і «Характеристики» — публічні дані, тому вони удвох і ділять нижню
@@ -390,15 +393,25 @@ function psRender() {
      Поводиться вона так само, як і дві інші кнопки (клас .ps-tab + data-ps-tab), тобто
      лишається вкладкою: натиснув — її вміст з'явився в тому самому місці, сама кнопка
      залилась акцентом. Змінилось тільки місце. */
+  /* Порядок і місця — рішення власника 2026-10-12:
+     • «Наявність» лишається ВГОРІ, у рядку з ціною, рівно по центру (адмінські дані);
+     • «На сайт» переїхала ВНИЗ, третьою в стрічку — тепер це теж кнопка з іконкою,
+       хоч за суттю лишається посиланням (відкриває картку на sun-ice.com.ua, активною
+       не стає ніколи). Через її перехід у рядку з ціною лишились ціна й «Наявність»,
+       і сітка 1fr auto 1fr так само тримає кнопку по центру. */
   body.innerHTML =
     '<div class="ps-price-row' + (psHasStock() ? ' ps-price-row-3' : '') + '">' + priceHtml +
       (psHasStock()
         ? '<button type="button" class="ps-tab ps-stock-tab' + (s.tab === 'stock' ? ' on' : '') +
-          '" data-ps-tab="stock">Наявність</button>'
+          '" data-ps-tab="stock">' + ic('package', '') + '<span>Наявність</span></button>'
         : '') +
-      (s.siteUrl ? '<a class="ps-site-link" href="' + escapeHtml(s.siteUrl) + '" target="_blank" rel="noopener">На сайт ↗</a>' : '') +
     '</div>' +
-    '<div class="ps-tabs">' + tab('calc', 'Розрахунок') + tab('specs', 'Характеристики') + '</div>' +
+    '<div class="ps-tabs">' + tab('calc', 'Розрахунок', 'calculator') + tab('specs', 'Характеристики', 'file-text') +
+      (s.siteUrl
+        ? '<a class="ps-tab ps-tab-link" href="' + escapeHtml(s.siteUrl) + '" target="_blank" rel="noopener">' +
+          ic('external-link', '') + '<span>На сайт</span></a>'
+        : '') +
+    '</div>' +
     '<div class="ps-tabbody">' + psTabBody() + '</div>';
 }
 

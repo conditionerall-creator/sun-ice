@@ -278,7 +278,13 @@ function renderCatalogView() {
     document.querySelector('header').classList.remove('home-logo');
     applyCatalogStatusUi(); // у категорії — у власний рядок .status-row
     const tile = CATALOG_TILES.find(t => t.id === activeTile);
-    title.textContent = tile ? tile.label : activeTile;
+    /* Хлібні крихти «Каталог / Розділ» замість голої назви (макет власника 2026-10-12).
+       Це ЄДИНЕ місце, де ставиться заголовок розділу каталогу, тому заміна локальна.
+       «Каталог» клікабельний і робить те саме, що стрілка «назад» — обробник у
+       js/13-start.js просто натискає #back-btn, щоб не дублювати логіку повернення. */
+    const tileLabel = tile ? tile.label : activeTile;
+    title.innerHTML = '<button type="button" class="crumb-root" data-crumb-root>Каталог</button>' +
+      '<span class="crumb-sep">/</span><span class="crumb-cur">' + escapeHtml(tileLabel) + '</span>';
     if (activeTile !== 'heatpumps') {
       document.getElementById('th-ezy-instruction-btn').style.display = 'none';
       document.getElementById('q-ton-instruction-btn').style.display = 'none';
@@ -947,11 +953,20 @@ function renderCatalogList() {
 
   const hasBoth = !!(tile.mhi && tile.gal);
   const cfg = tileActiveCfg(tile);
+  /* Кнопки брендів — КАРТКИ З ЛОГОТИПАМИ (макет власника 2026-10-12), а не текст
+     «MHI»/«GAL». Логотипи — svg з сайту самої компанії (tile-images/brand-logo-*.svg),
+     тому це її власні матеріали, а не перемальовка чужих знаків.
+     «Бігунок», що переїжджав під текстом, прибрано: під картинками він лише смикав би
+     фон. positionBrandSlider() це переживе — вона виходить, якщо бігунка немає. */
+  const brandCard = (brand, file, name) =>
+    `<button type="button" class="brand-card${activeBrand === brand ? ' active' : ''}" data-brand="${brand}"
+       aria-pressed="${activeBrand === brand}">
+       <img src="tile-images/${file}" alt="${escapeHtml(name)}" draggable="false">
+     </button>`;
   const toggleHtml = hasBoth ? `
     <div class="brand-toggle brand-toggle-sliding">
-      <div class="brand-toggle-slider"></div>
-      <button type="button" class="brand-toggle-btn ${activeBrand === 'mhi' ? 'active' : ''}" data-brand="mhi">MHI</button>
-      <button type="button" class="brand-toggle-btn ${activeBrand === 'gal' ? 'active' : ''}" data-brand="gal">GAL</button>
+      ${brandCard('mhi', 'brand-logo-mitsubishi.svg', 'Mitsubishi Heavy Industries')}
+      ${brandCard('gal', 'brand-logo-galactic.svg', 'Galactic')}
     </div>` : '';
 
   // Одноразово consume: чи це перше відкриття екрана (stagger рядків, бігунок просто
@@ -1063,7 +1078,11 @@ function attachBrandToggleHandlers(main) {
   // [data-brand] — щоб не чіпляти обробник до кнопок "3 перемикачі" вкладки VRF
   // (.brand-toggle-btn там теж використовується для вигляду, але з іншими data-атрибутами,
   // див. attachVrfHandlers).
-  main.querySelectorAll('.brand-toggle-btn[data-brand]').forEach(btn => {
+  /* .brand-card — нові кнопки-картки з логотипами (2026-10-12); .brand-toggle-btn —
+     старий текстовий вигляд, який лишився в розділах із власним рендером.
+     [data-brand] обов'язковий: у вкладці VRF ті самі класи використано для «3 перемикачів»
+     з іншими атрибутами, і без цього фільтра ми перехопили б їхні кліки. */
+  main.querySelectorAll('.brand-card[data-brand], .brand-toggle-btn[data-brand]').forEach(btn => {
     btn.addEventListener('click', () => {
       const brand = btn.getAttribute('data-brand');
       if (brand === activeBrand) return;

@@ -719,6 +719,29 @@ new MutationObserver(function () {
 /* Загальний пошук по каталогу (П-8). Лупа в шапці → лист із полем і результатами;
    клік по результату веде В РОЗДІЛ НА САМ РЯДОК (goToGlobalSearchHit → revealFoundRow),
    а не на початок групи — саме через це минулу версію пошуку власник і видалив. */
+/* Картки уваги вгорі Кабінету ведуть до свого блоку нижче на тій самій сторінці.
+   Не окремі екрани: адмінська панель — одна довга сторінка, і «перехід» тут означає
+   докрутити до потрібного місця й на мить його підсвітити. */
+document.getElementById('main').addEventListener('click', function (e) {
+  const card = e.target.closest('[data-attn]');
+  if (!card) return;
+  const target = card.getAttribute('data-attn') === 'diag'
+    ? document.querySelector('.price-diag-card')
+    : document.getElementById('admin-pending-list');
+  if (!target) return;
+  target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  target.classList.remove('attn-flash');
+  void target.offsetWidth;            // перезапуск анімації, якщо клас уже був
+  target.classList.add('attn-flash');
+  setTimeout(function () { target.classList.remove('attn-flash'); }, 1800);
+});
+
+/* «Каталог» у хлібних крихтах = та сама дія, що й стрілка «назад». Не дублюємо логіку
+   повернення, а натискаємо наявну кнопку: вона єдина знає про історію й анімації. */
+document.getElementById('title').addEventListener('click', function (e) {
+  if (e.target.closest('[data-crumb-root]')) document.getElementById('back-btn').click();
+});
+
 /* Рядок пошуку в шапці — справжній <button>, тож клавіатура працює сама. */
 document.getElementById('header-search').addEventListener('click', openGlobalSearch);
 document.getElementById('global-search-close').addEventListener('click', dismissGlobalSearch);

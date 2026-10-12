@@ -647,6 +647,49 @@ function diagSaveAcks(acks) {
   try { localStorage.setItem(DIAG_ACK_KEY, JSON.stringify(acks)); } catch (e) { /* без localStorage примітки просто показуватимуться знову */ }
 }
 
+/* КАРТКИ УВАГИ ВГОРІ КАБІНЕТУ (прохання власника 2026-10-12): «щоб я міг бачити, в якій
+   вкладці потрібна моя увага». Два показники з лічильником: нові заявки на реєстрацію і
+   проблеми самодіагностики. Нуль — кружечка немає взагалі, щоб спокійний стан виглядав
+   спокійно, а не «0».
+   Рахуємо ТИМИ САМИМИ функціями, що й картка діагностики нижче (diagDedupe + відсів
+   'info'), інакше лічильник показував би одне число, а список під ним — інше.
+   «Самодіагностика» лишається тільки для super_admin — це давніше рішення власника,
+   записане в CLAUDE.md; розширювати доступ без окремої згоди не став.
+   Дотик по картці веде до відповідного блоку нижче на цій же сторінці. */
+/* Українська множина: 1 проблема · 2-4 проблеми · 5-20 проблем. 11-14 — виняток,
+   інакше вийшло б «12 проблеми». */
+function pluralUa(n, one, few, many) {
+  const n10 = n % 10, n100 = n % 100;
+  if (n100 >= 11 && n100 <= 14) return many;
+  if (n10 === 1) return one;
+  if (n10 >= 2 && n10 <= 4) return few;
+  return many;
+}
+function adminAttentionHtml(pendingCount, issues, isSuper) {
+  const list = diagDedupe(issues || []);
+  const acks = diagLoadAcks();
+  const problems = list.filter(i => i.kind !== 'info').length;
+  const freshNotes = list.filter(i => i.kind === 'info' && acks[diagNoteKey(i)] !== diagNoteHash(i)).length;
+  const card = (target, icon, title, sub, count) =>
+    `<button type="button" class="attn-card${count ? ' attn-card-on' : ''}" data-attn="${target}">
+       <span class="attn-icon">${ic(icon, '')}${count ? `<span class="attn-badge">${count > 99 ? '99+' : count}</span>` : ''}</span>
+       <span class="attn-text"><span class="attn-title">${title}</span><span class="attn-sub">${sub}</span></span>
+     </button>`;
+  let h = '<div class="attn-row">';
+  h += card('pending', 'user', 'Заявки',
+    pendingCount ? pendingCount + ' на розгляді' : 'Нових немає', pendingCount);
+  if (isSuper) {
+    /* Підпис «Діагностика», а не «Самодіагностика»: довше слово фізично не вміщається
+       в піврядкову картку поряд з іконкою й лічильником — ріжеться трьома крапками
+       (поміряно на 375px). Сам розділ нижче називається повністю, як і був. */
+    h += card('diag', 'activity', 'Діагностика',
+      problems ? problems + ' ' + pluralUa(problems, 'проблема', 'проблеми', 'проблем')
+               : (freshNotes ? freshNotes + ' ' + pluralUa(freshNotes, 'нова примітка', 'нові примітки', 'нових приміток') : 'Проблем немає'),
+      problems);
+  }
+  return h + '</div>';
+}
+
 function priceIssuesListHtml(issues) {
   lastPriceIssues = issues || [];
   const list = diagDedupe(lastPriceIssues);
@@ -903,7 +946,7 @@ async function renderAdminPanel(profile) {
        <option value="admin">Адміністратори</option>
        <option value="user">Користувачі</option>`;
 
-  let html = '';
+  let html = adminAttentionHtml(pending.length, priceIssues, isSuper);
   if (pushState.supported) {
     html += pushState.enabled
       ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'

@@ -311,9 +311,20 @@ async function diagCheckSiteLinks(ctx) {
 }
 
 /* ---- 3. Зображення та файли застосунку ---- */
+/* Файли, на які посилається ЛИШЕ JavaScript і яких немає в розмітці на момент перевірки.
+   Самодіагностика запускається з Кабінету, а логотипи брендів малюються тільки всередині
+   розділу каталогу — без цього списку їх ніхто б не перевірив, і зникнення файлу
+   виявилось би вже в дилера порожньою кнопкою. Білі версії поки не використовуються,
+   але лежать поруч під темну тему — хай перевіряються разом. */
+const DIAG_JS_ONLY_FILES = [
+  'tile-images/brand-logo-mitsubishi.svg',
+  'tile-images/brand-logo-galactic.svg',
+  'tile-images/brand-logo-mitsubishi-white.svg',
+  'tile-images/brand-logo-galactic-white.svg'
+];
 function diagReferencedFiles() {
   const text = document.documentElement.innerHTML;
-  const found = new Set();
+  const found = new Set(DIAG_JS_ONLY_FILES);
   const re = /(?:tile-images\/[\w.\-]+\.(?:jpg|jpeg|png|webp|svg|gif)|data\/[\w\-]+\.json|(?:icon|apple-touch-icon)[\w\-]*\.png|manifest\.json)/g;
   let m;
   while ((m = re.exec(text))) found.add(m[0]);

@@ -245,6 +245,24 @@
   }
   .install-gate-later-btn:active, .install-gate-skip-btn:active, .install-gate-back-btn:active { opacity: 1; }
   .header-top { display: flex; align-items: center; gap: 10px; }
+  /* Хлібні крихти в заголовку розділу каталогу (макет власника 2026-10-12).
+     Поза каталогом #title лишається звичайним текстом — ці правила його не чіпають. */
+  /* Крихти мають бути ОДНИМ рядком, як у макеті: загальне правило h1 (18px, 800,
+     uppercase) ламало «МУЛЬТИ СПЛІТ-СИСТЕМИ» на три рядки й роздувало шапку.
+     Перевизначаємо на САМИХ КРИХТАХ, а не через h1:has(...): :has() не розуміють
+     старі Android-браузери, а в дилерів телефони різні — там заголовок лишився б
+     триповерховим. Розмір, регістр і насиченість успадковуються, тож цього досить. */
+  .crumb-root, .crumb-sep, .crumb-cur {
+    font-size: 15px; letter-spacing: 0; text-transform: none; white-space: nowrap;
+  }
+  .crumb-root {
+    border: none; background: none; padding: 0; margin: 0; flex-shrink: 0;
+    font-family: inherit; font-weight: 600; color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .crumb-sep { margin: 0 6px; color: var(--text-secondary); font-weight: 400; flex-shrink: 0; }
+  /* Довга назва ріжеться трьома крапками, а не переносить рядок. */
+  .crumb-cur { color: var(--text); font-weight: 700; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .back-btn {
     display: none;
     width: 34px; height: 34px;
@@ -640,23 +658,71 @@
   .header-search {
     display: none;            /* показ вмикає switchTab/initCatalog — лише на «Каталозі» */
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
-    min-height: 38px;
-    margin-top: 8px;
-    padding: 0 12px;
+    min-height: 46px;
+    margin-top: 10px;
+    padding: 0 14px;
     border: 1px solid var(--border);
-    border-radius: 11px;
+    border-radius: 12px;
     background: var(--card);
     color: var(--text-secondary);
     font-family: inherit;
-    font-size: 13px;
+    font-size: 15px;
     text-align: left;
     cursor: pointer;
   }
-  .header-search .ic { width: 16px; height: 16px; vertical-align: 0; flex-shrink: 0; }
+  .header-search .ic { width: 19px; height: 19px; vertical-align: 0; flex-shrink: 0; }
   .header-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .header-search:active { transform: scale(.995); }
+
+  /* ---------- Картки уваги вгорі Кабінету (2026-10-12) ---------- */
+  .attn-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .attn-card {
+    position: relative;
+    flex: 1 1 0; min-width: 0;
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px; min-height: 60px;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--card); color: var(--text);
+    font-family: inherit; text-align: left; cursor: pointer;
+  }
+  /* Є на що звернути увагу — картка підсвічується рамкою, а не лише кружечком:
+     колір сам по собі не повинен бути єдиною ознакою. */
+  .attn-card-on { border-color: var(--accent); }
+  .attn-card:active { transform: scale(.99); }
+  .attn-icon { flex-shrink: 0; display: flex; }
+  .attn-icon .ic { width: 22px; height: 22px; vertical-align: 0; color: var(--accent); }
+  /* Лічильник — у КУТІ КАРТКИ, а не на іконці: на іконці він наїжджав на початок
+     підпису («3Заявки») — видно на знімку 2026-10-12. */
+  .attn-badge {
+    position: absolute; top: 7px; right: 7px;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 9px; background: var(--accent); color: #fff;
+    font-size: 11px; font-weight: 700; line-height: 1;
+  }
+  .attn-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  /* Місце під лічильник тримаємо ЛИШЕ коли він є (.attn-card-on ставиться рівно тоді ж).
+     Інакше спокійна картка різала власний підпис: «Проблем не…» замість «Проблем немає». */
+  .attn-card-on .attn-text { padding-right: 26px; }
+  .attn-title {
+    font-size: 13px; font-weight: 700;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .attn-sub {
+    font-size: 11.5px; color: var(--text-secondary);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  /* Коротка підсвітка блоку, до якого докрутили — щоб було видно, куди саме потрапив. */
+  @keyframes attnFlash {
+    0%, 70% { box-shadow: 0 0 0 3px var(--accent); }
+    100%    { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+  }
+  .attn-flash { animation: attnFlash 1.8s ease-out; border-radius: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    .attn-flash { animation: none; box-shadow: 0 0 0 3px var(--accent); }
+  }
 
   /* ---------- Загальний пошук по каталогу (П-8) ---------- */
   /* Поле — окремим блоком між шапкою листа й результатами, щоб воно лишалось на місці,
@@ -742,11 +808,14 @@
      кнопка малювалась голим текстом без рамки (видно на знімку 2026-10-09). */
   .ps-price-row .ps-stock-tab {
     flex: none; justify-self: center;
+    flex-direction: row; gap: 6px;
     min-height: 38px; padding: 0 12px;
     border: 1px solid var(--border); border-radius: 10px;
     background: var(--card); color: var(--text);
     font-size: 12.5px; white-space: nowrap;
   }
+  /* У рядку з ціною місця мало, тому тут іконка ПОРУЧ із підписом, а не над ним. */
+  .ps-price-row .ps-stock-tab .ic { width: 16px; height: 16px; }
   .ps-price-row .ps-stock-tab.on { background: var(--accent); color: #fff; border-color: var(--accent); }
   /* «Наявність» — ТРЕТЯ РІВНОПРАВНА ВКЛАДКА, посередині стрічки (прохання власника).
      Кнопкою в рядку з ціною вона «подорожувала» (ціни різної довжини) і, розкриваючись,
@@ -760,22 +829,30 @@
     font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap;
   }
 
+  /* Стрічка кнопок панелі: кожна — окрема картка з іконкою над підписом (макет власника
+     2026-10-12). Раніше це була одна спільна «таблетка» з кнопками всередині. */
   .ps-tabs {
-    display: flex; gap: 4px; margin: 14px 0 0; flex-shrink: 0;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 11px; padding: 4px;
+    display: flex; gap: 8px; margin: 14px 0 0; flex-shrink: 0;
   }
   .ps-tab {
-    min-width: 0; min-height: 40px; padding: 0 6px;
-    border: none; border-radius: 8px;
-    background: transparent; color: var(--text-secondary);
-    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    min-width: 0; min-height: 58px; padding: 7px 4px;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--card); color: var(--text);
+    font-size: 11.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+    text-decoration: none; text-align: center;
   }
-  /* У нижній стрічці лишились ДВІ публічні кнопки — ділять її порівну й займають
-     увесь рядок (вимога власника). Поки їх було три, рівні частки різали
-     «Характеристики» на вузькому екрані; удвох вони вміщаються з запасом навіть на
-     320px, тому тут знову «1 1 0». */
+  .ps-tab .ic { width: 20px; height: 20px; vertical-align: 0; color: var(--accent); }
+  /* Підпис може не вміститись в одне слово («Характеристики» на 320px) — даємо йому
+     зменшитись, а не різатись трьома крапками. */
+  .ps-tab > span { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ps-tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .ps-tab.on .ic { color: #fff; }
+  .ps-tab:active { transform: scale(.98); }
+  /* Три кнопки ділять рядок порівну. */
   .ps-tabs .ps-tab { flex: 1 1 0; }
+  /* «На сайт» — посилання, а не вкладка: активною не стає, тому ніякого стану .on. */
+  .ps-tab-link { color: var(--accent); }
   .ps-tab.on { background: var(--accent); color: #fff; }
   /* Прокручується лише вміст вкладки — шапка з ціною й кнопки лишаються на місці. */
   .ps-tabbody { padding-top: 14px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
@@ -1022,9 +1099,31 @@
   /* Перемикач бренду MHI / GAL у прайсі */
   .brand-toggle {
     display: flex;
-    gap: 6px;
+    gap: 10px;
     padding: 4px 0 12px;
   }
+  /* Картка бренда: біла поверхня, логотип по центру, активна — в акцентній рамці.
+     aspect-ratio не ставимо: висота фіксована, щоб перемикання брендів не рухало список. */
+  .brand-card {
+    flex: 1 1 0; min-width: 0;
+    display: flex; align-items: center; justify-content: center;
+    height: 58px; padding: 8px 12px;
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--card); cursor: pointer;
+  }
+  .brand-card img {
+    max-width: 100%; max-height: 100%;
+    width: auto; height: auto; object-fit: contain;
+    pointer-events: none; user-select: none;
+  }
+  /* Активний бренд — рамка в два пікселі + тепла заливка. Рамку компенсуємо padding'ом,
+     інакше картка «підстрибувала» б на 1px при перемиканні. */
+  .brand-card.active {
+    border: 2px solid var(--accent);
+    padding: 7px 11px;
+    background: var(--accent-bg, rgba(200, 90, 28, .06));
+  }
+  .brand-card:active { transform: scale(.99); }
   .brand-toggle-btn {
     flex: 1;
     padding: 9px 0;
@@ -3079,6 +3178,10 @@
   <symbol id="ic-factory" viewBox="0 0 24 24"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></symbol>
   <symbol id="ic-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol>
   <symbol id="ic-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="ic-activity" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
+  <symbol id="ic-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+  <symbol id="ic-package" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+  <symbol id="ic-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M8 9h2"/></symbol>
   <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
   <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
   <symbol id="ic-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
@@ -3176,7 +3279,7 @@
          прайс. Показ вмикають switchTab() та initCatalog(). -->
     <button type="button" class="header-search" id="header-search" style="display:none;">
       <svg class="ic" data-fb="🔍" aria-hidden="true"><use href="#ic-search"></use></svg>
-      <span>Введіть маркування, напр. SRK71</span>
+      <span>Модель або артикул</span>
     </button>
     <div class="status-row" id="status-row" style="display:none;">
       <div class="status-text" id="status-text"></div>
@@ -3626,18 +3729,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-09.26"></script>
-<script src="js/02-price-parse.js?v=2026-10-09.26"></script>
-<script src="js/03-diagnostics.js?v=2026-10-09.26"></script>
-<script src="js/04-catalog.js?v=2026-10-09.26"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-09.26"></script>
-<script src="js/06-cart-promo.js?v=2026-10-09.26"></script>
-<script src="js/07-access-info.js?v=2026-10-09.26"></script>
-<script src="js/08-info-tables.js?v=2026-10-09.26"></script>
-<script src="js/09-cabinet.js?v=2026-10-09.26"></script>
-<script src="js/10-crmontage.js?v=2026-10-09.26"></script>
-<script src="js/11-shell.js?v=2026-10-09.26"></script>
-<script src="js/12-product-sheet.js?v=2026-10-09.26"></script>
-<script src="js/13-start.js?v=2026-10-09.26"></script>
+<script src="js/01-config.js?v=2026-10-12.12"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.12"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.12"></script>
+<script src="js/04-catalog.js?v=2026-10-12.12"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.12"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.12"></script>
+<script src="js/07-access-info.js?v=2026-10-12.12"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.12"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.12"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.12"></script>
+<script src="js/11-shell.js?v=2026-10-12.12"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.12"></script>
+<script src="js/13-start.js?v=2026-10-12.12"></script>
 </body>
 </html>
