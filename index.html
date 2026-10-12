@@ -16,6 +16,25 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Sun-ice">
 <meta name="theme-color" content="#2A2725">
+<!-- ЄДИНИЙ виконуваний скрипт поза js/13-start.js, і це свідомий виняток із правила
+     «усе виконуване — в останньому модулі». Причина: модулі підключені в кінці <body>,
+     тобто виконуються ПІСЛЯ першої відмальовки, і збережена тема вмикалась би вже на
+     показаному екрані — людина щоразу бачила б спалах чужої теми. Тут робиться рівно
+     одне: читається збережений вибір і ставиться атрибут. Логіка теми — у js/01-config.js.
+     try/catch обов'язковий: у приватному вікні звернення до localStorage кидає виняток,
+     і без нього не піднявся б увесь застосунок. -->
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem('sunice.theme');
+      if (t === 'warm-chocolate') {
+        document.documentElement.dataset.theme = t;
+        var m = document.querySelector('meta[name="theme-color"]');
+        if (m) m.setAttribute('content', '#30251F');
+      }
+    } catch (e) { /* сховище недоступне — лишається світла тема */ }
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -64,7 +83,68 @@
     /* Змінної --header-logo-opacity тут більше немає: до 2026-09-21 логотип у шапці був
        напівпрозорим водяним знаком, тепер він повноколірний і нічим не перекритий
        (див. .header-logo-band у <style>). */
+
+    /* ---- РОЛІ ДЛЯ ДРУГОЇ ТЕМИ (додано 2026-10-12) ----
+       Значення тут НАВМИСНО дорівнюють нинішньому вигляду: світла тема не повинна
+       змінитись ані на піксель. Сенс у тому, щоб «хром» (шапка й нижнє меню) і поля
+       мали власні імена — тоді друга тема перефарбовує їх, не чіпаючи решти.
+       Повний опис ролей — у дизайн-схемі власника (Sun-ice_warm_chocolate_design.txt). */
+    --chrome-bg: rgba(255,255,255,0.95);   /* шапка й нижнє меню */
+    --chrome-bg-nav: rgba(255,255,255,0.97);
+    --on-chrome: var(--text);              /* текст на «хромі» */
+    --on-chrome-muted: var(--text-secondary);
+    --chrome-field-bg: var(--card);        /* поле пошуку в шапці */
+    --chrome-field-border: var(--border);
+    --accent-on-chrome: var(--accent);     /* акцент поверх «хрому» */
+    --on-accent: #FFFFFF;                  /* текст на акцентній заливці */
   }
+  /* ================== ТЕМА «ТЕПЛИЙ ШОКОЛАД» (2026-10-12) ==================
+     Палітра й ролі — з дизайн-схеми власника (Sun-ice_warm_chocolate_design.txt).
+     Тема змішана: шоколадні шапка й нижнє меню, молочний фон, світлі картки.
+     Розмітка одна на обидві теми — міняються ТІЛЬКИ значення змінних.
+     color-scheme: light свідомо: робочі поверхні лишаються світлими, і це керує
+     вбудованими елементами браузера (поля, смуги прокрутки), а не перефарбовує
+     застосунок. */
+  html[data-theme="warm-chocolate"] {
+    color-scheme: light;
+    --bg: #FAF6EE;
+    --card: #FFFCF6;
+    --border: #DDCFBD;
+    --text: #352820;
+    --text-secondary: #756657;
+    --accent: #B9470E;
+    --accent-press: #93380B;
+    --accent-bg: #FFF0DA;
+    --navy: #30251F;
+    --navy-2: #49372B;
+
+    --chrome-bg: #30251F;
+    --chrome-bg-nav: #30251F;
+    --on-chrome: #FFF8EC;
+    --on-chrome-muted: #D3C2AF;
+    --chrome-field-bg: #49372B;
+    --chrome-field-border: #96816C;
+    --accent-on-chrome: #F0B55B;
+  }
+  /* «Хром» перефарбовується ЦІЛИМ БЛОКОМ, а не правилом на кожен елемент усередині:
+     усередині шапки й меню підміняємо самі змінні, і всі вкладені правила, які й так
+     користуються var(--text) / var(--card) / var(--border), стають світлими самі.
+     Інакше довелось би правити понад сотню наявних правил і стежити за кожним новим. */
+  html[data-theme="warm-chocolate"] header,
+  html[data-theme="warm-chocolate"] .bottom-nav {
+    --text: var(--on-chrome);
+    --text-secondary: var(--on-chrome-muted);
+    --card: var(--chrome-field-bg);
+    --border: var(--chrome-field-border);
+    --accent: var(--accent-on-chrome);
+  }
+  /* Виняток: піднята кнопка «Каталог» лишається МІДНОЮ зі світлою іконкою (вимога схеми),
+     тому їй повертаємо «справжній» акцент, а не янтарний варіант для тексту на темному. */
+  html[data-theme="warm-chocolate"] .nav-btn-primary.active .nav-icon {
+    background: #B9470E;
+    color: #FFFFFF;
+  }
+
   * { box-sizing: border-box; }
   body {
     margin: 0;
@@ -170,7 +250,8 @@
        absolute — і шапка її з'їла. Користувач одразу помітив: "зникла шторка".
        Тепер працює як задумано автором: ручка висить ПІД шапкою, сама шапка не росте
        (92 px замість 165, як було б із position:relative). */
-    background: rgba(255,255,255,0.95);
+    background: var(--chrome-bg);
+    color: var(--on-chrome);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-bottom: 1px solid var(--navy);
@@ -448,7 +529,8 @@
   .bottom-nav {
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    background: rgba(255,255,255,0.97);
+    background: var(--chrome-bg-nav);
+    color: var(--on-chrome);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-top: 1px solid var(--border);
@@ -675,6 +757,26 @@
   .header-search .ic { width: 19px; height: 19px; vertical-align: 0; flex-shrink: 0; }
   .header-search span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .header-search:active { transform: scale(.995); }
+
+  /* ---------- Перемикач оформлення (2026-10-12) ---------- */
+  .theme-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin: 16px 0 10px; padding: 12px 14px;
+    border: 1px solid var(--border); border-radius: 12px; background: var(--card);
+  }
+  .theme-row-label { font-size: 14px; font-weight: 600; color: var(--text); flex-shrink: 0; }
+  .theme-pills {
+    display: inline-flex; gap: 3px; flex-shrink: 1; min-width: 0;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 3px;
+  }
+  .theme-pill {
+    min-height: 36px; padding: 0 12px; min-width: 0;
+    border: none; border-radius: 8px; background: transparent;
+    color: var(--text-secondary);
+    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .theme-pill.on { background: var(--accent); color: var(--on-accent); }
 
   /* ---------- Картки уваги вгорі Кабінету (2026-10-12) ---------- */
   .attn-row { display: flex; gap: 10px; margin-bottom: 12px; }
@@ -3729,18 +3831,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-12.12"></script>
-<script src="js/02-price-parse.js?v=2026-10-12.12"></script>
-<script src="js/03-diagnostics.js?v=2026-10-12.12"></script>
-<script src="js/04-catalog.js?v=2026-10-12.12"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-12.12"></script>
-<script src="js/06-cart-promo.js?v=2026-10-12.12"></script>
-<script src="js/07-access-info.js?v=2026-10-12.12"></script>
-<script src="js/08-info-tables.js?v=2026-10-12.12"></script>
-<script src="js/09-cabinet.js?v=2026-10-12.12"></script>
-<script src="js/10-crmontage.js?v=2026-10-12.12"></script>
-<script src="js/11-shell.js?v=2026-10-12.12"></script>
-<script src="js/12-product-sheet.js?v=2026-10-12.12"></script>
-<script src="js/13-start.js?v=2026-10-12.12"></script>
+<script src="js/01-config.js?v=2026-10-12.14"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.14"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.14"></script>
+<script src="js/04-catalog.js?v=2026-10-12.14"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.14"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.14"></script>
+<script src="js/07-access-info.js?v=2026-10-12.14"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.14"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.14"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.14"></script>
+<script src="js/11-shell.js?v=2026-10-12.14"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.14"></script>
+<script src="js/13-start.js?v=2026-10-12.14"></script>
 </body>
 </html>

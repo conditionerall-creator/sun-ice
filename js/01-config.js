@@ -8,7 +8,7 @@
 /* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
    файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
    ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
-const APP_BUILD = '2026-10-12.12'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-12.14'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
@@ -82,6 +82,42 @@ const CATALOG_TILES = [
   { id: 'consumables', label: 'Витратні матеріали', img: 'tile-images/tile-consumables.webp', flipImg: 'tile-images/tile-consumables-s30.webp', custom: 'consumables' },
   { id: 'convectors', label: 'Конвектори та обігрівачі' }
 ];
+
+/* ---------- ОФОРМЛЕННЯ: дві теми (2026-10-12) ----------
+   Світла — те, що було; «Теплий шоколад» — за дизайн-схемою власника. Розмітка одна,
+   міняються лише значення CSS-змінних (див. html[data-theme=...] у <style>).
+   Вибір зберігається на пристрої; читається він ДВІЧІ: інлайн-скриптом у <head> (щоб не
+   було спалаху чужої теми до відмальовки) і тут — щоб намалювати перемикач у потрібному
+   стані. Невідоме значення завжди зводиться до світлої. */
+const THEMES = [
+  { id: 'light',          label: 'Світла',         meta: '#2A2725' },
+  { id: 'warm-chocolate', label: 'Теплий шоколад', meta: '#30251F' }
+];
+const THEME_KEY = 'sunice.theme';
+
+function currentTheme() {
+  const t = document.documentElement.dataset.theme;
+  return THEMES.some(x => x.id === t) ? t : 'light';
+}
+/* Усі звернення до сховища — через try/catch: у приватному вікні воно кидає виняток,
+   і застосунок має працювати й без нього (просто не пам'ятатиме вибір). */
+function applyTheme(id) {
+  const theme = THEMES.find(x => x.id === id) || THEMES[0];
+  if (theme.id === 'light') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = theme.id;
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute('content', theme.meta);
+  try { localStorage.setItem(THEME_KEY, theme.id); } catch (e) { /* без сховища — на один сеанс */ }
+}
+/* Рядок перемикача. Дві пігулки, а не окремий екран налаштувань: варіантів усього два,
+   і ховати їх під додатковий дотик немає сенсу. */
+function themeRowHtml() {
+  const cur = currentTheme();
+  return '<div class="theme-row"><span class="theme-row-label">Оформлення</span><div class="theme-pills">' +
+    THEMES.map(t => '<button type="button" class="theme-pill' + (t.id === cur ? ' on' : '') +
+      '" data-theme-id="' + t.id + '" aria-pressed="' + (t.id === cur) + '">' + t.label + '</button>').join('') +
+    '</div></div>';
+}
 
 /* ЖАРТ-НАПИСИ (тимчасово) — щоб прибрати жарти, просто постав false */
 const JOKE_MODE = true;

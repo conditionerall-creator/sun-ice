@@ -55,6 +55,7 @@ async function renderCabinetTab() {
   if (error || !profile) {
     main.innerHTML =
       '<div class="error">Не вдалося завантажити профіль. Спробуйте вийти і зайти знову.</div>' +
+      themeRowHtml() +
       '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
     document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
     return;
@@ -80,6 +81,7 @@ function renderAuthForms() {
       <button type="button" id="auth-tab-register" class="${cabinetMode !== 'login' ? 'active' : ''}">Реєстрація</button>
     </div>
     <div id="auth-form-holder"></div>
+    ${themeRowHtml()}
   `;
   document.getElementById('auth-tab-login').addEventListener('click', () => { cabinetMode = 'login'; renderAuthForms(); });
   document.getElementById('auth-tab-register').addEventListener('click', () => { cabinetMode = 'register'; renderAuthForms(); });
@@ -533,6 +535,7 @@ async function renderUserStatus(profile) {
     ${resetNoteHtml}
     ${JOKE_MODE && profile.status === 'pending' && !awaitingAfterReset ? '<div class="joke-note">Зареєструвались, не перенавантажились!? Винагорода? Дякуємо, що не насварили :-)</div>' : ''}
     ${pushHtml}
+    ${themeRowHtml()}
     <button class="logout-btn" id="cab-logout-btn">Вийти</button>
   `;
   document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
@@ -976,6 +979,7 @@ async function renderAdminPanel(profile) {
   html += '<div id="admin-pending-list">' + (pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>') + '</div>';
   html += `<div class="admin-section-title">Користувачі (${others.length})</div>`;
   html += '<div id="admin-users-list">' + (others.length ? others.map(u => userCardHtml(u, false)).join('') : '<div class="empty" style="padding:16px;">Користувачів немає</div>') + '</div>';
+  html += themeRowHtml();
   html += '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
 
   main.innerHTML = html;
