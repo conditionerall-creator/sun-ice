@@ -3214,15 +3214,29 @@
      заважає. Прозорість 0.28 підібрана так, щоб текст лишався контрастним; якщо знак
      колись перемалюють — перевіряти саме цю цифру.
      pointer-events: none успадковано від .header-logo-band — знак не перехоплює дотики. */
+  /* БАЗА для всіх внутрішніх екранів (Кабінет, Інфо, Акції, CRМонтаж) — маленький знак
+     у правому нижньому куті, як було до 2026-10-12. */
   header:not(.home-logo) .header-logo-band {
     position: absolute;
+    right: 16px;
+    bottom: 12px;
+    height: 19px;
+    z-index: 0;
+  }
+  header:not(.home-logo) .header-logo-band img { height: 100%; }
+  /* І ТІЛЬКИ в розділах каталогу — широкий напівпрозорий знак.
+     Клас .tab-catalog ставить switchTab() (і renderCatalogView() — на випадок старту
+     одразу в каталозі, коли switchTab не викликається). Без цієї прив'язки селектор
+     header:not(.home-logo) чіпляв УСІ внутрішні екрани, і знак виліз у Кабінеті, Інфо
+     та CRМонтажі (знайдено власником 2026-10-12). */
+  header.tab-catalog:not(.home-logo) .header-logo-band {
     left: 0; right: 0; top: 0;
+    bottom: auto;
     display: block;
     height: auto;
     opacity: .28;
-    z-index: 0;
   }
-  header:not(.home-logo) .header-logo-band img { width: 100%; height: auto; }
+  header.tab-catalog:not(.home-logo) .header-logo-band img { width: 100%; height: auto; }
 
   header > * { position: relative; z-index: 1; }
 
@@ -3856,18 +3870,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-12.18"></script>
-<script src="js/02-price-parse.js?v=2026-10-12.18"></script>
-<script src="js/03-diagnostics.js?v=2026-10-12.18"></script>
-<script src="js/04-catalog.js?v=2026-10-12.18"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-12.18"></script>
-<script src="js/06-cart-promo.js?v=2026-10-12.18"></script>
-<script src="js/07-access-info.js?v=2026-10-12.18"></script>
-<script src="js/08-info-tables.js?v=2026-10-12.18"></script>
-<script src="js/09-cabinet.js?v=2026-10-12.18"></script>
-<script src="js/10-crmontage.js?v=2026-10-12.18"></script>
-<script src="js/11-shell.js?v=2026-10-12.18"></script>
-<script src="js/12-product-sheet.js?v=2026-10-12.18"></script>
-<script src="js/13-start.js?v=2026-10-12.18"></script>
+<script src="js/01-config.js?v=2026-10-12.19"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.19"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.19"></script>
+<script src="js/04-catalog.js?v=2026-10-12.19"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.19"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.19"></script>
+<script src="js/07-access-info.js?v=2026-10-12.19"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.19"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.19"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.19"></script>
+<script src="js/11-shell.js?v=2026-10-12.19"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.19"></script>
+<script src="js/13-start.js?v=2026-10-12.19"></script>
 </body>
 </html>

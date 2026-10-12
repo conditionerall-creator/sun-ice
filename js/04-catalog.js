@@ -263,6 +263,9 @@ function tileActiveCfg(tile) {
 function renderCatalogView() {
   const backBtn = document.getElementById('back-btn');
   const title = document.getElementById('title');
+  /* Страхування: при старті одразу в каталозі switchTab() не викликається взагалі,
+     а саме він ставить .tab-catalog (від якого залежить знак-підложка в шапці). */
+  document.querySelector('header').classList.add('tab-catalog');
 
   if (activeTile === null) {
     backBtn.style.display = 'none';

@@ -1069,6 +1069,8 @@ function switchTab(tab, pushHistory) {
   /* Логотип-заголовок лишається тільки на головній каталогу; renderCatalogView()
      увімкне його назад, якщо ми перейшли саме туди. */
   document.querySelector('header').classList.remove('home-logo');
+  /* Знак-підложка в шапці належить лише каталогу — див. header.tab-catalog у <style>. */
+  document.querySelector('header').classList.toggle('tab-catalog', tab === 'catalog');
   document.getElementById('rate-row').style.display = 'none';
   openCalcPanelEl = null;
   closeCartPanel();
