@@ -8,7 +8,7 @@
 /* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
    файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
    ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
-const APP_BUILD = '2026-10-12.14'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-12.17'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
@@ -109,11 +109,15 @@ function applyTheme(id) {
   if (m) m.setAttribute('content', theme.meta);
   try { localStorage.setItem(THEME_KEY, theme.id); } catch (e) { /* без сховища — на один сеанс */ }
 }
-/* Рядок перемикача. Дві пігулки, а не окремий екран налаштувань: варіантів усього два,
-   і ховати їх під додатковий дотик немає сенсу. */
+/* Перемикач. Стоїть НАГОРІ екрана Кабінету й навмисно компактний (рішення власника
+   2026-10-12: «невеликий, але помітний»): це не щоденна дія, тому він не повинен
+   займати цілий рядок-картку, як це було спершу.
+   Дві пігулки, а не окремий екран налаштувань: варіантів усього два, і ховати їх під
+   додатковий дотик немає сенсу. Підпису «Оформлення» більше немає — назви самих тем
+   пояснюють себе, а зайве слово тільки з'їдало ширину на телефоні. */
 function themeRowHtml() {
   const cur = currentTheme();
-  return '<div class="theme-row"><span class="theme-row-label">Оформлення</span><div class="theme-pills">' +
+  return '<div class="theme-row"><div class="theme-pills" role="group" aria-label="Оформлення">' +
     THEMES.map(t => '<button type="button" class="theme-pill' + (t.id === cur ? ' on' : '') +
       '" data-theme-id="' + t.id + '" aria-pressed="' + (t.id === cur) + '">' + t.label + '</button>').join('') +
     '</div></div>';

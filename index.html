@@ -759,23 +759,21 @@
   .header-search:active { transform: scale(.995); }
 
   /* ---------- Перемикач оформлення (2026-10-12) ---------- */
-  .theme-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    margin: 16px 0 10px; padding: 12px 14px;
-    border: 1px solid var(--border); border-radius: 12px; background: var(--card);
-  }
-  .theme-row-label { font-size: 14px; font-weight: 600; color: var(--text); flex-shrink: 0; }
+  /* Перемикач оформлення: НАГОРІ екрана, компактний, праворуч. Картки-рядка на всю
+     ширину більше немає — це не щоденна дія, і займати нею цілий блок було завелико. */
+  .theme-row { display: flex; justify-content: flex-end; margin: 0 0 12px; }
   .theme-pills {
-    display: inline-flex; gap: 3px; flex-shrink: 1; min-width: 0;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 3px;
+    display: inline-flex; gap: 2px; max-width: 100%;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 2px;
   }
   .theme-pill {
-    min-height: 36px; padding: 0 12px; min-width: 0;
-    border: none; border-radius: 8px; background: transparent;
+    min-height: 30px; padding: 0 10px; min-width: 0;
+    border: none; border-radius: 7px; background: transparent;
     color: var(--text-secondary);
-    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+    font-size: 11.5px; font-weight: 600; font-family: inherit; cursor: pointer;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  /* Обрана тема залита акцентом — саме це робить маленький перемикач помітним. */
   .theme-pill.on { background: var(--accent); color: var(--on-accent); }
 
   /* ---------- Картки уваги вгорі Кабінету (2026-10-12) ---------- */
@@ -804,10 +802,23 @@
     border-radius: 9px; background: var(--accent); color: #fff;
     font-size: 11px; font-weight: 700; line-height: 1;
   }
-  .attn-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  /* Місце праворуч тримаємо завжди — під стрілку; під лічильник додається ще трохи
+     нижче, лише коли він є. */
+  .attn-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; padding-right: 16px; }
+  /* Стрілка показує стан блоку: вниз — розгорнуто, вправо — згорнуто. Разом з
+     aria-expanded це єдина ознака і для ока, і для екранного диктора.
+     ПОЗА ПОТОКОМ (у нижньому правому куті): у рядку вона з'їдала ширину підпису, і
+     назви починали різатись — «Діагнос…», «2 на розг…» (видно на знімку 2026-10-12).
+     Лічильник сидить у верхньому куті, тож вони не перетинаються. */
+  .attn-chev {
+    position: absolute; right: 9px; bottom: 7px;
+    font-size: 11px; color: var(--text-secondary);
+    transition: transform .2s ease;
+  }
+  .attn-card-collapsed .attn-chev { transform: rotate(-90deg); }
   /* Місце під лічильник тримаємо ЛИШЕ коли він є (.attn-card-on ставиться рівно тоді ж).
      Інакше спокійна картка різала власний підпис: «Проблем не…» замість «Проблем немає». */
-  .attn-card-on .attn-text { padding-right: 26px; }
+  .attn-card-on .attn-text { padding-right: 28px; }
   .attn-title {
     font-size: 13px; font-weight: 700;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -3831,18 +3842,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-12.14"></script>
-<script src="js/02-price-parse.js?v=2026-10-12.14"></script>
-<script src="js/03-diagnostics.js?v=2026-10-12.14"></script>
-<script src="js/04-catalog.js?v=2026-10-12.14"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-12.14"></script>
-<script src="js/06-cart-promo.js?v=2026-10-12.14"></script>
-<script src="js/07-access-info.js?v=2026-10-12.14"></script>
-<script src="js/08-info-tables.js?v=2026-10-12.14"></script>
-<script src="js/09-cabinet.js?v=2026-10-12.14"></script>
-<script src="js/10-crmontage.js?v=2026-10-12.14"></script>
-<script src="js/11-shell.js?v=2026-10-12.14"></script>
-<script src="js/12-product-sheet.js?v=2026-10-12.14"></script>
-<script src="js/13-start.js?v=2026-10-12.14"></script>
+<script src="js/01-config.js?v=2026-10-12.17"></script>
+<script src="js/02-price-parse.js?v=2026-10-12.17"></script>
+<script src="js/03-diagnostics.js?v=2026-10-12.17"></script>
+<script src="js/04-catalog.js?v=2026-10-12.17"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-12.17"></script>
+<script src="js/06-cart-promo.js?v=2026-10-12.17"></script>
+<script src="js/07-access-info.js?v=2026-10-12.17"></script>
+<script src="js/08-info-tables.js?v=2026-10-12.17"></script>
+<script src="js/09-cabinet.js?v=2026-10-12.17"></script>
+<script src="js/10-crmontage.js?v=2026-10-12.17"></script>
+<script src="js/11-shell.js?v=2026-10-12.17"></script>
+<script src="js/12-product-sheet.js?v=2026-10-12.17"></script>
+<script src="js/13-start.js?v=2026-10-12.17"></script>
 </body>
 </html>

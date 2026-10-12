@@ -731,21 +731,23 @@ document.getElementById('main').addEventListener('click', function (e) {
   if (row) row.outerHTML = themeRowHtml();
 });
 
-/* Картки уваги вгорі Кабінету ведуть до свого блоку нижче на тій самій сторінці.
-   Не окремі екрани: адмінська панель — одна довга сторінка, і «перехід» тут означає
-   докрутити до потрібного місця й на мить його підсвітити. */
+/* Картки уваги вгорі Кабінету ЗГОРТАЮТЬ і РОЗГОРТАЮТЬ свій блок (рішення власника
+   2026-10-12). До того вони лише докручували до блоку, а блок і так був розгорнутий —
+   кнопка фактично нічим не керувала.
+   Коли розгортаємо — ще й докручуємо до блоку: інакше при довгому списку користувачів
+   людина натискає картку й не бачить, що саме з'явилось нижче. */
 document.getElementById('main').addEventListener('click', function (e) {
   const card = e.target.closest('[data-attn]');
   if (!card) return;
-  const target = card.getAttribute('data-attn') === 'diag'
+  const block = card.getAttribute('data-attn') === 'diag'
     ? document.querySelector('.price-diag-card')
-    : document.getElementById('admin-pending-list');
-  if (!target) return;
-  target.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  target.classList.remove('attn-flash');
-  void target.offsetWidth;            // перезапуск анімації, якщо клас уже був
-  target.classList.add('attn-flash');
-  setTimeout(function () { target.classList.remove('attn-flash'); }, 1800);
+    : document.getElementById('admin-pending-block');
+  if (!block) return;
+  const willOpen = block.hasAttribute('hidden');
+  if (willOpen) block.removeAttribute('hidden'); else block.setAttribute('hidden', '');
+  card.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  card.classList.toggle('attn-card-collapsed', !willOpen);
+  if (willOpen) block.scrollIntoView({ block: 'start', behavior: 'smooth' });
 });
 
 /* «Каталог» у хлібних крихтах = та сама дія, що й стрілка «назад». Не дублюємо логіку

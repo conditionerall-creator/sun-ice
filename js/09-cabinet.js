@@ -55,7 +55,6 @@ async function renderCabinetTab() {
   if (error || !profile) {
     main.innerHTML =
       '<div class="error">Не вдалося завантажити профіль. Спробуйте вийти і зайти знову.</div>' +
-      themeRowHtml() +
       '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
     document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
     return;
@@ -76,12 +75,12 @@ function renderAuthForms() {
   // тому підсвічуємо вкладку Реєстрація (найближчу за змістом), а сама форма далі явно
   // пояснює, що відбувається.
   main.innerHTML = `
+    ${themeRowHtml()}
     <div class="auth-toggle">
       <button type="button" id="auth-tab-login" class="${cabinetMode === 'login' ? 'active' : ''}">Вхід</button>
       <button type="button" id="auth-tab-register" class="${cabinetMode !== 'login' ? 'active' : ''}">Реєстрація</button>
     </div>
     <div id="auth-form-holder"></div>
-    ${themeRowHtml()}
   `;
   document.getElementById('auth-tab-login').addEventListener('click', () => { cabinetMode = 'login'; renderAuthForms(); });
   document.getElementById('auth-tab-register').addEventListener('click', () => { cabinetMode = 'register'; renderAuthForms(); });
@@ -528,6 +527,7 @@ async function renderUserStatus(profile) {
         : '<button type="button" class="link-btn push-enable-btn" id="enable-push-btn">🔔 Увімкнути сповіщення на цьому пристрої</button>')
     : '';
   main.innerHTML = `
+    ${themeRowHtml()}
     <div class="status-card">
       <div class="status-card-title">${escapeHtml(statusLabel(profile.status))}</div>
       <div class="status-card-sub">${escapeHtml(profile.full_name || '')}<br>${escapeHtml(profile.phone || '')}${priceLine}</div>
@@ -535,7 +535,6 @@ async function renderUserStatus(profile) {
     ${resetNoteHtml}
     ${JOKE_MODE && profile.status === 'pending' && !awaitingAfterReset ? '<div class="joke-note">Зареєструвались, не перенавантажились!? Винагорода? Дякуємо, що не насварили :-)</div>' : ''}
     ${pushHtml}
-    ${themeRowHtml()}
     <button class="logout-btn" id="cab-logout-btn">Вийти</button>
   `;
   document.getElementById('cab-logout-btn').addEventListener('click', handleLogout);
@@ -673,10 +672,16 @@ function adminAttentionHtml(pendingCount, issues, isSuper) {
   const acks = diagLoadAcks();
   const problems = list.filter(i => i.kind !== 'info').length;
   const freshNotes = list.filter(i => i.kind === 'info' && acks[diagNoteKey(i)] !== diagNoteHash(i)).length;
+  /* Картка — РОЗКРИВАЧКА свого блоку (рішення власника 2026-10-12): дотик згортає або
+     розгортає те, що всередині. Раніше вона лише докручувала до блоку, а блок і так був
+     розгорнутий — тобто кнопка нічим не керувала.
+     Початковий стан — РОЗГОРНУТО: згортати заявки за замовчуванням не можна, це щоденна
+     робота адміна, і вона не повинна зникати після оновлення застосунку. */
   const card = (target, icon, title, sub, count) =>
-    `<button type="button" class="attn-card${count ? ' attn-card-on' : ''}" data-attn="${target}">
+    `<button type="button" class="attn-card${count ? ' attn-card-on' : ''}" data-attn="${target}" aria-expanded="true">
        <span class="attn-icon">${ic(icon, '')}${count ? `<span class="attn-badge">${count > 99 ? '99+' : count}</span>` : ''}</span>
        <span class="attn-text"><span class="attn-title">${title}</span><span class="attn-sub">${sub}</span></span>
+       <span class="attn-chev">▾</span>
      </button>`;
   let h = '<div class="attn-row">';
   h += card('pending', 'user', 'Заявки',
@@ -949,7 +954,7 @@ async function renderAdminPanel(profile) {
        <option value="admin">Адміністратори</option>
        <option value="user">Користувачі</option>`;
 
-  let html = adminAttentionHtml(pending.length, priceIssues, isSuper);
+  let html = themeRowHtml() + adminAttentionHtml(pending.length, priceIssues, isSuper);
   if (pushState.supported) {
     html += pushState.enabled
       ? '<div class="push-status">🔔 Сповіщення на цьому пристрої увімкнено</div>'
@@ -975,11 +980,14 @@ async function renderAdminPanel(profile) {
         ${isSuper ? `<div class="admin-region-filter"><select id="admin-region-filter"><option value="">Усі регіони</option>${regionOptionsHtml}</select></div>` : ''}
       </div>
     </div>`;
+  /* Обгортка навколо заголовка й списку — саме її згортає картка «Заявки». Згортати
+     лише список, лишаючи заголовок, було б дивно: заголовок сам по собі ні про що. */
+  html += '<div id="admin-pending-block">';
   html += `<div class="admin-section-title">Заявки на розгляді (${pending.length})</div>`;
   html += '<div id="admin-pending-list">' + (pending.length ? pending.map(u => userCardHtml(u, true)).join('') : '<div class="empty" style="padding:16px;">Нових заявок немає</div>') + '</div>';
+  html += '</div>';
   html += `<div class="admin-section-title">Користувачі (${others.length})</div>`;
   html += '<div id="admin-users-list">' + (others.length ? others.map(u => userCardHtml(u, false)).join('') : '<div class="empty" style="padding:16px;">Користувачів немає</div>') + '</div>';
-  html += themeRowHtml();
   html += '<button class="logout-btn" id="cab-logout-btn">Вийти</button>';
 
   main.innerHTML = html;
