@@ -320,11 +320,13 @@
     const P = sum(perWh, function (x) { return x.p; });
     const A = sum(perWh, function (x) { return x.a; });
     const t = Number(data.badge_threshold) > 0 ? Number(data.badge_threshold) : 5;
-    /* «Є на інших складах» для КОМПЛЕКТУ: кожна частина або вільна тут, або доступна деінде.
-       Інакше обіцяли б доставку комплекту, половини якого немає ніде. */
+    /* «Є на інших складах» для КОМПЛЕКТУ: кожна частина або ФІЗИЧНО є тут, або доступна деінде.
+       Саме фізично, а не вільно (виправлено 2026-10-16 після перепису по каталогу): інакше комплект,
+       у якого внутрішній блок лежить у дилера в резерві, а зовнішній треба привезти, ставав червоним
+       «немає на жодному складі». Такий блок у список «деінде» не потрапляє саме тому, що він ТУТ. */
     const elsewhere = ex.every(function (e) {
-      const hereA = sum(whs, function (w) { return e.wh[w.code] ? e.wh[w.code].a : 0; });
-      return hereA > 0 || !!els[e.k];
+      const hereP = sum(whs, function (w) { return e.wh[w.code] ? e.wh[w.code].p : 0; });
+      return hereP > 0 || !!els[e.k];
     });
     const bP = bucketOf(P, t), bA = bucketOf(A, t);
     let tone, note;
@@ -362,7 +364,12 @@
 
   const TTL_MS = 5 * 60 * 1000; // на пристрої тримаємо зріз не довше 5 хв (кеш лише в пам'яті — на спільних пристроях нічого не лишається)
   let data = null, index = null, fetchedAt = 0, loading = null;
-  let filt = { kind: 'all', region: 'all', only: false }; // фільтри вікна «Повна інформація» (живуть до перезавантаження сторінки)
+  /* Фільтри вікна «Повна інформація». Стан за замовчуванням (рішення власника 2026-10-16):
+     усі склади · усі регіони · ЛИШЕ ДЕ Є В НАЯВНОСТІ. Скидається при КОЖНОМУ відкритті вікна —
+     адмін завжди починає з однакової картини, а не з фільтрів, виставлених для попереднього товару.
+     Змінені фільтри живуть, поки вікно відкрите. */
+  const FILT_DEFAULT = { kind: 'all', region: 'all', only: true };
+  let filt = Object.assign({}, FILT_DEFAULT);
 
   const esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
 
@@ -398,7 +405,9 @@
     '.stock-part-h{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary);margin:0 0 6px}' +
     '.stock-var{border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:6px;background:var(--bg)}' +
     '.stock-var-n{font-weight:600;font-size:13.5px;display:flex;justify-content:space-between;gap:8px}' +
-    '.stock-var-n em{font-style:normal;font-weight:500;font-size:11px;color:var(--text-secondary)}' +
+    /* Підписи «точний збіг» / «схожа позиція» — маленькі чіпи. Було дрібним сірим курсивом і
+       губилось; тепер видно з відстані, але вага та сама, що в решти службових підписів. */
+    '.stock-var-n em{font-style:normal;font-weight:700;font-size:10px;line-height:1;letter-spacing:.05em;text-transform:uppercase;padding:4px 8px;border-radius:999px;background:var(--border);color:var(--text-secondary);white-space:nowrap;align-self:flex-start;flex:0 0 auto}' +
     '.stock-grp{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-secondary);margin:6px 0 1px}' +
     '.stock-line{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:2px 0}' +
     '.stock-line span:last-child{white-space:nowrap}' +
@@ -426,7 +435,7 @@
     '.stock-note-big b{font-weight:700}' +
     /* --- акцент на точному збігу у «Повній інформації» --- */
     '.stock-var.sv-exact{border-color:var(--accent);background:var(--accent-bg)}' +
-    '.stock-var.sv-exact .stock-var-n em{color:var(--accent);font-weight:700}' +
+    '.stock-var.sv-exact .stock-var-n em{background:var(--accent);color:#fff}' +
     '.stock-var.sv-sim{opacity:.7}' +
     '.stock-badge-line{display:flex;align-items:center;gap:7px;margin:0 0 8px}' +
     '.stock-badge-line small{color:var(--text-secondary);font-size:11.5px;font-weight:500}' +
@@ -716,6 +725,7 @@
   function openSheet(parts) {
     if (!data || !index) return;
     ensureCss();
+    filt = Object.assign({}, FILT_DEFAULT); // кожне відкриття — з чистого аркуша
     sheetParts = parts;
     const el = ensureSheet();
     renderSheet();

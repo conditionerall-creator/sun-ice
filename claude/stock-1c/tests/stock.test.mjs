@@ -202,6 +202,17 @@ assert.deepEqual([ab.label, ab.tone, ab.note], ['0', 'warn', 'elsewhere'], '4 ш
 ab = S.badgeFor([{ m: 'NOWHERE2-W', role: null }], aidx, odesaAdmin);
 assert.deepEqual([ab.label, ab.tone, ab.note], ['0', 'out', 'nowhere'], 'ніде нічого — ось тоді червоний');
 assert.ok(S.elsewhereSet(odesaAdmin, [{ code: 'ODESA' }])['ONLYKYIV-W'], 'ключ потрапив у множину «деінде»');
+
+// Комплект: внутрішній лежить у МЕНЕ, але весь у резерві; зовнішній треба везти з іншого складу.
+// Такий комплект НЕ «немає ніде» — внутрішній блок фізично тут (виправлено після перепису каталогу).
+const kitRows = [
+  { k: 'INHERE-W', n: 'INHERE-W', w: 'ODESA', p: 3, a: 0 },          // у мене є, але зарезервовано
+  { k: 'OUTFAR-W', n: 'OUTFAR-W', w: 'KYIV_GORENICHI', p: 2, a: 2 }, // лише в Києві
+];
+const kidx = S.buildIndex(kitRows);
+const kdata = { ...odesaAdmin, rows: kitRows };
+let kb = S.badgeFor([{ m: 'INHERE-W', role: 'indoor' }, { m: 'OUTFAR-W', role: 'outdoor' }], kidx, kdata);
+assert.deepEqual([kb.label, kb.tone, kb.note], ['0', 'warn', 'elsewhere'], 'половина комплекту в мене на складі — це не «немає ніде»');
 assert.ok(S.elsewhereSet({ mode: 'user', elsewhere: ['A-W/B-W'] }, [])['B-W'], 'склеєний ключ із серверного списку теж розкладається');
 
 // --- свіжість ---
