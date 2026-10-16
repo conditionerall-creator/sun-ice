@@ -441,7 +441,26 @@
     '.stock-var.sv-sim{opacity:.7}' +
     '.stock-badge-line{display:flex;align-items:center;gap:7px;margin:0 0 8px}' +
     '.stock-badge-line small{color:var(--text-secondary);font-size:11.5px;font-weight:500}' +
-    '.stock-exact-h{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:0 0 4px}';
+    '.stock-exact-h{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}' +
+    /* --- таблиці наявності (макет власника 2026-10-16) ---
+       Числа читаються стовпчиками, а не рядком тексту: «30 / 44» під підписами «внутр./зовн.»
+       зрозуміле з одного погляду, а «вільно 30 + 30 · всього 44 + 44» доводилось розбирати. */
+    '.stock-badge-strip{display:flex;align-items:center;gap:10px;background:rgba(79,138,91,.10);border-radius:10px;padding:7px 11px;margin:0 0 10px;font-size:12.5px;color:var(--text-secondary)}' +
+    '.stock-tbl{width:100%;border-collapse:collapse;font-size:13px;margin:0 0 12px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--card)}' +
+    '.stock-tbl th,.stock-tbl td{padding:7px 6px;text-align:center;border-top:1px solid var(--border)}' +
+    '.stock-tbl thead th{background:var(--bg);color:var(--text-secondary);font-weight:600;font-size:11px;border-top:0;line-height:1.25}' +
+    '.stock-tbl tbody th{text-align:left;font-weight:700;color:var(--text);font-size:12.5px;line-height:1.3}' +
+    '.stock-tbl .t-free td{font-weight:800;font-size:15px;color:var(--text)}' +
+
+    '.stock-tbl .t-total th,.stock-tbl .t-total td{color:var(--text-secondary);font-weight:600}' +
+    '.stock-tbl td.t-has{background:rgba(79,138,91,.12);color:#2F6B3C;font-weight:800}' +
+    '.stock-tbl td.t-dim{color:var(--text-secondary);font-weight:600}' +
+    '.stock-tbl tr.t-own{background:rgba(79,138,91,.07)}' +
+    '.stock-tbl tr.t-own th{color:var(--accent)}' +
+    '.stock-tbl tr.t-grp th{background:var(--bg);color:var(--text-secondary);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}' +
+    '.stock-tbl .t-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--stock-c,#8B8682);margin-right:7px;vertical-align:middle}' +
+    '.stock-wh-h{font-size:13.5px;font-weight:700;color:var(--text);margin:2px 0 1px}' +
+    '.stock-upd{margin:0 0 7px}';
 
   function ensureCss() {
     if (document.getElementById('stock-css')) return;
@@ -511,37 +530,62 @@
   };
 
   /* ---- КОРОТКА панель ---- */
-  /* КОРОТКА панель (адміни). З 2026-10-16 показує ТІЛЬКИ ТОЧНИЙ ЗБІГ: одна цифра — одна відповідь.
-     Схожі позиції не зникли, але живуть у «Повній інформації», де видно, яка саме це позиція. */
+  /* КОРОТКА панель (адміни). Показує ТІЛЬКИ ТОЧНИЙ ЗБІГ: одна цифра — одна відповідь. Схожі позиції
+     не зникли, але живуть у «Повній інформації», де видно, яка саме це позиція.
+     З 2026-10-16 верстається ТАБЛИЦЯМИ за макетом власника: колонки «внутр./зовн.», рядки
+     «Вільно» (жирним) і «Всього» (тьмяним), склад свого регіону підсвічений. */
   function panelHtml(parts) {
     const v = compactView(parts, index, data);
     const s = v.summary;
-    const pair = s.parts.length > 1;
     const fr = freshness(data, fetchedAt, Date.now());
     const bdg = badgeFor(parts, index, data);
     const minA = v.totals.length ? Math.min.apply(null, v.totals.map(function (x) { return x.a; })) : 0;
     const low = Number(data.low_threshold);
     const status = minA <= 0 ? 'out' : (minA <= (isFinite(low) ? low : 2) ? 'low' : 'ok');
+    const cols = s.parts.map(function (p) { return ROLE_SHORT[p.role] || ''; });
+    const multi = cols.length > 1;
+    const head = function (c) { return '<th>' + (c ? '(' + esc(c) + ')' : '') + '</th>'; };
+
     let h = '';
-    if (bdg) h += '<p class="stock-badge-line"><span class="stock-badge sb-' + bdg.tone + '">' + esc(bdg.label) + '</span>' +
-      '<small>' + esc(bdg.region ? 'ваш регіон: ' + bdg.region : 'ваш регіон') + '</small></p>';
+    if (bdg) h += '<div class="stock-badge-strip"><span class="stock-badge sb-' + bdg.tone + '">' + esc(bdg.label) + '</span>' +
+      '<span>ваш регіон: ' + esc(bdg.region || '—') + '</span></div>';
+
     h += '<p class="stock-exact-h">Точний збіг</p>';
-    /* Порядок «спершу всього, потім вільно» — вимога власника: спочатку відповідь «чи товар узагалі
-       є», і лише потім «скільки з нього не під чужим замовленням». */
-    h += v.hasExact
-      ? '<div class="stock-' + status + '"><p class="stock-sum">Всього: ' + joinRoles(s.parts, v.totals, 'p') + '</p>' +
-        '<p class="stock-sum-free">Вільно: ' + joinRoles(s.parts, v.totals, 'a') + '</p></div>'
-      : '<div class="stock-none">Точного збігу в 1С немає — дивіться схожі позиції в повній інформації.</div>';
+    if (!v.hasExact) {
+      h += '<div class="stock-none">Точного збігу в 1С немає — дивіться схожі позиції в повній інформації.</div>';
+    } else {
+      h += '<table class="stock-tbl stock-' + status + '"><thead><tr><th></th>' + cols.map(head).join('') + '</tr></thead><tbody>' +
+        '<tr class="t-free"><th><i class="t-dot"></i>Вільно</th>' +
+          v.totals.map(function (x) { return '<td>' + fmtQty(x.a) + '</td>'; }).join('') + '</tr>' +
+        '<tr class="t-total"><th>Всього</th>' +
+          v.totals.map(function (x) { return '<td>' + fmtQty(x.p) + '</td>'; }).join('') + '</tr>' +
+        '</tbody></table>';
+    }
+
+    h += '<p class="stock-wh-h">Основні склади</p>';
     h += fr.state === 'stale'
       ? '<div class="stock-warn">Дані про залишки можуть бути неактуальними — востаннє підтверджено ' + esc(fmtAge(fr.ageMin)) + '.</div>'
-      : '<p class="stock-note">Основні склади · оновлено ' + esc(fmtAge(fr.ageMin)) + '</p>';
-    h += '<div class="stock-wl">';
+      : '<p class="stock-note stock-upd">оновлено ' + esc(fmtAge(fr.ageMin)) + '</p>';
+
     if (v.rows.length) {
+      const whByCode = {};
+      (data.warehouses || []).forEach(function (w) { whByCode[w.code] = w; });
+      h += '<table class="stock-tbl"><thead>';
+      h += multi
+        ? '<tr><th rowspan="2">Склад</th><th colspan="' + cols.length + '">Вільно</th><th colspan="' + cols.length + '">Всього</th></tr>' +
+          '<tr>' + cols.map(head).join('') + cols.map(head).join('') + '</tr>'
+        : '<tr><th>Склад</th><th>Вільно</th><th>Всього</th></tr>';
+      h += '</thead><tbody>';
       v.rows.forEach(function (r) {
-        h += '<div class="stock-line"><span>' + esc(r.name) + '</span><span>всього ' + joinQ(r.vals, 'p') + ' · вільно ' + joinQ(r.vals, 'a') + '</span></div>';
+        const w = whByCode[r.code] || {};
+        const own = data.region_id != null && w.region_id === data.region_id;
+        h += '<tr' + (own ? ' class="t-own"' : '') + '><th>' + esc(r.name) + '</th>' +
+          r.vals.map(function (x) { return '<td class="' + (x.a > 0 ? 't-has' : '') + '">' + fmtQty(x.a) + '</td>'; }).join('') +
+          r.vals.map(function (x) { return '<td class="t-dim">' + fmtQty(x.p) + '</td>'; }).join('') + '</tr>';
       });
+      h += '</tbody></table>';
     } else h += '<div class="stock-none">На основних складах немає.</div>';
-    h += '</div>';
+
     s.parts.filter(function (p) { return !p.found; }).forEach(function (p) { h += '<p class="stock-note">У 1С не знайдено: ' + esc(p.marking) + '</p>'; });
     if (v.extra.any) h += '<p class="stock-note">На додаткових складах: всього ' + joinQ(v.extra.vals, 'p') + ' · вільно ' + joinQ(v.extra.vals, 'a') + '</p>';
     if (v.similar) h += '<p class="stock-note">Схожих позицій (-W1, -W2 …): ' + v.similar + ' — у повній інформації.</p>';
@@ -680,16 +724,34 @@
       '<div class="stock-chips"><button type="button" class="stock-chip" data-fg="only" data-fv="toggle" aria-pressed="' + filt.only + '">Лише де є в наявності</button></div>';
   }
 
-  function lineHtml(r) {
-    return '<div class="stock-line' + (r.p <= 0 && r.a <= 0 ? ' zero' : '') + '"><span>' + esc(r.name) + '</span><span>всього ' + fmtQty(r.p) + ' · вільно ' + fmtQty(r.a) + '</span></div>';
-  }
-
-  function variantRowsHtml(rows) {
-    const main = rows.filter(function (r) { return r.kind !== 'additional'; }), add = rows.filter(function (r) { return r.kind === 'additional'; });
-    let h = '';
-    if (main.length) { if (add.length) h += '<div class="stock-grp">Основні склади</div>'; h += main.map(lineHtml).join(''); }
-    if (add.length) { h += '<div class="stock-grp">Додаткові склади</div>' + add.map(lineHtml).join(''); }
-    return h;
+  /* Склади однією таблицею: Склад · Вільно · Всього. Той самий стиль, що в короткій панелі
+     (макет власника 2026-10-16) — щоб перехід «панель → повна інформація» не був стрибком
+     у іншу верстку. Склад свого регіону підсвічений, ненульове «вільно» — зеленим. */
+  function whTable(rows, totalLabel) {
+    if (!rows.length) return '<div class="stock-none">На вибраних складах немає.</div>';
+    const whByCode = {};
+    (data.warehouses || []).forEach(function (w) { whByCode[w.code] = w; });
+    const tr = function (r) {
+      const w = whByCode[r.code] || {};
+      const own = data.region_id != null && w.region_id === data.region_id;
+      return '<tr' + (own ? ' class="t-own"' : '') + '><th>' + esc(r.name) + '</th>' +
+        '<td class="' + (r.a > 0 ? 't-has' : '') + '">' + fmtQty(r.a) + '</td>' +
+        '<td class="t-dim">' + fmtQty(r.p) + '</td></tr>';
+    };
+    const main = rows.filter(function (r) { return r.kind !== 'additional'; });
+    const add = rows.filter(function (r) { return r.kind === 'additional'; });
+    let h = '<table class="stock-tbl"><thead><tr><th>Склад</th><th>Вільно</th><th>Всього</th></tr></thead><tbody>';
+    if (main.length) {
+      if (add.length) h += '<tr class="t-grp"><th colspan="3">Основні склади</th></tr>';
+      h += main.map(tr).join('');
+    }
+    if (add.length) h += '<tr class="t-grp"><th colspan="3">Додаткові склади</th></tr>' + add.map(tr).join('');
+    if (rows.length > 1 && totalLabel) {
+      h += '<tr class="t-total"><th>' + esc(totalLabel) + '</th><td>' +
+        fmtQty(rows.reduce(function (n, r) { return n + r.a; }, 0)) + '</td><td>' +
+        fmtQty(rows.reduce(function (n, r) { return n + r.p; }, 0)) + '</td></tr>';
+    }
+    return h + '</tbody></table>';
   }
 
   function renderSheet() {
@@ -714,9 +776,8 @@
       const similar = p.variants.filter(function (v) { return !v.exact; });
       const block = function (v, cls) {
         let b = '<div class="stock-var ' + cls + '"><div class="stock-var-n"><span>' + esc(v.name) + '</span><em>' + (v.exact ? 'точний збіг' : 'схожа позиція') + '</em></div>';
-        if (v.from && v.from.length) b += '<p class="stock-note" style="margin:2px 0 4px">Разом із комплектами 1С: ' + esc(v.from.join(', ')) + '</p>';
-        b += v.rows.length ? variantRowsHtml(v.rows) : '<div class="stock-none">На вибраних складах немає.</div>';
-        if (v.rows.length > 1) b += '<div class="stock-line total"><span>Разом</span><span>всього ' + fmtQty(v.P) + ' · вільно ' + fmtQty(v.A) + '</span></div>';
+        if (v.from && v.from.length) b += '<p class="stock-note" style="margin:2px 0 6px">Разом із комплектами 1С: ' + esc(v.from.join(', ')) + '</p>';
+        b += whTable(v.rows, 'Разом');
         return b + '</div>';
       };
       exact.forEach(function (v) { h += block(v, 'sv-exact'); });
@@ -728,8 +789,19 @@
     });
     if (m.kit) {
       h += '<div class="stock-kit"><p class="stock-part-h">Комплектів можна зібрати (з одного складу)</p>';
-      h += m.kit.perWh.length ? m.kit.perWh.map(function (w) { return '<div class="stock-line' + (w.kits <= 0 ? ' zero' : '') + '"><span>' + esc(w.name) + '</span><span>' + fmtQty(w.kits) + '</span></div>'; }).join('') : '<div class="stock-none">На вибраних складах немає.</div>';
-      h += '<div class="stock-line total"><span>Разом</span><span>' + fmtQty(m.kit.total) + '</span></div></div>';
+      if (m.kit.perWh.length) {
+        const whByCode = {};
+        (data.warehouses || []).forEach(function (w) { whByCode[w.code] = w; });
+        h += '<table class="stock-tbl"><thead><tr><th>Склад</th><th>Комплектів</th></tr></thead><tbody>';
+        m.kit.perWh.forEach(function (w) {
+          const meta = whByCode[w.code] || {};
+          const own = data.region_id != null && meta.region_id === data.region_id;
+          h += '<tr' + (own ? ' class="t-own"' : '') + '><th>' + esc(w.name) + '</th>' +
+            '<td class="' + (w.kits > 0 ? 't-has' : '') + '">' + fmtQty(w.kits) + '</td></tr>';
+        });
+        h += '<tr class="t-total"><th>Разом</th><td>' + fmtQty(m.kit.total) + '</td></tr></tbody></table>';
+      } else h += '<div class="stock-none">На вибраних складах немає.</div>';
+      h += '</div>';
     }
     if (m.parts.some(function (p) { return p.variants.some(function (v) { return !v.exact; }); })) {
       h += '<p class="stock-note">Показано всі позиції 1С з тим самим початком маркування (до «-W»/«-S»). Яку брати — вирішуйте самі.</p>';

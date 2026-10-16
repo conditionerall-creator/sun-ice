@@ -1121,7 +1121,11 @@ function switchTab(tab, pushHistory) {
      лишився б у змінній, і при поверненні в каталог renderCatalogView() показав би
      результати пошуку при згорнутому (тобто невидимому) полі. */
   if (tab !== 'catalog') { closeHeaderSearch(); clearCatalogSearch(false); }
-  document.getElementById('shortcut-icon').style.display = tab === 'cabinet' ? 'flex' : 'none';
+  /* Кнопка «Встановити» — лише тому, хто ще НЕ встановив застосунок (власник 2026-10-16:
+     «вона завжди є навіть при встановленому додатку»). Запущеному з головного екрана вона
+     нічого не дає й збиває з пантелику — зокрема при розборі «чому не приходять сповіщення»,
+     де «встановлений чи ні» — перше питання. isStandalone оголошено в js/11-shell.js. */
+  document.getElementById('shortcut-icon').style.display = (tab === 'cabinet' && !isStandalone) ? 'flex' : 'none';
   if (tab !== 'catalog') {
     document.getElementById('th-ezy-instruction-btn').style.display = 'none';
     document.getElementById('q-ton-instruction-btn').style.display = 'none';
