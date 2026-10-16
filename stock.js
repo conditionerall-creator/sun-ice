@@ -52,15 +52,55 @@
   const sum = function (arr, f) { return arr.reduce(function (s, x) { return s + f(x); }, 0); };
   const qty = function (v, code, field) { return v.wh[code] ? v.wh[code][field] : 0; };
 
-  /* Індекс з рядків get_stock: key → { n: назва 1С, wh: { код_складу: {p, a} } } */
+  /* Індекс з рядків get_stock: key → { n: назва 1С, wh: { код_складу: {p, a} }, from: [склеєні назви] }
+
+     СКЛЕЄНІ НАЗВИ (знайдено власником 2026-10-16). У 1С частина комплектів заведена одним рядком
+     через скісну риску: «SRK50HE-S1/SRC50HE-S1». Це не окремий товар, а два маркування того самого
+     комплекту. Раніше такий рядок не збігався з жодним маркуванням прайсу й потрапляв у «схожі
+     позиції», а дилер бачив «0» на товар, якого насправді 14 штук.
+     Тепер склеєний рядок РОЗКЛАДАЄТЬСЯ на обидві частини, кількості додаються до кожної, а сам
+     склеєний ключ в індексі не лишається (інакше ті самі штуки рахувалися б двічі). Початкова
+     назва зберігається в `from`, щоб адмін бачив, звідки взялись числа. */
   function buildIndex(rows) {
     const byKey = new Map();
+    const add = function (key, name, w, p, a, src) {
+      let e = byKey.get(key);
+      if (!e) { e = { k: key, n: name, wh: {}, from: [] }; byKey.set(key, e); }
+      const cur = e.wh[w] || (e.wh[w] = { p: 0, a: 0 });
+      cur.p += p; cur.a += a;
+      if (src && e.from.indexOf(src) === -1) e.from.push(src);
+    };
     (rows || []).forEach(function (r) {
-      let e = byKey.get(r.k);
-      if (!e) { e = { k: r.k, n: r.n, wh: {} }; byKey.set(r.k, e); }
-      e.wh[r.w] = { p: Number(r.p) || 0, a: Number(r.a) || 0 };
+      const p = Number(r.p) || 0, a = Number(r.a) || 0;
+      const parts = String(r.k == null ? '' : r.k).split('/').map(function (x) { return x.trim(); }).filter(Boolean);
+      if (parts.length > 1) parts.forEach(function (pk) { add(pk, pk, r.w, p, a, r.n); });
+      else add(r.k, r.n, r.w, p, a, null);
     });
     return { byKey: byKey, keys: Array.from(byKey.keys()).sort() };
+  }
+
+  /* Маркування, яких у МОЄМУ регіоні немає, але вони є на інших основних складах.
+     Дилеру цей перелік дає сервер (кількостей і назв складів він не отримує). АДМІНУ сервер віддає
+     всі склади, тож список для нього порожній — рахуємо тут із тих самих рядків. Без цього будь-який
+     нуль у свого адміна ставав ЧЕРВОНИМ «немає ніде», хоча товар лежав у Києві (знайдено власником). */
+  function elsewhereSet(data, whs) {
+    const set = Object.create(null);
+    const add = function (k) {
+      if (!k) return;
+      set[k] = 1;
+      String(k).split('/').forEach(function (p) { const t = p.trim(); if (t) set[t] = 1; });
+    };
+    (data.elsewhere || []).forEach(add);
+    if (data.mode === 'admin') {
+      const mine = Object.create(null);
+      whs.forEach(function (w) { mine[w.code] = 1; });
+      const outside = Object.create(null);
+      (data.warehouses || []).forEach(function (w) { if (isMain(w) && !mine[w.code]) outside[w.code] = 1; });
+      /* За ЗАГАЛЬНИМ залишком, а не за вільним: якщо на складі 4 штуки й усі зарезервовані,
+         товар фізично є — менеджер може домовитись. Казати «немає ніде» в такому разі неправда. */
+      (data.rows || []).forEach(function (r) { if (outside[r.w] && (Number(r.p) || 0) > 0) add(r.k); });
+    }
+    return set;
   }
 
   /* Усі позиції 1С, що підходять під маркування; точний збіг — першим. */
@@ -72,7 +112,7 @@
     index.keys.forEach(function (key) {
       if (base ? key.indexOf(base) === 0 : key === k) {
         const e = index.byKey.get(key);
-        out.push({ k: key, n: e.n, exact: key === k, wh: e.wh });
+        out.push({ k: key, n: e.n, exact: key === k, wh: e.wh, from: e.from || [] });
       }
     });
     out.sort(function (a, b) { return (b.exact ? 1 : 0) - (a.exact ? 1 : 0) || (a.k < b.k ? -1 : a.k > b.k ? 1 : 0); });
@@ -219,7 +259,7 @@
           variants: p.variants.map(function (v) {
             let rows = whs.map(function (w) { return { code: w.code, name: w.name, kind: w.kind, region: w.region, p: qty(v, w.code, 'p'), a: qty(v, w.code, 'a') }; });
             if (f.only) rows = rows.filter(function (r) { return r.p > 0; });
-            return { name: v.n, exact: v.exact, rows: rows, P: sum(rows, function (r) { return r.p; }), A: sum(rows, function (r) { return r.a; }) };
+            return { name: v.n, exact: v.exact, from: v.from || [], rows: rows, P: sum(rows, function (r) { return r.p; }), A: sum(rows, function (r) { return r.a; }) };
           })
         };
       }),
@@ -258,7 +298,7 @@
     if (!parts || !parts.length || !index || !data) return null;
     const whs = regionWarehouses(data);
     if (!whs.length) return null;
-    const els = data.elsewhere || [];
+    const els = elsewhereSet(data, whs);
     /* У дилера index містить ЛИШЕ склади його регіону. Позиція, якої тут немає, але яка є деінде,
        у index не потрапляє зовсім — вона приходить окремим списком data.elsewhere (самі маркування).
        Для регіонів це найчастіший випадок (200–300 позицій), тому обробляємо його нарівні. */
@@ -267,7 +307,7 @@
       if (!k) return null;
       const e = index.byKey.get(k);
       if (e) return { k: k, wh: e.wh };
-      if (els.indexOf(k) !== -1) return { k: k, wh: {} };   // у регіоні немає, але десь є
+      if (els[k]) return { k: k, wh: {} };                  // у регіоні немає, але десь є
       return null;                                          // у 1С немає взагалі
     });
     // Жодної частини в 1С немає → позначки немає (нічого не вигадуємо).
@@ -284,7 +324,7 @@
        Інакше обіцяли б доставку комплекту, половини якого немає ніде. */
     const elsewhere = ex.every(function (e) {
       const hereA = sum(whs, function (w) { return e.wh[w.code] ? e.wh[w.code].a : 0; });
-      return hereA > 0 || els.indexOf(e.k) !== -1;
+      return hereA > 0 || !!els[e.k];
     });
     const bP = bucketOf(P, t), bA = bucketOf(A, t);
     let tone, note;
@@ -310,7 +350,8 @@
   const api = { normKey: normKey, baseOf: baseOf, leadOf: leadOf, buildIndex: buildIndex, matchVariants: matchVariants, summarizeParts: summarizeParts,
                 kitFor: kitFor, partsFor: partsFor, freshness: freshness, fmtAge: fmtAge, fmtQty: fmtQty,
                 compactView: compactView, applyFilter: applyFilter, fullView: fullView,
-                regionWarehouses: regionWarehouses, exactOf: exactOf, badgeFor: badgeFor, badgeNote: badgeNote };
+                regionWarehouses: regionWarehouses, exactOf: exactOf, badgeFor: badgeFor, badgeNote: badgeNote,
+                elsewhereSet: elsewhereSet };
 
   if (typeof document === 'undefined') { // Node (тести): лише чиста логіка
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
@@ -649,6 +690,7 @@
       const similar = p.variants.filter(function (v) { return !v.exact; });
       const block = function (v, cls) {
         let b = '<div class="stock-var ' + cls + '"><div class="stock-var-n"><span>' + esc(v.name) + '</span><em>' + (v.exact ? 'точний збіг' : 'схожа позиція') + '</em></div>';
+        if (v.from && v.from.length) b += '<p class="stock-note" style="margin:2px 0 4px">Разом із комплектами 1С: ' + esc(v.from.join(', ')) + '</p>';
         b += v.rows.length ? variantRowsHtml(v.rows) : '<div class="stock-none">На вибраних складах немає.</div>';
         if (v.rows.length > 1) b += '<div class="stock-line total"><span>Разом</span><span>всього ' + fmtQty(v.P) + ' · вільно ' + fmtQty(v.A) + '</span></div>';
         return b + '</div>';

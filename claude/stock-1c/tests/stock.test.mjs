@@ -166,6 +166,44 @@ b = S.badgeFor([{ m: 'SRC35ZS-W2', role: 'outdoor' }], idx, adminData);
 assert.deepEqual([b.label, b.tone, b.region], ['>5', 'ok', 'Одеса'], 'київські 30 шт. у позначку одеського адміна не потрапляють');
 assert.equal(S.regionWarehouses({ ...adminData, region_id: null }).length, 0, 'адмін без регіону — позначки немає');
 
+// --- СКЛЕЄНІ НАЗВИ 1С «A/B» (знайдено власником 2026-10-16) ---
+// У 1С частина комплектів заведена одним рядком: «SRK50HE-S1/SRC50HE-S1». Раніше такий рядок
+// не збігався з жодним маркуванням прайсу, і дилер бачив «0» на товар, якого 14 штук.
+const pairRows = [
+  { k: 'SRK50HE-S1', n: 'SRK50HE-S1', w: 'KYIV_GORENICHI', p: 1, a: 1 },
+  { k: 'SRK50HE-S1/SRC50HE-S1', n: 'SRK50HE-S1/SRC50HE-S1', w: 'KYIV_GORENICHI', p: 14, a: 11 },
+];
+const pidx = S.buildIndex(pairRows);
+assert.equal(pidx.byKey.get('SRK50HE-S1/SRC50HE-S1'), undefined, 'склеєний ключ в індексі не лишається — інакше подвійний рахунок');
+assert.deepEqual(pidx.byKey.get('SRK50HE-S1').wh.KYIV_GORENICHI, { p: 15, a: 12 }, 'внутрішній: 1 окремо + 14 у комплектах');
+assert.deepEqual(pidx.byKey.get('SRC50HE-S1').wh.KYIV_GORENICHI, { p: 14, a: 11 }, 'зовнішній існує лише всередині комплекту');
+assert.deepEqual(pidx.byKey.get('SRC50HE-S1').from, ['SRK50HE-S1/SRC50HE-S1'], 'звідки взялись числа — видно адміну');
+
+const kyivAdmin = {
+  mode: 'admin', region_id: 1, badge_threshold: 5, low_threshold: 2, fresh_minutes: 45, stale_minutes: 120,
+  last_success_at: '2026-10-16T09:00:00Z', server_now: '2026-10-16T09:05:00Z',
+  warehouses: [{ code: 'KYIV_GORENICHI', name: 'Гореничі', kind: 'main', region: 'Київ', region_id: 1 },
+               { code: 'ODESA', name: 'Одеса', kind: 'main', region: 'Одеса', region_id: 2 }],
+  rows: pairRows, elsewhere: [],
+};
+let pb = S.badgeFor([{ m: 'SRK50HE-S1', role: 'indoor' }, { m: 'SRC50HE-S1', role: 'outdoor' }], pidx, kyivAdmin);
+assert.deepEqual([pb.label, pb.tone], ['>5', 'ok'], 'комплект зі склеєного рядка: min(15,14) всього, min(12,11) вільних');
+
+// --- АДМІН: «є на інших складах» рахує клієнт (сервер віддає адміну порожній elsewhere) ---
+// Без цього будь-який нуль у своєму регіоні ставав червоним «немає ніде» (знайдено власником).
+const adminRows = [
+  { k: 'ONLYKYIV-W', n: 'ONLYKYIV-W', w: 'KYIV_GORENICHI', p: 4, a: 0 }, // є, але все зарезервовано
+  { k: 'NOWHERE2-W', n: 'NOWHERE2-W', w: 'ODESA', p: 0, a: 0 },
+];
+const odesaAdmin = { ...kyivAdmin, region_id: 2, rows: adminRows };
+const aidx = S.buildIndex(adminRows);
+let ab = S.badgeFor([{ m: 'ONLYKYIV-W', role: null }], aidx, odesaAdmin);
+assert.deepEqual([ab.label, ab.tone, ab.note], ['0', 'warn', 'elsewhere'], '4 шт. у Києві, хай і в резерві, — це не «немає ніде»');
+ab = S.badgeFor([{ m: 'NOWHERE2-W', role: null }], aidx, odesaAdmin);
+assert.deepEqual([ab.label, ab.tone, ab.note], ['0', 'out', 'nowhere'], 'ніде нічого — ось тоді червоний');
+assert.ok(S.elsewhereSet(odesaAdmin, [{ code: 'ODESA' }])['ONLYKYIV-W'], 'ключ потрапив у множину «деінде»');
+assert.ok(S.elsewhereSet({ mode: 'user', elsewhere: ['A-W/B-W'] }, [])['B-W'], 'склеєний ключ із серверного списку теж розкладається');
+
 // --- свіжість ---
 const t0 = Date.parse('2026-10-02T10:10:00Z');
 assert.equal(S.freshness(data, t0, t0).state, 'fresh');

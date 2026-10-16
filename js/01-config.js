@@ -8,7 +8,7 @@
 /* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
    файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
    ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
-const APP_BUILD = '2026-10-16.2'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-16.3'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
@@ -207,8 +207,15 @@ function syncStockModule(allowed) {
     if (!window.Stock) return;
     window.Stock.refresh();
     /* Модуль міг приїхати ВЖЕ ПІСЛЯ того, як список намальовано: тоді в рядках немає слотів
-       (їх вставляє Stock.slotHtml під час рендеру), і позначки не з’являться до наступного перемальовування списку. */
-    if (typeof renderCatalogList === 'function' && typeof currentTab !== 'undefined' && currentTab === 'catalog' && typeof activeTile !== 'undefined' && activeTile) renderCatalogList();
+       (їх вставляє Stock.slotHtml під час рендеру), і позначки не з’являться до наступного перемальовування.
+       ВАЖЛИВО: перемальовуємо БЕЗ анімації появи рядків і повертаємо прокрутку на місце — інакше список
+       «стрибає» під пальцем у того, хто вже гортає (власник зняв це на відео 2026-10-16). */
+    if (typeof renderCatalogList === 'function' && typeof currentTab !== 'undefined' && currentTab === 'catalog' && typeof activeTile !== 'undefined' && activeTile) {
+      const y = window.scrollY;
+      if (typeof catalogRowsSkipStagger !== 'undefined') catalogRowsSkipStagger = true;
+      renderCatalogList();
+      window.scrollTo(0, y);
+    }
   };
   el.onerror = () => { stockModuleLoading = false; }; // офлайн/збій — просто без залишків
   document.head.appendChild(el);

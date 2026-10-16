@@ -80,6 +80,7 @@ begin
       from public.stock_levels l join public.stock_warehouses w on w.code = l.warehouse_code
      where w.show_in_app;
 
+    -- Адмін бачить усі склади, тож перелік «деінде» рахує сам клієнт (stock.js, elsewhereSet).
     v_else := '[]'::jsonb;
   else
     -- ---------- ДИЛЕР: лише основні склади свого регіону ----------
@@ -97,17 +98,19 @@ begin
       from public.stock_levels l join public.stock_warehouses w on w.code = l.warehouse_code
      where w.show_in_app and w.kind = 'main' and w.region_id = v_region;
 
-    -- Маркування, вільні на інших основних складах, але не у своєму регіоні.
+    -- Маркування, яких немає у своєму регіоні, але вони Є на інших основних складах.
+    -- За ЗАГАЛЬНИМ залишком, не за вільним (зауваження власника 2026-10-16): якщо в Києві
+    -- 4 штуки й усі зарезервовані — товар фізично Є, і «немає ніде» було б неправдою.
     select coalesce(jsonb_agg(distinct l.item_key), '[]'::jsonb)
       into v_else
       from public.stock_levels l join public.stock_warehouses w on w.code = l.warehouse_code
      where w.show_in_app and w.kind = 'main' and w.region_id is distinct from v_region
-       and l.available > 0
+       and l.physical > 0
        and not exists (
              select 1
                from public.stock_levels l2 join public.stock_warehouses w2 on w2.code = l2.warehouse_code
               where l2.item_key = l.item_key and w2.kind = 'main'
-                and w2.region_id = v_region and l2.available > 0);
+                and w2.region_id = v_region and l2.physical > 0);
   end if;
 
   return jsonb_build_object(
