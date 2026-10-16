@@ -64,7 +64,8 @@ export function kyivToDate(y: number, mo: number, d: number, h: number, mi: numb
 function findGeneratedAt(aoa: unknown[][]): Date | null {
   for (let i = 0; i < Math.min(aoa.length, 15); i++) {
     for (const cell of aoa[i] || []) {
-      const m = /Період:\s*на\s*(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/.exec(String(cell ?? ''));
+      // Година буває одноцифровою («9:36:58»), а слово — українським або російським, залежно від мови інтерфейсу 1С.
+      const m = /Пер[іи]од:\s*на\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(String(cell ?? ''));
       if (m) return kyivToDate(+m[3], +m[2], +m[1], +m[4], +m[5], +(m[6] ?? 0));
     }
   }
