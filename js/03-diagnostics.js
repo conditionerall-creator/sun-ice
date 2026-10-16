@@ -37,7 +37,8 @@ const DIAG_AREA = {
   modules: 'Модулі застосунку',
   specs: 'Характеристики товарів',
   search: 'Пошук по каталогу',
-  header: 'Шапка застосунку'
+  header: 'Шапка застосунку',
+  push: 'Сповіщення (push)'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -442,6 +443,49 @@ async function diagCheckRoles(ctx) {
   return out;
 }
 
+/* ---- 4а. Сповіщення (push) ----
+   Додано 2026-10-16 після скарги «сповіщення приходять лише коли зайшов у застосунок».
+   Розслідування показало, що функція відправки мовчки ковтала всі помилки й завжди
+   звітувала «ок», а троє адмінів узагалі не мали підписки — і ніщо про це не казало.
+   Тепер кожна відправка пишеться в push_log, а ця перевірка показує підсумок.
+   Дані бере окрема RPC: push_subscriptions кожен бачить лише свої (RLS). */
+async function diagCheckPush(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.push;
+  const tgt = { tab: 'cabinet' };
+  let data = null;
+  try {
+    const r = await sb.rpc('get_push_health');
+    data = r && r.data;
+  } catch (e) { /* нижче повідомимо */ }
+  if (!data) {
+    out.issues.push(diagIssue(area, 'access', 'info', 'Стан сповіщень недоступний',
+      ['Зведення віддається лише супер-адміну. Якщо ви супер-адмін і бачите це повідомлення — у базі немає функції get_push_health.'], tgt));
+    return out;
+  }
+  const noSubs = data.admins_no_subs || [];
+  if (noSubs.length) {
+    out.issues.push(diagIssue(area, 'subs', 'warning',
+      'Адміністратори без підписки на сповіщення: ' + noSubs.length + ' із ' + data.admins,
+      ['Їм push не надсилається взагалі — вони бачать заявки лише коли самі відкриють Кабінет.',
+       'Лікується на їхньому пристрої: Кабінет → увімкнути сповіщення й дозволити їх у системі.']
+      .concat(noSubs), tgt));
+  }
+  if (Number(data.failed7) > 0) {
+    out.issues.push(diagIssue(area, 'errors', 'warning',
+      'Невдалих відправок за 7 днів: ' + data.failed7,
+      ['Коди відповіді від Google/Apple:'].concat(data.errors || []), tgt));
+  }
+  if (Number(data.subs) > 0 && Number(data.sent7) === 0 && Number(data.failed7) === 0) {
+    out.issues.push(diagIssue(area, 'silence', 'info',
+      'За 7 днів жодного сповіщення не надсилалось',
+      ['Це нормально, якщо не було нових заявок і акцій.'], tgt));
+  }
+  out.checked.push({ area: area, sub: 'push', label: 'Підписки на сповіщення та доставка за 7 днів',
+    detail: 'адмінів ' + data.admins + ' · підписок ' + data.subs + ' · надіслано ' + data.sent7 + ', помилок ' + data.failed7 });
+  return out;
+}
+
 /* ---- 5. Курси валют ---- */
 async function diagCheckRates(ctx) {
   const out = { issues: [], checked: [] };
@@ -837,6 +881,7 @@ const DIAG_CHECKS = [
   { id: 'series-images', label: 'Фото серій з Excel', run: ctx => diagCheckSeriesImages(ctx) },
   { id: 'roles', label: 'Ролі та доступи', run: ctx => diagCheckRoles(ctx) },
   { id: 'rates', label: 'Курси валют', run: ctx => diagCheckRates(ctx) },
+  { id: 'push', label: 'Сповіщення (push)', run: ctx => diagCheckPush(ctx) },
   { id: 'build', label: 'Версія застосунку', run: ctx => diagCheckBuild(ctx) },
   { id: 'site-live', label: 'Картки на сайті (сервер)', run: ctx => diagCheckSiteLive(ctx) }
 ];

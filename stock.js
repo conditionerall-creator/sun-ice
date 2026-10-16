@@ -829,7 +829,14 @@
       const r = await sb.rpc('get_stock_sync_log', { p_limit: 10 });
       const bad = r && r.data && r.data.log ? r.data.log.filter(function (l) { return l.status === 'rejected' || l.status === 'error'; }) : [];
       if (bad.length) out.issues.push(diagIssue(area, 'log', 'warning', 'Відхилені або помилкові синхронізації серед останніх 10',
-        bad.slice(0, 5).map(function (l) { return String(l.started_at).slice(0, 16).replace('T', ' ') + ' — ' + l.status + ': ' + (l.reason || ''); }), tgt));
+        /* Час показуємо КИЇВСЬКИЙ: у базі він у UTC, і «08:30» замість «11:30» збивало з пантелику
+           при розборі (помічено власником 2026-10-16). */
+        bad.slice(0, 5).map(function (l) {
+          const d = new Date(l.started_at);
+          const t = isNaN(d) ? String(l.started_at).slice(0, 16).replace('T', ' ')
+            : d.toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+          return t + ' — ' + l.status + ': ' + (l.reason || '');
+        }), tgt));
       out.checked.push({ area: area, sub: 'log', label: 'Журнал синхронізацій (останні 10)', detail: bad.length ? bad.length + ' відхилено/помилок' : 'без відхилень' });
     } catch (e) { /* журнал недоступний — не блокуємо інші перевірки */ }
 
