@@ -291,7 +291,9 @@
     if (bP === 0) { tone = elsewhere ? 'warn' : 'out'; note = elsewhere ? 'elsewhere' : 'nowhere'; }
     else if (bA === bP) { tone = 'ok'; note = null; }
     else { tone = 'warn'; note = 'reserved'; }
-    return { label: bP === 0 ? '0' : (bP === 1 ? '<' + t + ' шт.' : '>' + t + ' шт.'),
+    /* Підпис навмисно без «шт.» (рішення власника 2026-10-16): у рядку прайсу поруч із ціною
+       кожен зайвий символ розтягує праву колонку. «<5» читається так само однозначно. */
+    return { label: bP === 0 ? '0' : (bP === 1 ? '<' + t : '>' + t),
              tone: tone, note: note, P: P, A: A, threshold: t,
              region: (whs[0] && whs[0].region) || '' };
   }
@@ -368,14 +370,16 @@
     '.stock-chips::-webkit-scrollbar{display:none}' +
     '.stock-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:999px;padding:5px 11px;font:600 12px/1.2 inherit;font-family:inherit;cursor:pointer}' +
     '.stock-chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}' +
-    /* --- позначка наявності в рядку прайсу (бачать усі, хто бачить ціни) --- */
-    '.stock-badge{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:999px;border:1px solid;font:700 11.5px/1 inherit;font-family:inherit;white-space:nowrap;background:transparent;-webkit-appearance:none;padding-inline:8px}' +
-    '.stock-badge.sb-ok{color:#2F6B3C;border-color:#9BC7A6;background:rgba(79,138,91,.13)}' +
-    '.stock-badge.sb-warn{color:#8A6104;border-color:#DBB457;background:rgba(192,138,28,.15)}' +
-    '.stock-badge.sb-out{color:var(--danger);border-color:var(--danger)}' +
-    '.stock-badge.sb-stale{color:var(--text-secondary);border-color:var(--border);background:transparent}' +
-    'button.stock-badge{cursor:pointer}button.stock-badge:active{filter:brightness(.94)}' +
-    '.stock-badge .sb-i{display:inline-flex;width:14px;height:14px;border-radius:50%;border:1.3px solid currentColor;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;line-height:1;flex:0 0 14px}' +
+    /* --- позначка наявності в рядку прайсу (бачать усі, хто бачить ціни) ---
+       Рішення власника 2026-10-16: НЕ кнопка й не пігулка, а просто напис — кольором відрізняється
+       сам текст. Рамка з підложкою з'їдали ширину поруч із ціною й виглядали як ще одна кнопка. */
+    '.stock-badge{display:inline-flex;align-items:center;gap:3px;min-height:26px;padding:0 1px;border:0;border-radius:0;background:transparent;font:800 13.5px/1 inherit;font-family:inherit;white-space:nowrap;-webkit-appearance:none;color:inherit}' +
+    '.stock-badge.sb-ok{color:#2F6B3C}' +
+    '.stock-badge.sb-warn{color:#8A6104}' +
+    '.stock-badge.sb-out{color:var(--danger)}' +
+    '.stock-badge.sb-stale{color:var(--text-secondary)}' +
+    'button.stock-badge{cursor:pointer}button.stock-badge:active{opacity:.55}' +
+    '.stock-badge .sb-i{display:inline-flex;width:13px;height:13px;border-radius:50%;border:1.2px solid currentColor;align-items:center;justify-content:center;font-size:9px;font-weight:800;line-height:1;flex:0 0 13px;opacity:.9}' +
     '.stock-badge .sb-clock{width:12px;height:12px;flex:0 0 12px;opacity:.85}' +
     '.stock-note-big{margin:0;font-size:13px;line-height:1.5;color:var(--text)}' +
     '.stock-note-big b{font-weight:700}' +

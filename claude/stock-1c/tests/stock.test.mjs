@@ -134,21 +134,21 @@ const uidx = S.buildIndex(userRows);
 const badge = (m) => S.badgeFor([].concat(m).map((x) => (typeof x === 'string' ? { m: x, role: null } : x)), uidx, userData);
 
 let b = badge('SRC35ZS-W2');                       // 14 всього / 12 вільних
-assert.deepEqual([b.label, b.tone, b.note], ['>5 шт.', 'ok', null]);
+assert.deepEqual([b.label, b.tone, b.note], ['>5', 'ok', null], 'підпис без «шт.» — рішення власника');
 b = badge('SRK20ZS-W');                            // 3 / 2
-assert.deepEqual([b.label, b.tone, b.note], ['<5 шт.', 'ok', null]);
+assert.deepEqual([b.label, b.tone, b.note], ['<5', 'ok', null]);
 b = badge('RESERVED-W');                           // 8 всього, вільних 3 → цифра від загального, колір від вільного
-assert.deepEqual([b.label, b.tone, b.note], ['>5 шт.', 'warn', 'reserved'], 'приклад власника: 80 на складі / 3 вільних');
+assert.deepEqual([b.label, b.tone, b.note], ['>5', 'warn', 'reserved'], 'приклад власника: 80 на складі / 3 вільних');
 b = badge('ZEROMAIN-W');                           // 0 у регіоні, але є деінде
 assert.deepEqual([b.label, b.tone, b.note], ['0', 'warn', 'elsewhere']);
 b = badge('FARAWAY-W');                            // у регіоні немає зовсім, але є деінде
 assert.deepEqual([b.label, b.tone, b.note], ['0', 'warn', 'elsewhere'], 'позиції, якої немає в регіоні, у rows немає — беремо з elsewhere');
 b = badge('FDE71VH');                              // 2 / 2 у регіоні, деінде немає
-assert.deepEqual([b.label, b.tone], ['<5 шт.', 'ok']);
+assert.deepEqual([b.label, b.tone], ['<5', 'ok']);
 assert.equal(badge('NOPE-W'), null, 'немає ні в регіоні, ні деінде → позначки немає взагалі');
 // комплект: беремо min(внутр., зовн.) по складу
 b = badge([{ m: 'SRK20ZS-W', role: 'indoor' }, { m: 'SRC35ZS-W2', role: 'outdoor' }]);
-assert.deepEqual([b.label, b.tone], ['<5 шт.', 'ok'], 'min(3,14) всього і min(2,12) вільних');
+assert.deepEqual([b.label, b.tone], ['<5', 'ok'], 'min(3,14) всього і min(2,12) вільних');
 assert.equal(badge([{ m: 'SRK20ZS-W', role: 'indoor' }, { m: 'NOPE-W', role: 'outdoor' }]), null, 'півкомплекту — це не наявність');
 // червоний нуль: позиція є в 1С регіону з нулем і ніде більше
 const redRows = userRows.concat([{ k: 'NOWHERE-W', n: 'NOWHERE-W', w: 'ODESA', p: 0, a: 0 }]);
@@ -163,7 +163,7 @@ assert.equal(S.badgeNote({ note: null }), '');
 const adminData = { ...data, mode: 'admin', region_id: 2, badge_threshold: 5, elsewhere: [],
   warehouses: data.warehouses.map((w) => ({ ...w, region_id: w.region === 'Одеса' ? 2 : 1 })) };
 b = S.badgeFor([{ m: 'SRC35ZS-W2', role: 'outdoor' }], idx, adminData);
-assert.deepEqual([b.label, b.tone, b.region], ['>5 шт.', 'ok', 'Одеса'], 'київські 30 шт. у позначку одеського адміна не потрапляють');
+assert.deepEqual([b.label, b.tone, b.region], ['>5', 'ok', 'Одеса'], 'київські 30 шт. у позначку одеського адміна не потрапляють');
 assert.equal(S.regionWarehouses({ ...adminData, region_id: null }).length, 0, 'адмін без регіону — позначки немає');
 
 // --- свіжість ---
