@@ -396,6 +396,8 @@
     '.stock-sum{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;font-weight:700;font-size:13.5px;margin:0 0 2px}' +
     '.stock-sum::before{content:"";flex:0 0 9px;width:9px;height:9px;border-radius:50%;background:var(--stock-c,#8B8682)}' +
     '.stock-sum small{font-weight:500;color:var(--text-secondary);font-size:12px}' +
+    '.stock-sum-free{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;font-weight:700;font-size:13.5px;margin:0 0 2px;padding-left:15px;color:var(--text)}' +
+    '.stock-sum-free small{font-weight:500;color:var(--text-secondary);font-size:12px}' +
     '.stock-note{font-size:12px;color:var(--text-secondary);margin:4px 0 0;line-height:1.45}' +
     '.stock-warn{background:var(--accent-bg);border-radius:10px;padding:7px 10px;color:var(--text);font-size:12.5px;margin:6px 0 8px}' +
     '.stock-wl{margin-top:6px}' +
@@ -497,6 +499,17 @@
   function partsOf(slot) { try { return JSON.parse(decodeURIComponent(slot.getAttribute('data-stock-parts'))); } catch (e) { return null; } }
   const joinQ = function (vals, f) { return vals.map(function (x) { return fmtQty(x[f]); }).join(' + '); };
 
+  /* Те саме, але з підписом блоку біля КОЖНОГО числа: «0 (внутр.) + 4 (зовн.)» замість
+     «0+4 (внутр. + зовн.)» (рішення власника 2026-10-16): у другому варіанті доводилось
+     здогадуватись, яке число до чого, а 0 і 4 — це зовсім різні висновки. */
+  const ROLE_SHORT = { indoor: 'внутр.', outdoor: 'зовн.' };
+  const joinRoles = function (parts, vals, f) {
+    return vals.map(function (x, i) {
+      const lbl = ROLE_SHORT[parts[i] && parts[i].role];
+      return fmtQty(x[f]) + (lbl ? ' <small>(' + lbl + ')</small>' : '');
+    }).join(' + ');
+  };
+
   /* ---- КОРОТКА панель ---- */
   /* КОРОТКА панель (адміни). З 2026-10-16 показує ТІЛЬКИ ТОЧНИЙ ЗБІГ: одна цифра — одна відповідь.
      Схожі позиції не зникли, але живуть у «Повній інформації», де видно, яка саме це позиція. */
@@ -513,9 +526,11 @@
     if (bdg) h += '<p class="stock-badge-line"><span class="stock-badge sb-' + bdg.tone + '">' + esc(bdg.label) + '</span>' +
       '<small>' + esc(bdg.region ? 'ваш регіон: ' + bdg.region : 'ваш регіон') + '</small></p>';
     h += '<p class="stock-exact-h">Точний збіг</p>';
+    /* Порядок «спершу всього, потім вільно» — вимога власника: спочатку відповідь «чи товар узагалі
+       є», і лише потім «скільки з нього не під чужим замовленням». */
     h += v.hasExact
-      ? '<div class="stock-' + status + '"><p class="stock-sum">Вільно: ' + joinQ(v.totals, 'a') + (pair ? ' <small>(внутр. + зовн.)</small>' : '') +
-        ' <small>· всього ' + joinQ(v.totals, 'p') + '</small></p></div>'
+      ? '<div class="stock-' + status + '"><p class="stock-sum">Всього: ' + joinRoles(s.parts, v.totals, 'p') + '</p>' +
+        '<p class="stock-sum-free">Вільно: ' + joinRoles(s.parts, v.totals, 'a') + '</p></div>'
       : '<div class="stock-none">Точного збігу в 1С немає — дивіться схожі позиції в повній інформації.</div>';
     h += fr.state === 'stale'
       ? '<div class="stock-warn">Дані про залишки можуть бути неактуальними — востаннє підтверджено ' + esc(fmtAge(fr.ageMin)) + '.</div>'
@@ -523,12 +538,12 @@
     h += '<div class="stock-wl">';
     if (v.rows.length) {
       v.rows.forEach(function (r) {
-        h += '<div class="stock-line"><span>' + esc(r.name) + '</span><span>вільно ' + joinQ(r.vals, 'a') + ' · всього ' + joinQ(r.vals, 'p') + '</span></div>';
+        h += '<div class="stock-line"><span>' + esc(r.name) + '</span><span>всього ' + joinQ(r.vals, 'p') + ' · вільно ' + joinQ(r.vals, 'a') + '</span></div>';
       });
     } else h += '<div class="stock-none">На основних складах немає.</div>';
     h += '</div>';
     s.parts.filter(function (p) { return !p.found; }).forEach(function (p) { h += '<p class="stock-note">У 1С не знайдено: ' + esc(p.marking) + '</p>'; });
-    if (v.extra.any) h += '<p class="stock-note">На додаткових складах: вільно ' + joinQ(v.extra.vals, 'a') + ' · всього ' + joinQ(v.extra.vals, 'p') + '</p>';
+    if (v.extra.any) h += '<p class="stock-note">На додаткових складах: всього ' + joinQ(v.extra.vals, 'p') + ' · вільно ' + joinQ(v.extra.vals, 'a') + '</p>';
     if (v.similar) h += '<p class="stock-note">Схожих позицій (-W1, -W2 …): ' + v.similar + ' — у повній інформації.</p>';
     h += '<button type="button" class="stock-more">Повна інформація</button>';
     return h;
