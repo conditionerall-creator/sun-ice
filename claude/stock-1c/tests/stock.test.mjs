@@ -68,17 +68,22 @@ sm = S.summarizeParts([{ m: 'ZEROMAIN-W', role: null }], idx, data);
 assert.equal(sm.any, true); assert.equal(sm.status, 'out', 'нуль на основному складі — це результат, кнопка є');
 assert.equal(S.summarizeParts([{ m: 'NOPE-W', role: null }], idx, data).any, false, 'нема в 1С → кнопки нема');
 
-// --- КОРОТКА панель ---
+// --- КОРОТКА панель: з 2026-10-16 ТІЛЬКИ ТОЧНИЙ ЗБІГ (схожі позиції — у повній інформації) ---
 let cv = S.compactView([{ m: 'SRC35ZS-W2', role: 'outdoor' }], idx, data);
-assert.deepEqual(cv.rows.map((r) => [r.name, r.vals[0].p, r.vals[0].a]), [['Одеса', 28, 24], ['Київ — Гореничі', 30, 20]], 'варіанти складені в один рядок на склад');
+assert.deepEqual(cv.rows.map((r) => [r.name, r.vals[0].p, r.vals[0].a]), [['Одеса', 14, 12], ['Київ — Гореничі', 30, 20]], 'лише точний збіг: -W і -W1 сюди не входять');
+assert.equal(cv.hasExact, true);
+assert.deepEqual(cv.totals, [{ p: 44, a: 32 }], 'підсумок основних складів — теж лише точний збіг');
 assert.equal(cv.extra.any, true); assert.deepEqual(cv.extra.vals, [{ p: 3, a: 3 }]);
-assert.equal(cv.similar, 2);
+assert.equal(cv.similar, 2, 'схожі не зникли — їх рахуємо, щоб написати «є ще N»');
+cv = S.compactView([{ m: 'SRK20ZS-WT', role: null }], idx, data);
+assert.equal(cv.hasExact, false, 'точного збігу немає (є лише -W і -WB) → панель так і каже');
+assert.equal(cv.rows.length, 0);
 cv = S.compactView([{ m: 'ONLYUSED-W', role: null }], idx, data);
 assert.equal(cv.rows.length, 0, 'на основних нема — рядків нема'); assert.equal(cv.extra.any, true);
 cv = S.compactView([{ m: 'ZEROMAIN-W', role: null }], idx, data);
 assert.equal(cv.rows.length, 0, 'склад з нулем у короткій панелі не показується');
 cv = S.compactView([{ m: 'SRK20ZS-W', role: 'indoor' }, { m: 'SRC35ZS-W2', role: 'outdoor' }], idx, data);
-assert.deepEqual(cv.rows.map((r) => [r.name, r.vals.map((x) => x.a)]), [['Одеса', [3, 24]], ['Київ — Гореничі', [0, 20]]]);
+assert.deepEqual(cv.rows.map((r) => [r.name, r.vals.map((x) => x.a)]), [['Одеса', [2, 12]], ['Київ — Гореничі', [0, 20]]]);
 
 // --- ПОВНА інформація + фільтри ---
 const P2 = [{ m: 'SRC35ZS-W2', role: 'outdoor' }];
@@ -115,6 +120,51 @@ assert.deepEqual(S.partsFor({ model: 'Wifi адаптер для LCAC Module Ass
 assert.deepEqual(S.partsFor({ model: 'SRK71ZR-W + FDC71VNX-W' }, 'semi_mhi', []).map((p) => [p.m, p.role]), [['SRK71ZR-W', 'indoor'], ['FDC71VNX-W', 'outdoor']]);
 assert.deepEqual(S.partsFor({ model: 'GBZ18MLQ-W', outdoorModel: 'GCZ18MLNQ-W', unitType: 'indoor' }, 'semi_gal', []).map((p) => p.role), ['indoor', 'outdoor']);
 assert.deepEqual(S.partsFor({ model: 'SCM40ZS-W', unitType: 'outdoor' }, 'multisplit_mhi', []), [{ m: 'SCM40ZS-W', role: 'outdoor' }]);
+
+// --- ПОЗНАЧКА В РЯДКУ ПРАЙСУ (рішення власника 2026-10-16) ---
+// Дилер з Одеси: сервер віддає лише одеські рядки + перелік маркувань, доступних деінде.
+const userRows = rows.filter((r) => r.w === 'ODESA').concat([{ k: 'RESERVED-W', n: 'RESERVED-W', w: 'ODESA', p: 8, a: 3 }]);
+const userData = {
+  mode: 'user', region_id: 2, badge_threshold: 5, low_threshold: 2, fresh_minutes: 45, stale_minutes: 120,
+  last_success_at: '2026-10-02T10:00:00Z', server_now: '2026-10-02T10:10:00Z',
+  warehouses: [{ code: 'ODESA', name: 'Одеса', kind: 'main', region: 'Одеса', region_id: 2 }],
+  rows: userRows, elsewhere: ['ZEROMAIN-W', 'FARAWAY-W'],
+};
+const uidx = S.buildIndex(userRows);
+const badge = (m) => S.badgeFor([].concat(m).map((x) => (typeof x === 'string' ? { m: x, role: null } : x)), uidx, userData);
+
+let b = badge('SRC35ZS-W2');                       // 14 всього / 12 вільних
+assert.deepEqual([b.label, b.tone, b.note], ['>5 шт.', 'ok', null]);
+b = badge('SRK20ZS-W');                            // 3 / 2
+assert.deepEqual([b.label, b.tone, b.note], ['<5 шт.', 'ok', null]);
+b = badge('RESERVED-W');                           // 8 всього, вільних 3 → цифра від загального, колір від вільного
+assert.deepEqual([b.label, b.tone, b.note], ['>5 шт.', 'warn', 'reserved'], 'приклад власника: 80 на складі / 3 вільних');
+b = badge('ZEROMAIN-W');                           // 0 у регіоні, але є деінде
+assert.deepEqual([b.label, b.tone, b.note], ['0', 'warn', 'elsewhere']);
+b = badge('FARAWAY-W');                            // у регіоні немає зовсім, але є деінде
+assert.deepEqual([b.label, b.tone, b.note], ['0', 'warn', 'elsewhere'], 'позиції, якої немає в регіоні, у rows немає — беремо з elsewhere');
+b = badge('FDE71VH');                              // 2 / 2 у регіоні, деінде немає
+assert.deepEqual([b.label, b.tone], ['<5 шт.', 'ok']);
+assert.equal(badge('NOPE-W'), null, 'немає ні в регіоні, ні деінде → позначки немає взагалі');
+// комплект: беремо min(внутр., зовн.) по складу
+b = badge([{ m: 'SRK20ZS-W', role: 'indoor' }, { m: 'SRC35ZS-W2', role: 'outdoor' }]);
+assert.deepEqual([b.label, b.tone], ['<5 шт.', 'ok'], 'min(3,14) всього і min(2,12) вільних');
+assert.equal(badge([{ m: 'SRK20ZS-W', role: 'indoor' }, { m: 'NOPE-W', role: 'outdoor' }]), null, 'півкомплекту — це не наявність');
+// червоний нуль: позиція є в 1С регіону з нулем і ніде більше
+const redRows = userRows.concat([{ k: 'NOWHERE-W', n: 'NOWHERE-W', w: 'ODESA', p: 0, a: 0 }]);
+const redData = { ...userData, rows: redRows };
+b = S.badgeFor([{ m: 'NOWHERE-W', role: null }], S.buildIndex(redRows), redData);
+assert.deepEqual([b.label, b.tone, b.note], ['0', 'out', 'nowhere']);
+// підписи під позначкою
+assert.ok(S.badgeNote({ note: 'elsewhere', region: 'Одеса' }).includes('Одеса'));
+assert.ok(S.badgeNote({ note: 'nowhere' }).includes('жодному складі'));
+assert.equal(S.badgeNote({ note: null }), '');
+// адмін: позначка рахується по СВОЄМУ регіону, решта складів у неї не входить
+const adminData = { ...data, mode: 'admin', region_id: 2, badge_threshold: 5, elsewhere: [],
+  warehouses: data.warehouses.map((w) => ({ ...w, region_id: w.region === 'Одеса' ? 2 : 1 })) };
+b = S.badgeFor([{ m: 'SRC35ZS-W2', role: 'outdoor' }], idx, adminData);
+assert.deepEqual([b.label, b.tone, b.region], ['>5 шт.', 'ok', 'Одеса'], 'київські 30 шт. у позначку одеського адміна не потрапляють');
+assert.equal(S.regionWarehouses({ ...adminData, region_id: null }).length, 0, 'адмін без регіону — позначки немає');
 
 // --- свіжість ---
 const t0 = Date.parse('2026-10-02T10:10:00Z');

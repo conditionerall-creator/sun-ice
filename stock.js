@@ -1,7 +1,14 @@
 /* Sun-ice — наявність товарів з 1С: кнопка в ряду кнопок рядка прайсу → плавно розкрита КОРОТКА панель (основні склади,
    де товар є) → кнопка «Повна інформація» з усіма складами, фільтрами й нульовими залишками.
-   Підвантажується з index.html ДИНАМІЧНО і лише адмінам (regional_admin/super_admin) — звичайні користувачі й гості цей
-   файл не завантажують. План і рішення: claude/stock-1c/00-ПЛАН-І-СТАТУС.md.
+   Підвантажується ДИНАМІЧНО всім, хто бачить ЦІНИ (hasFullAccess) — гості файл не завантажують узагалі.
+   План і рішення: claude/stock-1c/00-ПЛАН-І-СТАТУС.md.
+
+   ДВА РЕЖИМИ (з 2026-10-16, рішення власника). Сервер сам вирішує, що віддати, і повертає це в data.mode:
+     'user'  — ДИЛЕР: лише основні склади СВОГО регіону (profiles.region_id) + data.elsewhere (перелік маркувань,
+               доступних на інших складах, БЕЗ цифр і назв складів). Бачить ТІЛЬКИ позначку в рядку прайсу:
+               «>5 шт.» / «<5 шт.» / «0». Ні кнопки, ні панелі, ні назв складів.
+     'admin' — усе, як раніше: кнопка → панель → «Повна інформація». Плюс та сама позначка по своєму регіону.
+   Фільтрує САМЕ СЕРВЕР (get_stock), а не цей файл: інакше залишки чужих складів лежали б у браузері.
 
    ДАНІ: RPC get_stock() (SQL claude/sql/2026-10-02-stock-1c.sql + 2026-10-05-stock-all-warehouses.sql). З 2026-10-05 усі
    підтверджені адміни бачать УСІ склади; склад має kind = 'main' (основний) | 'additional' (додатковий) і назву регіону.
@@ -158,19 +165,33 @@
     return String(v).replace('.', ',');
   }
 
-  /* КОРОТКА панель: основні склади, де товар є (всього > 0), одним рядком на склад; варіанти за основою складаються.
-     extra — що є на додаткових складах (лише підсумок, деталі — у повній інформації). */
+  /* КОРОТКА панель (адміни): ТІЛЬКИ ТОЧНИЙ ЗБІГ по основних складах, де товар є.
+     З 2026-10-16 схожі позиції сюди НЕ потрапляють (рішення власника): коротка панель має давати
+     однозначну відповідь, а різні -W1/-W2 — це вибір, який робить людина у «Повній інформації».
+     extra — що є на додаткових складах (лише підсумок). similar — скільки схожих позицій сховано. */
   function compactView(parts, index, data) {
     const summary = summarizeParts(parts, index, data);
     const whs = data.warehouses || [];
+    const exact = function (p) { return p.variants.filter(function (v) { return v.exact; }); };
     const rows = whs.filter(isMain).map(function (w) {
       return { code: w.code, name: w.name, vals: summary.parts.map(function (p) {
-        return { p: sum(p.variants, function (v) { return qty(v, w.code, 'p'); }), a: sum(p.variants, function (v) { return qty(v, w.code, 'a'); }) };
+        return { p: sum(exact(p), function (v) { return qty(v, w.code, 'p'); }), a: sum(exact(p), function (v) { return qty(v, w.code, 'a'); }) };
       }) };
     }).filter(function (r) { return r.vals.some(function (x) { return x.p > 0; }); });
-    const exVals = summary.parts.map(function (p) { return { p: p.PX, a: p.AX }; });
-    const similar = sum(summary.parts, function (p) { return p.variants.filter(function (v) { return !v.exact; }).length; });
-    return { summary: summary, rows: rows, extra: { vals: exVals, any: exVals.some(function (x) { return x.p > 0; }) }, similar: similar };
+    const extraCodes = whs.filter(function (w) { return !isMain(w); }).map(function (w) { return w.code; });
+    const exVals = summary.parts.map(function (p) {
+      return { p: sum(exact(p), function (v) { return sum(extraCodes, function (c) { return qty(v, c, 'p'); }); }),
+               a: sum(exact(p), function (v) { return sum(extraCodes, function (c) { return qty(v, c, 'a'); }); }) };
+    });
+    const totals = summary.parts.map(function (p) {
+      const mainCodes = whs.filter(isMain).map(function (w) { return w.code; });
+      return { p: sum(exact(p), function (v) { return sum(mainCodes, function (c) { return qty(v, c, 'p'); }); }),
+               a: sum(exact(p), function (v) { return sum(mainCodes, function (c) { return qty(v, c, 'a'); }); }) };
+    });
+    return { summary: summary, rows: rows, totals: totals,
+             hasExact: summary.parts.every(function (p) { return exact(p).length > 0; }),
+             extra: { vals: exVals, any: exVals.some(function (x) { return x.p > 0; }) },
+             similar: sum(summary.parts, function (p) { return p.variants.filter(function (v) { return !v.exact; }).length; }) };
   }
 
   /* Фільтр складів: kind 'all'|'main'|'additional'; region 'all'|назва регіону. */
@@ -206,9 +227,88 @@
     };
   }
 
+  /* ---------------- ПОЗНАЧКА В РЯДКУ ПРАЙСУ (рішення власника 2026-10-16) ----------------
+
+     КІЛЬКІСТЬ рахуємо від ЗАГАЛЬНОГО залишку, КОЛІР — від ВІЛЬНОГО. Приклад власника: на складі 80,
+     вільних 3 → показуємо «>5 шт.», але ЖОВТИМ. Зелений означає «вільного стільки ж, скільки обіцяє цифра».
+
+     ТІЛЬКИ ТОЧНИЙ ЗБІГ. Схожі позиції (-W1, -W2, кольорові -WT/-WB) — це інший товар; обіцяти ними
+     наявність не можна. Вони лишаються в адмінських панелях, де рішення приймає людина.
+
+     КОМПЛЕКТ = min(внутр., зовн.) У МЕЖАХ ОДНОГО СКЛАДУ, і вже ці числа сумуються по складах регіону.
+     Інакше можна пообіцяти комплект, якого фізично ніде не зібрати. */
+
+  function regionWarehouses(data) {
+    const whs = (data && data.warehouses) || [];
+    if (!data) return [];
+    if (data.mode !== 'admin') return whs.filter(isMain); // сервер уже віддав лише свій регіон
+    if (data.region_id == null) return [];                // адмін без регіону — позначку рахувати нема від чого
+    return whs.filter(function (w) { return isMain(w) && w.region_id === data.region_id; });
+  }
+
+  function exactOf(index, marking) {
+    const k = normKey(leadOf(marking));
+    const e = k ? index.byKey.get(k) : null;
+    return e ? { k: k, n: e.n, wh: e.wh } : null;
+  }
+
+  const bucketOf = function (v, t) { return v <= 0 ? 0 : (v < t ? 1 : 2); };
+
+  function badgeFor(parts, index, data) {
+    if (!parts || !parts.length || !index || !data) return null;
+    const whs = regionWarehouses(data);
+    if (!whs.length) return null;
+    const els = data.elsewhere || [];
+    /* У дилера index містить ЛИШЕ склади його регіону. Позиція, якої тут немає, але яка є деінде,
+       у index не потрапляє зовсім — вона приходить окремим списком data.elsewhere (самі маркування).
+       Для регіонів це найчастіший випадок (200–300 позицій), тому обробляємо його нарівні. */
+    const ex = parts.map(function (p) {
+      const k = normKey(leadOf(p.m));
+      if (!k) return null;
+      const e = index.byKey.get(k);
+      if (e) return { k: k, wh: e.wh };
+      if (els.indexOf(k) !== -1) return { k: k, wh: {} };   // у регіоні немає, але десь є
+      return null;                                          // у 1С немає взагалі
+    });
+    // Жодної частини в 1С немає → позначки немає (нічого не вигадуємо).
+    // Комплект знайдено наполовину → теж немає: «є внутрішній, нема зовнішнього» — це не наявність.
+    if (ex.some(function (e) { return !e; })) return null;
+    const perWh = whs.map(function (w) {
+      return { p: Math.min.apply(null, ex.map(function (e) { return e.wh[w.code] ? e.wh[w.code].p : 0; })),
+               a: Math.min.apply(null, ex.map(function (e) { return e.wh[w.code] ? e.wh[w.code].a : 0; })) };
+    });
+    const P = sum(perWh, function (x) { return x.p; });
+    const A = sum(perWh, function (x) { return x.a; });
+    const t = Number(data.badge_threshold) > 0 ? Number(data.badge_threshold) : 5;
+    /* «Є на інших складах» для КОМПЛЕКТУ: кожна частина або вільна тут, або доступна деінде.
+       Інакше обіцяли б доставку комплекту, половини якого немає ніде. */
+    const elsewhere = ex.every(function (e) {
+      const hereA = sum(whs, function (w) { return e.wh[w.code] ? e.wh[w.code].a : 0; });
+      return hereA > 0 || els.indexOf(e.k) !== -1;
+    });
+    const bP = bucketOf(P, t), bA = bucketOf(A, t);
+    let tone, note;
+    if (bP === 0) { tone = elsewhere ? 'warn' : 'out'; note = elsewhere ? 'elsewhere' : 'nowhere'; }
+    else if (bA === bP) { tone = 'ok'; note = null; }
+    else { tone = 'warn'; note = 'reserved'; }
+    return { label: bP === 0 ? '0' : (bP === 1 ? '<' + t + ' шт.' : '>' + t + ' шт.'),
+             tone: tone, note: note, P: P, A: A, threshold: t,
+             region: (whs[0] && whs[0].region) || '' };
+  }
+
+  /* Підпис під позначкою. З'являється на дотик і ТІЛЬКИ коли позначка не зелена (вимога власника). */
+  function badgeNote(b) {
+    if (!b || !b.note) return '';
+    const where = b.region ? 'У вашому регіоні (' + b.region + ')' : 'У вашому регіоні';
+    if (b.note === 'elsewhere') return where + ' цього товару немає, але він є на інших складах. Доставка перевізником зазвичай 2–3 дні — зв\'яжіться зі своїм менеджером.';
+    if (b.note === 'nowhere') return 'Немає на жодному складі. Щодо строків постачання зв\'яжіться зі своїм менеджером.';
+    return 'Товар на складі є, але частину зарезервовано під інші замовлення. Вільних менше, ніж показує позначка — уточніть у свого менеджера.';
+  }
+
   const api = { normKey: normKey, baseOf: baseOf, leadOf: leadOf, buildIndex: buildIndex, matchVariants: matchVariants, summarizeParts: summarizeParts,
                 kitFor: kitFor, partsFor: partsFor, freshness: freshness, fmtAge: fmtAge, fmtQty: fmtQty,
-                compactView: compactView, applyFilter: applyFilter, fullView: fullView };
+                compactView: compactView, applyFilter: applyFilter, fullView: fullView,
+                regionWarehouses: regionWarehouses, exactOf: exactOf, badgeFor: badgeFor, badgeNote: badgeNote };
 
   if (typeof document === 'undefined') { // Node (тести): лише чиста логіка
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
@@ -228,8 +328,10 @@
     '<path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>' +
     '<path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>';
 
+  const ICON_CLOCK = '<svg class="sb-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+
   const CSS = '' +
-    '.stock-slot{display:none}.stock-slot.has{display:block;line-height:0}' +
+    '.stock-slot{display:none}.stock-slot.has{display:flex;align-items:center;gap:6px;line-height:0}' +
     '.stock-btn{position:relative;width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--text-secondary);cursor:pointer;padding:0;flex-shrink:0;-webkit-appearance:none;transition:background-color .2s,border-color .2s,color .2s}' +
     '.stock-btn svg{width:17px;height:17px;display:block}' +
     '.stock-btn:active{background:var(--accent-bg)}' +
@@ -265,7 +367,25 @@
     '.stock-chips{display:flex;gap:6px;overflow-x:auto;padding:0 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none}' +
     '.stock-chips::-webkit-scrollbar{display:none}' +
     '.stock-chip{flex:0 0 auto;border:1px solid var(--border);background:var(--card);color:var(--text);border-radius:999px;padding:5px 11px;font:600 12px/1.2 inherit;font-family:inherit;cursor:pointer}' +
-    '.stock-chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}';
+    '.stock-chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}' +
+    /* --- позначка наявності в рядку прайсу (бачать усі, хто бачить ціни) --- */
+    '.stock-badge{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:999px;border:1px solid;font:700 11.5px/1 inherit;font-family:inherit;white-space:nowrap;background:transparent;-webkit-appearance:none;padding-inline:8px}' +
+    '.stock-badge.sb-ok{color:#2F6B3C;border-color:#9BC7A6;background:rgba(79,138,91,.13)}' +
+    '.stock-badge.sb-warn{color:#8A6104;border-color:#DBB457;background:rgba(192,138,28,.15)}' +
+    '.stock-badge.sb-out{color:var(--danger);border-color:var(--danger)}' +
+    '.stock-badge.sb-stale{color:var(--text-secondary);border-color:var(--border);background:transparent}' +
+    'button.stock-badge{cursor:pointer}button.stock-badge:active{filter:brightness(.94)}' +
+    '.stock-badge .sb-i{display:inline-flex;width:14px;height:14px;border-radius:50%;border:1.3px solid currentColor;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;line-height:1;flex:0 0 14px}' +
+    '.stock-badge .sb-clock{width:12px;height:12px;flex:0 0 12px;opacity:.85}' +
+    '.stock-note-big{margin:0;font-size:13px;line-height:1.5;color:var(--text)}' +
+    '.stock-note-big b{font-weight:700}' +
+    /* --- акцент на точному збігу у «Повній інформації» --- */
+    '.stock-var.sv-exact{border-color:var(--accent);background:var(--accent-bg)}' +
+    '.stock-var.sv-exact .stock-var-n em{color:var(--accent);font-weight:700}' +
+    '.stock-var.sv-sim{opacity:.7}' +
+    '.stock-badge-line{display:flex;align-items:center;gap:7px;margin:0 0 8px}' +
+    '.stock-badge-line small{color:var(--text-secondary);font-size:11.5px;font-weight:500}' +
+    '.stock-exact-h{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);margin:0 0 4px}';
 
   function ensureCss() {
     if (document.getElementById('stock-css')) return;
@@ -324,13 +444,25 @@
   const joinQ = function (vals, f) { return vals.map(function (x) { return fmtQty(x[f]); }).join(' + '); };
 
   /* ---- КОРОТКА панель ---- */
+  /* КОРОТКА панель (адміни). З 2026-10-16 показує ТІЛЬКИ ТОЧНИЙ ЗБІГ: одна цифра — одна відповідь.
+     Схожі позиції не зникли, але живуть у «Повній інформації», де видно, яка саме це позиція. */
   function panelHtml(parts) {
     const v = compactView(parts, index, data);
     const s = v.summary;
     const pair = s.parts.length > 1;
     const fr = freshness(data, fetchedAt, Date.now());
-    let h = '<div class="stock-' + s.status + '"><p class="stock-sum">Вільно: ' + joinQ(s.parts, 'A') + (pair ? ' <small>(внутр. + зовн.)</small>' : '') +
-      ' <small>· всього ' + joinQ(s.parts, 'P') + '</small></p></div>';
+    const bdg = badgeFor(parts, index, data);
+    const minA = v.totals.length ? Math.min.apply(null, v.totals.map(function (x) { return x.a; })) : 0;
+    const low = Number(data.low_threshold);
+    const status = minA <= 0 ? 'out' : (minA <= (isFinite(low) ? low : 2) ? 'low' : 'ok');
+    let h = '';
+    if (bdg) h += '<p class="stock-badge-line"><span class="stock-badge sb-' + bdg.tone + '">' + esc(bdg.label) + '</span>' +
+      '<small>' + esc(bdg.region ? 'ваш регіон: ' + bdg.region : 'ваш регіон') + '</small></p>';
+    h += '<p class="stock-exact-h">Точний збіг</p>';
+    h += v.hasExact
+      ? '<div class="stock-' + status + '"><p class="stock-sum">Вільно: ' + joinQ(v.totals, 'a') + (pair ? ' <small>(внутр. + зовн.)</small>' : '') +
+        ' <small>· всього ' + joinQ(v.totals, 'p') + '</small></p></div>'
+      : '<div class="stock-none">Точного збігу в 1С немає — дивіться схожі позиції в повній інформації.</div>';
     h += fr.state === 'stale'
       ? '<div class="stock-warn">Дані про залишки можуть бути неактуальними — востаннє підтверджено ' + esc(fmtAge(fr.ageMin)) + '.</div>'
       : '<p class="stock-note">Основні склади · оновлено ' + esc(fmtAge(fr.ageMin)) + '</p>';
@@ -343,7 +475,7 @@
     h += '</div>';
     s.parts.filter(function (p) { return !p.found; }).forEach(function (p) { h += '<p class="stock-note">У 1С не знайдено: ' + esc(p.marking) + '</p>'; });
     if (v.extra.any) h += '<p class="stock-note">На додаткових складах: вільно ' + joinQ(v.extra.vals, 'a') + ' · всього ' + joinQ(v.extra.vals, 'p') + '</p>';
-    if (v.similar) h += '<p class="stock-note">Враховано також схожі позиції 1С (-W1, -W2 …): ' + v.similar + '</p>';
+    if (v.similar) h += '<p class="stock-note">Схожих позицій (-W1, -W2 …): ' + v.similar + ' — у повній інформації.</p>';
     h += '<button type="button" class="stock-more">Повна інформація</button>';
     return h;
   }
@@ -352,8 +484,8 @@
 
   function closePanelEl(panel) {
     panel.classList.remove('open');
-    const row = panel.closest('.row'), b = row && row.querySelector('.stock-btn');
-    if (b) b.setAttribute('aria-expanded', 'false');
+    const row = panel.closest('.row');
+    if (row) row.querySelectorAll('.stock-btn, button.stock-badge').forEach(function (b) { b.setAttribute('aria-expanded', 'false'); });
   }
 
   function paint(rootEl) {
@@ -368,11 +500,29 @@
       const parts = partsOf(slot);
       let sm = null;
       if (data && index && fr.state !== 'none' && parts) sm = summarizeParts(parts, index, data);
-      if (!sm || !sm.any) { if (panel) panel.remove(); return; } // у 1С такої позиції нема взагалі — кнопки нема
+      const badge = (data && index && fr.state !== 'none' && parts) ? badgeFor(parts, index, data) : null;
+      const isAdmin = !!(data && data.mode === 'admin');
+      const hasBtn = !!(isAdmin && sm && sm.any);
+      if (!hasBtn && !badge) { if (panel) panel.remove(); return; } // нема ні позначки, ні кнопки — слот порожній
       const open = !!(panel && panel.classList.contains('open'));
       const stale = fr.state === 'stale';
-      slot.innerHTML = '<button type="button" class="stock-btn stock-' + sm.status + (stale ? ' stock-stale' : '') + '" aria-expanded="' + open + '" aria-label="Наявність по складах" title="Вільно (основні склади): ' +
-        esc(joinQ(sm.parts, 'A')) + (stale ? ' — дані можуть бути неактуальними' : '') + '">' + ICON + '<i class="stock-dot"></i></button>';
+      let html = '';
+      if (badge) {
+        /* Застарілі дані показуємо сірим і з годинником (рішення власника 2026-10-16): ховати позначку
+           не можна — дилер вирішив би, що наявності немає взагалі. */
+        const cls = 'stock-badge sb-' + (stale ? 'stale' : badge.tone);
+        const clock = stale ? ICON_CLOCK : '';
+        const lbl = esc(badge.label) + clock;
+        html += badge.note
+          ? '<button type="button" class="' + cls + '" data-sb-note="' + esc(badge.note) + '" data-sb-region="' + esc(badge.region) +
+            '" aria-expanded="false" aria-label="Наявність: ' + esc(badge.label) + '. Натисніть, щоб побачити пояснення">' + lbl + '<span class="sb-i" aria-hidden="true">i</span></button>'
+          : '<span class="' + cls + '" aria-label="Наявність: ' + esc(badge.label) + '">' + lbl + '</span>';
+      }
+      if (hasBtn) {
+        html += '<button type="button" class="stock-btn stock-' + sm.status + (stale ? ' stock-stale' : '') + '" aria-expanded="' + open + '" aria-label="Наявність по складах" title="Вільно (основні склади): ' +
+          esc(joinQ(sm.parts, 'A')) + (stale ? ' — дані можуть бути неактуальними' : '') + '">' + ICON + '<i class="stock-dot"></i></button>';
+      } else if (panel) panel.remove();
+      slot.innerHTML = html;
       slot.classList.add('has');
       if (panel) fillPanel(panel, parts); // дані оновились, поки панель відкрита — перемальовуємо її вміст
     });
@@ -381,11 +531,11 @@
     if (Date.now() - fetchedAt > TTL_MS && data) refresh(); // тихо оновлюємо, якщо дані застарілі на пристрої
   }
 
-  /* Розкриття/згортання панелі під рядком (плавно: grid-template-rows 0fr↔1fr). Одночасно відкрита лише одна. */
-  function toggle(btn) {
-    const slot = btn.closest('.stock-slot'), row = btn.closest('.row');
-    if (!slot || !row || !data || !index) return;
-    const parts = partsOf(slot); if (!parts) return;
+  /* Розкриття/згортання панелі під рядком (плавно: grid-template-rows 0fr↔1fr). Одночасно відкрита лише одна.
+     Один механізм на два випадки: адмінська панель складів і підказка під позначкою дилера — щоб «Назад»,
+     акордеон і робота з історією були однакові (інакше легко отримати зайвий запис в історії, див. CLAUDE.md). */
+  function panelToggle(trigger, row, fill) {
+    if (!row) return;
     let panel = row.querySelector(':scope > .stock-panel');
     if (!panel) {
       panel = document.createElement('div');
@@ -393,7 +543,7 @@
       panel.innerHTML = '<div class="stock-panel-clip"><div class="stock-panel-in"></div></div>';
       const top = row.querySelector(':scope > .row-top');
       (top || row.firstElementChild).insertAdjacentElement('afterend', panel);
-      fillPanel(panel, parts);
+      fill(panel);
       void panel.offsetHeight; // зафіксувати стартовий стан, щоб перехід відпрацював
     }
     if (panel.classList.contains('open')) { // згорнути
@@ -402,13 +552,29 @@
       return;
     }
     document.querySelectorAll('.stock-panel.open').forEach(function (p) { if (p !== panel) closePanelEl(p); }); // акордеон
-    fillPanel(panel, parts);
+    fill(panel);
     panel.classList.add('open');
-    btn.setAttribute('aria-expanded', 'true');
+    if (trigger) trigger.setAttribute('aria-expanded', 'true');
     const layer = { type: 'panel', row: row, close: function () { closePanelEl(panel); }, alive: function () { return document.body.contains(panel); } };
     const idx = layers.map(function (l) { return l.type; }).lastIndexOf('panel');
     if (idx >= 0) layers[idx] = layer; // замінили відкриту панель іншою — запис історії той самий
     else pushLayer(layer);
+  }
+
+  function toggle(btn) {
+    const slot = btn.closest('.stock-slot'), row = btn.closest('.row');
+    if (!slot || !row || !data || !index) return;
+    const parts = partsOf(slot); if (!parts) return;
+    panelToggle(btn, row, function (panel) { fillPanel(panel, parts); });
+  }
+
+  /* Дотик по НЕзеленій позначці → під рядком розкривається людський підпис, що робити далі. */
+  function toggleNote(badge) {
+    const row = badge.closest('.row');
+    const b = { note: badge.getAttribute('data-sb-note'), region: badge.getAttribute('data-sb-region') };
+    panelToggle(badge, row, function (panel) {
+      panel.querySelector('.stock-panel-in').innerHTML = '<p class="stock-note-big">' + esc(badgeNote(b)) + '</p>';
+    });
   }
 
   /* ---- ВІКНО «Повна інформація» (низ екрана, стиль info-sheet) ---- */
@@ -472,12 +638,22 @@
       const label = ROLE_LABEL[p.role] || (m.parts.length > 1 ? 'Позиція' : '');
       h += '<p class="stock-part-h">' + esc(label ? label + ' · ' + p.marking : p.marking) + '</p>';
       if (!p.found) h += '<div class="stock-none">У 1С такої позиції не знайдено.</div>';
-      p.variants.forEach(function (v) {
-        h += '<div class="stock-var"><div class="stock-var-n"><span>' + esc(v.name) + '</span><em>' + (v.exact ? 'точний збіг' : 'схожа позиція') + '</em></div>';
-        h += v.rows.length ? variantRowsHtml(v.rows) : '<div class="stock-none">На вибраних складах немає.</div>';
-        if (v.rows.length > 1) h += '<div class="stock-line total"><span>Разом</span><span>всього ' + fmtQty(v.P) + ' · вільно ' + fmtQty(v.A) + '</span></div>';
-        h += '</div>';
-      });
+      /* Точний збіг — окремим акцентованим блоком і завжди першим; схожі позиції — нижче й тьмяніше
+         (рішення власника 2026-10-16). Раніше вони йшли суцільним списком і різниця читалась лише
+         дрібним підписом праворуч. */
+      const exact = p.variants.filter(function (v) { return v.exact; });
+      const similar = p.variants.filter(function (v) { return !v.exact; });
+      const block = function (v, cls) {
+        let b = '<div class="stock-var ' + cls + '"><div class="stock-var-n"><span>' + esc(v.name) + '</span><em>' + (v.exact ? 'точний збіг' : 'схожа позиція') + '</em></div>';
+        b += v.rows.length ? variantRowsHtml(v.rows) : '<div class="stock-none">На вибраних складах немає.</div>';
+        if (v.rows.length > 1) b += '<div class="stock-line total"><span>Разом</span><span>всього ' + fmtQty(v.P) + ' · вільно ' + fmtQty(v.A) + '</span></div>';
+        return b + '</div>';
+      };
+      exact.forEach(function (v) { h += block(v, 'sv-exact'); });
+      if (similar.length) {
+        h += '<p class="stock-grp">Схожі позиції — ' + similar.length + '</p>';
+        similar.forEach(function (v) { h += block(v, 'sv-sim'); });
+      }
       h += '</div>';
     });
     if (m.kit) {
@@ -511,6 +687,8 @@
   /* ---- кліки ---- */
   document.addEventListener('click', function (e) {
     const t = e.target; if (!t || !t.closest) return;
+    const bdg = t.closest('button.stock-badge');
+    if (bdg && bdg.getAttribute('data-sb-note')) { e.preventDefault(); e.stopPropagation(); toggleNote(bdg); return; }
     const b = t.closest('.stock-btn');
     if (b) { e.preventDefault(); e.stopPropagation(); toggle(b); return; }
     const more = t.closest('.stock-more');
@@ -600,6 +778,44 @@
         ['Це моделі/аксесуари, яких немає у звіті 1С (або названі там інакше).'].concat(lines), tgt));
       out.checked.push({ area: area, sub: 'coverage', label: 'Зіставлення позицій прайсу з 1С (Спліт/Мульти/Напівпром, разом з аксесуарами)', detail: matched + ' із ' + total + ' мають збіг' });
     }
+
+    /* ---- Позначки наявності в рядках прайсу (з 2026-10-16) ----
+       Ловить три речі, які інакше видно лише очима дилера з іншого регіону:
+       сервер віддав не ті склади; жодна позиція не отримала позначки; позначка обіцяє
+       більше, ніж є вільного (цифра від загального, колір від вільного — легко переплутати). */
+    if (fr.state !== 'none') {
+      const whs = regionWarehouses(data);
+      const mode = data.mode === 'admin' ? 'адмін (усі склади, позначка по своєму регіону)' : 'дилер (лише свій регіон)';
+      if (!whs.length) {
+        out.issues.push(diagIssue(area, 'badges', 'warning', 'Позначки наявності не показуються: не визначено склади вашого регіону',
+          ['Перевірте, що в профілі вказано регіон, а в таблиці stock_warehouses у складів цього регіону стоїть region_id і kind = main.'], tgt));
+      } else if (data.mode !== 'admin' && (data.warehouses || []).some(function (w) { return w.kind === 'additional' || w.region_id !== data.region_id; })) {
+        out.issues.push(diagIssue(area, 'badges', 'error', 'Сервер віддав дилеру склади поза його регіоном',
+          ['get_stock() має віддавати звичайному користувачеві лише основні склади його регіону. Звірте SQL: claude/sql/2026-10-16-get-stock-for-users.sql.'], tgt));
+      } else {
+        const data0 = (ctx && ctx.data) || (typeof sheetsData !== 'undefined' ? sheetsData : {});
+        const cnt = { ok: 0, warn: 0, out: 0, none: 0 };
+        const wrong = [];
+        TILE_LISTS.forEach(function (tl) {
+          const list = data0[tl[0]] || [];
+          list.forEach(function (it) {
+            const b = badgeFor(partsFor(it, tl[0], list), index, data);
+            if (!b) { cnt.none++; return; }
+            cnt[b.tone]++;
+            // Зелена позначка обіцяє, що вільного стільки ж, скільки показує цифра.
+            const t = b.threshold;
+            const okGreen = b.tone !== 'ok' || (b.A > 0 && ((b.P >= t && b.A >= t) || (b.P < t && b.A < t && b.A > 0)));
+            if (!okGreen && wrong.length < 10) wrong.push(tl[1] + ': ' + leadOf(it.model) + ' — ' + b.label + ', всього ' + b.P + ', вільно ' + b.A);
+          });
+        });
+        if (wrong.length) out.issues.push(diagIssue(area, 'badges', 'error', 'Зелена позначка не підтверджується вільним залишком: ' + wrong.length,
+          ['Кількість рахується від загального залишку, колір — від вільного. Зелений дозволено лише коли вільного не менше, ніж обіцяє цифра.'].concat(wrong), tgt));
+        if (cnt.ok + cnt.warn + cnt.out === 0) out.issues.push(diagIssue(area, 'badges', 'warning', 'Жодна позиція прайсу не отримала позначки наявності',
+          ['Схоже, маркування прайсу не збігаються з назвами 1С, або зріз порожній.'], tgt));
+        out.checked.push({ area: area, sub: 'badges', label: 'Позначки наявності в рядках прайсу · режим: ' + mode,
+          detail: 'склади регіону: ' + whs.length + ' · зелених ' + cnt.ok + ', жовтих ' + cnt.warn + ', червоних ' + cnt.out + ', без позначки ' + cnt.none });
+      }
+    }
     return out;
   }
 
@@ -612,5 +828,6 @@
      себе, окремою вкладкою. Без цього довелось би або дублювати тут усю верстку
      залишків, або закривати панель і відкривати повноекранний лист — а тоді
      зникали б кнопки меню, на що власник і поскаржився. */
-  root.Stock = Object.assign({ slotHtml: slotHtml, paint: paint, refresh: refresh, reset: reset, toggle: toggle, openSheet: openSheet, onBack: onBack, diagCheck: diagCheck, panelHtml: panelHtml, hasData: function () { return !!(data && index); } }, api);
+  root.Stock = Object.assign({ slotHtml: slotHtml, paint: paint, refresh: refresh, reset: reset, toggle: toggle, openSheet: openSheet, onBack: onBack, diagCheck: diagCheck, panelHtml: panelHtml,
+    hasData: function () { return !!(data && index); }, isAdminMode: function () { return !!(data && data.mode === 'admin'); } }, api);
 })(typeof window !== 'undefined' ? window : globalThis);

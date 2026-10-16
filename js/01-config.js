@@ -8,7 +8,7 @@
 /* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
    файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
    ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
-const APP_BUILD = '2026-10-12.30'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-16.1'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
@@ -184,23 +184,32 @@ const VAPID_PUBLIC_KEY = 'BIoU6N899jbSOeI02wfVBgX5M4VUq6oM-Vz_TeDiUYxIdjgbW9w2Je
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* Залишки з 1С — окремий файл stock.js (план і рішення: claude/stock-1c/00-ПЛАН-І-СТАТУС.md). Файл підвантажується
-   ЛИШЕ адмінам (regional_admin/super_admin): звичайні користувачі й гості його навіть не завантажують. Разом із
-   запитом до сервера це подвійний замок: бейдж не з'явиться без прав, а get_stock() сам відмовить неадміну.
+/* Залишки з 1С — окремий файл stock.js (план і рішення: claude/stock-1c/00-ПЛАН-І-СТАТУС.md).
+   З 2026-10-16 файл підвантажується ВСІМ, хто бачить ЦІНИ (hasFullAccess), а не лише адмінам: дилер бачить
+   позначку наявності по своєму регіону («>5 шт.» / «<5 шт.» / «0»), адмін — ще й кнопку з повною таблицею.
+   Гості файл не завантажують узагалі. Подвійний замок лишився: без доступу модуль не вантажиться, а
+   get_stock() однаково віддасть null і сам вирішить, СКІЛЬКИ даних дати (свій регіон чи всі склади).
    Піднімай ?v= разом зі зміною stock.js. */
 /* Версію НЕ пишемо руками — беремо APP_BUILD, який піднімає set-build.py.
    Своя захардкоджена версія вже підводила: правили stock.js, забували підняти
    ?v=, і браузер віддавав стару копію (2026-10-09, четвертий раз за два дні). */
 const STOCK_JS_FILE = 'stock.js?v=' + APP_BUILD;
 let stockModuleLoading = false;
-function syncStockModule(isAdmin) {
-  if (!isAdmin) { if (window.Stock) window.Stock.reset(); return; } // вихід із акаунта/втрата прав — прибрати залишки з екрана
+function syncStockModule(allowed) {
+  if (!allowed) { if (window.Stock) window.Stock.reset(); return; } // вихід із акаунта/втрата доступу — прибрати залишки з екрана
   if (window.Stock) { window.Stock.refresh(); return; }
   if (stockModuleLoading) return;
   stockModuleLoading = true;
   const el = document.createElement('script');
   el.src = STOCK_JS_FILE;
-  el.onload = () => { stockModuleLoading = false; if (window.Stock) window.Stock.refresh(); };
+  el.onload = () => {
+    stockModuleLoading = false;
+    if (!window.Stock) return;
+    window.Stock.refresh();
+    /* Модуль міг приїхати ВЖЕ ПІСЛЯ того, як список намальовано: тоді в рядках немає слотів
+       (їх вставляє Stock.slotHtml під час рендеру), і позначки не з’являться до наступного перемальовування списку. */
+    if (typeof renderCatalogList === 'function' && typeof currentTab !== 'undefined' && currentTab === 'catalog' && typeof activeTile !== 'undefined' && activeTile) renderCatalogList();
+  };
   el.onerror = () => { stockModuleLoading = false; }; // офлайн/збій — просто без залишків
   document.head.appendChild(el);
 }

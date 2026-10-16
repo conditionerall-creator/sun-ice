@@ -35,7 +35,10 @@ async function loadExchangeRate() {
     canEditRate = false;
     rateViewerIsAdmin = false;
   }
-  syncStockModule(canEditRate);
+  /* Наявність іде в парі з цінами (рішення власника 2026-10-16), тому вмикаємо її за hasFullAccess,
+     а НЕ за правами адміна: дилер бачить позначку по своєму регіону. Скільки саме даних віддати —
+     вирішує сервер у get_stock(). */
+  syncStockModule(hasFullAccess);
   renderRateRow();
 }
 
@@ -1097,7 +1100,7 @@ function renderCatalogList() {
 
   main.innerHTML = toggleHtml + accessNoticeHtml() + countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
   applySiteLinks();
-  if (window.Stock) Stock.paint(main); // наявність з 1С (лише адміни; слот порожній, поки немає даних)
+  if (window.Stock) Stock.paint(main); // наявність з 1С: позначка всім із доступом, кнопка — адмінам
   attachBrandToggleHandlers(main);
   positionBrandSlider(main, activeBrand, prevBrandForSlider);
 }

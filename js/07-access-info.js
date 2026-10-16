@@ -204,6 +204,8 @@ async function ensureAccessFresh(force) {
   if (hasFullAccess && !cartRestored) { cartRestored = true; loadStoredCart(); }
   /* Доступ з'явився (підтвердили заявку, розблокували, увійшли), але в пам'яті лежить
      копія прайсу без цін — показувати нема чого, треба перекачати. */
+  /* Доступ змінився — наявність іде за цінами: або підвантажуємо модуль, або прибираємо з екрана. */
+  if (typeof syncStockModule === 'function') syncStockModule(hasFullAccess);
   if (hasFullAccess && priceDataStripped) { reloadPriceAfterAccessGranted(); return hasFullAccess; }
   if (currentTab === 'catalog' && activeTile) renderCatalogList();
   renderCartBar();
