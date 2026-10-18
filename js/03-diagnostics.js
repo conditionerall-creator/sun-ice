@@ -38,7 +38,8 @@ const DIAG_AREA = {
   specs: 'Характеристики товарів',
   search: 'Пошук по каталогу',
   header: 'Шапка застосунку',
-  push: 'Сповіщення (push)'
+  push: 'Сповіщення (push)',
+  pricePublish: 'Публікація прайсу'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -530,6 +531,76 @@ async function diagCheckBuild(ctx) {
   return out;
 }
 
+/* ---- Публікація прайсу (з 2026-10-18) ----
+   Нова функція = нова перевірка (вимога CLAUDE.md, не обговорюється).
+   Тут ловимо саме те, що здатне зламатись ТИХО:
+     • серверна частина не розгорнута (RPC немає) — кабінет покаже кнопку, а публікація
+       впаде аж у момент натискання;
+     • опублікована версія розійшлась із тим, що показує застосунок — тобто дилери
+       бачать не те, що опублікував адмін. Це головне, заради чого перевірка існує;
+     • сам файл price-admin.js недосяжний або застарілої версії.
+   Поки опублікованої версії ще немає (етапи A–C), це НЕ проблема: застосунок свідомо
+   працює зі старого price.xlsx. Тому — примітка, а не помилка. */
+async function diagCheckPricePublish(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.pricePublish;
+
+  // 1. Чи відповідає серверна частина
+  let info = null;
+  try {
+    const res = await sb.rpc('get_price_version');
+    if (res.error) throw res.error;
+    info = res.data || null;
+    out.checked.push({ area: area, sub: 'rpc', label: 'Серверна частина публікації відповідає',
+      detail: info ? ('чинна версія №' + info.version_id) : 'опублікованої версії ще немає' });
+  } catch (e) {
+    out.issues.push(diagIssue(area, 'rpc', 'warning',
+      'Серверна частина публікації прайсу не відповідає (get_price_version)',
+      ['Міграція claude/sql/2026-10-18-price-publish.sql, найімовірніше, ще не застосована до цієї бази.',
+       (e && e.message) || ''], { tab: 'cabinet' }));
+    return out; // далі перевіряти нічого
+  }
+
+  // 2. Чи збігається опубліковане з тим, що зараз у застосунку
+  if (!info) {
+    out.issues.push(diagIssue(area, 'state', 'info',
+      'Опублікованої версії прайсу ще немає — застосунок працює зі старого price.xlsx',
+      ['Так і задумано, доки переїзд не завершено (claude/price-publish/00-ПЛАН-І-СТАТУС.md).'], null));
+  } else {
+    const shown = Object.keys(sheetsData || {}).reduce(function (n, k) {
+      return n + (Array.isArray(sheetsData[k]) ? sheetsData[k].length : 0);
+    }, 0);
+    out.checked.push({ area: area, sub: 'count', label: 'Позицій у застосунку на цьому пристрої', detail: String(shown) });
+    try {
+      const pub = await sb.rpc('get_price');
+      const total = pub && pub.data && pub.data.stats && pub.data.stats.total;
+      if (typeof total === 'number') {
+        out.checked.push({ area: area, sub: 'published', label: 'Позицій в опублікованій версії', detail: String(total) });
+        if (shown > 0 && total !== shown) {
+          out.issues.push(diagIssue(area, 'published', 'warning',
+            'Опублікований прайс і те, що показує застосунок, розходяться: ' + total + ' проти ' + shown + ' позицій',
+            ['Поки застосунок читає price.xlsx, а не опубліковані дані, розбіжність очікувана — але її варто розуміти.',
+             'Якщо перехід уже зроблено — це справжня проблема: дилери бачать не те, що опубліковано.'], { tab: 'cabinet' }));
+        }
+      }
+    } catch (e) { /* немає доступу до цін — не наша справа, це перевіряє інша частина */ }
+  }
+
+  // 3. Чи досяжний сам модуль кабінету
+  try {
+    const r = await fetch(PRICE_ADMIN_JS_FILE, { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    out.checked.push({ area: area, sub: 'module', label: 'Файл price-admin.js на сервері', detail: 'є, версія ' + APP_BUILD });
+  } catch (e) {
+    out.issues.push(diagIssue(area, 'module', 'warning',
+      'Файл price-admin.js не завантажується — розділ «Прайс» у кабінеті не відкриється',
+      ['Найімовірніше, його не залили на GitHub разом з рештою файлів.',
+       (e && e.message) || ''], { tab: 'cabinet' }));
+  }
+
+  return out;
+}
+
 /* ---- 10. Характеристики товарів (data/specs-*.json) ----
    Новий зовнішній джерело даних = нова перевірка (вимога CLAUDE.md). Характеристики
    беруться з сайту офлайн-скриптом, тож розійтися з дійсністю можуть тихо: на сайті
@@ -882,6 +953,7 @@ const DIAG_CHECKS = [
   { id: 'roles', label: 'Ролі та доступи', run: ctx => diagCheckRoles(ctx) },
   { id: 'rates', label: 'Курси валют', run: ctx => diagCheckRates(ctx) },
   { id: 'push', label: 'Сповіщення (push)', run: ctx => diagCheckPush(ctx) },
+  { id: 'price-publish', label: 'Публікація прайсу', run: ctx => diagCheckPricePublish(ctx) },
   { id: 'build', label: 'Версія застосунку', run: ctx => diagCheckBuild(ctx) },
   { id: 'site-live', label: 'Картки на сайті (сервер)', run: ctx => diagCheckSiteLive(ctx) }
 ];

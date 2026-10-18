@@ -8,7 +8,7 @@
 /* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
    файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
    ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
-const APP_BUILD = '2026-10-16.8'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-18.2'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
@@ -219,6 +219,39 @@ function syncStockModule(allowed) {
   };
   el.onerror = () => { stockModuleLoading = false; }; // офлайн/збій — просто без залишків
   document.head.appendChild(el);
+}
+
+/* Прайс із кабінету — окремий файл price-admin.js (план: claude/price-publish/00-ПЛАН-І-СТАТУС.md).
+   Той самий приём, що й stock.js: підвантажується динамічно і ТІЛЬКИ super_admin'у.
+   Супер-адмінів четверо з 34 — решті цей код не потрібен узагалі, і в js/ йому робити
+   нічого. Право на саму публікацію перевіряє БД (price_is_manager()), а не цей гейт:
+   сховати кнопку — не захист.
+   ?v= беремо з APP_BUILD, руками не писати (set-build.py підніме сам). */
+const PRICE_ADMIN_JS_FILE = 'price-admin.js?v=' + APP_BUILD;
+let priceAdminLoading = false;
+/* Примонтувати розділ прайсу до вузла в Кабінеті. Кликати ПІСЛЯ кожного рендеру
+   адмін-панелі: вона щоразу збирає DOM заново, і старий вузол стає чужим. */
+function mountPriceAdmin(el) {
+  if (!el) return;
+  if (window.PriceAdmin && window.PriceAdmin.mount) { window.PriceAdmin.mount(el); return; }
+  if (priceAdminLoading) return;
+  priceAdminLoading = true;
+  const tag = document.createElement('script');
+  tag.src = PRICE_ADMIN_JS_FILE;
+  tag.onload = () => {
+    priceAdminLoading = false;
+    /* Вузол міг зникнути, поки файл їхав (адмін згорнув блок або пішов з Кабінету) —
+       тоді монтувати нема куди, і це не помилка. */
+    const fresh = document.getElementById('price-admin-mount');
+    if (window.PriceAdmin && window.PriceAdmin.mount && fresh) window.PriceAdmin.mount(fresh);
+  };
+  tag.onerror = () => {
+    priceAdminLoading = false;
+    const fresh = document.getElementById('price-admin-mount');
+    if (fresh) fresh.innerHTML = '<div class="warn">Не вдалося завантажити розділ завантаження прайсу. ' +
+      'Перевірте мережу й відкрийте Кабінет ще раз.</div>';
+  };
+  document.head.appendChild(tag);
 }
 
 /* Спільна перевірка prefers-reduced-motion для всіх анімацій застосунку (словник

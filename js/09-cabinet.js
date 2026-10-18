@@ -714,16 +714,21 @@ function adminAttentionHtml(pendingCount, issues, isSuper) {
   let h = '<div class="attn-row">';
   h += card('pending', 'user', 'Заявки',
     pendingCount ? pendingCount + ' на розгляді' : 'Нових немає', pendingCount);
+  h += '</div>';
   if (isSuper) {
-    /* Підпис «Діагностика», а не «Самодіагностика»: довше слово фізично не вміщається
-       в піврядкову картку поряд з іконкою й лічильником — ріжеться трьома крапками
-       (поміряно на 375px). Сам розділ нижче називається повністю, як і був. */
-    h += card('diag', 'activity', 'Діагностика',
+    /* Картка ПРАЙСУ — на власному рядку, на всю ширину (рішення власника 2026-10-18).
+       Раніше вона стояла поряд із «Заявками» і звалась «Діагностика»: довша назва
+       фізично не вміщається в піврядкову картку, ріжеться трьома крапками
+       (поміряно на 375px). Повна назва потрібна, бо блок тепер не лише про
+       діагностику — усередині ще й завантаження прайсу. Тому рядок свій. */
+    h += '<div class="attn-row attn-row-wide">';
+    h += card('diag', 'activity', 'Завантаження та діагностика прайсу',
       problems ? problems + ' ' + pluralUa(problems, 'проблема', 'проблеми', 'проблем')
                : (freshNotes ? freshNotes + ' ' + pluralUa(freshNotes, 'нова примітка', 'нові примітки', 'нових приміток') : 'Проблем немає'),
       problems);
+    h += '</div>';
   }
-  return h + '</div>';
+  return h;
 }
 
 function priceIssuesListHtml(issues) {
@@ -989,9 +994,24 @@ async function renderAdminPanel(profile) {
      розкриття першої зсувало все, що нижче, разом зі списком користувачів.
      Відкритим може бути лише ОДИН блок (акордеон, вимога власника) — тож зсув
      обмежений висотою одного блоку й завжди в одному й тому самому місці. */
+  /* Блок «Завантаження та діагностика прайсу» (лише super_admin). Усередині ДВІ
+     частини, саме в такому порядку (рішення власника 2026-10-18):
+       1) завантаження й публікація прайсу — те, по що адмін сюди приходить;
+       2) самодіагностика застосунку — те, що він тут перевіряє.
+     Окремого вікна свідомо немає: блок розкривається карткою так само, як «Заявки».
+     Сам екран прайсу малює price-admin.js, що підвантажується на вимогу — той самий
+     приём, що й stock.js, щоб цей код не їхав на телефони дилерів.
+     Право на публікацію перевіряє БД (price_is_manager()); сховати кнопку — не захист. */
   if (isSuper) {
     html += `
       <div class="price-diag-card" hidden>
+        <div class="price-diag-header">
+          <span>Завантаження прайсу</span>
+        </div>
+        <div class="price-admin-mount" id="price-admin-mount">
+          <div class="price-diag-status-line">Завантаження розділу…</div>
+        </div>
+        <div class="price-diag-sep"></div>
         <div class="price-diag-header">
           <span>Самодіагностика застосунку</span>
           <button type="button" class="link-btn" id="price-check-btn">🔍 Перевірити зараз</button>
@@ -1041,6 +1061,10 @@ async function renderAdminPanel(profile) {
   if (isSuper) {
     document.getElementById('price-check-btn').addEventListener('click', () => runManualPriceCheck(profile));
     wirePriceIssueButtons(profile);
+    /* Кабінет перемальовується часто (зміна статусу, фільтри) і щоразу збирає DOM
+       заново — тому модуль прайсу треба примонтувати до НОВОГО вузла після кожного
+       рендеру, а не один раз на сесію. */
+    mountPriceAdmin(document.getElementById('price-admin-mount'));
   }
 }
 

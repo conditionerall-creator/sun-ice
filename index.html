@@ -2962,6 +2962,59 @@
   }
   .price-diag-header .link-btn { margin-top: 0; font-size: 12px; white-space: nowrap; }
   .price-diag-status-line { font-size: 11.5px; color: var(--text-secondary); margin: 4px 0 8px; min-height: 14px; }
+
+  /* Картка прайсу стоїть на власному рядку, на всю ширину: повна назва
+     «Завантаження та діагностика прайсу» в піврядкову картку не вміщається. */
+  .attn-row-wide .attn-card { flex: 1 1 100%; }
+  /* Розділювач між двома частинами блоку: завантаженням прайсу й самодіагностикою. */
+  .price-diag-sep { border-top: 1px solid var(--border); margin: 14px 0 12px; }
+  /* Розділ прайсу — малюється модулем price-admin.js ПРЯМО в блоці Кабінету
+     (окремого вікна немає, рішення власника 2026-10-18). */
+  .price-admin-current {
+    font-size: 12.5px; line-height: 1.5; color: var(--text-secondary);
+    background: var(--bg-soft, rgba(127,127,127,.08));
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+  }
+  .price-admin-pick { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  /* <label> поверх схованого <input type=file>: кнопка виглядає як решта кнопок
+     застосунку, а системний «Choose file» не показується взагалі. */
+  .price-admin-file-btn { cursor: pointer; display: inline-block; width: auto; text-align: center; }
+  .price-admin-secondary {
+    padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+    background: transparent; color: var(--text-secondary);
+    font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .price-admin-ok {
+    background: rgba(40, 167, 69, .12); color: var(--text);
+    padding: 8px 12px; border-radius: 10px; font-size: 12px; margin-top: 10px;
+  }
+  .price-admin-note {
+    background: rgba(127, 127, 127, .10); padding: 8px 12px; border-radius: 10px;
+    font-size: 12px; margin-top: 10px; line-height: 1.5;
+  }
+  .price-admin-note ul, .warn ul { margin: 6px 0 0; padding-left: 18px; }
+  .price-admin-mount .muted { font-size: 11.5px; color: var(--text-secondary); }
+  .price-admin-candidate { border-top: 1px solid var(--border); padding-top: 10px; }
+  .price-admin-candidate h4 { font-size: 13px; margin: 10px 0 6px; }
+  .price-admin-sum { font-size: 12.5px; margin-bottom: 8px; }
+  .price-admin-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  .price-admin-table th, .price-admin-table td {
+    border-bottom: 1px solid var(--border); padding: 4px 6px; text-align: right;
+  }
+  .price-admin-table th:first-child, .price-admin-table td:first-child { text-align: left; }
+  .price-admin-table tr.row-bad td { background: rgba(220, 53, 69, .12); font-weight: 700; }
+  .price-admin-big { font-size: 11.5px; margin: 0 0 8px; padding-left: 18px; }
+  .price-admin-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .price-admin-actions .primary-btn, .price-admin-actions .price-admin-secondary { width: auto; flex: 1 1 0; }
+  .price-admin-ver {
+    display: flex; flex-direction: column; gap: 2px; font-size: 12px;
+    border-bottom: 1px solid var(--border); padding: 8px 0;
+  }
+  .price-admin-ver.is-current { background: rgba(40, 167, 69, .10); border-radius: 8px; padding: 8px; }
+  .price-admin-ver button { align-self: flex-start; margin-top: 4px; }
+  /* Поки йде розбір або публікація — екран не приймає кліків: повторний тап по
+     «Опублікувати» під час публікації створював би другу спробу. */
+  .price-admin-mount.is-busy { pointer-events: none; opacity: .6; }
   .price-diag-ok { font-size: 12.5px; color: var(--text-secondary); padding: 4px 0; }
   .price-issue-row {
     display: flex;
@@ -3874,18 +3927,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-16.8"></script>
-<script src="js/02-price-parse.js?v=2026-10-16.8"></script>
-<script src="js/03-diagnostics.js?v=2026-10-16.8"></script>
-<script src="js/04-catalog.js?v=2026-10-16.8"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-16.8"></script>
-<script src="js/06-cart-promo.js?v=2026-10-16.8"></script>
-<script src="js/07-access-info.js?v=2026-10-16.8"></script>
-<script src="js/08-info-tables.js?v=2026-10-16.8"></script>
-<script src="js/09-cabinet.js?v=2026-10-16.8"></script>
-<script src="js/10-crmontage.js?v=2026-10-16.8"></script>
-<script src="js/11-shell.js?v=2026-10-16.8"></script>
-<script src="js/12-product-sheet.js?v=2026-10-16.8"></script>
-<script src="js/13-start.js?v=2026-10-16.8"></script>
+<script src="js/01-config.js?v=2026-10-18.2"></script>
+<script src="js/02-price-parse.js?v=2026-10-18.2"></script>
+<script src="js/03-diagnostics.js?v=2026-10-18.2"></script>
+<script src="js/04-catalog.js?v=2026-10-18.2"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-18.2"></script>
+<script src="js/06-cart-promo.js?v=2026-10-18.2"></script>
+<script src="js/07-access-info.js?v=2026-10-18.2"></script>
+<script src="js/08-info-tables.js?v=2026-10-18.2"></script>
+<script src="js/09-cabinet.js?v=2026-10-18.2"></script>
+<script src="js/10-crmontage.js?v=2026-10-18.2"></script>
+<script src="js/11-shell.js?v=2026-10-18.2"></script>
+<script src="js/12-product-sheet.js?v=2026-10-18.2"></script>
+<script src="js/13-start.js?v=2026-10-18.2"></script>
 </body>
 </html>
