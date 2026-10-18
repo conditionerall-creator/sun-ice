@@ -584,10 +584,20 @@ async function diagCheckPricePublish(ctx) {
      тягне весь 10-мегабайтний price.xlsx — і закрити публічний бакет не можна.
      Саме так і сталось: публікація того самого файлу вдруге мовчки повернула стару
      чернетку, фото вже лежали в сховищі, а мапа загубилась. Тепер це видно. */
-  if (priceSourceUsed === 'published') {
-    if (seriesPhotosArePublished()) {
-      out.checked.push({ area: area, sub: 'media', label: 'Фото серій',
-        detail: 'перенесені в сховище, аркушів: ' + Object.keys(publishedMedia).length });
+  /* ⚠️ Питаємо СЕРВЕР (info.has_media), а не власну памʼять. Одразу після публікації
+     застосунок ще тримає ПОПЕРЕДНЮ версію прайсу — і перевірка, дивлячись у памʼять,
+     казала «фото немає» про версію, яка їх щойно отримала. Власник побачив саме це
+     (2026-10-19). Памʼять тепер лише окремо згадуємо, якщо вона відстала. */
+  if (info) {
+    if (info.has_media) {
+      out.checked.push({ area: area, sub: 'media', label: 'Фото серій в опублікованій версії',
+        detail: 'перенесені в сховище' });
+      if (priceSourceUsed === 'published' && publishedVersionId !== info.version_id) {
+        out.issues.push(diagIssue(area, 'media', 'info',
+          'Цей пристрій ще показує версію прайсу №' + publishedVersionId + ', опублікована вже №' + info.version_id,
+          ['Так і буває одразу після публікації. Застосунок підхопить нову при наступному відкритті.'],
+          { tab: 'catalog' }));
+      }
     } else {
       out.issues.push(diagIssue(area, 'media', 'warning',
         'В опублікованій версії немає фото серій — застосунок тягне price.xlsx щоразу, коли хтось їх відкриває',

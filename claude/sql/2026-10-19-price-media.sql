@@ -128,3 +128,47 @@ end; $$;
 
 revoke all on function public.price_create_draft(jsonb, jsonb, jsonb, jsonb, jsonb, integer, text, text, text, text) from anon, public;
 grant execute on function public.price_create_draft(jsonb, jsonb, jsonb, jsonb, jsonb, integer, text, text, text, text) to authenticated;
+
+
+-- =====================================================================
+-- 2026-10-19 (пізніше) — версія прайсу повідомляє, чи є в ній фото
+-- =====================================================================
+-- Навіщо. Перевірка «чи перенесені фото» дивилась на копію, яку застосунок уже
+-- тримає в памʼяті. Одразу після публікації там ще СТАРА версія — і перевірка
+-- чесно, але неправильно казала «фото немає», хоча щойно опублікована версія їх
+-- має. Тепер про фото питаємо сервер, а не власну памʼять.
+create or replace function public.get_price_version()
+returns jsonb language plpgsql stable security definer set search_path to 'public' as $$
+declare v_uid uuid := auth.uid(); v_status text; v_rereg timestamptz;
+        v_allowed boolean; v_id bigint; v_at timestamptz; v_media boolean;
+begin
+  if v_uid is null then return null; end if;
+  select status, reregistered_at into v_status, v_rereg from public.profiles where id = v_uid;
+  v_allowed := v_status is not null
+               and v_status not in ('blocked','rejected')
+               and not (v_status = 'pending' and v_rereg is not null);
+  if not v_allowed then return null; end if;
+  select ps.current_version_id, pv.published_at,
+         (pv.media is not null and pv.media <> '{}'::jsonb)
+    into v_id, v_at, v_media
+    from public.price_state ps left join public.price_versions pv on pv.id = ps.current_version_id
+   where ps.id = 1;
+  if v_id is null then return null; end if;
+  return jsonb_build_object('version_id', v_id, 'published_at', v_at,
+                            'has_media', coalesce(v_media, false));
+end; $$;
+
+create or replace function public.get_price_version_public()
+returns jsonb language plpgsql stable security definer set search_path to 'public' as $$
+declare v_id bigint; v_at timestamptz; v_has boolean; v_media boolean;
+begin
+  select ps.current_version_id, pv.published_at, (pv.data_public is not null),
+         (pv.media is not null and pv.media <> '{}'::jsonb)
+    into v_id, v_at, v_has, v_media
+    from public.price_state ps left join public.price_versions pv on pv.id = ps.current_version_id
+   where ps.id = 1;
+  if v_id is null then return null; end if;
+  return jsonb_build_object('version_id', v_id, 'published_at', v_at,
+                            'has_public', coalesce(v_has, false),
+                            'has_media', coalesce(v_media, false));
+end; $$;

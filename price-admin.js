@@ -550,8 +550,24 @@
       if (!pub.data || pub.data.ok !== true) throw new Error(errorText(pub.data));
 
       candidate = null;
+
+      /* Одразу підтягуємо щойно опубліковане СОБІ. Інакше адмін лишається на
+         попередній версії, і діагностика, дивлячись у памʼять, скаржиться на те,
+         що він щойно виправив (саме так і сталось 2026-10-19). */
+      let mine = '';
+      try {
+        const got = await loadPublishedPrice({ force: true });
+        if (got.ok) {
+          priceVersion = publishedVersionId;
+          if (typeof renderCatalogView === 'function' && typeof currentTab !== 'undefined' && currentTab === 'catalog') {
+            renderCatalogView();
+          }
+          mine = ' Цей пристрій уже на ній.';
+        }
+      } catch (e) { /* не вийшло оновити себе — на публікацію це не впливає */ }
+
       flash = '<div class="price-admin-ok">Опубліковано. Версія №' + esc(pub.data.current_version_id) +
-              '. Дилери отримають її при наступному відкритті застосунку.</div>';
+              '. Дилери отримають її при наступному відкритті застосунку.' + mine + '</div>';
       await loadCurrent();   // всередині кличе render(), який і покаже flash
     } catch (e) {
       flash = '<div class="warn">Не опубліковано: ' + esc(e.message || e) +
