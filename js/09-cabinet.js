@@ -433,7 +433,18 @@ function urlBase64ToUint8Array(base64String) {
 async function getPushSubscriptionState() {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return { supported: false, enabled: false };
   try {
-    const reg = await navigator.serviceWorker.ready;
+    /* ⚠️ navigator.serviceWorker.ready НЕ відхиляється — якщо жодного service worker
+       не зареєстровано, ця обіцянка просто ніколи не настає. А Кабінет чекає на неї
+       перед тим, як щось намалювати, тож екран назавжди лишається на «Завантаження…».
+       Так буває не лише в тесті: приватне вікно, вимкнені сайтові дані, збій
+       реєстрації sw.js — і адмін бачить вічне завантаження без жодної помилки.
+       Знайдено 2026-10-18, коли sw.js прибрали з тестової вкладки руками.
+       Три секунди — із запасом: уже зареєстрований worker відповідає миттєво. */
+    const reg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise(function (resolve) { setTimeout(function () { resolve(null); }, 3000); })
+    ]);
+    if (!reg) return { supported: true, enabled: false };
     const sub = await reg.pushManager.getSubscription();
     return { supported: true, enabled: !!sub };
   } catch (e) {
@@ -714,26 +725,148 @@ function adminAttentionHtml(pendingCount, issues, isSuper) {
   let h = '<div class="attn-row">';
   h += card('pending', 'user', 'Заявки',
     pendingCount ? pendingCount + ' на розгляді' : 'Нових немає', pendingCount);
-  h += '</div>';
   if (isSuper) {
-    /* Картка ПРАЙСУ — на власному рядку, на всю ширину (рішення власника 2026-10-18).
-       Раніше вона стояла поряд із «Заявками» і звалась «Діагностика»: довша назва
-       фізично не вміщається в піврядкову картку, ріжеться трьома крапками
-       (поміряно на 375px). Повна назва потрібна, бо блок тепер не лише про
-       діагностику — усередині ще й завантаження прайсу. Тому рядок свій. */
-    h += '<div class="attn-row attn-row-wide">';
+    /* ДВІ КАРТКИ В ОДИН РЯДОК (рішення власника 2026-10-18, друга ітерація).
+       Повну назву «Завантаження та діагностика прайсу» в піврядкову картку одним
+       рядком не вмістити — тому підпис переноситься на два рядки (.attn-title
+       більше не ріже трьома крапками, а переносить, максимум два рядки).
+       Перша спроба розводила картки на два рядки — власник сказав звести назад
+       в один і зробити компактно. */
     h += card('diag', 'activity', 'Завантаження та діагностика прайсу',
       problems ? problems + ' ' + pluralUa(problems, 'проблема', 'проблеми', 'проблем')
                : (freshNotes ? freshNotes + ' ' + pluralUa(freshNotes, 'нова примітка', 'нові примітки', 'нових приміток') : 'Проблем немає'),
       problems);
-    h += '</div>';
   }
-  return h;
+  return h + '</div>';
+}
+
+/* ДВА ПІДМЕНЮ всередині блоку «Завантаження та діагностика прайсу»
+   (рішення власника 2026-10-18): «Завантаження прайсу» і «Діагностика», кожне
+   зі своїм вмістом. Виглядають і поводяться так само, як картки вгорі Кабінету —
+   натиснув, розгорнулось; натиснув ще раз, згорнулось. Відкрите одне.
+   Один рівень вкладеності, глибше не йдемо: далі це перетворюється на лабіринт. */
+function subRowHtml(issues) {
+  const list = diagDedupe(issues || []);
+  const acks = diagLoadAcks();
+  const problems = list.filter(i => i.kind !== 'info').length;
+  const fresh = list.filter(i => i.kind === 'info' && acks[diagNoteKey(i)] !== diagNoteHash(i)).length;
+  const sub = problems ? problems + ' ' + pluralUa(problems, 'проблема', 'проблеми', 'проблем')
+            : (fresh ? fresh + ' ' + pluralUa(fresh, 'примітка', 'примітки', 'приміток') : 'Проблем немає');
+  const card = (target, icon, title, subtitle, count) =>
+    `<button type="button" class="attn-card submenu-card attn-card-collapsed${count ? ' attn-card-on' : ''}" data-subattn="${target}" aria-expanded="false">
+       <span class="attn-icon">${ic(icon, '')}${count ? `<span class="attn-badge">${count > 99 ? '99+' : count}</span>` : ''}</span>
+       <span class="attn-text"><span class="attn-title">${title}</span><span class="attn-sub">${subtitle}</span></span>
+       <span class="attn-chev">▾</span>
+     </button>`;
+  return '<div class="attn-row submenu-row">' +
+    card('price-load', 'file-spreadsheet', 'Завантаження прайсу', 'Excel → публікація', 0) +
+    card('diag', 'activity', 'Діагностика', sub, problems) +
+    '</div>';
+}
+
+/* ПАНЕЛЬ ДІАГНОСТИКИ. Що тут зроблено понад те, що було (2026-10-18):
+     • зверху вердикт одним рядком — «усе гаразд» чи скільки саме проблем і коли
+       востаннє перевіряли. Раніше, щоб це зрозуміти, треба було читати список;
+     • хід перевірки показується смужкою з лічильником «3 з 14», а не самим лише
+       написом: перевірка триває десятки секунд, і без прогресу вона виглядає як
+       зависання;
+     • фільтр за типом (помилки / попередження / примітки) з лічильниками. Коли
+       приміток два десятки, знайти серед них справжню помилку очима важко;
+     • «Скопіювати звіт» — текстом у буфер. Власнику це потрібно, щоб переслати
+       знахідку, не переписуючи її вручну і не роблячи знімок екрана;
+     • «Що перевірено» лишилось, але тепер із підсумком «N пунктів · M з проблемами».
+   Сам рушій перевірок (DIAG_CHECKS) не чіпався — це лише те, як його видно. */
+function diagPanelHtml(issues) {
+  const list = diagDedupe(issues || []);
+  const acks = diagLoadAcks();
+  const errors = list.filter(i => i.kind === 'error').length;
+  const warns = list.filter(i => i.kind === 'warning').length;
+  const notes = list.filter(i => i.kind === 'info').length;
+  const fresh = list.filter(i => i.kind === 'info' && acks[diagNoteKey(i)] !== diagNoteHash(i)).length;
+  const problems = errors + warns;
+
+  const when = lastDiagRun ? 'перевірено ' + new Date(lastDiagRun.at).toLocaleString('uk-UA')
+                           : 'повну перевірку ще не запускали на цьому пристрої';
+  const verdict = problems
+    ? '<div class="diag-verdict diag-verdict-bad"><span class="diag-verdict-mark">' + (errors ? '⛔' : '⚠️') + '</span>' +
+      '<span><b>' + problems + ' ' + pluralUa(problems, 'проблема', 'проблеми', 'проблем') + '</b>' +
+      (errors && warns ? ' <span class="muted">(' + errors + ' ' + pluralUa(errors, 'помилка', 'помилки', 'помилок') +
+         ', ' + warns + ' ' + pluralUa(warns, 'попередження', 'попередження', 'попереджень') + ')</span>' : '') +
+      '<span class="diag-verdict-when">' + escapeHtml(when) + '</span></span></div>'
+    : '<div class="diag-verdict diag-verdict-ok"><span class="diag-verdict-mark">✓</span>' +
+      '<span><b>Проблем не виявлено</b>' +
+      (fresh ? ' <span class="muted">· нових приміток: ' + fresh + '</span>' : '') +
+      '<span class="diag-verdict-when">' + escapeHtml(when) + '</span></span></div>';
+
+  const chip = (k, label, n) =>
+    '<button type="button" class="diag-chip' + (diagFilter === k ? ' is-on' : '') + (n ? '' : ' is-empty') +
+    '" data-diag-filter="' + k + '"' + (n ? '' : ' disabled') + '>' + label +
+    '<span class="diag-chip-n">' + n + '</span></button>';
+
+  return verdict +
+    '<div class="diag-actions">' +
+      '<button type="button" class="primary-btn diag-run-btn" id="price-check-btn">Перевірити зараз</button>' +
+      '<button type="button" class="price-admin-secondary" id="diag-copy-btn">Скопіювати звіт</button>' +
+    '</div>' +
+    '<div class="diag-progress" id="price-diag-progress" hidden>' +
+      '<div class="diag-progress-bar"><span id="diag-progress-fill"></span></div>' +
+      '<div class="diag-progress-text" id="price-diag-status"></div>' +
+    '</div>' +
+    '<div class="diag-chips">' +
+      chip('all', 'Усі', list.length) +
+      chip('error', '⛔ Помилки', errors) +
+      chip('warning', '⚠️ Попередження', warns) +
+      chip('info', 'ℹ️ Примітки', notes) +
+    '</div>' +
+    '<div id="price-issues-list">' + priceIssuesListHtml(issues) + '</div>' +
+    '<div id="price-diag-coverage">' + diagCoverageHtml(lastDiagRun) + '</div>';
+}
+
+/* Який тип знахідок зараз показано. Живе поза рендером, щоб фільтр не скидався
+   щоразу, коли Кабінет перемальовується (а він перемальовується часто). */
+let diagFilter = 'all';
+
+/* Звіт текстом — для «Скопіювати звіт». Формат навмисно простий: його читає людина
+   в месенджері, а не машина. */
+function diagReportText(issues) {
+  const list = diagDedupe(issues || []);
+  const lines = [];
+  lines.push('Sun-ice — звіт самодіагностики');
+  lines.push('Версія застосунку: ' + APP_BUILD);
+  lines.push('Прайс: ' + (priceVersion || '—'));
+  lines.push(lastDiagRun ? 'Перевірено: ' + new Date(lastDiagRun.at).toLocaleString('uk-UA')
+                         : 'Повну перевірку на цьому пристрої не запускали');
+  const problems = list.filter(i => i.kind !== 'info');
+  lines.push('Проблем: ' + problems.length + ' · приміток: ' + (list.length - problems.length));
+  lines.push('');
+  if (!list.length) lines.push('Знахідок немає.');
+  list.forEach(function (i) {
+    const mark = i.kind === 'error' ? '[ПОМИЛКА]' : (i.kind === 'warning' ? '[УВАГА]' : '[примітка]');
+    /* У знахідок з БАЗИ поле зветься tile_label, у щойно порахованих у памʼяті — tile.
+       Через цю різницю звіт спершу друкував «[ПОМИЛКА]  · mhi» без назви області. */
+    const area = i.tile_label || i.tile || '';
+    lines.push(mark + ' ' + area + (i.brand && i.brand !== '-' ? ' · ' + i.brand : ''));
+    String(i.message || '').split('\n').filter(l => l && l.indexOf('@@') !== 0)
+      .forEach(l => lines.push('    ' + l));
+  });
+  if (lastDiagRun && lastDiagRun.checked && lastDiagRun.checked.length) {
+    lines.push('');
+    lines.push('Перевірено пунктів: ' + lastDiagRun.checked.length);
+    lastDiagRun.checked.forEach(c => lines.push('    · ' + c.area + ' — ' + c.label + (c.detail ? ': ' + c.detail : '')));
+  }
+  return lines.join('\n');
 }
 
 function priceIssuesListHtml(issues) {
   lastPriceIssues = issues || [];
-  const list = diagDedupe(lastPriceIssues);
+  /* Фільтр за типом знахідки (чипи над списком). 'all' — як було завжди.
+     Фільтруємо ПІСЛЯ diagDedupe, щоб лічильники на чипах і сам список рахувались
+     з одного й того самого набору — інакше вони розходяться. */
+  const all = diagDedupe(lastPriceIssues);
+  const list = diagFilter === 'all' ? all : all.filter(i => i.kind === diagFilter);
+  if (diagFilter !== 'all' && !list.length) {
+    return '<div class="price-diag-ok">Нічого такого немає ✓</div>';
+  }
   const acks = diagLoadAcks();
   const problems = list.filter(i => i.kind !== 'info');
   const notes = list.filter(i => i.kind === 'info');
@@ -765,7 +898,12 @@ function diagCoverageHtml(run) {
   };
   const rows = run.checked.map(c => '<div class="diag-cov-row"><span class="diag-cov-st">' + status(c) + '</span><span><b>' + escapeHtml(c.area) + ' · ' + escapeHtml(c.label) + '</b>' +
     (c.detail ? '<span class="diag-cov-detail">' + escapeHtml(c.detail) + '</span>' : '') + '</span></div>').join('');
-  return '<details class="diag-coverage"><summary>Що перевірено: ' + run.checked.length + ' пунктів · ' + new Date(run.at).toLocaleString('uk-UA') + '</summary>' + rows + '</details>';
+  /* У підсумку одразу видно, скільки пунктів НЕ чисті: доти доводилось гортати
+     весь перелік очима, щоб зрозуміти, чи є там взагалі щось, крім галочок. */
+  const bad = run.checked.filter(c => status(c) !== '✓').length;
+  return '<details class="diag-coverage"><summary>Що перевірено: ' + run.checked.length + ' пунктів' +
+    (bad ? ' · з них із зауваженнями: ' + bad : ' · усі чисті') +
+    ' · ' + new Date(run.at).toLocaleString('uk-UA') + '</summary>' + rows + '</details>';
 }
 
 /* «Куди веде»: відкриває розділ застосунку на потрібному списку й підсвічує рядок. */
@@ -837,30 +975,100 @@ function wirePriceIssueButtons(profile) {
 // свіжий price.xlsx, перераховує його й проганяє ВСІ перевірки (DIAG_CHECKS): ціни/маркування проти
 // Excel, посилання на сайт, зображення й файли, ролі, курси, версію застосунку, картки на сайті.
 async function runManualPriceCheck(profile) {
-  const statusEl = document.getElementById('price-diag-status');
   const btn = document.getElementById('price-check-btn');
-  if (btn) btn.disabled = true;
-  if (statusEl) statusEl.textContent = 'Завантажую прайс...';
+  const box = document.getElementById('price-diag-progress');
+  const statusEl = document.getElementById('price-diag-status');
+  const fill = document.getElementById('diag-progress-fill');
+  /* Смужка ходу (2026-10-18). Перевірка триває десятки секунд — качає 10 МБ прайсу,
+     розбирає його й ганяє півтора десятка перевірок. Без лічильника «3 з 14» це
+     виглядає як зависання, і адмін тисне кнопку вдруге. */
+  const show = (text, done, total) => {
+    if (box) box.hidden = false;
+    if (statusEl) statusEl.textContent = text;
+    if (fill) fill.style.width = total ? Math.round(done / total * 100) + '%' : '8%';
+  };
+  if (btn) { btn.disabled = true; btn.textContent = 'Перевіряю…'; }
+  show('Завантажую прайс…', 0, 0);
   try {
     const meta = await checkPriceVersion();
     const version = meta ? meta.version : priceVersion;
     const parsed = await downloadAndParsePrice(version, { skipDiag: true });
     if (meta) { priceVersion = meta.version; persistProcessedCache(priceVersion); }
+    let done = 0;
     const run = await runDiagnostics({
       manual: true, wb: parsed.wb, data: parsed.data, version: version,
-      onProgress: label => { if (statusEl) statusEl.textContent = 'Перевіряю: ' + label + '...'; }
+      onProgress: (label, idx, total) => {
+        done = (idx || 0) + 1;
+        show(label + ' — ' + done + ' з ' + (total || '?'), done - 1, total || 0);
+      }
     });
-    const list = document.getElementById('price-issues-list');
-    if (list) list.innerHTML = priceIssuesListHtml(await loadPriceIssues());
-    const cov = document.getElementById('price-diag-coverage');
-    if (cov) cov.innerHTML = diagCoverageHtml(lastDiagRun);
-    wirePriceIssueButtons(profile);
+    const issues = await loadPriceIssues();
     const problems = run.issues.filter(i => i.kind !== 'info').length;
-    if (statusEl) statusEl.textContent = 'Перевірку завершено ' + new Date().toLocaleString('uk-UA') + ' · перевірено ' + run.checked.length + ' пунктів · проблем: ' + problems;
+    /* ⚠️ Вердикт угорі будується з того, що ЗБЕРЕЖЕНО на сервері, а щойно виконана
+       перевірка знає свій результат сама. Якщо запис на сервер не пройшов (немає
+       мережі, немає прав, функції report_price_issue не існує), виходить відверта
+       брехня: смужка каже «проблем — 2», а вердикт — «проблем не виявлено».
+       Застосунок не має права показувати «усе гаразд», коли щойно знайшов інше,
+       тому про розбіжність кажемо прямо (знайдено 2026-10-18). */
+    const saved = (issues || []).filter(i => i.kind !== 'info').length;
+    const lost = problems > saved;
+    /* Перемальовуємо ВСЮ панель, а не лише список: після перевірки змінюються і
+       вердикт угорі, і лічильники на чипах, і звіт «що перевірено». Доти оновлювався
+       тільки список, і вердикт показував учорашні цифри. */
+    const panel = document.getElementById('sub-diag');
+    if (panel) {
+      panel.innerHTML = (lost
+        ? '<div class="warn">Ця перевірка знайшла ' + problems + ' ' +
+          pluralUa(problems, 'проблему', 'проблеми', 'проблем') +
+          ', але зберегти їх на сервер не вдалося — нижче показано те, що там лежало раніше. ' +
+          'Найімовірніше, немає зв\'язку або бракує прав.</div>'
+        : '') + diagPanelHtml(issues);
+      wirePriceIssueButtons(profile);
+      wireDiagPanel(profile);
+    }
+    const el = document.getElementById('price-diag-status');
+    const b2 = document.getElementById('price-diag-progress');
+    if (b2) b2.hidden = false;
+    if (el) el.textContent = 'Готово: ' + run.checked.length + ' пунктів, проблем — ' + problems;
+    const f2 = document.getElementById('diag-progress-fill');
+    if (f2) f2.style.width = '100%';
   } catch (e) {
-    if (statusEl) statusEl.textContent = 'Не вдалося перевірити — немає інтернету?';
+    show('Не вдалося перевірити — немає інтернету?', 0, 0);
   }
-  if (btn) btn.disabled = false;
+  const b3 = document.getElementById('price-check-btn');
+  if (b3) { b3.disabled = false; b3.textContent = 'Перевірити зараз'; }
+}
+
+/* Кнопки самої панелі діагностики: чипи фільтра, «Скопіювати звіт», «Перевірити зараз».
+   Кликати після КОЖНОГО перемальовування панелі — вузли щоразу нові. */
+function wireDiagPanel(profile) {
+  const panel = document.getElementById('sub-diag');
+  if (!panel) return;
+  const runBtn = panel.querySelector('#price-check-btn');
+  if (runBtn) runBtn.addEventListener('click', () => runManualPriceCheck(profile));
+  panel.querySelectorAll('[data-diag-filter]').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      diagFilter = chip.getAttribute('data-diag-filter');
+      panel.querySelectorAll('[data-diag-filter]').forEach(c =>
+        c.classList.toggle('is-on', c.getAttribute('data-diag-filter') === diagFilter));
+      const list = document.getElementById('price-issues-list');
+      if (list) { list.innerHTML = priceIssuesListHtml(lastPriceIssues); wirePriceIssueButtons(profile); }
+    });
+  });
+  const copyBtn = panel.querySelector('#diag-copy-btn');
+  if (copyBtn) copyBtn.addEventListener('click', async function () {
+    const text = diagReportText(lastPriceIssues);
+    try {
+      await navigator.clipboard.writeText(text);
+      copyBtn.textContent = 'Скопійовано ✓';
+    } catch (e) {
+      /* Буфер може бути недоступний (старий браузер, немає https) — тоді не мовчимо,
+         а віддаємо звіт тим самим «Поділитися», що й решта застосунку. */
+      if (navigator.share) { try { await navigator.share({ text: text }); } catch (e2) {} }
+      else copyBtn.textContent = 'Не вдалося скопіювати';
+    }
+    setTimeout(() => { copyBtn.textContent = 'Скопіювати звіт'; }, 2000);
+  });
 }
 
 async function renderAdminPanel(profile) {
@@ -1005,20 +1213,13 @@ async function renderAdminPanel(profile) {
   if (isSuper) {
     html += `
       <div class="price-diag-card" hidden>
-        <div class="price-diag-header">
-          <span>Завантаження прайсу</span>
+        ${subRowHtml(priceIssues)}
+        <div class="submenu-block" id="sub-price-load" hidden>
+          <div class="price-admin-mount" id="price-admin-mount">
+            <div class="price-diag-status-line">Завантаження розділу…</div>
+          </div>
         </div>
-        <div class="price-admin-mount" id="price-admin-mount">
-          <div class="price-diag-status-line">Завантаження розділу…</div>
-        </div>
-        <div class="price-diag-sep"></div>
-        <div class="price-diag-header">
-          <span>Самодіагностика застосунку</span>
-          <button type="button" class="link-btn" id="price-check-btn">🔍 Перевірити зараз</button>
-        </div>
-        <div class="price-diag-status-line" id="price-diag-status">Перевіряється: ціни й маркування проти Excel, посилання на сайт, картки на сайті, зображення й файли, ролі, курси, версія застосунку.</div>
-        <div id="price-diag-coverage">${diagCoverageHtml(lastDiagRun)}</div>
-        <div id="price-issues-list">${priceIssuesListHtml(priceIssues)}</div>
+        <div class="submenu-block" id="sub-diag" hidden>${diagPanelHtml(priceIssues)}</div>
       </div>`;
   }
   /* Кнопка «Заявки» згортає ВСЮ роботу з людьми — і самі заявки, і фільтри, і список
@@ -1059,7 +1260,7 @@ async function renderAdminPanel(profile) {
   const enablePushBtn = document.getElementById('enable-push-btn');
   if (enablePushBtn) enablePushBtn.addEventListener('click', () => enablePushNotifications(profile.id));
   if (isSuper) {
-    document.getElementById('price-check-btn').addEventListener('click', () => runManualPriceCheck(profile));
+    wireDiagPanel(profile);
     wirePriceIssueButtons(profile);
     /* Кабінет перемальовується часто (зміна статусу, фільтри) і щоразу збирає DOM
        заново — тому модуль прайсу треба примонтувати до НОВОГО вузла після кожного

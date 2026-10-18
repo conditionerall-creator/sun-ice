@@ -940,9 +940,14 @@
   /* Місце під лічильник тримаємо ЛИШЕ коли він є (.attn-card-on ставиться рівно тоді ж).
      Інакше спокійна картка різала власний підпис: «Проблем не…» замість «Проблем немає». */
   .attn-card-on .attn-text { padding-right: 28px; }
+  /* Підпис ПЕРЕНОСИТЬСЯ, а не ріжеться трьома крапками (2026-10-18). Назва
+     «Завантаження та діагностика прайсу» в піврядкову картку одним рядком не
+     влізе ніколи, а власник хоче обидві кнопки в одному рядку. Два рядки —
+     стеля: на третьому картка почала б перекошувати сусідню. */
   .attn-title {
-    font-size: 13px; font-weight: 700;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 12.5px; font-weight: 700; line-height: 1.25;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
   }
   .attn-sub {
     font-size: 11.5px; color: var(--text-secondary);
@@ -2963,11 +2968,40 @@
   .price-diag-header .link-btn { margin-top: 0; font-size: 12px; white-space: nowrap; }
   .price-diag-status-line { font-size: 11.5px; color: var(--text-secondary); margin: 4px 0 8px; min-height: 14px; }
 
-  /* Картка прайсу стоїть на власному рядку, на всю ширину: повна назва
-     «Завантаження та діагностика прайсу» в піврядкову картку не вміщається. */
-  .attn-row-wide .attn-card { flex: 1 1 100%; }
-  /* Розділювач між двома частинами блоку: завантаженням прайсу й самодіагностикою. */
-  .price-diag-sep { border-top: 1px solid var(--border); margin: 14px 0 12px; }
+  /* Підменю всередині блоку — ті самі картки, лише трохи менші: вони вже
+     всередині розгорнутого блоку, і повторювати його вагу не треба. */
+  .submenu-row { margin-bottom: 12px; }
+  .submenu-card { min-height: 52px; padding: 10px; }
+  .submenu-card .attn-title { font-size: 12px; }
+  .submenu-card .attn-sub { font-size: 11px; }
+
+  /* ---- Діагностика: вердикт, хід перевірки, фільтр ---- */
+  .diag-verdict {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 12px; border-radius: 10px; font-size: 12.5px; line-height: 1.45;
+    margin-bottom: 10px;
+  }
+  .diag-verdict-ok  { background: rgba(40, 167, 69, .12); }
+  .diag-verdict-bad { background: rgba(220, 53, 69, .12); }
+  .diag-verdict-mark { font-size: 16px; line-height: 1.2; }
+  .diag-verdict-when { display: block; font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .diag-actions { display: flex; gap: 8px; margin-bottom: 10px; }
+  .diag-actions .primary-btn, .diag-actions .price-admin-secondary { width: auto; flex: 1 1 0; padding: 10px; font-size: 13px; }
+  .diag-progress { margin-bottom: 10px; }
+  .diag-progress-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+  .diag-progress-bar span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+  .diag-progress-text { font-size: 11.5px; color: var(--text-secondary); margin-top: 4px; }
+  .diag-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .diag-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 9px; border-radius: 999px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--text);
+    font-family: inherit; font-size: 11.5px;
+  }
+  .diag-chip.is-on { border-color: var(--accent); background: rgba(127,127,127,.10); font-weight: 700; }
+  .diag-chip.is-empty { opacity: .45; cursor: default; }
+  .diag-chip-n { font-size: 10.5px; color: var(--text-secondary); }
+  .diag-chip.is-on .diag-chip-n { color: inherit; }
   /* Розділ прайсу — малюється модулем price-admin.js ПРЯМО в блоці Кабінету
      (окремого вікна немає, рішення власника 2026-10-18). */
   .price-admin-current {
@@ -3927,18 +3961,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-18.2"></script>
-<script src="js/02-price-parse.js?v=2026-10-18.2"></script>
-<script src="js/03-diagnostics.js?v=2026-10-18.2"></script>
-<script src="js/04-catalog.js?v=2026-10-18.2"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-18.2"></script>
-<script src="js/06-cart-promo.js?v=2026-10-18.2"></script>
-<script src="js/07-access-info.js?v=2026-10-18.2"></script>
-<script src="js/08-info-tables.js?v=2026-10-18.2"></script>
-<script src="js/09-cabinet.js?v=2026-10-18.2"></script>
-<script src="js/10-crmontage.js?v=2026-10-18.2"></script>
-<script src="js/11-shell.js?v=2026-10-18.2"></script>
-<script src="js/12-product-sheet.js?v=2026-10-18.2"></script>
-<script src="js/13-start.js?v=2026-10-18.2"></script>
+<script src="js/01-config.js?v=2026-10-18.8"></script>
+<script src="js/02-price-parse.js?v=2026-10-18.8"></script>
+<script src="js/03-diagnostics.js?v=2026-10-18.8"></script>
+<script src="js/04-catalog.js?v=2026-10-18.8"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-18.8"></script>
+<script src="js/06-cart-promo.js?v=2026-10-18.8"></script>
+<script src="js/07-access-info.js?v=2026-10-18.8"></script>
+<script src="js/08-info-tables.js?v=2026-10-18.8"></script>
+<script src="js/09-cabinet.js?v=2026-10-18.8"></script>
+<script src="js/10-crmontage.js?v=2026-10-18.8"></script>
+<script src="js/11-shell.js?v=2026-10-18.8"></script>
+<script src="js/12-product-sheet.js?v=2026-10-18.8"></script>
+<script src="js/13-start.js?v=2026-10-18.8"></script>
 </body>
 </html>

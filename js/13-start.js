@@ -806,6 +806,30 @@ document.getElementById('main').addEventListener('click', function (e) {
   card.classList.toggle('attn-card-collapsed', !willOpen);
 });
 
+/* ПІДМЕНЮ всередині блоку «Завантаження та діагностика прайсу» (2026-10-18):
+   «Завантаження прайсу» і «Діагностика». Поводяться точно як картки вгорі —
+   натиснув, розгорнулось; натиснув ще раз, згорнулось; відкрите лише одне.
+   Окремий обробник, а не спільний із [data-attn]: у тих блоки шукаються за
+   іменем через blockOf(), а тут блок завжди поруч і зветься #sub-<ім'я>. */
+document.getElementById('main').addEventListener('click', function (e) {
+  const card = e.target.closest('[data-subattn]');
+  if (!card) return;
+  const name = card.getAttribute('data-subattn');
+  const block = document.getElementById('sub-' + name);
+  if (!block) return;
+  const willOpen = block.hasAttribute('hidden');
+  card.closest('.submenu-row').querySelectorAll('[data-subattn]').forEach(function (other) {
+    if (other === card) return;
+    const ob = document.getElementById('sub-' + other.getAttribute('data-subattn'));
+    if (ob) ob.setAttribute('hidden', '');
+    other.setAttribute('aria-expanded', 'false');
+    other.classList.add('attn-card-collapsed');
+  });
+  if (willOpen) block.removeAttribute('hidden'); else block.setAttribute('hidden', '');
+  card.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  card.classList.toggle('attn-card-collapsed', !willOpen);
+});
+
 /* «Каталог» у хлібних крихтах = та сама дія, що й стрілка «назад». Не дублюємо логіку
    повернення, а натискаємо наявну кнопку: вона єдина знає про історію й анімації. */
 document.getElementById('title').addEventListener('click', function (e) {

@@ -1000,9 +1000,13 @@ async function diagReport(issues, checked, version) {
 async function runDiagnostics(opts) {
   const ctx = { wb: opts.wb || null, data: opts.data || sheetsData, manual: !!opts.manual, version: opts.version != null ? opts.version : priceVersion };
   const issues = [], checked = [];
-  for (const chk of DIAG_CHECKS) {
-    if (!ctx.manual && !chk.auto) continue;
-    if (opts.onProgress) opts.onProgress(chk.label);
+  /* Скільки перевірок реально виконається — потрібне смужці ходу в Кабінеті:
+     у тихому (автоматичному) прогоні працюють лише ті, що з auto, і писати
+     «3 з 14», коли їх насправді чотири, означало б брехати. */
+  const plan = DIAG_CHECKS.filter(c => ctx.manual || c.auto);
+  let idx = 0;
+  for (const chk of plan) {
+    if (opts.onProgress) opts.onProgress(chk.label, idx++, plan.length);
     try {
       const r = await chk.run(ctx);
       issues.push.apply(issues, r.issues);
