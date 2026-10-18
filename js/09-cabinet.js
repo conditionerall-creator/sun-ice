@@ -555,6 +555,14 @@ async function renderUserStatus(profile) {
 
 async function handleLogout() {
   await sb.auth.signOut();
+  /* Прибираємо прайс із пристрою (етап D). Кеш опублікованих даних підписаний
+     ідентифікатором користувача, тож чужому він і так не показався б — але
+     лишати ціни попереднього власника телефону після виходу просто незачем.
+     Це НЕ шифрування: поки людина була в акаунті, дані в неї вже побували. */
+  await priceCacheClear();
+  sheetsData = {};
+  publishedVersionId = null;
+  priceSourceUsed = null;
   cabinetMode = 'login';
   renderCabinetTab();
 }

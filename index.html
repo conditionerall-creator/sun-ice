@@ -50,12 +50,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"
         integrity="sha384-iLddHTLokph6Omwoyid4XKxHaWa6w41BnoEj0q5oOrzmYPpHIKt1wyjReA7s//pP"
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"
-        integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
-        integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<!-- SheetJS і JSZip тут БІЛЬШЕ НЕ ПІДКЛЮЧАЮТЬСЯ (етап D, 2026-10-18).
+     Разом вони важили близько мегабайта і їхали на телефон КОЖНОМУ, хто відкривав
+     застосунок. Після переїзду на опубліковані дані дилер Excel не розбирає взагалі.
+     Тепер їх вантажать на вимогу ensureXlsx() / ensureJszip() з js/01-config.js —
+     коли супер-адмін публікує прайс, коли хтось тисне «Excel» у СRМонтажі, коли
+     відкривається фото серії або коли спрацював аварійний відкат на price.xlsx.
+     Адреси й integrity лежать у тих функціях — міняти версію там, не тут. -->
 <style>
   :root {
     /* Палітра 2026-09-18 — токени дизайн-системи Sun-ice ("Sun-ice Design System-handoff"):
@@ -3961,18 +3962,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-18.8"></script>
-<script src="js/02-price-parse.js?v=2026-10-18.8"></script>
-<script src="js/03-diagnostics.js?v=2026-10-18.8"></script>
-<script src="js/04-catalog.js?v=2026-10-18.8"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-18.8"></script>
-<script src="js/06-cart-promo.js?v=2026-10-18.8"></script>
-<script src="js/07-access-info.js?v=2026-10-18.8"></script>
-<script src="js/08-info-tables.js?v=2026-10-18.8"></script>
-<script src="js/09-cabinet.js?v=2026-10-18.8"></script>
-<script src="js/10-crmontage.js?v=2026-10-18.8"></script>
-<script src="js/11-shell.js?v=2026-10-18.8"></script>
-<script src="js/12-product-sheet.js?v=2026-10-18.8"></script>
-<script src="js/13-start.js?v=2026-10-18.8"></script>
+<script src="js/01-config.js?v=2026-10-18.13"></script>
+<script src="js/02-price-parse.js?v=2026-10-18.13"></script>
+<script src="js/03-diagnostics.js?v=2026-10-18.13"></script>
+<script src="js/04-catalog.js?v=2026-10-18.13"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-18.13"></script>
+<script src="js/06-cart-promo.js?v=2026-10-18.13"></script>
+<script src="js/07-access-info.js?v=2026-10-18.13"></script>
+<script src="js/08-info-tables.js?v=2026-10-18.13"></script>
+<script src="js/09-cabinet.js?v=2026-10-18.13"></script>
+<script src="js/10-crmontage.js?v=2026-10-18.13"></script>
+<script src="js/11-shell.js?v=2026-10-18.13"></script>
+<script src="js/12-product-sheet.js?v=2026-10-18.13"></script>
+<script src="js/13-start.js?v=2026-10-18.13"></script>
 </body>
 </html>

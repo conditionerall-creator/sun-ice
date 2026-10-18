@@ -315,6 +315,8 @@
       stage('Рахуємо контрольну суму…');
       const sha = await sha256Hex(buf);
 
+      stage('Готуємо розбірник…');
+      await ensureXlsx();   // бібліотека вантажиться на вимогу (етап D)
       stage('Розбираємо прайс…');
       await nextFrame();
       const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
@@ -403,6 +405,10 @@
       say('Створюємо чернетку…');
       const draft = await sb.rpc('price_create_draft', {
         p_data: candidate.data,
+        /* Друга копія — БЕЗ ЦІН, для гостей (get_price_public). Рахуємо ТІЄЮ САМОЮ
+           stripPricesFromSheets(), що роками готує кеш для тих, хто доступу не має:
+           другої реалізації «як прибрати ціни» в застосунку бути не повинно. */
+        p_data_public: stripPricesFromSheets(candidate.data),
         p_stats: candidate.stats,
         p_diff: {
           added: candidate.diff.added, removed: candidate.diff.removed,

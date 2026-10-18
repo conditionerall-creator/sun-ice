@@ -360,7 +360,8 @@ function shareTaskInfo(t, btnId) {
    нова залежність заради того самого результату, який print() дає безкоштовно. Обидві дії
    працюють з тим самим відфільтрованим списком, що й на екрані (getFilteredInstallerTasks),
    тобто експортується/друкується рівно те, що зараз видно. */
-function exportInstallerTasksToExcel() {
+async function exportInstallerTasksToExcel() {
+  await ensureXlsx(); // бібліотека вантажиться на вимогу (етап D)
   const tasks = getFilteredInstallerTasks();
   if (!tasks.length) {
     alert('Немає монтажів для експорту за поточними фільтрами.');

@@ -171,6 +171,32 @@ async function initCatalog() {
   priceLoadError = null;
   setCatalogStatus('Завантажуємо прайс…');
   renderCatalogView();
+
+  /* СПЕРШУ — опублікований прайс (етап D). Він приходить готовим: ні 10 МБ, ні
+     розбору на телефоні. Не вийшло з будь-якої причини — нижче працює старий шлях
+     із price.xlsx, і про цей відкат дізнається супер-адмін (reportPriceFallback).
+     Мовчазного відкату тут немає й бути не повинно. */
+  try {
+    const pub = await loadPublishedPrice({
+      onStage: function (s) {
+        priceLoadState = s;
+        setCatalogStatus(s === 'parse' ? 'Готуємо каталог…' : 'Завантажуємо прайс…');
+        renderCatalogView();
+      }
+    });
+    if (pub.ok) {
+      priceLoadState = 'ready';
+      priceVersion = publishedVersionId;
+      setCatalogStatus(publishedLabel(), true); // тихий стан: лише адмінам
+      renderCatalogView();
+      checkPriceUpdateInBackground();
+      return;
+    }
+    reportPriceFallback(pub.reason);
+  } catch (e) {
+    reportPriceFallback((e && e.message) ? e.message : 'помилка запиту');
+  }
+
   try {
     const meta = await checkPriceVersion();
     await downloadAndParsePrice(meta ? meta.version : null, {
@@ -201,9 +227,70 @@ async function initCatalog() {
    паралельно з ручним ↻ (handleRefreshClick), щоб не качати 10 МБ двічі. */
 let priceUpdateCheckDone = false;
 let priceDownloadInFlight = false;
+
+/* ПРАЙС ЗМІНИВСЯ ПРЯМО ПІД РУКАМИ (етап D). Дилер міг саме зараз рахувати ціну
+   клієнту в панелі товару або тримати підбірку — і мовчки підмінити під ним числа
+   не можна: він назве клієнту одне, а в застосунку буде інше.
+   Тому кажемо прямо, і саме тому НЕ тихим статусом (quiet) — цей напис мусять
+   бачити всі, не лише адміни. Самі числа перемальовуються як завжди: нова ціна
+   правильна, людина просто має про це знати. */
+function notePriceVersionChanged() {
+  const sheet = document.getElementById('product-sheet-overlay');
+  const openSheet = sheet && sheet.classList.contains('show');
+  const hasCart = typeof cart !== 'undefined' && Array.isArray(cart) && cart.length > 0;
+  if (!openSheet && !hasCart) return;
+  const where = openSheet && hasCart ? 'відкритий розрахунок і підбірку'
+              : (openSheet ? 'відкритий розрахунок' : 'підбірку');
+  setCatalogStatus('Прайс оновився — перевірте ' + where + ', ціни могли змінитися');
+  if (openSheet) {
+    const body = document.getElementById('product-sheet-body');
+    if (body && !body.querySelector('.price-changed-note')) {
+      body.insertAdjacentHTML('afterbegin',
+        '<div class="warn price-changed-note">Прайс оновився, поки ця панель була відкрита. ' +
+        'Перевірте ціну перед тим, як називати її клієнту.</div>');
+    }
+  }
+}
+
+/* Підпис версії опублікованого прайсу. Дата публікації читабельніша за «версію №7»:
+   дилеру номер нічого не каже, а «Прайс від 18.10.2026» — каже все. */
+function publishedLabel() {
+  if (!publishedVersionId) return 'Прайс завантажено';
+  const at = publishedPublishedAt ? new Date(publishedPublishedAt) : null;
+  if (!at || isNaN(at.getTime())) return 'Прайс завантажено';
+  const p = function (n) { return (n < 10 ? '0' : '') + n; };
+  return 'Прайс від ' + p(at.getDate()) + '.' + p(at.getMonth() + 1) + '.' + at.getFullYear();
+}
+
 async function checkPriceUpdateInBackground() {
   if (priceUpdateCheckDone || priceDownloadInFlight) return;
   priceUpdateCheckDone = true;
+
+  /* Якщо працюємо на опублікованих даних — звіряємось із НИМИ, а не з price_meta:
+     price_meta описує старий xlsx і при переїзді вже не є джерелом правди. */
+  if (priceSourceUsed === 'published') {
+    try {
+      const v = await fetchPublishedVersion();
+      if (!v || v.version_id == null) return;              // немає зв'язку — мовчимо
+      if (v.version_id === publishedVersionId) return;      // уже найсвіжіше
+      priceDownloadInFlight = true;
+      setCatalogStatus('Зʼявився новий прайс — завантажую…');
+      try {
+        const res = await loadPublishedPrice({ force: true });
+        if (res.ok) {
+          priceVersion = publishedVersionId;
+          publishedPublishedAt = v.published_at || publishedPublishedAt;
+          setCatalogStatus(publishedLabel() + ' · щойно оновлено');
+          notePriceVersionChanged();
+          catalogMenuSkipEnterAnim = true;
+          if (currentTab === 'catalog') renderCatalogView();
+          renderCartBar();
+        }
+      } finally { priceDownloadInFlight = false; }
+    } catch (e) { /* мовчимо: людина працює з тим, що вже є */ }
+    return;
+  }
+
   try {
     const meta = await checkPriceVersion();
     if (!meta || meta.version == null) return;                 // немає зв'язку — мовчимо
@@ -232,6 +319,39 @@ async function handleRefreshClick() {
   // Фонова звірка могла вже качати прайс — двічі 10 МБ поспіль качати не треба.
   if (priceDownloadInFlight) { setCatalogStatus('Прайс уже завантажується…'); return; }
   setCatalogStatus('Перевірка оновлень...');
+
+  /* Кнопка ↻ на опублікованих даних звіряється з ними ж. Якщо тут лишити стару
+     звірку з price_meta, дилер тиснув би «оновити» і бачив «це найсвіжіший»,
+     хоча опублікована версія вже інша. */
+  if (priceSourceUsed === 'published') {
+    try {
+      const v = await fetchPublishedVersion();
+      if (!v || v.version_id == null) {
+        setCatalogStatus('Не вдалося перевірити оновлення. Перевірте інтернет-зʼєднання.');
+        return;
+      }
+      if (v.version_id === publishedVersionId) {
+        setCatalogStatus(publishedLabel() + ' · це найсвіжіший');
+        return;
+      }
+      setCatalogStatus('Завантаження нового прайсу...');
+      priceDownloadInFlight = true;
+      try {
+        const res = await loadPublishedPrice({ force: true });
+        if (!res.ok) throw new Error(res.reason || 'порожня відповідь');
+        priceVersion = publishedVersionId;
+        publishedPublishedAt = v.published_at || publishedPublishedAt;
+        setCatalogStatus(publishedLabel() + ' · щойно оновлено');
+        notePriceVersionChanged();
+        catalogMenuSkipEnterAnim = true;
+        renderCatalogView();
+      } finally { priceDownloadInFlight = false; }
+    } catch (e) {
+      setCatalogStatus('Немає підключення. Відображається остання завантажена версія прайсу.');
+    }
+    return;
+  }
+
   const meta = await checkPriceVersion();
   if (!meta) {
     setCatalogStatus('Не вдалося перевірити оновлення. Перевірте інтернет-з’єднання.');

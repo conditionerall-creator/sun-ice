@@ -8,7 +8,7 @@
 /* APP_BUILD переїхав сюди з 03-diagnostics.js 2026-10-09: він потрібен уже в цьому
    файлі (адреса stock.js будується з нього), а 03 вантажиться пізніше — вийшов би
    ReferenceError. Місце тут і логічніше: це налаштування, а не діагностика. */
-const APP_BUILD = '2026-10-18.8'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
+const APP_BUILD = '2026-10-18.13'; // міняти разом із кожною заливкою; МУСИТЬ збігатися з ?v= у всіх <script src> в index.html і зі списком APP_SHELL у sw.js (стереже перевірка «Модулі застосунку»)
 const SUPABASE_URL = 'https://pwyeifgjfyymhhvzigcg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_CFO8bbjiwrqfnTiuPf2SJg_r9Zt-cke';
 const PRICE_FILE_URL = SUPABASE_URL + '/storage/v1/object/public/price/price.xlsx';
@@ -219,6 +219,50 @@ function syncStockModule(allowed) {
   };
   el.onerror = () => { stockModuleLoading = false; }; // офлайн/збій — просто без залишків
   document.head.appendChild(el);
+}
+
+/* ---------- Важкі бібліотеки — лише на вимогу (етап D, 2026-10-18) ----------
+   SheetJS (xlsx.full.min.js) і JSZip разом важать близько мегабайта і досі
+   вантажились у <head> КОЖНОМУ, хто відкривав застосунок. Після переїзду на
+   опубліковані дані дилеру розбирати Excel уже не треба — отже й бібліотеки
+   йому не потрібні.
+   Хто їх усе-таки вмикає:
+     • супер-адмін, коли публікує прайс;
+     • будь-хто, хто тисне «📊 Excel» у СRМонтажі;
+     • аварійний відкат на price.xlsx;
+     • фото серій (JSZip — розпакувати xl/media).
+   Обіцянку кешуємо: друге звернення нічого не качає. */
+function loadScriptOnce(url, integrity) {
+  return new Promise(function (resolve, reject) {
+    const el = document.createElement('script');
+    el.src = url;
+    if (integrity) { el.integrity = integrity; el.crossOrigin = 'anonymous'; el.referrerPolicy = 'no-referrer'; }
+    el.onload = function () { resolve(); };
+    el.onerror = function () { reject(new Error('Не вдалося завантажити ' + url)); };
+    document.head.appendChild(el);
+  });
+}
+let xlsxPromise = null;
+function ensureXlsx() {
+  if (typeof XLSX !== 'undefined') return Promise.resolve();
+  if (!xlsxPromise) {
+    xlsxPromise = loadScriptOnce(
+      'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+      'sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA=='
+    ).catch(function (e) { xlsxPromise = null; throw e; }); // збій не має робити бібліотеку «назавжди недоступною»
+  }
+  return xlsxPromise;
+}
+let jszipPromise = null;
+function ensureJszip() {
+  if (typeof JSZip !== 'undefined') return Promise.resolve();
+  if (!jszipPromise) {
+    jszipPromise = loadScriptOnce(
+      'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+      'sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg=='
+    ).catch(function (e) { jszipPromise = null; throw e; });
+  }
+  return jszipPromise;
 }
 
 /* Прайс із кабінету — окремий файл price-admin.js (план: claude/price-publish/00-ПЛАН-І-СТАТУС.md).

@@ -561,6 +561,24 @@ async function diagCheckPricePublish(ctx) {
     return out; // далі перевіряти нічого
   }
 
+  /* 1b. ЯКИМ ШЛЯХОМ узято прайс на цьому пристрої (етап D).
+     Головне, заради чого перевірка існує під час переїзду: якщо застосунок тихо
+     працює на старому price.xlsx, усі переваги переїзду не діють, а бакет
+     закривати не можна. Тому стан шляху — завжди на видноті. */
+  if (priceSourceUsed === 'published') {
+    out.checked.push({ area: area, sub: 'source', label: 'Звідки взято прайс на цьому пристрої',
+      detail: 'опубліковані дані, версія №' + (publishedVersionId || '?') });
+  } else if (priceSourceUsed === 'xlsx') {
+    out.issues.push(diagIssue(area, 'source', 'warning',
+      'Цей пристрій працює зі СТАРОГО price.xlsx, а не з опублікованих даних',
+      ['Причина відкату: ' + (priceFallbackReason || 'не вказана') + '.',
+       'Поки такі відкати трапляються, публічний бакет закривати не можна (етап E).'],
+      { tab: 'cabinet' }));
+  } else {
+    out.checked.push({ area: area, sub: 'source', label: 'Звідки взято прайс на цьому пристрої',
+      detail: 'прайс ще не завантажувався в цьому сеансі' });
+  }
+
   // 2. Чи збігається опубліковане з тим, що зараз у застосунку
   if (!info) {
     out.issues.push(diagIssue(area, 'state', 'info',

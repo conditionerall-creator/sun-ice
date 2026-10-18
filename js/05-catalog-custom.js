@@ -240,6 +240,7 @@ function attachVrfHandlers(main) {
 let kkbGalRawRowsCache = null;
 async function getKkbGalRawRows() {
   if (kkbGalRawRowsCache) return kkbGalRawRowsCache;
+  await ensureXlsx();
   const buf = await ensurePriceRawBuffer();
   if (!buf) return null;
   const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
@@ -837,6 +838,7 @@ async function extractSeriesImages(sheetName, rowToGroup) {
   if (seriesImageCache[sheetName]) return seriesImageCache[sheetName];
   const promise = (async () => {
     try {
+      await ensureJszip();
       const buf = await ensurePriceRawBuffer();
       if (!buf) return new Map();
       const zip = await JSZip.loadAsync(buf);
@@ -952,6 +954,7 @@ async function extractSeriesImages(sheetName, rowToGroup) {
 async function getRowGroupMapForSplitTile(brand) {
   const cacheKey = 'split_' + brand;
   if (seriesRowGroupMaps[cacheKey]) return seriesRowGroupMaps[cacheKey];
+  await ensureXlsx();
   const buf = await ensurePriceRawBuffer();
   if (!buf) return [];
   const tile = CATALOG_TILES.find(t => t.id === 'split');

@@ -592,6 +592,7 @@ function parseThMhiEzyQtonSheet(wb) {
 }
 async function getThEzyRowGroupMap() {
   if (thEzyRowGroupMapCache) return thEzyRowGroupMapCache;
+  await ensureXlsx();
   const buf = await ensurePriceRawBuffer();
   if (!buf) return [];
   const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
@@ -770,6 +771,7 @@ function parseVrfTypeSheet(wb, sheetName) {
 }
 async function getVrfRowGroupMap(cacheKey, rebuildFn) {
   if (vrfRowGroupMapCache[cacheKey]) return vrfRowGroupMapCache[cacheKey];
+  await ensureXlsx();
   const buf = await ensurePriceRawBuffer();
   if (!buf) return [];
   const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
@@ -1230,6 +1232,206 @@ function persistProcessedCache(version) {
   }
 }
 
+/* ================================================================
+   ОПУБЛІКОВАНИЙ ПРАЙС (етап D, 2026-10-18)
+   ================================================================
+   Досі КОЖЕН телефон качав price.xlsx (10 МБ) і розбирав його сам. Тепер прайс
+   один раз розбирає супер-адмін у Кабінеті, а сюди приходить готове.
+
+   ПОРЯДОК, і він навмисно саме такий:
+     1) опубліковані дані (get_price / get_price_public);
+     2) якщо з ними хоч щось не так — ЯВНИЙ відкат на старий шлях із price.xlsx.
+
+   Чому відкат узагалі є. У завданні було «не робити прихованого відкату», і це
+   правильно — але ПІД ЧАС ПЕРЕЇЗДУ заборонити відкат означає, що перша ж помилка
+   в новому коді лишає всіх дилерів без цін, а прайс — єдине, заради чого застосунок
+   відкривають. Тому відкат є, але він НЕ прихований: кожне спрацювання пишеться в
+   price_issues і видно супер-адміну в діагностиці. Прибрати його — окремий,
+   останній крок (етап E), коли лічильник спрацювань стоятиме на нулі.
+
+   Чого тут НЕМАЄ: фото серій. Вони лежать усередині самого xlsx (xl/media, 263
+   картинки на 11,9 МБ) і дістаються лише тоді, коли людина натисне ⓘ на заголовку
+   серії. Тобто на СТАРТІ файл більше не качається взагалі — лише за тим дотиком.
+   Перенести фото в окреме сховище — передумова етапу E, окрема задача. */
+
+let publishedVersionId = null;    // id версії, з якої взято поточний sheetsData
+let publishedPublishedAt = null;  // коли її опублікували (для підпису «Прайс від …»)
+let priceSourceUsed = null;       // 'published' | 'xlsx' — що саме спрацювало
+let priceFallbackReason = null;   // чому довелось відкотитись на xlsx
+
+/* ---- Кеш на пристрої: IndexedDB ----
+   Чому не localStorage, де кеш жив досі: там близько 5 МБ на застосунок, а
+   розібраний прайс важить ~1,7 МБ тексту (на iPhone символи по 2 байти, тобто
+   ~3,4 МБ з 5) — запас майже вичерпано, і QuotaExceededError був питанням часу.
+   Старий localStorage-кеш лишається недоторканим: ним і далі живе шлях із xlsx. */
+const PRICE_IDB_NAME = 'sunice-price';
+const PRICE_IDB_STORE = 'published';
+
+function priceIdbOpen() {
+  return new Promise(function (resolve, reject) {
+    if (!('indexedDB' in window)) { reject(new Error('IndexedDB недоступний')); return; }
+    const req = indexedDB.open(PRICE_IDB_NAME, 1);
+    req.onupgradeneeded = function () {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(PRICE_IDB_STORE)) db.createObjectStore(PRICE_IDB_STORE);
+    };
+    req.onsuccess = function () { resolve(req.result); };
+    req.onerror = function () { reject(req.error || new Error('IndexedDB')); };
+  });
+}
+
+function priceIdbRun(mode, fn) {
+  return priceIdbOpen().then(function (db) {
+    return new Promise(function (resolve, reject) {
+      const tx = db.transaction(PRICE_IDB_STORE, mode);
+      const store = tx.objectStore(PRICE_IDB_STORE);
+      let out;
+      try { out = fn(store); } catch (e) { reject(e); return; }
+      /* ⚠️ Віддаємо саме .result, а не сам запит. Перша версія писала
+         `out.result !== undefined ? out.result : out` — і коли запису НЕ БУЛО,
+         .result виявлявся undefined, тож поверталось IDBRequest, яке «істинне».
+         Через це порожній кеш виглядав як наявний: і читання віддавало сміття,
+         і перевірка «чи прибрався кеш після виходу» завжди казала «лишився»
+         (знайдено 2026-10-18). */
+      tx.oncomplete = function () {
+        db.close();
+        resolve(out && typeof IDBRequest !== 'undefined' && out instanceof IDBRequest ? out.result : out);
+      };
+      tx.onerror = function () { db.close(); reject(tx.error); };
+    });
+  });
+}
+
+async function priceCacheRead() {
+  try { return await priceIdbRun('readonly', function (s) { return s.get('current'); }); }
+  catch (e) { return null; }
+}
+async function priceCacheWrite(rec) {
+  try { await priceIdbRun('readwrite', function (s) { return s.put(rec, 'current'); }); return true; }
+  catch (e) { return false; }
+}
+/* Викликається при виході з акаунта й при втраті доступу: чужі дані на пристрої
+   лишатись не повинні. Це НЕ шифрування — власник пристрою все одно бачив свої
+   дані, поки вони там були; це лише про «наступний користувач цього телефону». */
+async function priceCacheClear() {
+  try { await priceIdbRun('readwrite', function (s) { return s.delete('current'); }); } catch (e) {}
+}
+
+/* Хто зараз у застосунку — ШВИДКА підказка з localStorage-ключа Supabase.
+   ⚠️ Лише підказка: одразу після входу supabase-js записує токен не миттєво, і
+   тут ще кілька мілісекунд буде null. Для ВИБОРУ запиту цього досить, а от
+   підписувати нею кеш НЕ МОЖНА — див. currentUserId() нижче. */
+function currentUserIdQuick() {
+  try {
+    const key = Object.keys(localStorage).find(function (k) { return /^sb-.*-auth-token$/.test(k); });
+    if (!key) return null;
+    const raw = JSON.parse(localStorage.getItem(key) || 'null');
+    return (raw && raw.user && raw.user.id) || null;
+  } catch (e) { return null; }
+}
+
+/* Хто зараз у застосунку — ДОСТОВІРНО. Саме цим підписуємо кеш.
+   ⚠️ ЧОМУ НЕ ШВИДКОЮ ПІДКАЗКОЮ. Одразу після входу localStorage-ключа ще немає,
+   і currentUserIdQuick() повертає null. Якщо підписати кеш цим null, запис із
+   ЦІНАМИ позначиться як «гостьовий» — і наступний гість на цьому телефоні
+   побачить чужі ціни, бо null === null. Знайдено перевіркою 2026-10-18:
+   у записі кеша замість ідентифікатора дилера справді стояло порожнє значення. */
+async function currentUserId() {
+  try {
+    const { data } = await sb.auth.getSession();
+    return (data && data.session && data.session.user && data.session.user.id) || null;
+  } catch (e) {
+    return currentUserIdQuick(); // немає зв'язку з Auth — хоч якась підказка
+  }
+}
+
+/* Легка перевірка «яка версія опублікована». Без тіла прайсу. */
+async function fetchPublishedVersion() {
+  const fn = currentUserIdQuick() ? 'get_price_version' : 'get_price_version_public';
+  const res = await sb.rpc(fn);
+  if (res.error) throw res.error;
+  return res.data || null;
+}
+
+/* Саме завантаження опублікованих даних. Повертає true, якщо sheetsData заповнено.
+   opts.onStage('download'|'parse') — щоб екран міг сказати, що відбувається. */
+async function loadPublishedPrice(opts) {
+  const stage = (opts && opts.onStage) || function () {};
+  const uid = await currentUserId();
+
+  /* 1. Кеш пристрою. Чужий кеш не показуємо НІКОЛИ: інакше наступний користувач
+        цього телефону побачив би ціни попереднього. */
+  const cached = await priceCacheRead();
+  const fresh = (opts && opts.force) ? null : cached;
+  let wanted = null;
+  /* Подвійний замок. Перший — збіг власника. Другий — запис із ЦІНАМИ не показуємо
+     нікому без сесії взагалі, навіть якщо позначка власника якимось чином збіглася:
+     ціни на екрані в того, хто не входив, — це саме те, чого тут не може бути. */
+  const cacheUsable = fresh && fresh.userId === uid && fresh.parserVersion === PARSER_VERSION &&
+                      fresh.data && (uid || fresh.stripped);
+  if (cacheUsable) {
+    /* Кеш є — показуємо миттєво, а чи не застарів він, з'ясуємо окремо (фонова
+       звірка робить це сама, як і для старого шляху). */
+    sheetsData = fresh.data;
+    priceDataStripped = !!fresh.stripped;
+    publishedVersionId = fresh.versionId;
+    publishedPublishedAt = fresh.publishedAt || null;
+    priceSourceUsed = 'published';
+    return { ok: true, fromCache: true };
+  }
+
+  stage('download');
+  /* 2. Сервер. Залогіненому спершу пробуємо з цінами; якщо доступу немає —
+        get_price() чесно віддає null, і ми беремо копію без цін. */
+  let payload = null;
+  if (uid) {
+    const withPrices = await sb.rpc('get_price');
+    if (withPrices.error) throw withPrices.error;
+    payload = withPrices.data || null;
+  }
+  if (!payload) {
+    const pub = await sb.rpc('get_price_public');
+    if (pub.error) throw pub.error;
+    payload = pub.data || null;
+  }
+  if (!payload || !payload.data) return { ok: false, reason: 'опублікованої версії немає' };
+
+  stage('parse'); // насправді розбирати нічого не треба — але екран чесно каже «готуємо»
+  sheetsData = payload.data;
+  priceDataStripped = !!payload.stripped;
+  publishedVersionId = payload.version_id;
+  publishedPublishedAt = payload.published_at || null;
+  priceSourceUsed = 'published';
+  wanted = {
+    versionId: payload.version_id, publishedAt: payload.published_at || null,
+    data: payload.data, stripped: !!payload.stripped,
+    userId: uid, parserVersion: PARSER_VERSION, savedAt: Date.now()
+  };
+  await priceCacheWrite(wanted);
+  return { ok: true, fromCache: false };
+}
+
+/* Відкат на старий шлях — ГУЧНИЙ. Пишемо в price_issues рівно один раз за запуск:
+   інакше кожне відкриття каталогу народжувало б новий рядок. */
+let priceFallbackReported = false;
+function reportPriceFallback(reason) {
+  priceFallbackReason = reason || 'невідома причина';
+  priceSourceUsed = 'xlsx';
+  if (priceFallbackReported) return;
+  priceFallbackReported = true;
+  try {
+    sb.rpc('report_price_issue', {
+      p_version: String(priceVersion == null ? '' : priceVersion),
+      p_tile_label: 'Публікація прайсу',
+      p_brand: 'відкат',
+      p_kind: 'warning',
+      p_message: 'Застосунок не зміг узяти опублікований прайс і повернувся до старого ' +
+                 'price.xlsx. Причина: ' + priceFallbackReason + '. Поки такі відкати ' +
+                 'трапляються, публічний бакет закривати не можна.'
+    }).catch(function () {});
+  } catch (e) {}
+}
+
 async function checkPriceVersion() {
   try {
     const { data, error } = await sb.from('price_meta').select('version, updated_at').eq('id', 1).single();
@@ -1250,6 +1452,8 @@ async function downloadAndParsePrice(newVersion, opts) {
      різниця в часі. Без етапів обидва виглядали як однакове мовчазне «Завантаження...». */
   const stage = (opts && opts.onStage) || function () {};
   stage('download');
+  /* Бібліотека розбору тепер вантажиться на вимогу — саме тут вона й потрібна. */
+  await ensureXlsx();
   const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const buf = await res.arrayBuffer();
