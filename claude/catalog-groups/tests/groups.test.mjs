@@ -82,6 +82,15 @@ ok('спліт MHI: серія ZT — один блок із підзаголо�
   assert.equal(groups[4].sizes, '');
 });
 
+ok('примітка про пульт касетного блоку переїжджає з «Пульти» до касет', () => {
+  const items = splitMhi.concat([mk('FDTC25VH1', { groupKey: 'VH', groupLabel: 'Моделі 4-х потокові компактні касети 600х600' })]);
+  const nodes = build('split_mhi', items).filter(g => g.type === 'group');
+  const rc = nodes.find(g => g.rawTitle === 'Пульти');
+  assert.equal(rc.note, '');
+  const cass = nodes.find(g => g.rawTitle === 'Моделі 4-х потокові компактні касети 600х600');
+  assert.equal(cass.note.indexOf('Пульт для касетного блоку') === 0, true);
+});
+
 ok('комплект забору повітря відкривається разом із канальними (підблок, порядок прайсу)', () => {
   const nodes = build('split_mhi', splitMhi);
   const duct = nodes.find(g => g.type === 'group' && g.rawTitle === 'Моделі канальні R32 DC PAM Inverter');

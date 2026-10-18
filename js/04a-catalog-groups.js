@@ -129,6 +129,13 @@ const CG_ATTACH = {
   }]
 };
 
+/* Примітка з прайсу стоїть біля однієї групи, а стосується іншої: «Пульт для касетного блоку
+   замовляється додатково як опція!» парсер вішає на «Пульти», а йдеться про касети (рішення
+   власника 2026-10-19). Переносимо у верх тіла тієї групи, якої вона стосується. */
+const CG_NOTE_MOVES = {
+  split_mhi: [{ from: 'Пульти', to: 'Моделі 4-х потокові компактні касети 600х600' }]
+};
+
 /* ---------- Дрібні помічники (чисті) ---------- */
 function cgText(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
 
@@ -269,6 +276,13 @@ function cgBuildNodes(cfgKey, items) {
     cur.entries.push(entry);
   });
   nodes.forEach(n => { if (n.type === 'group') cgFinishGroup(n, rule, cfgKey); });
+  (CG_NOTE_MOVES[cfgKey] || []).forEach(mv => {
+    const from = nodes.find(n => n.type === 'group' && n.rawTitle === mv.from);
+    const to = nodes.find(n => n.type === 'group' && n.rawTitle === mv.to);
+    if (!from || !to || !from.note) return;
+    to.note = to.note ? to.note + ' ' + from.note : from.note;
+    from.note = '';
+  });
   return nodes;
 }
 
