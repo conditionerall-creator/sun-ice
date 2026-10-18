@@ -381,6 +381,94 @@
     }
   }
 
+  /* ---- Фото серій: з Excel у окреме сховище (з 2026-10-19) ----
+     Доти фото жили всередині price.xlsx, і будь-який дотик по ⓘ біля назви серії
+     тягнув увесь 10-мегабайтний файл. Головне ж — через них НЕМОЖЛИВО було закрити
+     публічний бакет: разом із прайсом зникли б і фото.
+     Тепер при публікації вони вивантажуються в бакет `price-media`, а у версію
+     лягає готова мапа «аркуш → серія → адреси».
+
+     ⚠️ Прив'язку «фото ↔ серія» рахує ТОЙ САМИЙ extractSeriesImages(), що й
+     застосунок. Другої реалізації тут немає свідомо: розійдуться — і дилер
+     побачить біля серії чуже фото, чого ніяка перевірка не спіймає.
+
+     Аркуші перелічені руками, бо кожен має власний спосіб визначити серію за
+     рядком — рівно ті вирази, що стоять у місцях показу. */
+  async function buildSeriesMedia(buf, sha, onStep) {
+    const out = {};
+    /* Підсовуємо щойно обраний файл як «сирий буфер» застосунку: тоді всі наявні
+       помічники (rowGroupMap'и) працюють як завжди, нічого не перероблюючи. */
+    const prevBuf = (typeof priceRawBuffer !== 'undefined') ? priceRawBuffer : null;
+    priceRawBuffer = buf;
+    seriesImageCache = {};
+    try {
+      const sources = [
+        { sheet: 'ПОБУТОВІ', rows: function () { return getRowGroupMapForSplitTile('mhi'); } },
+        { sheet: 'GALACTIC', rows: function () { return getRowGroupMapForSplitTile('gal'); } },
+        { sheet: 'VRF Зовнішні блоки', rows: function () { return getVrfRowGroupMap('VRF Зовнішні блоки', function (wb) { return parseVrfTypeSheet(wb, 'VRF Зовнішні блоки'); }); } },
+        { sheet: 'VRF Внутрішні R410A', rows: function () { return getVrfRowGroupMap('VRF Внутрішні R410A', function (wb) { return parseVrfTypeSheet(wb, 'VRF Внутрішні R410A'); }); } },
+        { sheet: 'VRF Внутрішні KXZE1-W R32', rows: function () { return getVrfRowGroupMap('VRF Внутрішні KXZE1-W R32', function (wb) { return parseVrfTypeSheet(wb, 'VRF Внутрішні KXZE1-W R32'); }); } },
+        { sheet: 'Galactic VRF', rows: function () { return getVrfRowGroupMap('galOutdoor', parseGalVrfOutdoorSheet); } },
+        { sheet: 'TH MHI – EZY та Qton', rows: function () { return getThEzyRowGroupMap(); } },
+        { sheet: 'Galactic ККБ', kkb: true }
+      ];
+
+      let done = 0;
+      for (const src of sources) {
+        onStep && onStep('Фото серій: ' + src.sheet + ' (' + (++done) + ' з ' + sources.length + ')');
+        let rowToGroup;
+        if (src.kkb) {
+          const rawRows = await getKkbGalRawRows();
+          rowToGroup = function (row) {
+            const m = rawRows && rawRows[row] ? String(rawRows[row][2] || '').trim() : '';
+            return m ? extractGucSeries(m) : null;
+          };
+        } else {
+          const map = await src.rows();
+          rowToGroup = function (row) { return map[row]; };
+        }
+        seriesImageCache = {}; // кожен аркуш рахуємо начисто
+        const found = await extractSeriesImages(src.sheet, rowToGroup);
+        if (!found || !found.size) continue;
+
+        const perSheet = {};
+        for (const [group, urls] of found) {
+          const links = [];
+          for (let i = 0; i < urls.length; i++) {
+            /* extractSeriesImages віддає blob-адреси вже витягнутих картинок —
+               читаємо їх назад і кладемо в сховище. Ім'я містить хеш файлу прайсу:
+               та сама публікація вдруге нічого не перезаливає зайвого, а різні
+               прайси не плутаються між собою. */
+            const blob = await (await fetch(urls[i])).blob();
+            const ext = (blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
+            const path = sha.slice(0, 8) + '/' + slug(src.sheet) + '-' + slug(group) + '-' + i + '.' + ext;
+            const up = await sb.storage.from('price-media').upload(path, blob, {
+              upsert: true, contentType: blob.type, cacheControl: '31536000'
+            });
+            if (up.error) throw new Error('фото не завантажилось (' + up.error.message + ')');
+            const { data } = sb.storage.from('price-media').getPublicUrl(path);
+            links.push(data.publicUrl);
+          }
+          if (links.length) perSheet[group] = links;
+        }
+        if (Object.keys(perSheet).length) out[src.sheet] = perSheet;
+      }
+    } finally {
+      priceRawBuffer = prevBuf;
+      seriesImageCache = {};
+    }
+    return out;
+  }
+
+  /* Ім'я файлу в сховищі має бути латиницею без пробілів: назви аркушів і серій
+     українські й з розділовими знаками. Беремо хеш рядка — короткий і стабільний. */
+  function slug(text) {
+    let h = 0;
+    const str = String(text || '');
+    for (let i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
+    return (h >>> 0).toString(36);
+  }
+
   /* ---- Публікація ---- */
   async function publish() {
     if (!candidate || !candidate.verdict.canPublish || busy) return;
@@ -402,8 +490,20 @@
 
       /* 2. Чернетка. Ключ ідемпотентності — хеш файлу: повтор після обриву мережі
          віддасть ту саму чернетку, а не створить другу. */
+      /* 2. Фото серій — ДО чернетки: якщо сховище недоступне, краще впасти тут,
+         ніж опублікувати версію з мапою, що веде в нікуди. */
+      say('Переносимо фото серій…');
+      let media = null;
+      try {
+        media = await buildSeriesMedia(await candidate.file.arrayBuffer(), candidate.sha || 'nohash',
+                                       function (t) { say(t); });
+      } catch (e) {
+        throw new Error('фото серій: ' + (e.message || e));
+      }
+
       say('Створюємо чернетку…');
       const draft = await sb.rpc('price_create_draft', {
+        p_media: media,
         p_data: candidate.data,
         /* Друга копія — БЕЗ ЦІН, для гостей (get_price_public). Рахуємо ТІЄЮ САМОЮ
            stripPricesFromSheets(), що роками готує кеш для тих, хто доступу не має:
@@ -498,7 +598,12 @@
     el.innerHTML =
       cur +
       '<div class="price-admin-pick">' +
-        '<label class="primary-btn price-admin-file-btn" for="price-admin-file">Завантажити прайс</label>' +
+        /* Напис із попередженням — рішення власника 2026-10-18, після того як публікація
+           з Android не вдалась: телефон не витягує розбір 10 МБ (вкладку вбиває брак
+           памʼяті, і людину «викидає» назад у меню без жодної помилки). Попередження
+           стоїть ПРЯМО НА КНОПЦІ, а не підписом поруч: підпис не читають. */
+        '<label class="primary-btn price-admin-file-btn" for="price-admin-file">' +
+          'Завантажити прайс<span class="price-admin-pc-note">тільки з ПК, обовʼязково</span></label>' +
         '<input type="file" id="price-admin-file" accept=".xlsx,.xls" hidden>' +
         '<div class="muted" id="price-admin-stage"></div>' +
       '</div>' +

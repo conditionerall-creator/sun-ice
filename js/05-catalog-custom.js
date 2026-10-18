@@ -240,6 +240,7 @@ function attachVrfHandlers(main) {
 let kkbGalRawRowsCache = null;
 async function getKkbGalRawRows() {
   if (kkbGalRawRowsCache) return kkbGalRawRowsCache;
+  if (seriesPhotosArePublished()) return null; // фото вже прив'язані на сервері
   await ensureXlsx();
   const buf = await ensurePriceRawBuffer();
   if (!buf) return null;
@@ -836,6 +837,24 @@ async function xmlFromZip(zip, path) {
    моделі, див. виклики нижче). */
 async function extractSeriesImages(sheetName, rowToGroup) {
   if (seriesImageCache[sheetName]) return seriesImageCache[sheetName];
+
+  /* ШВИДКИЙ ШЛЯХ (з 2026-10-19): фото вже вивантажені в окремий бакет при публікації
+     прайсу, і у версії лежить готова мапа «аркуш → серія → адреси». Тоді ні zip, ні
+     сам price.xlsx не потрібні взагалі: дотик по ⓘ коштує ~60 КБ замість 10 МБ.
+     rowToGroup тут не потрібен — групи вже пораховані при публікації. */
+  const published = publishedSeriesPhotos(sheetName);
+  if (published) {
+    const ready = new Map();
+    Object.keys(published).forEach(function (group) {
+      const urls = published[group];
+      if (Array.isArray(urls) && urls.length) ready.set(group, urls.slice());
+    });
+    seriesImageCache[sheetName] = Promise.resolve(ready);
+    return seriesImageCache[sheetName];
+  }
+
+  /* СТАРИЙ ШЛЯХ — поки прайс ще не публікували новим кабінетом. Тягне price.xlsx
+     цілком. Прибрати його можна тільки разом із закриттям публічного бакета. */
   const promise = (async () => {
     try {
       await ensureJszip();
@@ -954,6 +973,7 @@ async function extractSeriesImages(sheetName, rowToGroup) {
 async function getRowGroupMapForSplitTile(brand) {
   const cacheKey = 'split_' + brand;
   if (seriesRowGroupMaps[cacheKey]) return seriesRowGroupMaps[cacheKey];
+  if (seriesPhotosArePublished()) return []; // фото вже прив'язані на сервері
   await ensureXlsx();
   const buf = await ensurePriceRawBuffer();
   if (!buf) return [];

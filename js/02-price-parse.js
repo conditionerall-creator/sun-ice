@@ -592,6 +592,7 @@ function parseThMhiEzyQtonSheet(wb) {
 }
 async function getThEzyRowGroupMap() {
   if (thEzyRowGroupMapCache) return thEzyRowGroupMapCache;
+  if (seriesPhotosArePublished()) return []; // фото вже прив'язані на сервері — xlsx не потрібен
   await ensureXlsx();
   const buf = await ensurePriceRawBuffer();
   if (!buf) return [];
@@ -771,6 +772,7 @@ function parseVrfTypeSheet(wb, sheetName) {
 }
 async function getVrfRowGroupMap(cacheKey, rebuildFn) {
   if (vrfRowGroupMapCache[cacheKey]) return vrfRowGroupMapCache[cacheKey];
+  if (seriesPhotosArePublished()) return []; // те саме: rowGroupMap потрібен лише фото
   await ensureXlsx();
   const buf = await ensurePriceRawBuffer();
   if (!buf) return [];
@@ -1255,6 +1257,21 @@ function persistProcessedCache(version) {
    Перенести фото в окреме сховище — передумова етапу E, окрема задача. */
 
 let publishedVersionId = null;    // id версії, з якої взято поточний sheetsData
+/* Мапа фото серій, що приїхала разом з опублікованим прайсом (з 2026-10-19):
+   { "<аркуш Excel>": { "<назва серії>": ["<адреса>", ...] } }.
+   Коли вона є — price.xlsx не потрібен узагалі навіть для фото. */
+let publishedMedia = null;
+function publishedSeriesPhotos(sheetName) {
+  const m = publishedMedia && publishedMedia[sheetName];
+  return (m && Object.keys(m).length) ? m : null;
+}
+/* Чи взагалі є опубліковані фото. Саме це питають чотири допоміжні функції нижче
+   (rowGroupMap'и для Спліт/VRF/ТН і сирі рядки ККБ): вони існують ВИКЛЮЧНО щоб
+   прив'язати фото до серії, і коли фото вже прив'язані на сервері, качати заради
+   них 10 МБ не треба. */
+function seriesPhotosArePublished() {
+  return !!(publishedMedia && Object.keys(publishedMedia).length);
+}
 let publishedPublishedAt = null;  // коли її опублікували (для підпису «Прайс від …»)
 let priceSourceUsed = null;       // 'published' | 'xlsx' — що саме спрацювало
 let priceFallbackReason = null;   // чому довелось відкотитись на xlsx
@@ -1376,6 +1393,7 @@ async function loadPublishedPrice(opts) {
     priceDataStripped = !!fresh.stripped;
     publishedVersionId = fresh.versionId;
     publishedPublishedAt = fresh.publishedAt || null;
+    publishedMedia = fresh.media || null;
     priceSourceUsed = 'published';
     return { ok: true, fromCache: true };
   }
@@ -1401,10 +1419,11 @@ async function loadPublishedPrice(opts) {
   priceDataStripped = !!payload.stripped;
   publishedVersionId = payload.version_id;
   publishedPublishedAt = payload.published_at || null;
+  publishedMedia = payload.media || null;
   priceSourceUsed = 'published';
   wanted = {
     versionId: payload.version_id, publishedAt: payload.published_at || null,
-    data: payload.data, stripped: !!payload.stripped,
+    data: payload.data, media: payload.media || null, stripped: !!payload.stripped,
     userId: uid, parserVersion: PARSER_VERSION, savedAt: Date.now()
   };
   await priceCacheWrite(wanted);
