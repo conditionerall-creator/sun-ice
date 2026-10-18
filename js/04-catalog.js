@@ -1026,6 +1026,7 @@ function renderCartBar() {
      кожної зміни (додали, ± кількість, прибрали рядок, очистили, втратили доступ до
      цін) — тому достатньо одного виклику тут, замість п'яти по різних обробниках. */
   persistCart();
+  if (typeof cgRefreshSelected === 'function') cgRefreshSelected(); // «Вибрано: N» у шапках груп
   const totalQty = cart.reduce((s, c) => s + c.qty, 0);
   if (totalQty === 0 || currentTab !== 'catalog') {
     fab.style.display = 'none';
@@ -1129,6 +1130,70 @@ function applySiteLinks() {
   if (siteLinks) run(siteLinks); else loadSiteLinks().then(run);
 }
 
+/* Контекст поточного рендеру списку — щоб рядок не шукав плитку й аркуш наново для
+   кожної з сотні позицій. Виставляє renderCatalogList() перед малюванням. */
+let catalogRowCtx = null;
+
+/* Запис «інформація про серію» для спливаючого вікна. Спільний для плоского списку
+   (заголовки-розділювачі) і для згортних блоків (js/04a-catalog-groups.js). Фото серії
+   (кондиціонера) — тільки для Спліт-систем (MHI/GAL), за проханням користувача; для
+   Мульти спліт (той самий 'series' режим на GAL) не чіпаємо. */
+function catalogSeriesInfoEntry(effectiveKey, text) {
+  const entry = { title: effectiveKey, text: text };
+  if (activeTile === 'split') {
+    const brandAtPush = activeBrand;
+    const sheetAtPush = brandAtPush === 'mhi' ? 'ПОБУТОВІ' : 'GALACTIC';
+    entry.getImages = async () => {
+      const rowGroupMap = await getRowGroupMapForSplitTile(brandAtPush);
+      const map = await extractSeriesImages(sheetAtPush, row => rowGroupMap[row]);
+      return map.get(effectiveKey) || [];
+    };
+  }
+  return entry;
+}
+
+/* Один рядок прайсу (одна товарна позиція). opts: { animate, rowNo } — поява зі
+   зсувом у плоскому списку; { grouped:true } — рядок усередині згортного блоку: без
+   кольорових смуг і без власної анімації появи, вигляд задає .sg-body .row у CSS.
+   data-row-idx — індекс позиції в аркуші: однакові маркування (RC-E5, Wi-Fi адаптери)
+   стоять у кількох групах, і за самим маркуванням «перейти до рядка» знаходило б
+   чужий. */
+function catalogRowHtml(it, index, opts) {
+  opts = opts || {};
+  const cfg = catalogRowCtx.cfg, tile = catalogRowCtx.tile;
+  const locked = !hasFullAccess;
+  /* Справжня ціна не потрапляє в розмітку взагалі, якщо доступу немає. Раніше сюди
+     завжди йшла цифра, і ховав її лише CSS-blur поверх. */
+  const priceStr = locked
+    ? ic('lock', PRICE_HIDDEN_TEXT)
+    : formatListPrice(it);
+  const cartKey = activeTile + '|' + activeBrand + '|' + it.model;
+  const cartQty = cartQtyFor(cartKey);
+  const animate = !!opts.animate && !opts.grouped;
+  const rowCls = 'row' + (locked ? ' row-locked' : '') + (animate ? ' tile-enter' : '');
+  const rowStyle = opts.grouped ? '' :
+    (it.color ? 'border-left:4px solid ' + it.color + ';border-right:4px solid ' + it.color + ';' : '') +
+    (animate ? 'animation-delay:' + ((opts.rowNo || 0) * 45) + 'ms;' : '');
+
+  /* data-row-* — щоб панель товару (П-9) знала, що саме відкривати: дотик приходить
+     по порожньому місцю рядка, а рядок сам по собі знає лише свою модель. */
+  return `
+      <div class="${rowCls}" style="${rowStyle}" data-row-cfg="${escapeHtml(cfg.key)}" data-row-model="${escapeHtml(it.model)}" data-row-idx="${index}" data-row-tile="${escapeHtml(tile.label)}">
+        <div class="row-top">
+          <div class="row-info">
+            <p class="row-name" data-site-list="${cfg.key}" data-site-key="${escapeHtml(siteLinkKey(it))}">${modelHtml(it.model)}</p>
+          </div>
+          <div class="row-right">
+            ${window.Stock ? Stock.slotHtml(it, cfg.key) : ''}
+            ${locked ? '' : `
+            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>`}
+            <div class="row-price${locked ? ' row-price-locked' : ''}" aria-label="${locked ? 'Ціна доступна після входу' : ''}">${priceStr}</div>
+          </div>
+        </div>
+      </div>
+    `;
+}
+
 function renderCatalogList() {
   // "Теплові насоси" і "Мультизональні VRF" мають нестандартну структуру (вкладені комплекти,
   // кілька вкладок прайсу під одним перемикачем) — рендеряться окремими функціями нижче,
@@ -1175,8 +1240,12 @@ function renderCatalogList() {
   const showSegments = true;
   let lastKey = null;
   seriesInfoTexts = [];
+  catalogRowCtx = { cfg: cfg, tile: tile };
 
-  const rowsHtml = filtered.map((it, rowIndex) => {
+  /* Спліт, Мульти спліт і Напівпром (обидва бренди) малюються згортними блоками серій
+     (js/04a-catalog-groups.js). Решта — старим плоским списком із заголовками-розділювачами. */
+  const grouped = typeof CG_RULES !== 'undefined' && !!CG_RULES[cfg.key];
+  const rowsHtml = grouped ? cgRenderListHtml(cfg, filtered, animateRows) : filtered.map((it, rowIndex) => {
     let header = '';
     // "Зовнішні блоки"/"Внутрішні блоки" — великий заголовок секції (Мульти спліт-системи,
     // обидва бренди), над звичайним segment-header. Рахує parseSheet() у item.sectionLabel.
@@ -1200,19 +1269,7 @@ function renderCatalogList() {
       const noteHtml = it.groupNote ? `<div class="segment-header-note">${escapeHtml(it.groupNote)}</div>` : '';
       if (hasMoreInfo) {
         const idx = seriesInfoTexts.length;
-        const infoEntry = { title: effectiveKey, text: it.groupFullText.trim() };
-        // Фото серії (кондиціонера) — тільки для Спліт-систем (MHI/GAL), за проханням
-        // користувача; для Мульти спліт (той самий 'series' режим на GAL) не чіпаємо.
-        if (activeTile === 'split') {
-          const brandAtPush = activeBrand;
-          const sheetAtPush = brandAtPush === 'mhi' ? 'ПОБУТОВІ' : 'GALACTIC';
-          infoEntry.getImages = async () => {
-            const rowGroupMap = await getRowGroupMapForSplitTile(brandAtPush);
-            const map = await extractSeriesImages(sheetAtPush, row => rowGroupMap[row]);
-            return map.get(effectiveKey) || [];
-          };
-        }
-        seriesInfoTexts.push(infoEntry);
+        seriesInfoTexts.push(catalogSeriesInfoEntry(effectiveKey, it.groupFullText.trim()));
         header = `<div class="segment-header segment-header-info" data-info-idx="${idx}" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}<span class="segment-header-info-icon">ⓘ</span>${noteHtml}</div>`;
       } else {
         header = `<div class="segment-header" style="${it.color ? 'border-color:' + it.color : ''}">${escapeHtml(effectiveKey)}${noteHtml}</div>`;
@@ -1220,34 +1277,7 @@ function renderCatalogList() {
     } else if (showSegments && !effectiveKey) {
       lastKey = null;
     }
-    const locked = !hasFullAccess;
-    /* Справжня ціна не потрапляє в розмітку взагалі, якщо доступу немає. Раніше сюди
-       завжди йшла цифра, і ховав її лише CSS-blur поверх. */
-    const priceStr = locked
-      ? ic('lock', PRICE_HIDDEN_TEXT)
-      : formatListPrice(it);
-    const cartKey = activeTile + '|' + activeBrand + '|' + it.model;
-    const cartQty = cartQtyFor(cartKey);
-    const rowCls = 'row' + (locked ? ' row-locked' : '') + (animateRows ? ' tile-enter' : '');
-    const rowStyle = (it.color ? 'border-left:4px solid ' + it.color + ';border-right:4px solid ' + it.color + ';' : '') + (animateRows ? 'animation-delay:' + (rowIndex * 45) + 'ms;' : '');
-
-    /* data-row-* — щоб панель товару (П-9) знала, що саме відкривати: дотик приходить
-       по порожньому місцю рядка, а рядок сам по собі знає лише свою модель. */
-    return sectionLabelHtml + header + `
-      <div class="${rowCls}" style="${rowStyle}" data-row-cfg="${escapeHtml(cfg.key)}" data-row-model="${escapeHtml(it.model)}" data-row-tile="${escapeHtml(tile.label)}">
-        <div class="row-top">
-          <div class="row-info">
-            <p class="row-name" data-site-list="${cfg.key}" data-site-key="${escapeHtml(siteLinkKey(it))}">${modelHtml(it.model)}</p>
-          </div>
-          <div class="row-right">
-            ${window.Stock ? Stock.slotHtml(it, cfg.key) : ''}
-            ${locked ? '' : `
-            <button class="cart-check-btn${cartQty > 0 ? ' active' : ''}" type="button" data-key="${escapeHtml(cartKey)}" data-model="${escapeHtml(it.model)}" data-price="${it.price}" data-currency="${escapeHtml(it.currency || '')}" data-tile-label="${escapeHtml(tile.label)}" aria-label="Додати в підбірку"><span class="cart-check-icon">${ic('check', '✓')}</span><span class="cart-check-badge" style="${cartQty > 0 ? '' : 'display:none;'}">${cartQty || ''}</span></button>`}
-            <div class="row-price${locked ? ' row-price-locked' : ''}" aria-label="${locked ? 'Ціна доступна після входу' : ''}">${priceStr}</div>
-          </div>
-        </div>
-      </div>
-    `;
+    return sectionLabelHtml + header + catalogRowHtml(it, rowIndex, { animate: animateRows, rowNo: rowIndex });
   }).join('');
 
   main.innerHTML = toggleHtml + accessNoticeHtml() + countHtml + (filtered.length ? rowsHtml : '<div class="empty">Нічого не знайдено</div>');
@@ -1333,7 +1363,7 @@ function computeGlobalSearchResults(query) {
       if (posPlain < 0 && posRe < 0) return;
       const pos = (posPlain < 0) ? posRe : (posRe < 0 ? posPlain : Math.min(posPlain, posRe));
       hits.push({
-        tileId: src.tileId, tileLabel: src.tileLabel, brand: src.brand, brandLabel: src.brandLabel,
+        tileId: src.tileId, tileLabel: src.tileLabel, brand: src.brand, brandLabel: src.brandLabel, cfgKey: src.key,
         item: it, rank: normModel === significant ? 0 : (pos === 0 ? 1 : 2), pos: pos, len: normModel.length
       });
     });
@@ -1391,13 +1421,16 @@ function renderGlobalSearchResults(query) {
 }
 
 /* ГОЛОВНЕ в усьому пункті: довести людину до САМОГО рядка, а не до початку розділу. */
-function revealFoundRow(model) {
+function revealFoundRow(model, itemIndex) {
   /* Два кадри поспіль: після innerHTML браузер ще не порахував нову геометрію, і
      scrollIntoView відпрацював би по старій — рядок опинявся б не там. */
   requestAnimationFrame(function () {
     requestAnimationFrame(function () {
       const esc = (window.CSS && CSS.escape) ? CSS.escape(model) : model;
-      const row = document.querySelector('#main .row[data-row-model="' + esc + '"]');
+      /* Одне маркування стоїть у кількох групах (пульти, Wi-Fi адаптери) — шукаємо за
+         індексом позиції, а за маркуванням лише як запасний шлях. */
+      const byIdx = (itemIndex != null) ? document.querySelector('#main .row[data-row-idx="' + itemIndex + '"]') : null;
+      const row = byIdx || document.querySelector('#main .row[data-row-model="' + esc + '"]');
       if (!row) return;
       row.scrollIntoView({ block: 'center', behavior: 'smooth' });
       row.classList.remove('row-found');
@@ -1419,9 +1452,13 @@ function goToGlobalSearchHit(hit) {
   catalogRowsSkipStagger = true;   // стрибати до рядка, що саме «виїжджає», ні до чого
   activeTile = hit.tileId;
   activeBrand = hit.brand;
+  /* Позиція лежить у згортній групі: спершу розкриваємо її, інакше рядка на екрані
+     просто немає, і «знайшов, але не бачу» повернулось би (див. шапку цього пункту). */
+  const hitIndex = ((sheetsData && sheetsData[hit.cfgKey]) || []).indexOf(hit.item);
+  if (hitIndex >= 0 && typeof cgOpenGroupForItem === 'function') cgOpenGroupForItem(hit.cfgKey, hitIndex);
   history.pushState({ tab: 'catalog', tile: hit.tileId }, '', '#' + encodeURIComponent(hit.tileId));
   renderCatalogView();
-  revealFoundRow(hit.item.model);
+  revealFoundRow(hit.item.model, hitIndex >= 0 ? hitIndex : null);
 }
 
 /* ---------- Розгортання поля пошуку в шапці (2026-10-12) ----------

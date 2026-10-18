@@ -37,6 +37,7 @@ const DIAG_AREA = {
   modules: 'Модулі застосунку',
   specs: 'Характеристики товарів',
   search: 'Пошук по каталогу',
+  groups: 'Групи прайсу',
   header: 'Шапка застосунку',
   push: 'Сповіщення (push)',
   pricePublish: 'Публікація прайсу'
@@ -52,6 +53,7 @@ const MODULE_ANCHORS = {
   '02-price-parse.js': 'parseSheet',
   '03-diagnostics.js': 'runDiagnostics',
   '04-catalog.js': 'renderCatalogList',
+  '04a-catalog-groups.js': 'cgBuildNodes',
   '05-catalog-custom.js': 'renderVrfList',
   '06-cart-promo.js': 'renderCartPanel',
   '07-access-info.js': 'ensureAccessFresh',
@@ -905,6 +907,70 @@ async function diagCheckSearch(ctx) {
   return out;
 }
 
+/* ---------- ГРУПИ ПРАЙСУ (2026-10-19) ----------
+   Спліт, Мульти спліт і Напівпром показуються згортними блоками серій (js/04a-catalog-groups.js).
+   Дві речі тут ламаються ТИХО — людина просто не знайде товар:
+   1. Позиція випала з дерева груп (чи з'явилась двічі, чи змінила місце) — у згорнутому
+      блоці вона ніде не видна, і ніякої помилки немає.
+   2. Серію не вдалось визначити (новий суфікс у Мульти GAL, нова настінна серія в Мульти MHI,
+      позиція без групи) — позиція лишиться «голим» рядком посеред згорнутих блоків.
+   Перевірка будує дерево з тих самих даних, що йдуть на екран, і звіряє з прайсом. */
+async function diagCheckGroups(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.groups;
+  const srcByKey = {};
+  GLOBAL_SEARCH_TILES.forEach(s => { srcByKey[s.key] = s; });
+  Object.keys(CG_RULES).forEach(key => {
+    const label = DIAG_SUB_LABELS[key] || key;
+    const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
+    if (!items.length) return;   // порожній аркуш — про це скаже звірка з Excel
+    const src = srcByKey[key];
+    const target = src ? { app: { tile: src.tileId, brand: src.brand } } : null;
+    const mode = CG_RULES[key].mode;
+    const nodes = cgBuildNodes(key, items);
+    const flat = cgFlatIndexes(nodes);
+    const intact = flat.length === items.length && flat.every((v, i) => v === i);
+    if (!intact) {
+      out.issues.push(diagIssue(area, key, 'error',
+        label + ': у групах прайс не збігається з джерелом — ' + flat.length + ' з ' + items.length + ' позицій',
+        ['Кожна позиція прайсу мусить потрапляти в групи рівно один раз і в тому самому порядку. Дивитись cgBuildNodes у js/04a-catalog-groups.js.'],
+        target));
+    }
+    const groups = nodes.filter(n => n.type === 'group');
+    const split = groups.filter(g => g.split);
+    if (split.length) {
+      out.issues.push(diagIssue(area, key, 'warning',
+        label + ': одна серія стоїть у прайсі двома окремими шматками — ' + split.length,
+        split.map(g => g.title), target));
+    }
+    /* Що саме лишилось «голим» рядком — залежить від правила: у Мульти MHI зовнішні блоки й
+       аксесуари так і задумано, а ось внутрішній блок без типу чи настінний поза відомими
+       серіями — ні. */
+    const plain = nodes.filter(n => n.type === 'row').map(n => n.item);
+    let stray = [];
+    if (mode === 'labels' || mode === 'multi-gal') stray = plain;
+    else if (mode === 'multi-mhi') stray = plain.filter(it => it.unitType === 'indoor');
+    if (stray.length) {
+      out.issues.push(diagIssue(area, key, 'warning',
+        label + ': не вдалось віднести до групи — ' + stray.length + ' позицій',
+        stray.map(it => it.model).concat([mode === 'multi-gal'
+          ? 'Серія Мульти GAL визначається за суфіксом маркування (M-W, H-W, H-S) — див. CG_GAL_SERIES. Нова серія → додати в таблицю.'
+          : 'Позиція лишається звичайним рядком між згорнутими блоками.']), target));
+    }
+    if (mode === 'multi-mhi') {
+      const wall = groups.filter(g => g.id === 'type-' + cgSlug('Настінний'));
+      if (wall.length) {
+        out.issues.push(diagIssue(area, key, 'warning',
+          label + ': настінні внутрішні блоки поза відомими серіями (ZSP/ZS/ZSX/ZR)',
+          wall.flatMap(g => g.entries.map(e => e.item.model)).concat(['Нова серія → додати в CG_MHI_WALL_SERIES (js/04a-catalog-groups.js).']), target));
+      }
+    }
+    out.checked.push({ area: area, sub: key, label: label,
+      detail: groups.length + ' груп · ' + items.length + ' позицій' + (intact ? ' — усі на місці, порядок прайсу' : ' — РОЗБІЖНІСТЬ') });
+  });
+  return out;
+}
+
 /* Реєстр перевірок. auto — ще й тихо після кожного розбору нового прайсу; manualOnly — лише за кнопкою. */
 /* ---------- ШАПКА ЗАСТОСУНКУ (2026-10-12) ----------
    Шапку звели в один компактний ряд: [лупа 48×48] [курси + службові підписи] [↻].
@@ -1005,6 +1071,7 @@ const DIAG_CHECKS = [
   { id: 'modules', label: 'Модулі застосунку', auto: true, run: ctx => diagCheckModules(ctx) },
   { id: 'specs', label: 'Характеристики товарів', run: ctx => diagCheckSpecs(ctx) },
   { id: 'search', label: 'Пошук по каталогу', auto: true, run: ctx => diagCheckSearch(ctx) },
+  { id: 'groups', label: 'Групи прайсу', auto: true, run: ctx => diagCheckGroups(ctx) },
   { id: 'header', label: 'Шапка застосунку', run: ctx => diagCheckHeader(ctx) },
   { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
   { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },

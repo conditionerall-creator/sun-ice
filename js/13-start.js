@@ -68,21 +68,23 @@ document.getElementById('main').addEventListener('click', function(e) {
     showRegisterGate();
     return;
   }
+  /* Згортні блоки серій (js/04a-catalog-groups.js). Кнопка «ⓘ» — окремий сусідній
+     елемент, не вкладений у шапку: вона відкриває інформацію й НЕ згортає групу. Усе
+     інше в шапці (і кнопка-назва з клавіатури, і вільне місце, лічильник, стрілка)
+     розкриває/згортає. */
+  const sgInfo = e.target.closest('.sg-info');
+  if (sgInfo) {
+    openSeriesInfoEntry(seriesInfoTexts[Number(sgInfo.getAttribute('data-info-idx'))]);
+    return;
+  }
+  const sgHead = e.target.closest('.sg-head');
+  if (sgHead) {
+    cgToggle(sgHead.closest('.sg'));
+    return;
+  }
   const infoHeader = e.target.closest('.segment-header-info');
   if (infoHeader) {
-    const info = seriesInfoTexts[Number(infoHeader.getAttribute('data-info-idx'))];
-    if (info) {
-      openSeriesInfo(info.title, info.text); // текст одразу; фото (якщо є) домалюється нижче
-      if (info.getImages) {
-        info.getImages().then(images => {
-          // Overlay могли встигнути закрити чи відкрити на іншій серії, поки фото
-          // вантажилось (unzip — не миттєвий) — домальовуємо, лише якщо це та сама серія.
-          if (images.length && document.getElementById('series-info-title').textContent === info.title) {
-            openSeriesInfo(info.title, info.text, images);
-          }
-        });
-      }
-    }
+    openSeriesInfoEntry(seriesInfoTexts[Number(infoHeader.getAttribute('data-info-idx'))]);
     return;
   }
   // ⓘ біля рядка "Теплові насоси"/VRF — той самий спливаючий блок "детальніше", що й для

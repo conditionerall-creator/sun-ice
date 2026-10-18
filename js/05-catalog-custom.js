@@ -994,6 +994,23 @@ async function getRowGroupMapForSplitTile(brand) {
    opts-об'єкт { actionLabel, onAction } для кнопки-дії (таблиця сумісності MHI —
    "Виділити рядок/стовпчик", див. attachCompatTableHandlers). Решта викликів (звичайні
    описи серій без фото/кнопки) не передають жодного — обидва блоки лишаються прихованими. */
+/* Відкриває вікно інформації про серію за записом із seriesInfoTexts (заголовок плоского
+   списку або кнопка «ⓘ» згортного блока). Текст одразу; фото (якщо є) домалюється
+   нижче, коли розпакується. */
+function openSeriesInfoEntry(info) {
+  if (!info) return;
+  openSeriesInfo(info.title, info.text);
+  if (info.getImages) {
+    info.getImages().then(images => {
+      // Вікно могли встигнути закрити чи відкрити на іншій серії, поки фото вантажилось
+      // (unzip — не миттєвий) — домальовуємо, лише якщо це та сама серія.
+      if (images.length && document.getElementById('series-info-title').textContent === info.title) {
+        openSeriesInfo(info.title, info.text, images);
+      }
+    });
+  }
+}
+
 function openSeriesInfo(title, text, imagesOrOpts) {
   document.getElementById('series-info-title').textContent = title;
   document.getElementById('series-info-body').textContent = text;

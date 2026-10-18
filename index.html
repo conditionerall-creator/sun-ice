@@ -1530,6 +1530,115 @@
     margin-top: 2px;
   }
 
+  /* ---------- Згортні блоки серій (2026-10-19; js/04a-catalog-groups.js) ----------
+     Одна серія (тип блока) = одна поверхня: фон картки, контур 1 px, радіус 12. Шапка —
+     трохи темніша, з вузькою оранжевою смугою ЛИШЕ на собі (а не на кожному рядку, як було
+     з кольоровими смугами). Рядки всередині — тонкі горизонтальні лінії без власних рамок.
+     Усе через змінні теми: у шоколадній темі нічого не прописано кольором напряму.
+     Шапка — сітка, бо кнопка-назва, «ⓘ», лічильник і стрілка — ОКРЕМІ сусідні елементи
+     (кнопку в кнопку вкладати не можна); дотик по всій шапці обробляє делегований
+     обробник у 13-start.js, з клавіатури працює сама кнопка-назва. */
+  .sg {
+    margin: 0 0 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .sg-head {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, auto) auto minmax(8px, 1fr) auto auto;
+    grid-template-areas: "tg inf . meta chev";
+    align-items: center;
+    column-gap: 8px;
+    min-height: 52px;
+    padding: 9px 14px 9px 18px;
+    background: var(--bg);
+    background: color-mix(in srgb, var(--text) 6%, var(--card));
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .sg-head::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--accent);
+  }
+  .sg-head:active { background: color-mix(in srgb, var(--text) 10%, var(--card)); }
+  .sg-toggle {
+    grid-area: tg;
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+    margin: 0; padding: 0; border: 0; background: none; cursor: pointer;
+    font: inherit; color: inherit; text-align: left;
+  }
+  .sg-toggle:focus-visible, .sg-info:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+  .sg-title { font-size: 17px; font-weight: 650; line-height: 1.25; color: var(--text); overflow-wrap: break-word; }
+  .sg-sub { font-size: 12.5px; line-height: 1.3; color: var(--text-secondary); }
+  .sg-info {
+    grid-area: inf; position: relative;
+    width: 32px; height: 32px; margin: 0 0 0 -2px; padding: 0;
+    border: 0; border-radius: 50%; background: none; cursor: pointer;
+    font: inherit; font-size: 18px; line-height: 1; color: var(--text-secondary);
+  }
+  .sg-info::after {            /* зона дотику 44×44 при видимій іконці 32 */
+    content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%);
+  }
+  .sg-info:active { color: var(--accent); }
+  .sg-meta {
+    grid-area: meta;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+    font-size: 12.5px; line-height: 1.3; color: var(--text-secondary); white-space: nowrap;
+  }
+  .sg-sel { font-size: 12px; font-weight: 600; color: var(--accent); }
+  .sg-sel[hidden] { display: none; }
+  .sg-chev {
+    grid-area: chev;
+    width: 8px; height: 8px; margin: 0 4px 0 2px;
+    border-right: 2px solid var(--text-secondary); border-bottom: 2px solid var(--text-secondary);
+    transform: rotate(-45deg);               /* закрито — вправо */
+    transition: transform 180ms cubic-bezier(.23, 1, .32, 1);
+  }
+  .sg.open .sg-chev { transform: rotate(45deg); }   /* відкрито — вниз */
+
+  /* Розкриття: ряд сітки 0fr → 1fr, без фіксованого max-height (довга група не обрізається).
+     Закритий вміст ще й visibility:hidden + inert — із клавіатури й екранних читалок
+     недосяжний. */
+  .sg-body {
+    display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows 180ms cubic-bezier(.23, 1, .32, 1);
+  }
+  .sg.open .sg-body { grid-template-rows: 1fr; }
+  .sg-body-inner { min-height: 0; overflow: hidden; visibility: hidden; transition: visibility 0s linear 180ms; }
+  .sg.open .sg-body-inner { visibility: visible; transition-delay: 0s; }
+  .sg-subhead {
+    padding: 8px 18px; border-top: 1px solid var(--border);
+    font-size: 12.5px; font-weight: 600; color: var(--text-secondary);
+    background: var(--bg); background: color-mix(in srgb, var(--text) 3%, var(--card));
+  }
+  .sg-note { padding: 8px 18px; border-top: 1px solid var(--border); font-size: 12px; line-height: 1.4; color: var(--text-secondary); }
+
+  /* Рядок прайсу всередині групи: та сама розмітка, інший вигляд — без власної рамки,
+     тла, радіуса й відступів між рядками; розділяє тонка лінія. Вміст і порядок дій
+     (маркування, наявність, «Додати», ціна) не чіпаємо. */
+  .sg-body .row {
+    background: transparent; border: 0; border-top: 1px solid var(--border); border-radius: 0;
+    margin: 0; padding: 9px 14px 9px 18px; min-height: 58px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .sg-body .row .row-top { align-items: center; }
+  .sg-body .row:has(.cart-check-btn.active) { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+  @media (max-width: 359px) {
+    .sg-head {
+      grid-template-columns: minmax(0, auto) auto 1fr auto;
+      grid-template-areas: "tg inf . chev" "meta meta meta meta";
+      row-gap: 4px;
+    }
+    .sg-meta { flex-direction: row; align-items: baseline; gap: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sg-body, .sg-body-inner, .sg-chev { transition: none; }
+  }
+
   /* Спливаюче вікно "детальніше" — повний опис серії з прайсу */
   .info-sheet-overlay {
     display: none;
@@ -3881,18 +3990,19 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-19.11"></script>
-<script src="js/02-price-parse.js?v=2026-10-19.11"></script>
-<script src="js/03-diagnostics.js?v=2026-10-19.11"></script>
-<script src="js/04-catalog.js?v=2026-10-19.11"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-19.11"></script>
-<script src="js/06-cart-promo.js?v=2026-10-19.11"></script>
-<script src="js/07-access-info.js?v=2026-10-19.11"></script>
-<script src="js/08-info-tables.js?v=2026-10-19.11"></script>
-<script src="js/09-cabinet.js?v=2026-10-19.11"></script>
-<script src="js/10-crmontage.js?v=2026-10-19.11"></script>
-<script src="js/11-shell.js?v=2026-10-19.11"></script>
-<script src="js/12-product-sheet.js?v=2026-10-19.11"></script>
-<script src="js/13-start.js?v=2026-10-19.11"></script>
+<script src="js/01-config.js?v=2026-10-19.14"></script>
+<script src="js/02-price-parse.js?v=2026-10-19.14"></script>
+<script src="js/03-diagnostics.js?v=2026-10-19.14"></script>
+<script src="js/04-catalog.js?v=2026-10-19.14"></script>
+<script src="js/04a-catalog-groups.js?v=2026-10-19.14"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-19.14"></script>
+<script src="js/06-cart-promo.js?v=2026-10-19.14"></script>
+<script src="js/07-access-info.js?v=2026-10-19.14"></script>
+<script src="js/08-info-tables.js?v=2026-10-19.14"></script>
+<script src="js/09-cabinet.js?v=2026-10-19.14"></script>
+<script src="js/10-crmontage.js?v=2026-10-19.14"></script>
+<script src="js/11-shell.js?v=2026-10-19.14"></script>
+<script src="js/12-product-sheet.js?v=2026-10-19.14"></script>
+<script src="js/13-start.js?v=2026-10-19.14"></script>
 </body>
 </html>
