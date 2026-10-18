@@ -1066,7 +1066,11 @@
     font-size: 20px; font-weight: 700; font-family: inherit; color: var(--text);
     font-variant-numeric: tabular-nums;
   }
-  .ps-disc-box:focus-within { border-color: var(--accent); }
+  .ps-disc-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  /* Глобальне :focus-visible (нижче в таблиці) малює 3px обвідку з відступом навколо будь-якого
+     поля — у шапці панелі вона виглядала як зайве віконце всередині рамки (скарга власника
+     2026-10-19). Фокус тут і так видно: рамка .ps-disc-box стає акцентною. */
+  .ps-amount-input:focus, .ps-amount-input:focus-visible { outline: none; border-radius: 0; }
   /* Стрілки-лічильники в полі числа: на телефоні їх і так немає, а на комп'ютері вони
      тиснуть велику цифру вбік. Прибираємо — значення вводять із клавіатури. */
   .ps-amount-input::-webkit-outer-spin-button, .ps-amount-input::-webkit-inner-spin-button {
@@ -3877,18 +3881,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-19.10"></script>
-<script src="js/02-price-parse.js?v=2026-10-19.10"></script>
-<script src="js/03-diagnostics.js?v=2026-10-19.10"></script>
-<script src="js/04-catalog.js?v=2026-10-19.10"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-19.10"></script>
-<script src="js/06-cart-promo.js?v=2026-10-19.10"></script>
-<script src="js/07-access-info.js?v=2026-10-19.10"></script>
-<script src="js/08-info-tables.js?v=2026-10-19.10"></script>
-<script src="js/09-cabinet.js?v=2026-10-19.10"></script>
-<script src="js/10-crmontage.js?v=2026-10-19.10"></script>
-<script src="js/11-shell.js?v=2026-10-19.10"></script>
-<script src="js/12-product-sheet.js?v=2026-10-19.10"></script>
-<script src="js/13-start.js?v=2026-10-19.10"></script>
+<script src="js/01-config.js?v=2026-10-19.11"></script>
+<script src="js/02-price-parse.js?v=2026-10-19.11"></script>
+<script src="js/03-diagnostics.js?v=2026-10-19.11"></script>
+<script src="js/04-catalog.js?v=2026-10-19.11"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-19.11"></script>
+<script src="js/06-cart-promo.js?v=2026-10-19.11"></script>
+<script src="js/07-access-info.js?v=2026-10-19.11"></script>
+<script src="js/08-info-tables.js?v=2026-10-19.11"></script>
+<script src="js/09-cabinet.js?v=2026-10-19.11"></script>
+<script src="js/10-crmontage.js?v=2026-10-19.11"></script>
+<script src="js/11-shell.js?v=2026-10-19.11"></script>
+<script src="js/12-product-sheet.js?v=2026-10-19.11"></script>
+<script src="js/13-start.js?v=2026-10-19.11"></script>
 </body>
 </html>
