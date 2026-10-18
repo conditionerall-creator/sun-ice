@@ -474,6 +474,20 @@
     if (!candidate || !candidate.verdict.canPublish || busy) return;
     if (!confirm('Опублікувати цей прайс для всіх користувачів?')) return;
 
+    /* ⚠️ КЛЮЧ ПОВТОРУ — НА СПРОБУ ПУБЛІКАЦІЇ, А НЕ НА ФАЙЛ.
+       Спершу тут стояв хеш самого файлу — і це вийшло боком: власник опублікував
+       той самий прайс удруге (вже з перенесенням фото), а сервер побачив знайомий
+       ключ, повернув СТАРУ чернетку й мовчки викинув усе нове, разом із мапою фото.
+       Фото при цьому вже лежали в сховищі — тобто робота зроблена, а результат
+       загублено, і ніде жодної помилки (2026-10-19).
+       Ключ потрібен лише щоб обрив мережі посеред ОДНІЄЇ спроби не створив дубль,
+       тому він і живе рівно одну спробу. Від подвійної публікації захищає інше —
+       звірка очікуваної поточної версії (compare-and-swap) у price_publish. */
+    if (!candidate.opId) {
+      const rnd = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Math.random()).slice(2);
+      candidate.opId = 'pub:' + (candidate.sha || 'nohash').slice(0, 8) + ':' + rnd;
+    }
+
     setBusy(true);
     const note = document.getElementById('price-admin-publish-note');
     const say = function (t) { if (note) note.innerHTML = t; };
@@ -519,7 +533,7 @@
         p_app_build: (typeof APP_BUILD !== 'undefined') ? APP_BUILD : null,
         p_source_name: candidate.file.name,
         p_source_sha256: candidate.sha,
-        p_idempotency_key: candidate.sha ? ('sha:' + candidate.sha) : null
+        p_idempotency_key: candidate.opId
       });
       if (draft.error) throw draft.error;
       if (!draft.data || draft.data.ok !== true) throw new Error(errorText(draft.data));
