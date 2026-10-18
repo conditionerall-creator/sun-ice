@@ -774,7 +774,22 @@ async function diagCheckModules(ctx) {
     const shell = (sw.match(/'js\/[^']+'/g) || []).map(s => s.slice(1, -1));
     const onlyTags = tags.filter(t => shell.indexOf(t) < 0);
     const onlyShell = shell.filter(s => tags.indexOf(s) < 0);
-    if (onlyTags.length || onlyShell.length) {
+    /* ⚠️ ФАЛЬШИВА ТРИВОГА, на яку наступили 2026-10-19. Сторінка приходить із кеша
+       service worker (тобто СТАРОЇ версії), а sw.js ми щойно взяли з мережі —
+       тобто НОВИЙ. Списки, звісно, не збігаються, і перевірка кричала «застосунок
+       не підніметься без інтернету», хоча на сервері все узгоджено, а пристрій
+       просто ще не дооновився. Власник побачив саме це на телефоні.
+       Відрізняємо за версією: якщо версія в sw.js інша, ніж у цього пристрою —
+       це не поломка, а незавершене оновлення, і сказати треба саме так. */
+    const swBuild = ((sw.match(/js\/01-config\.js\?v=([^']+)'/) || [])[1]) || null;
+    const deviceIsStale = swBuild && swBuild !== APP_BUILD;
+    if (deviceIsStale) {
+      out.issues.push(diagIssue(area, 'modules', 'info',
+        'Оновлення застосунку ще не завершилось: на пристрої ' + APP_BUILD + ', на сервері ' + swBuild,
+        ['Це не поломка. Закрийте застосунок повністю (приберіть зі списку запущених) і відкрийте знову.',
+         'Доти звірка списку модулів нічого не означає — сторінка стара, а sw.js уже новий.'],
+        { tab: 'catalog' }));
+    } else if (onlyTags.length || onlyShell.length) {
       out.issues.push(diagIssue(area, 'modules', 'error',
         'Список модулів у sw.js не збігається з тегами в index.html',
         onlyTags.map(t => 'є в index.html, немає в sw.js: ' + t)
