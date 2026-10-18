@@ -26,7 +26,7 @@ ok('типорозмір: маркування різних сімейств', (
   assert.equal(cap('FDT50VH + SRC50ZSX-W2(3)').n, 50);
   assert.equal(cap('GKM09M-W').text, '09');
   assert.equal(cap('GMZ2-14M-W').text, '14');
-  for (const acc of ['RC-E5', 'T-PSA-5AW-E', 'UM-FL1EF', 'SC-BIKN2-E', 'AM-MHI-01', 'Wi-Fi модуль для GKZ-A-W', 'WF-RAC', 'UT-BAT1EF'])
+  for (const acc of ['RC-E5', 'T-PSA-5AW-E', 'UM-FL1EF', 'SC-BIKN2-E', 'AM-MHI-01', 'Wi-Fi модуль для GKZ-A-W', 'WF-RAC', 'UT-BAT1EF', 'RG10D Remote controller,\r\nарт. 17317000A65669'])
     assert.equal(cap(acc), null, acc);
 });
 
@@ -61,7 +61,10 @@ const splitMhi = [
   mk('SRK20ZT-WFT', { groupKey: 'ZT', groupLabel: 'Внутрішні кольорові' }),
   mk('SRK20ZT-WFB', { groupKey: 'ZT', groupLabel: 'Внутрішні кольорові' }),
   mk('SRC20ZT-WB', { groupKey: 'ZT', groupLabel: 'Зовнішні чорні' }),
-  mk('SRK50ZS-W', { groupKey: 'ZS', groupLabel: 'Моделі канальні R32 DC PAM Inverter' }),
+  mk('SRR25ZS-W', { groupKey: 'ZS', groupLabel: 'Моделі канальні R32 DC PAM Inverter' }),
+  mk('SRR35ZS-W', { groupKey: 'ZS', groupLabel: 'Моделі канальні R32 DC PAM Inverter' }),
+  mk('UT-BAT1EF', { groupLabel: 'Комплект для забору повітря знизу (опція)' }),
+  mk('UT-BAT2EF', { groupLabel: 'Комплект для забору повітря знизу (опція)' }),
   mk('RC-E5', { groupLabel: 'Пульти', groupNote: 'Пульт для касетного блоку замовляється додатково' })
 ];
 
@@ -69,13 +72,33 @@ ok('спліт MHI: серія ZT — один блок із підзаголо�
   const nodes = build('split_mhi', splitMhi);
   assert.deepEqual(flat(nodes), splitMhi.map((_, i) => i));
   const groups = nodes.filter(g => g.type === 'group');
-  assert.deepEqual(groups.map(g => g.title), ['HE', 'Популярний інвертор R32', 'Premium Series ZT-W R32', 'Моделі канальні R32 DC PAM Inverter', 'Пульти']);
+  assert.deepEqual(groups.map(g => g.title), ['HE-S1', 'ZSP-W1 · Популярний інвертор R32', 'Premium Series ZT-W R32',
+    'Канальні · SRR ZS-W · R32 DC PAM Inverter', 'Пульти']);
   const zt = groups[2];
   assert.equal(zt.count, 5);
   assert.deepEqual(zt.blocks.map(b => b.label), [null, 'Внутрішні кольорові', 'Зовнішні чорні']);
   assert.equal(zt.sizes, '20–25');
   assert.equal(groups[4].note.includes('Пульт'), true);
   assert.equal(groups[4].sizes, '');
+});
+
+ok('комплект забору повітря відкривається разом із канальними (підблок, порядок прайсу)', () => {
+  const nodes = build('split_mhi', splitMhi);
+  const duct = nodes.find(g => g.type === 'group' && g.rawTitle === 'Моделі канальні R32 DC PAM Inverter');
+  assert.equal(duct.count, 4);
+  assert.deepEqual(duct.blocks.map(b => [b.label, b.entries.length]), [[null, 2], ['Комплект для забору повітря знизу (опція)', 2]]);
+  assert.equal(duct.sizes, '25–35');
+  assert.equal(nodes.some(g => g.type === 'group' && g.rawTitle.indexOf('Комплект') === 0), false);
+});
+
+ok('комплект, що стоїть НЕ одразу після канальних, лишається окремою групою', () => {
+  const items = [mk('SRR25ZS-W', { groupKey: 'ZS', groupLabel: 'Моделі канальні R32 DC PAM Inverter' }),
+    mk('SRK25ZSP-W1', { groupKey: 'ZSP', groupLabel: 'Популярний інвертор R32' }),
+    mk('UT-BAT1EF', { groupLabel: 'Комплект для забору повітря знизу (опція)' })];
+  const nodes = build('split_mhi', items);
+  assert.deepEqual(flat(nodes), [0, 1, 2]);
+  assert.equal(nodes.length, 3);
+  assert.equal(nodes[2].rawTitle, 'Комплект для забору повітря знизу (опція)');
 });
 
 ok('розірвана серія не губить позицій і не міняє порядку', () => {
@@ -108,11 +131,20 @@ ok('мульти MHI: зовнішні й аксесуари — відкрит�
   assert.deepEqual(kinds, [
     'S:Зовнішні блоки', 'row', 'row',
     'S:Внутрішні блоки', 'G:wall-zsp', 'G:wall-zs', 'G:wall-zsx', 'G:wall-zr',
-    'G:type-касетний-без-панелі', 'row', 'G:type-підстельовий', 'row']);
+    'G:type-касетний-без-панелі', 'G:type-підстельовий', 'row']);
   const zs = nodes.find(x => x.id === 'wall-zs');
   assert.equal(zs.count, 2);
-  assert.equal(zs.title, 'Бізнес-клас дизайн серія R32');
-  assert.equal(zs.subtitle, 'Настінні ZS · типорозміри 20');
+  assert.equal(zs.title, 'ZS-W · Бізнес-клас дизайн серія R32');
+  assert.equal(zs.subtitle, 'типорозміри 20');
+});
+
+ok('мульти MHI: панель TC-PSA-5AW-E лежить у «Касетний без панелі»', () => {
+  const nodes = build('multisplit_mhi', msMhi);
+  const cass = nodes.find(x => x.id === 'type-касетний-без-панелі');
+  assert.equal(cass.title, 'Касетний без панелі · FDTC VH');
+  assert.deepEqual(cass.blocks.map(b => [b.label, b.entries.map(e => e.item.model)]),
+    [[null, ['FDTC25VH1']], ['Панель для касетних блоків', ['TC-PSA-5AW-E']]]);
+  assert.equal(cass.count, 2);
 });
 
 const msGal = [
@@ -136,6 +168,25 @@ ok('мульти GAL: невідомий суфікс лишається ряд�
   const nodes = build('multisplit_gal', items);
   assert.deepEqual(flat(nodes), items.map((_, i) => i));
   assert.equal(nodes[nodes.length - 1].type, 'row');
+});
+
+ok('кожна назва з таблиці має маркування серії, а її коди є в моделях фікстур', () => {
+  const titles = run('CG_TITLES');
+  const fixtures = { split_mhi: splitMhi, multisplit_mhi: msMhi };
+  for (const key of Object.keys(fixtures)) {
+    const groups = build(key, fixtures[key]).filter(g => g.type === 'group');
+    for (const g of groups) {
+      if (g.exempt) continue;
+      assert.equal(g.marked, true, key + ': ' + g.title);
+      const units = g.entries.filter(e => run('cgCapacity')(e.item.model)).map(e => e.item.model);
+      for (const m of units) assert.equal(g.codes.some(c => m.toUpperCase().includes(c)), true, key + ': ' + m + ' не містить ' + g.codes);
+    }
+  }
+  // Назви не-настінних груп починаються з типу блока
+  const first = (k, raw) => titles[k][raw].title;
+  assert.equal(first('split_mhi', 'Моделі 2-х потокові підлогового виконання').startsWith('Підлогові'), true);
+  assert.equal(first('split_mhi', 'Моделі 4-х потокові компактні касети 600х600').startsWith('Касетні'), true);
+  assert.equal(first('semi_gal', 'Канальний').startsWith('Канальний'), true);
 });
 
 ok('розділ без правил групування не чіпаємо', () => {

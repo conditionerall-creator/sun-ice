@@ -957,6 +957,29 @@ async function diagCheckGroups(ctx) {
           ? 'Серія Мульти GAL визначається за суфіксом маркування (M-W, H-W, H-S) — див. CG_GAL_SERIES. Нова серія → додати в таблицю.'
           : 'Позиція лишається звичайним рядком між згорнутими блоками.']), target));
     }
+    /* Маркування серії в назві блока — вимога власника (2026-10-19). Назви беруться з явної
+       таблиці CG_TITLES; група, якої там немає, показується за прайсом без маркування. А якщо
+       маркування в таблиці є, воно мусить бути в КОЖНІЙ моделі групи — інакше підпис бреше. */
+    const unmarked = groups.filter(g => !g.marked && !g.exempt);
+    if (unmarked.length) {
+      out.issues.push(diagIssue(area, key, 'warning',
+        label + ': у назві блока не вказано маркування серії — ' + unmarked.length,
+        unmarked.map(g => g.title).concat(['Додати запис у CG_TITLES (js/04a-catalog-groups.js): назва з маркуванням серії й типом блока.']), target));
+    }
+    const lying = [];
+    groups.forEach(g => {
+      if (!g.codes || !g.codes.length) return;
+      g.entries.forEach(e => {
+        if (!cgCapacity(e.item.model)) return;       // аксесуари маркування серії не мають
+        const up = String(e.item.model).toUpperCase();
+        if (!g.codes.some(c => up.indexOf(c.toUpperCase()) >= 0)) lying.push(g.title + ': ' + e.item.model);
+      });
+    });
+    if (lying.length) {
+      out.issues.push(diagIssue(area, key, 'warning',
+        label + ': маркування в назві не збігається з моделями групи — ' + lying.length,
+        lying.concat(['Прайс змінився — звірити CG_TITLES (поле codes) у js/04a-catalog-groups.js.']), target));
+    }
     if (mode === 'multi-mhi') {
       const wall = groups.filter(g => g.id === 'type-' + cgSlug('Настінний'));
       if (wall.length) {

@@ -54,6 +54,81 @@ const CG_GAL_SERIES = {
   'h-s': { title: 'Серія H-S', freon: 'R410' }
 };
 
+/* Назви блоків у шапці — ЯВНА таблиця (рішення власника 2026-10-19): «в кожній назві
+   маркування серії»; для не настінних блоків — спочатку тип блока, потім маркування, потім
+   решта опису. Ключ — назва групи з прайсу (як її дає парсер), значення:
+     title — що пише шапка;
+     codes — що має бути в КОЖНОМУ маркуванні групи (звіряє самодіагностика: прайс змінився,
+             а підпис ні — і шапка збреше про серію);
+     exempt — це не серія (пульти): маркування не вимагаємо.
+   Маркування серії = те, що в моделі після типорозміру: SRK25ZSP-W1 → ZSP-W1. Для не
+   настінних додано сімейство блока: SRR (канальні), SRF (підлогові), FDTC (касети).
+   Групи, яких тут немає, показуються за прайсом як є, а діагностика на це скаже. */
+const CG_TITLES = {
+  split_mhi: {
+    'HE': { title: 'HE-S1', codes: ['HE-S1'] },
+    'Популярний інвертор R410': { title: 'ZSPR-S · Популярний інвертор R410', codes: ['ZSPR-S'] },
+    'Популярний інвертор R32': { title: 'ZSP-W1 · Популярний інвертор R32', codes: ['ZSP-W1'] },
+    'Серія ZTL-W R32': { title: 'Серія ZTL-W R32', codes: ['ZTL-W'] },
+    'БІЗНЕС-КЛАС ДИЗАЙН СЕРІЯ R32': { title: 'ZS-W · Бізнес-клас дизайн серія R32', codes: ['ZS-W'] },
+    'Premium Series ZT-W R32': { title: 'Premium Series ZT-W R32', codes: ['ZT-W'] },
+    'Потужний інвертор R32': { title: 'ZR-W · Потужний інвертор R32', codes: ['ZR-W'] },
+    'ТЕПЛОВИЙ НАСОС / БІЗНЕС-КЛАС / ДИЗАЙН СЕРІЯ R32': { title: 'ZSX-W · Тепловий насос / бізнес-клас / дизайн серія R32', codes: ['ZSX-W'] },
+    'Моделі 2-х потокові підлогового виконання': { title: 'Підлогові · SRF ZS-W / ZSX-W · 2-х потокові', codes: ['ZS-W', 'ZSX-W'] },
+    'Моделі канальні R32 DC PAM Inverter': { title: 'Канальні · SRR ZS-W · R32 DC PAM Inverter', codes: ['ZS-W'] },
+    'Моделі 4-х потокові компактні касети 600х600': { title: 'Касетні · FDTC VH · 4-х потокові компактні 600х600', codes: ['VH'] },
+    'Пульти': { title: 'Пульти', exempt: true }
+  },
+  split_gal: {
+    'Моделі INFINI INVERTER Фреон R32.': { title: 'SH-W · INFINI INVERTER · фреон R32', codes: ['SH-W'] },
+    'Моделі VEGA INVERTER Фреон R32.': { title: 'A-W · VEGA INVERTER · фреон R32', codes: ['A-W'] },
+    'Моделі Proxima INVERTER Фреон R32.': { title: 'M-W · Proxima INVERTER · фреон R32', codes: ['M-W'] },
+    'Моделі Orient INVERTER Фреон R410.': { title: 'HF-S · Orient INVERTER · фреон R410', codes: ['HF-S'] }
+  },
+  semi_mhi: {
+    'Настінні SRK': { title: 'Настінні SRK', codes: ['SRK'] },
+    'Стельові FDE': { title: 'Стельові FDE', codes: ['FDE'] },
+    'Касетні 4-потокові FDT': { title: 'Касетні 4-потокові FDT', codes: ['FDT'] },
+    'Касетні компактні FDTC': { title: 'Касетні компактні FDTC', codes: ['FDTC'] },
+    'Канальні середнього тиску FDUM': { title: 'Канальні середнього тиску FDUM', codes: ['FDUM'] },
+    'Канальні високого тиску FDU': { title: 'Канальні високого тиску FDU', codes: ['FDU'] },
+    'Колонні FDF': { title: 'Колонні FDF', codes: ['FDF'] }
+  },
+  semi_gal: {
+    'Касетний': { title: 'Касетний · GBZ MLQ-W', codes: ['GBZ'] },
+    'Канальний': { title: 'Канальний · GDZ MLQ-W', codes: ['GDZ'] },
+    'Підлогово-стельовий': { title: 'Підлогово-стельовий · GFZ MLQ-W', codes: ['GFZ'] }
+  },
+  multisplit_mhi: {
+    'Популярний інвертор R32': { title: 'ZSP-W · Популярний інвертор R32', codes: ['ZSP-W'] },
+    'БІЗНЕС-КЛАС ДИЗАЙН СЕРІЯ R32': { title: 'ZS-W · Бізнес-клас дизайн серія R32', codes: ['ZS-W'] },
+    'ТЕПЛОВИЙ НАСОС / БІЗНЕС-КЛАС / ДИЗАЙН СЕРІЯ R32': { title: 'ZSX-W · Тепловий насос / бізнес-клас / дизайн серія R32', codes: ['ZSX-W'] },
+    'Потужний інвертор R32': { title: 'ZR-W · Потужний інвертор R32', codes: ['ZR-W'] },
+    'Касетний без панелі': { title: 'Касетний без панелі · FDTC VH', codes: ['FDTC'] },
+    'Підстельовий': { title: 'Підстельовий · FDE VH', codes: ['FDE'] },
+    'Канальний середнього тиску': { title: 'Канальний середнього тиску · FDUM VH', codes: ['FDUM'] },
+    'Канальний': { title: 'Канальний · SRR ZS-W', codes: ['SRR'] },
+    'Підлоговий': { title: 'Підлоговий · SRF ZS-W / ZSX-W', codes: ['SRF'] }
+  }
+  /* multisplit_gal: серія й фреон уже в назві («Серія M-W» + «Фреон R32») — CG_GAL_SERIES. */
+};
+
+/* Позиції, що за рішенням власника належать до сусідньої групи, хоч у прайсі стоять окремо.
+   Чіпляються ЛИШЕ коли йдуть одразу за своєю групою (порядок прайсу не міняємо); інакше
+   лишаються самі, як були. parent — назва групи з прайсу; label — підзаголовок усередині. */
+const CG_ATTACH = {
+  split_mhi: [{
+    parent: 'Моделі канальні R32 DC PAM Inverter',
+    test: it => cgText(it.groupLabel || it.groupKey) === 'Комплект для забору повітря знизу (опція)',
+    label: 'Комплект для забору повітря знизу (опція)'
+  }],
+  multisplit_mhi: [{
+    parent: 'Касетний без панелі',
+    test: it => cgText(it.blockName) === 'Панель для касетних блоків',
+    label: 'Панель для касетних блоків'
+  }]
+};
+
 /* ---------- Дрібні помічники (чисті) ---------- */
 function cgText(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
 
@@ -78,6 +153,9 @@ function cgPretty(label) {
    ТЕКСТ як у маркуванні («09», не «9»). */
 function cgCapacity(model) {
   const m = String(model == null ? '' : model).trim();
+  /* Справжні маркування — великі літери й цифри. Слово з малих літер («RG10D Remote
+     controller, арт. …») — це опис аксесуара, навіть якщо починається «як маркування». */
+  if (/[a-zа-яіїєґ]{3,}/.test(m)) return null;
   let x = /^[A-Z]{2,4}(\d{2,3})(?!\d)/.exec(m);
   if (!x) x = /^[A-Z]{2,4}\d-(\d{2,3})(?!\d)/.exec(m);
   return x ? { n: parseInt(x[1], 10), text: x[1] } : null;
@@ -126,8 +204,7 @@ function cgClassify(cfgKey, it) {
     if (it.unitType !== 'indoor') return null;          // зовнішні блоки й аксесуари — рядками
     const m = /^(SKM|SRK)\d{2,3}(ZSP|ZSX|ZS|ZR)-/.exec(model);
     if (m && CG_MHI_WALL_SERIES[m[2]]) {
-      return { id: 'wall-' + m[2].toLowerCase(), title: CG_MHI_WALL_SERIES[m[2]],
-               subtitle: 'Настінні ' + m[2], block: null };
+      return { id: 'wall-' + m[2].toLowerCase(), title: CG_MHI_WALL_SERIES[m[2]], block: null };
     }
     const type = cgText(it.groupKey || it.blockName);
     if (!type) return null;
@@ -141,7 +218,7 @@ function cgClassify(cfgKey, it) {
     const id = (m[1] + '-' + m[2]).toLowerCase();
     return { id: 'gal-' + id, title: s.title, subtitle: 'Фреон ' + s.freon,
              block: it.unitType === 'outdoor' ? 'Зовнішні блоки' : it.unitType === 'indoor' ? 'Внутрішні блоки' : null,
-             perBlockSizes: true };
+             perBlockSizes: true, marked: true };
   }
   return null;
 }
@@ -158,6 +235,17 @@ function cgBuildNodes(cfgKey, items) {
   const runs = {};
   let cur = null;
   (items || []).forEach((it, index) => {
+    /* Позиція, що належить сусідній групі (комплект забору повітря → канальні; панель →
+       касетні без панелі): додається до неї окремим підблоком, якщо йде одразу за нею. */
+    const att = (CG_ATTACH[cfgKey] || []).find(a => a.test(it));
+    if (att && cur && cur.rawTitle === att.parent) {
+      let ab = cur.blocks[cur.blocks.length - 1];
+      if (!ab || ab.label !== att.label) { ab = { label: att.label, entries: [] }; cur.blocks.push(ab); }
+      const aentry = { item: it, index: index };
+      ab.entries.push(aentry);
+      cur.entries.push(aentry);
+      return;
+    }
     const d = cgClassify(cfgKey, it);
     if (!d) {
       cur = null;
@@ -169,7 +257,8 @@ function cgBuildNodes(cfgKey, items) {
       if (rule.keepSections && it.sectionLabel) nodes.push({ type: 'section', label: it.sectionLabel });
       runs[d.id] = (runs[d.id] || 0) + 1;
       cur = { type: 'group', baseId: d.id, id: runs[d.id] > 1 ? d.id + '~' + runs[d.id] : d.id,
-              split: runs[d.id] > 1, d: d, blocks: [], entries: [] };
+              split: runs[d.id] > 1, d: d, blocks: [], entries: [],
+              rawTitle: d.title != null ? cgText(d.title) : cgText(d.block) };
       nodes.push(cur);
     }
     const blockLabel = d.block == null ? null : d.block;
@@ -179,18 +268,24 @@ function cgBuildNodes(cfgKey, items) {
     blk.entries.push(entry);
     cur.entries.push(entry);
   });
-  nodes.forEach(n => { if (n.type === 'group') cgFinishGroup(n, rule); });
+  nodes.forEach(n => { if (n.type === 'group') cgFinishGroup(n, rule, cfgKey); });
   return nodes;
 }
 
-function cgFinishGroup(g, rule) {
+function cgFinishGroup(g, rule, cfgKey) {
   const first = g.entries[0].item;
-  g.title = cgPretty(g.d.title != null ? g.d.title : g.blocks[0].label);
+  /* Назва з явної таблиці (маркування серії + тип блока); якщо групи там немає — як у
+     прайсі, а діагностика скаже, що маркування серії не вказано. */
+  const T = (CG_TITLES[cfgKey] || {})[g.rawTitle] || null;
+  g.title = T ? T.title : cgPretty(g.rawTitle);
+  g.codes = T && T.codes ? T.codes : [];
+  g.marked = !!(T && !T.exempt) || !!g.d.marked;
+  g.exempt = !!(T && T.exempt);
   g.count = g.entries.length;
-  /* Підзаголовок блока, що збігається з назвою групи (перший сегмент злитої серії),
+  /* Підзаголовок блока, що збігається з назвою групи з прайсу (перший сегмент злитої серії),
      не повторюємо — це та сама назва. */
   g.blocks.forEach(b => {
-    if (b.label != null && cgPretty(b.label) === g.title) b.label = null;
+    if (b.label != null && cgText(b.label) === g.rawTitle) b.label = null;
     else if (b.label != null) b.label = cgPretty(b.label);
   });
   const models = g.entries.map(e => e.item.model);
