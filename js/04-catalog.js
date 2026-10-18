@@ -266,6 +266,38 @@ async function checkPriceUpdateInBackground() {
   if (priceUpdateCheckDone || priceDownloadInFlight) return;
   priceUpdateCheckDone = true;
 
+  /* ⚠️ ПЕРЕХІД СТАРИХ ПРИСТРОЇВ. На телефоні, де застосунок уже працював, лежить
+     localStorage-кеш, і initCatalog показує його МИТТЄВО, не чіпаючи мережу —
+     отже priceSourceUsed лишається порожнім, а звірка нижче порівнює price_meta,
+     тобто СТАРИЙ шлях. Без цього блоку такий пристрій ніколи б сам не перейшов на
+     опубліковані дані: показував би кеш, а при зміні прайсу качав би 10 МБ xlsx,
+     як і раніше. А таких пристроїв — усі, хто вже користується застосунком.
+     Знайдено одразу після першої справжньої публікації, 2026-10-18. */
+  if (!priceSourceUsed) {
+    try {
+      const v = await fetchPublishedVersion();
+      if (v && v.version_id != null) {
+        priceDownloadInFlight = true;
+        try {
+          const res = await loadPublishedPrice({ force: true });
+          if (res.ok) {
+            priceVersion = publishedVersionId;
+            publishedPublishedAt = v.published_at || publishedPublishedAt;
+            /* Старий кеш більше не потрібен — звільняємо 1,7 МБ у localStorage,
+               інакше він лежатиме там вічно й займатиме третину ліміту. */
+            try { localStorage.removeItem('sunice_price_cache'); } catch (e) {}
+            setCatalogStatus(publishedLabel(), true);
+            notePriceVersionChanged();
+            catalogMenuSkipEnterAnim = true;
+            if (currentTab === 'catalog') renderCatalogView();
+            renderCartBar();
+            return;
+          }
+        } finally { priceDownloadInFlight = false; }
+      }
+    } catch (e) { /* немає зв'язку чи немає опублікованої версії — працюємо по-старому */ }
+  }
+
   /* Якщо працюємо на опублікованих даних — звіряємось із НИМИ, а не з price_meta:
      price_meta описує старий xlsx і при переїзді вже не є джерелом правди. */
   if (priceSourceUsed === 'published') {
