@@ -1008,52 +1008,105 @@
   #product-sheet-overlay .info-sheet-panel { height: 96vh; max-height: 96vh; }
   #product-sheet-body { display: flex; flex-direction: column; min-height: 0; }
 
-  /* Рядок ціни. Два стани:
-     • без «Наявності» (звичайний дилер) — ціна ліворуч, «На сайт» праворуч;
-     • з «Наявністю» (адмін) — ТРИ КОЛОНКИ 1fr / auto / 1fr. Саме сітка, а не flex:
-       бічні колонки однакові, тому середня кнопка стоїть рівно по центру рядка
-       НЕЗАЛЕЖНО від довжини ціни. На flex із space-between вона «подорожувала» —
-       «610 $» і «5 112 $» зсували її на різну відстань, і власник це помітив.
-       Сітка ще й не дає кнопкам накластись одна на одну, на відміну від абсолютного
-       центрування. */
-  .ps-price-row {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0;
+  /* ЗАГОЛОВОК: маркування великим, може переноситись лише на « / » (кожне маркування
+     — неподільний шматок). Хрестик збільшено до 40px — це зона дотику, а відступ до
+     «На сайт» нижче навмисно великий (власник просив, щоб пальцем не зачепити одне
+     замість іншого). */
+  /* Маркування в ОДИН рядок, без переносів (рішення власника 2026-10-19): розмір шрифту
+     підбирає psFit() у js/12-product-sheet.js — від 22px вниз, поки не вміститься, навіть
+     довге напівпромислове «внутр / зовн». */
+  #product-sheet-title {
+    font-size: 22px; font-weight: 800; line-height: 1.2; padding-top: 6px;
+    min-width: 0; overflow: hidden; white-space: nowrap;
   }
-  .ps-price-row .ps-price, .ps-price-row .ps-price-locked { flex: 1 1 auto; }
-  .ps-price-row-3 {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 8px;
+  #product-sheet-close { width: 40px; height: 40px; font-size: 17px; }
+
+  /* Рядок під заголовком: бренд ліворуч, «На сайт ↗» праворуч (вигляд за макетом:
+     акцентний підкреслений напис із стрілкою). */
+  .ps-subrow {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-shrink: 0; margin: 2px 0 8px;
   }
-  .ps-price-row-3 .ps-site-link { justify-self: end; }
-  /* Кнопка «Наявність» у рядку з ціною. Вигляд активного стану бере від .ps-tab.on —
-     залита акцентом, як і дві публічні кнопки нижче. */
-  /* Селектор із двох класів НЕ для краси: правило .ps-tab нижче в таблиці стилів
-     скидає border і background, і при однаковій вазі воно перемагало б за порядком —
-     кнопка малювалась голим текстом без рамки (видно на знімку 2026-10-09). */
-  .ps-price-row .ps-stock-tab {
-    flex: none; justify-self: center;
-    flex-direction: row; gap: 6px;
-    min-height: 38px; padding: 0 12px;
-    border: 1px solid var(--border); border-radius: 10px;
-    background: var(--card); color: var(--text);
-    font-size: 12.5px; white-space: nowrap;
+  .ps-brand { font-size: 14px; color: var(--text-secondary); min-width: 0; }
+  .ps-site-btn {
+    display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+    min-height: 44px; padding: 0 2px 0 12px;
+    color: var(--accent); font-size: 14px; font-weight: 600; text-decoration: none;
   }
-  /* У рядку з ціною місця мало, тому тут іконка ПОРУЧ із підписом, а не над ним. */
-  .ps-price-row .ps-stock-tab .ic { width: 16px; height: 16px; }
-  .ps-price-row .ps-stock-tab.on { background: var(--accent); color: #fff; border-color: var(--accent); }
-  /* «Наявність» — ТРЕТЯ РІВНОПРАВНА ВКЛАДКА, посередині стрічки (прохання власника).
-     Кнопкою в рядку з ціною вона «подорожувала» (ціни різної довжини) і, розкриваючись,
-     затуляла дві інші кнопки. Своїх стилів більше не має: виглядає як .ps-tab. */
-  .ps-price { font-size: 26px; font-weight: 800; color: var(--text); }
-  .ps-price-locked { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--text-secondary); }
-  .ps-price-locked .ic { width: 18px; height: 18px; vertical-align: 0; }
-  .ps-site-link {
-    min-height: 40px; padding: 0 14px; display: flex; align-items: center; flex-shrink: 0;
-    border: 1px solid var(--border); border-radius: 10px;
-    font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap;
+  .ps-site-btn > span { text-decoration: underline; text-underline-offset: 3px; }
+  .ps-site-btn .ic { width: 18px; height: 18px; vertical-align: 0; }
+
+  /* ШАПКА-РОЗРАХУНОК в ОДИН рядок: [Знижка %] [₴/$] [Ціна] [Поділитись]. Без переносів:
+     кожен перенос розтягує вікно (рішення власника 2026-10-19). Ціна — гнучка колонка,
+     її шрифт підбирає psFit(), тож шестизначна сума в гривні теж вміщається.
+     Живе над вкладками й не прокручується разом з їхнім вмістом. */
+  .ps-hero {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px; flex-shrink: 0;
+    background: var(--accent-bg, rgba(200, 90, 28, .10));
+    border: 1px solid var(--border); border-radius: 14px;
   }
+  .ps-hero-locked {
+    display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .ps-hero-locked .ic { width: 18px; height: 18px; vertical-align: 0; }
+  .ps-hero-label {
+    font-size: 11.5px; font-weight: 600; color: var(--text-secondary); line-height: 1.2;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ps-hero-disc { display: flex; flex-direction: column; gap: 3px; flex: none; }
+  .ps-disc-box {
+    display: flex; align-items: center; gap: 2px; padding: 0 8px;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
+  }
+  .ps-amount-input {
+    width: 38px; min-width: 0; min-height: 38px; padding: 0; text-align: center;
+    border: none; background: transparent; outline: none;
+    font-size: 20px; font-weight: 700; font-family: inherit; color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .ps-disc-box:focus-within { border-color: var(--accent); }
+  /* Стрілки-лічильники в полі числа: на телефоні їх і так немає, а на комп'ютері вони
+     тиснуть велику цифру вбік. Прибираємо — значення вводять із клавіатури. */
+  .ps-amount-input::-webkit-outer-spin-button, .ps-amount-input::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .ps-amount-input { -moz-appearance: textfield; }
+  .ps-disc-unit { font-size: 14px; font-weight: 700; color: var(--text-secondary); }
+  /* ₴ над $, як на макеті */
+  .ps-seg-cur {
+    display: flex; flex-direction: column; overflow: hidden; flex: none;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
+  }
+  .ps-seg-cur button {
+    min-width: 34px; min-height: 30px; padding: 0 4px; border: none; background: transparent;
+    color: var(--text-secondary); font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
+  }
+  .ps-seg-cur button.on { background: var(--accent); color: #fff; }
+  .ps-hero-price { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  /* font-size тут ставить psFit(); число й валюта міряються від нього в em. */
+  .ps-hero-sum {
+    display: flex; align-items: baseline; gap: .15em; white-space: nowrap;
+    min-width: 0; overflow: hidden; font-size: 28px; line-height: 1.15;
+  }
+  .ps-hero-sum b { font-size: 1em; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .ps-hero-sum small { font-size: .5em; font-weight: 700; color: var(--text-secondary); }
+  .ps-hero-ref {
+    font-size: 11.5px; color: var(--text-secondary); font-variant-numeric: tabular-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ps-share-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0; flex: none;
+    border: none; background: transparent; color: var(--text-secondary);
+    font-size: 10.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+  }
+  .ps-share-ico {
+    display: flex; align-items: center; justify-content: center;
+    width: 46px; height: 40px; border-radius: 11px; background: var(--accent);
+  }
+  .ps-share-ico .ic { width: 20px; height: 20px; vertical-align: 0; color: #fff; }
+  .ps-share-btn:active .ps-share-ico { transform: scale(.96); }
 
   /* Стрічка кнопок панелі: кожна — окрема картка з іконкою над підписом (макет власника
      2026-10-12). Раніше це була одна спільна «таблетка» з кнопками всередині. */
@@ -1075,10 +1128,8 @@
   .ps-tab.on { background: var(--accent); border-color: var(--accent); color: #fff; }
   .ps-tab.on .ic { color: #fff; }
   .ps-tab:active { transform: scale(.98); }
-  /* Три кнопки ділять рядок порівну. */
+  /* Вкладки ділять рядок порівну. */
   .ps-tabs .ps-tab { flex: 1 1 0; }
-  /* «На сайт» — посилання, а не вкладка: активною не стає, тому ніякого стану .on. */
-  .ps-tab-link { color: var(--accent); }
   .ps-tab.on { background: var(--accent); color: #fff; }
   /* Прокручується лише вміст вкладки — шапка з ціною й кнопки лишаються на місці. */
   .ps-tabbody { padding-top: 14px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
@@ -1142,148 +1193,6 @@
     background: var(--bg); border-radius: 20px; padding: 2px 9px; flex-shrink: 0;
   }
   .ps-group > .ps-spec-table { border: none; border-radius: 0; margin-bottom: 8px; }
-
-  /* РОЗРАХУНОК (перероблено 2026-10-09, друга правка власника).
-     Перший екран — одна дія: напис «Моя знижка», одне велике поле на відсотки й
-     результат під ним. Усе інше за кнопкою «Додаткові розрахунки»: раніше одночасно
-     були видні перемикач знижка/націнка, %/сума, кількість і валюта — для щоденної дії
-     це зайва вага. Кнопки «Розрахувати» немає: усе перераховується на ходу. */
-  .ps-disc-head {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    margin-bottom: 8px;
-  }
-  .ps-disc-label { font-size: 15px; font-weight: 700; color: var(--text); }
-  .ps-adv-toggle {
-    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
-    min-height: 36px; padding: 0 10px;
-    border: 1px solid var(--border); border-radius: 9px;
-    background: var(--bg); color: var(--text-secondary);
-    font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
-  }
-  .ps-adv-toggle.on { color: var(--accent); border-color: var(--accent); }
-  .ps-chev { font-size: 11px; transition: transform .2s ease; }
-  .ps-adv-toggle.on .ps-chev, .ps-stock-btn.on .ps-chev { transform: rotate(180deg); }
-
-  .ps-disc-row { display: flex; gap: 8px; align-items: stretch; }
-  .ps-amount-input {
-    flex: 1 1 auto; min-width: 0; min-height: 52px; padding: 0 14px; text-align: center;
-    border: 1px solid var(--border); border-radius: 10px; background: var(--card);
-    font-size: 24px; font-weight: 700; font-family: inherit; color: var(--text);
-    font-variant-numeric: tabular-nums;
-  }
-  /* Стрілки-лічильники в полі числа: на телефоні їх і так немає, а на комп'ютері вони
-     тиснуть велику цифру вбік. Прибираємо — значення вводять із клавіатури. */
-  .ps-amount-input::-webkit-outer-spin-button, .ps-amount-input::-webkit-inner-spin-button,
-  .ps-adv-input::-webkit-outer-spin-button, .ps-adv-input::-webkit-inner-spin-button,
-  .ps-qty-input::-webkit-outer-spin-button, .ps-qty-input::-webkit-inner-spin-button {
-    -webkit-appearance: none; margin: 0;
-  }
-  .ps-amount-input, .ps-adv-input, .ps-qty-input { -moz-appearance: textfield; }
-  .ps-disc-unit {
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    min-width: 52px; border: 1px solid var(--border); border-radius: 10px;
-    background: var(--bg); color: var(--text-secondary); font-size: 18px; font-weight: 700;
-  }
-  .ps-seg {
-    display: inline-flex; gap: 3px; background: var(--bg);
-    border: 1px solid var(--border); border-radius: 10px; padding: 3px; flex-shrink: 0;
-  }
-  .ps-seg button {
-    min-height: 36px; min-width: 40px; padding: 0 10px;
-    border: none; border-radius: 7px; background: transparent;
-    color: var(--text-secondary); font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
-  }
-  .ps-seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(10,10,10,.08); }
-
-  /* Додаткові розрахунки: знижка сумою, націнка (із підписом, ВІД ЧОГО вона), кількість,
-     скидання. Підпис основи націнки обов'язковий — без нього незрозуміло, до якої суми
-     застосовано відсоток. */
-  .ps-adv {
-    margin-top: 10px; padding: 10px 12px;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 11px;
-  }
-  .ps-adv-row {
-    display: flex; align-items: center; gap: 8px;
-    padding: 5px 0;
-  }
-  .ps-adv-row + .ps-adv-row { border-top: 1px solid var(--border); }
-  .ps-adv-label {
-    display: flex; flex-direction: column; gap: 1px; flex: 1 1 auto; min-width: 0;
-    font-size: 13px; font-weight: 600; color: var(--text);
-  }
-  .ps-adv-label small { font-size: 11px; font-weight: 500; color: var(--text-secondary); }
-  .ps-adv-input {
-    width: 72px; flex-shrink: 0; min-height: 40px; text-align: center;
-    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
-    font-size: 16px; font-weight: 700; font-family: inherit; color: var(--text);
-    font-variant-numeric: tabular-nums;
-  }
-  .ps-qty { display: flex; align-items: stretch; gap: 6px; flex-shrink: 0; }
-  .ps-qty-btn {
-    width: 40px; min-height: 40px; flex-shrink: 0;
-    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
-    font-size: 20px; font-weight: 700; color: var(--text); font-family: inherit; cursor: pointer;
-  }
-  .ps-qty-btn:active { transform: scale(.97); }
-  .ps-qty-input {
-    width: 56px; min-height: 40px; text-align: center;
-    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
-    font-size: 16px; font-weight: 700; font-family: inherit; color: var(--text);
-    font-variant-numeric: tabular-nums;
-  }
-  .ps-reset {
-    width: 100%; min-height: 40px; margin-top: 8px;
-    border: 1px solid var(--border); border-radius: 9px; background: var(--card);
-    color: var(--text-secondary); font-size: 12.5px; font-weight: 600; font-family: inherit; cursor: pointer;
-  }
-
-  /* Прозорий результат (П-12): видно, з чого склалась цифра, а не лише саму цифру.
-     Перемикач $/₴ — поруч із підсумком, там, де на нього дивляться. */
-  .ps-result {
-    margin-top: 14px; background: var(--bg);
-    border: 1px solid var(--border); border-radius: 11px; padding: 12px 14px;
-  }
-  .ps-total-line {
-    display: flex; justify-content: space-between; gap: 12px;
-    font-size: 13px; color: var(--text-secondary); padding: 3px 0;
-  }
-  /* Підсумок: назва й число НЕ ріжуться й не переносяться всередині себе. Якщо разом
-     не вміщаються (320px: «Ціна з прайсу» + «2 512 $» + перемикач валют), права частина
-     цілком переходить на другий рядок. До цього назва ламалась на два рядки, а число
-     розривалось між «2 512» і «$» — виглядало як поломка верстки. */
-  .ps-total-sum {
-    display: flex; justify-content: space-between; align-items: center; gap: 10px;
-    flex-wrap: wrap;
-    font-size: 13.5px; font-weight: 600; color: var(--text);
-  }
-  .ps-total-sum > span:first-child { white-space: nowrap; }
-  .ps-result .ps-total-line + .ps-total-sum {
-    margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--border);
-  }
-  .ps-sum-right { display: flex; align-items: center; gap: 10px; margin-left: auto; white-space: nowrap; }
-  .ps-total-sum b { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .ps-seg-cur button { min-width: 36px; min-height: 32px; font-size: 13px; }
-
-  /* Поділитись — тут, під щойно порахованою ціною, а не окремою вкладкою. */
-  .ps-share { margin-top: 14px; }
-  .ps-share-btn {
-    width: 100%; min-height: 48px;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    border: none; border-radius: 10px; background: var(--accent); color: #fff;
-    font-size: 14px; font-weight: 700; font-family: inherit; cursor: pointer;
-  }
-  .ps-share-btn .ic { width: 18px; height: 18px; vertical-align: 0; color: #fff; }
-  .ps-share-btn:active { transform: scale(.99); }
-  .ps-link-check {
-    display: flex; align-items: center; gap: 9px; min-height: 44px; margin-top: 4px;
-    font-size: 13px; color: var(--text-secondary); cursor: pointer;
-  }
-  .ps-link-check input { width: 19px; height: 19px; accent-color: var(--accent); flex-shrink: 0; }
-  .ps-share-preview {
-    margin: 4px 0 0; padding: 10px 12px; white-space: pre-wrap; word-break: break-word;
-    background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
-    font-family: inherit; font-size: 13px; line-height: 1.5; color: var(--text-secondary);
-  }
 
   /* Наявність розкривається тут же, під ціною — не окремим повноекранним листом
      (той закривав панель і прибирав меню). «Повна інформація» всередині відкриває
@@ -3968,18 +3877,18 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-19.8"></script>
-<script src="js/02-price-parse.js?v=2026-10-19.8"></script>
-<script src="js/03-diagnostics.js?v=2026-10-19.8"></script>
-<script src="js/04-catalog.js?v=2026-10-19.8"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-19.8"></script>
-<script src="js/06-cart-promo.js?v=2026-10-19.8"></script>
-<script src="js/07-access-info.js?v=2026-10-19.8"></script>
-<script src="js/08-info-tables.js?v=2026-10-19.8"></script>
-<script src="js/09-cabinet.js?v=2026-10-19.8"></script>
-<script src="js/10-crmontage.js?v=2026-10-19.8"></script>
-<script src="js/11-shell.js?v=2026-10-19.8"></script>
-<script src="js/12-product-sheet.js?v=2026-10-19.8"></script>
-<script src="js/13-start.js?v=2026-10-19.8"></script>
+<script src="js/01-config.js?v=2026-10-19.10"></script>
+<script src="js/02-price-parse.js?v=2026-10-19.10"></script>
+<script src="js/03-diagnostics.js?v=2026-10-19.10"></script>
+<script src="js/04-catalog.js?v=2026-10-19.10"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-19.10"></script>
+<script src="js/06-cart-promo.js?v=2026-10-19.10"></script>
+<script src="js/07-access-info.js?v=2026-10-19.10"></script>
+<script src="js/08-info-tables.js?v=2026-10-19.10"></script>
+<script src="js/09-cabinet.js?v=2026-10-19.10"></script>
+<script src="js/10-crmontage.js?v=2026-10-19.10"></script>
+<script src="js/11-shell.js?v=2026-10-19.10"></script>
+<script src="js/12-product-sheet.js?v=2026-10-19.10"></script>
+<script src="js/13-start.js?v=2026-10-19.10"></script>
 </body>
 </html>

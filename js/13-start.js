@@ -853,48 +853,12 @@ document.getElementById('product-sheet-body').addEventListener('click', function
   const tabBtn = t.closest('[data-ps-tab]');
   if (tabBtn) { psState.tab = tabBtn.getAttribute('data-ps-tab'); psRenderTabBody(); psSyncTabs(); return; }
 
-  // «Додаткові розрахунки»: знижка сумою, націнка, кількість, скидання.
-  if (t.closest('[data-ps-adv]')) {
-    psState.adv = !psState.adv;
-    psRenderTabBody();
-    return;
-  }
-
-  if (t.closest('[data-ps-reset]')) {
-    psState.disc = NaN; psState.mark = NaN; psState.qty = 1;
-    psState.discKind = 'pct'; psState.markKind = 'pct';
-    psRenderTabBody();
-    return;
-  }
-
+  /* Перемикач валюти в шапці: знижка в панелі лише відсотками, тому перераховувати
+     введену суму не треба — міняється тільки показ ціни. */
   const curBtn = t.closest('[data-ps-cur]');
   if (curBtn) {
-    const next = curBtn.getAttribute('data-ps-cur');
-    /* Якщо введена СУМА (а не відсоток) — переводимо і її. Інакше «знижка 15 $» при
-       перемиканні на гривню мовчки ставала «знижка 15 ₴», тобто в 45 разів меншою:
-       підсумок стрибав, і людина не розуміла чому. Відсотка це не стосується. */
-    if (psState.discKind === 'flat' && !isNaN(psState.disc) && psState.disc > 0) {
-      psState.disc = Math.round(convertAmount(psState.disc, psState.cur, next, usdRate) * 100) / 100;
-    }
-    if (psState.markKind === 'flat' && !isNaN(psState.mark) && psState.mark > 0) {
-      psState.mark = Math.round(convertAmount(psState.mark, psState.cur, next, usdRate) * 100) / 100;
-    }
-    psState.cur = next;
-    psRenderTabBody();
-    return;
-  }
-
-  const dk = t.closest('[data-ps-disckind]');
-  if (dk) { psState.discKind = dk.getAttribute('data-ps-disckind'); psRenderTabBody(); return; }
-  const mk = t.closest('[data-ps-markkind]');
-  if (mk) { psState.markKind = mk.getAttribute('data-ps-markkind'); psRenderTabBody(); return; }
-
-  const qtyBtn = t.closest('[data-ps-qty]');
-  if (qtyBtn) {
-    psState.qty = Math.max(1, psState.qty + (qtyBtn.getAttribute('data-ps-qty') === '+' ? 1 : -1));
-    const inp = document.querySelector('.ps-qty-input');
-    if (inp) inp.value = psState.qty;
-    psUpdateResult();
+    psState.cur = curBtn.getAttribute('data-ps-cur');
+    psRenderHero();
     return;
   }
 
@@ -906,28 +870,14 @@ document.getElementById('product-sheet-body').addEventListener('click', function
   }
 });
 
-/* Галочка «додати посилання» — change, а не click: так ловиться і клавіатура.
-   Перемальовуємо лише попередній перегляд, щоб нічого не стрибало. */
-document.getElementById('product-sheet-body').addEventListener('change', function (e) {
-  if (!psState) return;
-  if (e.target.matches('[data-ps-link]')) {
-    psState.withLink = e.target.checked;
-    const pv = document.getElementById('ps-share-preview');
-    if (pv) pv.textContent = shareText();
-  }
-});
+/* Поворот екрана / зміна ширини — маркування й ціна мусять знову вміститись у рядок. */
+window.addEventListener('resize', function () { if (psState) psFitAll(); });
 
-/* Ввід чисел — окремо від кліків: перемальовуємо лише результат, щоб у полі не
+/* Ввід знижки — окремо від кліків: перемальовуємо лише результат, щоб у полі не
    стрибав курсор і не закривалась екранна клавіатура. */
 document.getElementById('product-sheet-body').addEventListener('input', function (e) {
   if (!psState) return;
-  if (e.target.id === 'ps-disc') { psState.disc = parseFloat(e.target.value); psUpdateResult(); return; }
-  if (e.target.id === 'ps-mark') { psState.mark = parseFloat(e.target.value); psUpdateResult(); return; }
-  if (e.target.classList.contains('ps-qty-input')) {
-    const n = parseInt(e.target.value, 10);
-    psState.qty = (isNaN(n) || n < 1) ? 1 : n;
-    psUpdateResult();
-  }
+  if (e.target.id === 'ps-disc') { psState.disc = parseFloat(e.target.value); psUpdateResult(); }
 });
 
 /* «Усі характеристики» (і групи всередині) мусять ВІДРЕАГУВАТИ, а не тихо дописати
