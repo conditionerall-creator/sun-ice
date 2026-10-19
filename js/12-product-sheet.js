@@ -48,6 +48,51 @@ function loadSpecs(cfgKey) {
   return specsLoading[cfgKey];
 }
 
+/* ТЕХНІЧНІ ДАНІ З КАТАЛОГУ MHI (з 2026-10-19).
+   Джерело правди для характеристик — друкований каталог, а не картка сайту
+   (власник: «на сайті все не точно і не так повно»). Файл збирає
+   claude/mhi-catalog/build_catalog.py по координатах слів у PDF; у кожного
+   значення є номер сторінки.
+   Модель, якої в каталозі ще немає, працює як раніше — на даних із сайту. */
+const MHI_CATALOG_FILE = 'data/mhi-catalog.json';
+let mhiCatalog = null;
+let mhiCatalogPromise = null;
+let mhiCatalogFailed = false;
+
+function loadMhiCatalog() {
+  if (mhiCatalog) return Promise.resolve(mhiCatalog);
+  if (mhiCatalogPromise) return mhiCatalogPromise;
+  mhiCatalogPromise = fetch(MHI_CATALOG_FILE + '?v=' + APP_BUILD)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(j => { mhiCatalog = j; mhiCatalogPromise = null; mhiCatalogFailed = false; return j; })
+    .catch(() => { mhiCatalogPromise = null; mhiCatalogFailed = true; return null; });
+  return mhiCatalogPromise;
+}
+
+/* Ключ маркування для каталогу: верхній регістр, без пробілів, дефісів і підкреслень.
+   МУСИТЬ збігатися з norm_model() у claude/mhi-catalog/pdfgrid.py — саме так зібрано
+   index у файлі. psKey() тут не годиться: він лишає дефіси, і жодне маркування
+   («SRK35ZSX-W» проти «SRK35ZSXW») не знайшлося б. */
+function catKey(s) { return psKey(s).replace(/[-_]/g, ''); }
+
+/* Серія + колонка каталогу для цього товару. Пробуємо всі маркування рядка
+   (внутрішній, зовнішній): у прайсі комплект може бути записаний по-різному. */
+function mhiCatalogHit(cfgKey, it) {
+  if (!mhiCatalog || !mhiCatalog.index) return null;
+  const marks = psMarkings(cfgKey, it);
+  for (let i = 0; i < marks.length; i++) {
+    const ref = mhiCatalog.index[catKey(marks[i])];
+    if (!ref) continue;
+    const bits = String(ref).split('|');
+    const series = mhiCatalog.series && mhiCatalog.series[bits[0]];
+    /* mark — маркування САМЕ цього товару (у колонці каталогу їх кілька: -W, -WB,
+       -WT, -WF…). Потрібне там, де відповідь залежить від виконання, а не від
+       серії: у -WF Wi-Fi вбудований, у -W це опція. */
+    if (series) return { series: series, model: bits[1], key: bits[0], mark: catKey(marks[i]) };
+  }
+  return null;
+}
+
 /* Фото картки товару з сайту (2026-10-09, прохання власника: «у кожній картці зверху
    характеристик — фото з картки товару на сайті»).
    Окремий файл на всі шість розділів, а не поле в specs-*.json: інакше за фото
@@ -165,6 +210,146 @@ function specsHtml(spec) {
          '<details class="ps-all"><summary><span>Усі характеристики</span>' +
          '<span class="ps-group-n">' + total + '</span></summary>' +
          '<div class="ps-all-body">' + groups.join('') + '</div></details>';
+}
+
+/* ---------- Характеристики з каталогу MHI ---------- */
+
+/* Десять рядків, які видно одразу (порядок і склад — рішення власника 2026-10-19).
+   Решта таблиці — під кнопкою «Усі характеристики», і там ці десять теж є:
+   власник просив бачити таблицю так само, як у друкованому каталозі, а не
+   «залишок» без початку. */
+const CAT_KEY_ROWS = [
+  'Холодопродуктивність (Min~Max)',
+  'Теплопродуктивність (Min~Max)',
+  'SEER / SCOP',
+  'Розміри внутрішнього блока (Ш х В х Г)',
+  'Розміри зовнішнього блока (Ш х В х Г)',
+  'Міжлапна відстань опор зовнішнього блока',
+  'Максимальна довжина труб [заводська заправка]',
+  'Макс. перепад висот, зовнішн. вище / нижче',
+  'Холодоагент, заводська заправка',
+  'Дозаправка холодоагенту'
+];
+
+/* Значення немає в каталозі → «—». Не підставляти «як у сусіда» й не рахувати. */
+function catValue(spec, model) {
+  const v = spec && spec.values ? spec.values[model] : null;
+  return (v === undefined || v === null || v === '') ? '—' : v;
+}
+
+function catRowsHtml(list, model) {
+  return list.map(function (sp) {
+    const unit = sp.unit ? ' <span class="ps-spec-unit">' + escapeHtml(sp.unit) + '</span>' : '';
+    return '<div class="ps-spec-row"><span class="ps-spec-name">' + escapeHtml(sp.name) + unit +
+           '</span><span class="ps-spec-val">' + escapeHtml(catValue(sp, model)) + '</span></div>';
+  }).join('');
+}
+
+function catSpecsHtml(hit) {
+  const all = hit.series.specs || [];
+  const byName = {};
+  all.forEach(function (sp) { byName[sp.name] = sp; });
+  const key = CAT_KEY_ROWS.map(function (n) { return byName[n]; }).filter(Boolean);
+  return '<div class="ps-spec-table">' + catRowsHtml(key, hit.model) + '</div>' +
+    '<details class="ps-all"><summary><span>Усі характеристики</span>' +
+    '<span class="ps-group-n">' + all.length + '</span></summary>' +
+    '<div class="ps-spec-table">' + catRowsHtml(all, hit.model) + '</div></details>' +
+    catSourceHtml(hit);
+}
+
+/* Звідки взято — щоб будь-яку цифру можна було перевірити за десять секунд. */
+function catSourceHtml(hit) {
+  return '<div class="ps-source">Джерело: каталог Mitsubishi Heavy Industries, ' +
+    escapeHtml(hit.series.title) + ', стор. ' + hit.series.page + '.</div>';
+}
+
+/* Назви функцій у каталозі набрані капсом. Тридцять таких рядків поспіль читати
+   важко, тому кирилицю опускаємо до звичайного вигляду, а латиницю (FUZZY AUTO,
+   ECO, HIGH POWER) лишаємо як є — це назви режимів, вони так і пишуться.
+   Зміст не чіпаємо: це лише регістр. */
+function catNiceName(name) {
+  const low = name.split(' ').map(function (w) {
+    return /[А-ЯЁІЇЄҐ]/.test(w) && !/[A-Z]/.test(w) ? w.toLowerCase() : w;
+  }).join(' ').replace(/\bWI-FI\b/i, 'Wi-Fi');
+  return low.charAt(0).toUpperCase() + low.slice(1);
+}
+
+/* Стан функції/аксесуара для КОНКРЕТНОГО виконання, а не для серії загалом
+   (рішення власника 2026-10-19: «сторінці товару віримо і відповідно до неї
+   робимо»). Поки що так відрізняється лише Wi-Fi. */
+function catWifiBuiltin(hit) {
+  const pat = hit.series.wifi_builtin;
+  return !!(pat && hit.mark && hit.mark.indexOf(pat) >= 0);
+}
+/* Виноска теж залежить від виконання: у -WF показувати «для типів -W потрібно
+   доставити модуль» — означає плутати людину тим, що її моделі не стосується.
+   Обидва речення взяті зі сторінки каталогу. */
+function catNoteFor(hit, item) {
+  const isWifi = /WI-?FI/i.test(item.name) || item.kind === 'wifi';
+  if (isWifi && hit.series.wifi_builtin && catWifiBuiltin(hit)) {
+    return 'Wi-Fi-модуль вбудований у стандартній комплектації.';
+  }
+  return item.note;
+}
+
+function catStateFor(hit, item) {
+  const isWifi = /WI-?FI/i.test(item.name) || item.kind === 'wifi';
+  if (!isWifi) return item.state;
+  if (!hit.series.wifi_builtin) return item.state;
+  return catWifiBuiltin(hit) ? 'yes' : 'option';
+}
+
+/* Функції: показуємо те, що в цій серії Є, і те, що доплатою. Чого немає —
+   не малюємо: матриця каталогу спільна на 14 серій, і довгий список «немає»
+   лише заважає читати. */
+function catFuncsHtml(hit) {
+  const list = hit.series.functions || [];
+  const block = function (title, state, empty) {
+    const rows = list.filter(function (f) { return catStateFor(hit, f) === state; });
+    if (!rows.length) return empty ? '<div class="ps-block-title">' + title + '</div>' +
+      '<div class="ps-empty-line">' + empty + '</div>' : '';
+    return '<div class="ps-block-title">' + title + '</div><div class="ps-fn-list">' +
+      rows.map(function (f) {
+        return '<div class="ps-fn"><span class="ps-fn-name">' + escapeHtml(catNiceName(f.name)) + '</span>' +
+          (catNoteFor(hit, f) ? '<span class="ps-fn-note">' + escapeHtml(catNoteFor(hit, f)) + '</span>' : '') + '</div>';
+      }).join('') + '</div>';
+  };
+  if (!list.length) return '<div class="ps-empty">Для цієї моделі перелік функцій у каталозі не знайшовся.</div>';
+  return block('Є в цій серії', 'yes', 'Каталог не вказує жодної.') +
+         block('Доступно як опція', 'option', '') +
+         catSourceHtml(hit);
+}
+
+const CAT_ACC_TITLES = {
+  remote: 'Пульти керування',
+  adapter: 'Адаптери',
+  wifi: 'Wi-Fi',
+  filter: 'Фільтри'
+};
+const CAT_ACC_STATE = {
+  yes: 'у комплекті',
+  option: 'опція',
+  depends: 'залежить від моделі'
+};
+
+function catAccHtml(hit) {
+  const list = hit.series.accessories || [];
+  if (!list.length) return '<div class="ps-empty">Для цієї моделі аксесуарів у каталозі не знайшлось.</div>';
+  const order = ['remote', 'adapter', 'wifi', 'filter'];
+  let html = '';
+  order.forEach(function (kind) {
+    const rows = list.filter(function (a) { return a.kind === kind; });
+    if (!rows.length) return;
+    html += '<div class="ps-block-title">' + escapeHtml(CAT_ACC_TITLES[kind] || kind) + '</div>' +
+      '<div class="ps-fn-list">' + rows.map(function (a) {
+        const st = catStateFor(hit, a);
+        return '<div class="ps-fn"><span class="ps-fn-name">' + escapeHtml(a.name) +
+          '<span class="ps-acc-state ps-acc-' + escapeHtml(st) + '">' +
+          escapeHtml(CAT_ACC_STATE[st] || st) + '</span></span>' +
+          (catNoteFor(hit, a) ? '<span class="ps-fn-note">' + escapeHtml(catNoteFor(hit, a)) + '</span>' : '') + '</div>';
+      }).join('') + '</div>';
+  });
+  return html + catSourceHtml(hit);
 }
 
 /* ---------- Розрахунок (у шапці панелі) ---------- */
@@ -362,7 +547,12 @@ function psTabBody() {
     return '<div class="ps-stock-wrap" data-stock-parts="' +
       escapeHtml(encodeURIComponent(JSON.stringify(s.stockParts))) + '">' + inner + '</div>';
   }
+  /* Функції й аксесуари існують лише для моделей, що є в каталозі MHI. */
+  if (s.tab === 'funcs') return s.cat ? catFuncsHtml(s.cat) : '<div class="ps-empty">Немає даних.</div>';
+  if (s.tab === 'acc') return s.cat ? catAccHtml(s.cat) : '<div class="ps-empty">Немає даних.</div>';
   /* Фото картки — над характеристиками (прохання власника 2026-10-09). */
+  if (s.cat) return psPhotoHtml() + catSpecsHtml(s.cat);
+  if (s.catPending) return psPhotoHtml() + '<div class="ps-loading">Завантажуємо характеристики…</div>';
   if (s.specs === undefined) return psPhotoHtml() + '<div class="ps-loading">Завантажуємо характеристики…</div>';
   /* Збій мережі — це НЕ «характеристик немає». Кажемо прямо й даємо повторити:
      файл лежить поруч із застосунком, друга спроба після повернення мережі
@@ -405,7 +595,11 @@ function psRender() {
         : '') +
     '</div>' +
     psHeroHtml() +
-    '<div class="ps-tabs">' + tab('specs', 'Характеристики', 'file-text') +
+    /* Підписи короткі: чотири вкладки ділять ширину порівну, і на екрані 360 px
+       «Характеристики» обрізалось би многоточием (рішення власника 2026-10-19). */
+    '<div class="ps-tabs">' + tab('specs', s.cat ? 'Тех. дані' : 'Характеристики', 'file-text') +
+      (s.cat ? tab('funcs', 'Функції', 'activity') : '') +
+      (s.cat ? tab('acc', 'Аксесуари', 'wrench') : '') +
       (psHasStock() ? tab('stock', 'Наявність', 'package') : '') +
     '</div>' +
     '<div class="ps-tabbody">' + psTabBody() + '</div>';
@@ -447,6 +641,8 @@ function openProductSheet(cfgKey, model, tileLabel) {
     disc: NaN,
     tab: 'specs',   // «Розрахунку» вкладкою більше немає — він у шапці
     specs: undefined, slug: slug || null, img: cardImageUrl(slug),
+    /* cat — дані з каталогу MHI; catPending — ще вантажиться файл каталогу */
+    cat: null, catPending: false,
     stockParts: stockParts,
     siteUrl: slug ? ((siteLinks.base || 'https://sun-ice.com.ua/') + slug) : null
   };
@@ -467,6 +663,24 @@ function openProductSheet(cfgKey, model, tileLabel) {
       psState.img = cardImageUrl(slug);
       if (psState.tab === 'specs') psRenderTabBody();
     });
+  }
+
+  /* Каталог MHI — лише для розділів MHI. Файл один на всі серії, тому
+     вантажимо раз і далі беремо з пам'яті. Поки не приїхав — показуємо
+     «Завантажуємо…», а не дані сайту: інакше при кожному відкритті картки
+     вміст встигав би моргнути з сайтового на каталожний. */
+  if (/_mhi$/.test(cfgKey) && !mhiCatalogFailed) {
+    psState.cat = mhiCatalogHit(cfgKey, it);
+    if (!mhiCatalog) {
+      psState.catPending = true;
+      loadMhiCatalog().then(function () {
+        if (!psState || psState.model !== model) return;
+        psState.catPending = false;
+        psState.cat = mhiCatalogHit(cfgKey, it);
+        psRender();
+        psFitAll();
+      });
+    }
   }
 
   if (!SPECS_FILES[cfgKey]) {

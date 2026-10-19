@@ -41,7 +41,8 @@ const DIAG_AREA = {
   header: 'Шапка застосунку',
   push: 'Сповіщення (push)',
   pricePublish: 'Публікація прайсу',
-  resilience: 'Поведінка при збоях'
+  resilience: 'Поведінка при збоях',
+  mhiCatalog: 'Каталог MHI (тех. дані)'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -676,6 +677,101 @@ async function diagCheckPricePublish(ctx) {
    панель товару просто мовчки показує «характеристик не знайшлось».
    Перевіряємо три речі: файли взагалі вантажаться; чи не застаріли; скільки позицій
    прайсу мають картку на сайті, але не мають характеристик. */
+/* ТЕХНІЧНІ ДАНІ З КАТАЛОГУ MHI (з 2026-10-19).
+   Ловить три тихі поломки:
+   • файл каталогу не завантажився — панель мовчки відкотилась на дані сайту;
+   • маркування з каталогу немає в прайсі (серію перейменували) — дані осиротіли;
+   • каталог і сайт кажуть різне про ту саму модель. Це НЕ помилка (каталог
+     головніший), але власник має бачити, де сайт бреше.
+   Покриття («скільки позицій прайсу мають дані каталогу») пишемо в «перевірено»,
+   щоб було видно, як росте заповнення по серіях. */
+async function diagCheckMhiCatalog(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.mhiCatalog;
+  const FIX = 'Перезібрати: python claude/mhi-catalog/build_catalog.py';
+
+  const cat = await loadMhiCatalog();
+  if (!cat || !cat.index) {
+    out.issues.push(diagIssue(area, 'file', 'error',
+      'Файл каталогу MHI не завантажився',
+      ['data/mhi-catalog.json недоступний — панель товару показує дані з сайту замість каталожних.', FIX],
+      { app: { tile: 'split', brand: 'mhi' } }));
+    return out;
+  }
+  out.checked.push({ area: area, sub: 'file', label: 'Файл каталогу',
+    detail: 'зібрано ' + (cat.built || '?') + ', серій ' + Object.keys(cat.series || {}).length });
+
+  const MHI_KEYS = ['split_mhi', 'multisplit_mhi', 'semi_mhi'];
+  const seen = new Set();
+  let covered = 0, total = 0;
+  MHI_KEYS.forEach(key => {
+    const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
+    items.forEach(it => {
+      total++;
+      const marks = psMarkings(key, it);
+      const hit = marks.map(m => cat.index[catKey(m)]).find(Boolean);
+      if (!hit) return;
+      covered++;
+      marks.forEach(m => seen.add(catKey(m)));
+    });
+  });
+  out.checked.push({ area: area, sub: 'coverage', label: 'Покриття прайсу',
+    detail: covered + ' з ' + total + ' позицій MHI мають дані каталогу' });
+
+  const orphans = Object.keys(cat.index).filter(k => !seen.has(k));
+  if (orphans.length) {
+    out.issues.push(diagIssue(area, 'orphans', 'warning',
+      'Маркувань каталогу, яких немає в прайсі — ' + orphans.length,
+      orphans.slice(0, 20).concat([
+        'Дані зібрані, але жодна позиція прайсу їх не бачить: маркування в прайсі інше або позицію зняли.',
+        FIX]),
+      { app: { tile: 'split', brand: 'mhi' } }));
+  }
+
+  /* Звірка каталог ↔ сайт по холодопродуктивності. Беремо перше число — у каталозі
+     «2.0 (0.9 - 3.4)», на сайті «2.0», формати різні, а порівнювати треба номінал. */
+  const num = s => { const m = /(-?\d+(?:[.,]\d+)?)/.exec(String(s || '')); return m ? parseFloat(m[1].replace(',', '.')) : null; };
+  const links = await loadSiteLinks();
+  const diffs = [];
+  if (links && links.links) {
+    for (const key of MHI_KEYS) {
+      let specs = null;
+      try { specs = await loadSpecs(key); } catch (e) { specs = null; }
+      if (!specs) continue;
+      const map = links.links[key] || {};
+      const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
+      items.forEach(it => {
+        const ref = psMarkings(key, it).map(m => cat.index[catKey(m)]).find(Boolean);
+        const slug = map[siteLinkKey(it)];
+        if (!ref || !slug || !specs[slug]) return;
+        const bits = String(ref).split('|');
+        const series = cat.series[bits[0]];
+        if (!series) return;
+        const row = (series.specs || []).find(x => x.name.indexOf('Холодопродуктивність') === 0);
+        const fromCat = num(row && row.values[bits[1]]);
+        let fromSite = null;
+        (specs[slug]['основні'] || []).forEach(g => g.rows.forEach(r => {
+          if (fromSite === null && r[0].indexOf('Холодопродуктивність') === 0) fromSite = num(r[1]);
+        }));
+        if (fromCat !== null && fromSite !== null && Math.abs(fromCat - fromSite) > 0.05) {
+          diffs.push(it.model + ': каталог ' + fromCat + ' кВт, сайт ' + fromSite + ' кВт');
+        }
+      });
+    }
+  }
+  out.checked.push({ area: area, sub: 'vs-site', label: 'Звірка з даними сайту',
+    detail: diffs.length ? ('розбіжностей ' + diffs.length) : 'розбіжностей немає' });
+  if (diffs.length) {
+    out.issues.push(diagIssue(area, 'vs-site', 'info',
+      'Каталог і сайт розходяться по холодопродуктивності — позицій ' + diffs.length,
+      diffs.slice(0, 20).concat([
+        'Показуємо дані каталогу — він джерело правди (рішення власника 2026-10-19).',
+        'Це примітка, а не помилка: перевірте картку на сайті.']),
+      { site: {} }));
+  }
+  return out;
+}
+
 async function diagCheckSpecs(ctx) {
   const out = { issues: [], checked: [] };
   const area = DIAG_AREA.specs;
@@ -1216,6 +1312,7 @@ const DIAG_CHECKS = [
   { id: 'search', label: 'Пошук по каталогу', auto: true, run: ctx => diagCheckSearch(ctx) },
   { id: 'groups', label: 'Групи прайсу', auto: true, run: ctx => diagCheckGroups(ctx) },
   { id: 'header', label: 'Шапка застосунку', run: ctx => diagCheckHeader(ctx) },
+  { id: 'mhicat', label: 'Каталог MHI (тех. дані)', auto: true, run: ctx => diagCheckMhiCatalog(ctx) },
   { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
   { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },
   { id: 'files', label: 'Зображення та файли застосунку', run: ctx => diagCheckFiles(ctx) },

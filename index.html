@@ -1155,6 +1155,41 @@
   }
   .ps-reveal { animation: ps-reveal-flash .9s ease-out; border-radius: 10px; }
 
+  /* ТЕХНІЧНІ ДАНІ З КАТАЛОГУ MHI (2026-10-19). Одиниця виміру — окремим дрібним
+     написом у назві рядка: у каталозі вона стоїть своєю колонкою, а тулити її до
+     значення не можна, бо значення бувають складені («38 / 31 / 24 / 19»). */
+  .ps-spec-unit { color: var(--text-secondary); font-weight: 400; margin-left: 4px; }
+  .ps-spec-unit::before { content: '('; }
+  .ps-spec-unit::after { content: ')'; }
+
+  /* Звідки взято цифри — щоб будь-яку можна було перевірити за десять секунд. */
+  .ps-source {
+    margin-top: 12px; font-size: 11px; line-height: 1.45;
+    color: var(--text-secondary);
+  }
+
+  .ps-fn-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 16px; }
+  .ps-fn {
+    padding: 8px 10px; border-radius: 10px; font-size: 13px;
+  }
+  .ps-fn:nth-child(odd) { background: var(--row-alt, rgba(0, 0, 0, .03)); }
+  .ps-fn-name { display: block; font-weight: 600; }
+  .ps-fn-note {
+    display: block; margin-top: 3px; font-size: 11.5px; line-height: 1.4;
+    color: var(--text-secondary);
+  }
+  /* Стан аксесуара — пігулкою поруч із назвою: «у комплекті» читається інакше, ніж
+     «опція», і дилер не повинен це вираховувати з тексту виноски. */
+  .ps-acc-state {
+    display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+    vertical-align: 1px;
+  }
+  .ps-acc-yes { background: rgba(39, 174, 96, .15); color: #1e8449; }
+  .ps-acc-option { background: rgba(230, 126, 34, .16); color: #b9651a; }
+  .ps-acc-depends { background: rgba(52, 152, 219, .15); color: #1f6ea8; }
+  .ps-empty-line { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+
   .ps-block-title {
     font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
     color: var(--text-secondary); margin-bottom: 8px;
@@ -4006,19 +4041,19 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-19.22"></script>
-<script src="js/02-price-parse.js?v=2026-10-19.22"></script>
-<script src="js/03-diagnostics.js?v=2026-10-19.22"></script>
-<script src="js/04-catalog.js?v=2026-10-19.22"></script>
-<script src="js/04a-catalog-groups.js?v=2026-10-19.22"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-19.22"></script>
-<script src="js/06-cart-promo.js?v=2026-10-19.22"></script>
-<script src="js/07-access-info.js?v=2026-10-19.22"></script>
-<script src="js/08-info-tables.js?v=2026-10-19.22"></script>
-<script src="js/09-cabinet.js?v=2026-10-19.22"></script>
-<script src="js/10-crmontage.js?v=2026-10-19.22"></script>
-<script src="js/11-shell.js?v=2026-10-19.22"></script>
-<script src="js/12-product-sheet.js?v=2026-10-19.22"></script>
-<script src="js/13-start.js?v=2026-10-19.22"></script>
+<script src="js/01-config.js?v=2026-10-19.26"></script>
+<script src="js/02-price-parse.js?v=2026-10-19.26"></script>
+<script src="js/03-diagnostics.js?v=2026-10-19.26"></script>
+<script src="js/04-catalog.js?v=2026-10-19.26"></script>
+<script src="js/04a-catalog-groups.js?v=2026-10-19.26"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-19.26"></script>
+<script src="js/06-cart-promo.js?v=2026-10-19.26"></script>
+<script src="js/07-access-info.js?v=2026-10-19.26"></script>
+<script src="js/08-info-tables.js?v=2026-10-19.26"></script>
+<script src="js/09-cabinet.js?v=2026-10-19.26"></script>
+<script src="js/10-crmontage.js?v=2026-10-19.26"></script>
+<script src="js/11-shell.js?v=2026-10-19.26"></script>
+<script src="js/12-product-sheet.js?v=2026-10-19.26"></script>
+<script src="js/13-start.js?v=2026-10-19.26"></script>
 </body>
 </html>
