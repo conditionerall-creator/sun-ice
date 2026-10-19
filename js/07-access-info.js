@@ -218,22 +218,37 @@ async function ensureAccessFresh(force) {
   return hasFullAccess;
 }
 
+/* Людина щойно отримала доступ (увійшла або її підтвердили) — треба показати ціни.
+   ⚠️ 2026-10-19: цей шлях тепер ТАКИЙ САМИЙ, як на старті (етап D) — спершу
+   опублікований прайс, і лише якщо він не вийшов — старий xlsx, з гучним
+   reportPriceFallback. До цього тут БЕЗУМОВНО качався Excel: гість, який увійшов,
+   отримував 10 МБ на телефон, а його ціни могли відрізнятись від цін решти
+   застосунку, бо джерело інше. Це ж було останньою перешкодою до закриття публічного
+   бакета: закрий його раніше — і після входу ціни просто не зʼявились би. */
 async function reloadPriceAfterAccessGranted() {
-  setCatalogStatus('Завантаження прайсу...');
+  setCatalogStatus('Завантажуємо прайс…');
   priceDownloadInFlight = true;
   try {
+    const pub = await loadPublishedPrice({ force: true });
+    if (pub.ok) {
+      priceVersion = publishedVersionId;
+      priceLoadState = 'ready';
+      setCatalogStatus(publishedLabel(), true);   // тихий стан: лише адмінам
+      return;
+    }
+    reportPriceFallback(pub.reason);
     const meta = await checkPriceVersion();
     await downloadAndParsePrice(meta ? meta.version : null);
     priceVersion = meta ? meta.version : priceVersion;
     persistProcessedCache(priceVersion);
-    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено', true); // тихий стан: лише адмінам
+    setCatalogStatus(priceVersionLabel(priceVersion) || 'Прайс завантажено', true);
   } catch (e) {
     setCatalogStatus('Немає підключення. Ціни з\'являться після виходу в мережу.');
   } finally {
     priceDownloadInFlight = false;
+    if (currentTab === 'catalog') renderCatalogView();
+    renderCartBar();
   }
-  if (currentTab === 'catalog') renderCatalogView();
-  renderCartBar();
 }
 
 /* Повернення в застосунок — привід перевірити доступ негайно. PWA на телефоні тижнями

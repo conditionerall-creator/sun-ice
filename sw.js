@@ -28,20 +28,20 @@ const APP_SHELL = [
      застосунок не підніметься. Перевірка «Модулі застосунку» в самодіагностиці
      стежить за цим збігом. */
   ...[
-    'js/01-config.js?v=2026-10-19.17',
-    'js/02-price-parse.js?v=2026-10-19.17',
-    'js/03-diagnostics.js?v=2026-10-19.17',
-    'js/04-catalog.js?v=2026-10-19.17',
-    'js/04a-catalog-groups.js?v=2026-10-19.17',
-    'js/05-catalog-custom.js?v=2026-10-19.17',
-    'js/06-cart-promo.js?v=2026-10-19.17',
-    'js/07-access-info.js?v=2026-10-19.17',
-    'js/08-info-tables.js?v=2026-10-19.17',
-    'js/09-cabinet.js?v=2026-10-19.17',
-    'js/10-crmontage.js?v=2026-10-19.17',
-    'js/11-shell.js?v=2026-10-19.17',
-    'js/12-product-sheet.js?v=2026-10-19.17',
-    'js/13-start.js?v=2026-10-19.17'
+    'js/01-config.js?v=2026-10-19.20',
+    'js/02-price-parse.js?v=2026-10-19.20',
+    'js/03-diagnostics.js?v=2026-10-19.20',
+    'js/04-catalog.js?v=2026-10-19.20',
+    'js/04a-catalog-groups.js?v=2026-10-19.20',
+    'js/05-catalog-custom.js?v=2026-10-19.20',
+    'js/06-cart-promo.js?v=2026-10-19.20',
+    'js/07-access-info.js?v=2026-10-19.20',
+    'js/08-info-tables.js?v=2026-10-19.20',
+    'js/09-cabinet.js?v=2026-10-19.20',
+    'js/10-crmontage.js?v=2026-10-19.20',
+    'js/11-shell.js?v=2026-10-19.20',
+    'js/12-product-sheet.js?v=2026-10-19.20',
+    'js/13-start.js?v=2026-10-19.20'
   ].map((p) => new URL(p, self.registration.scope).href),
   /* Плитки каталогу. Раніше їх тут НЕ БУЛО — вони потрапляли в кеш лише після того,
      як користувач їх побачив, а браузер на Android чистить сховище у рідко відкриваних
@@ -100,9 +100,13 @@ const APP_SHELL = [
   /* Адреса ТОЧНО така сама, як у <script> в index.html (версія зафіксована 2026-09-21).
      Якщо розійдеться — сюди кешуватиметься один файл, а сторінка проситиме інший,
      і офлайн застосунок не підніметься. Міняти обидва місця разом. */
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js'
+  /* ⚠️ xlsx.js і jszip.js тут БІЛЬШЕ НЕМАЄ (2026-10-19). Разом це ~1,1 МБ, які качались
+     при КОЖНОМУ оновленні застосунку — у всіх, хоча потрібні вони лише там, де справді
+     читається Excel: публікація прайсу, вивантаження CRМонтажу, фото серій. З переїздом
+     на опублікований прайс (етап D) звичайний дилер не торкається їх узагалі.
+     Не загубиться: обробник fetch нижче кешує будь-яку статику при першому ж реальному
+     використанні, тож після одного онлайн-запуску ці бібліотеки працюють і офлайн. */
 ];
 
 /* ВАЖЛИВО: не cache.add(), а fetch з { cache: 'reload' }.
@@ -113,16 +117,41 @@ const APP_SHELL = [
    Напоролись на це 2026-10-08 під час перевірки офлайну — не повертати cache.add(). */
 function cacheFresh(cache, url) {
   return fetch(url, { cache: 'reload' })
-    .then((res) => (res && res.ok ? cache.put(url, res) : null))
-    .catch(() => {});
+    .then((res) => {
+      if (!res || !res.ok) return false;
+      return cache.put(url, res).then(() => true, () => false);
+    })
+    .catch(() => false);
 }
 
+/* ОБОВ'ЯЗКОВІ файли — ті, без яких застосунок офлайн просто не підніметься:
+   сама сторінка і всі модулі коду. Решта (іконки, плитки, шрифт, supabase-js із CDN)
+   бажана, але її відсутність лише псує вигляд або один сценарій, а не ламає запуск. */
+function isRequired(url) {
+  return url.indexOf('/js/') >= 0 || url.indexOf('index.html') >= 0 || url === self.registration.scope;
+}
+
+/* ⚠️ ВСТАНОВЛЕННЯ — ВСЕ АБО НІЧОГО (2026-10-19, за підсумками зовнішнього аудиту).
+   Було: помилки завантаження тихо ковтались, skipWaiting() стояв першим рядком, і
+   новий service worker активувався навіть якщо половина модулів не докачалась. А в
+   'activate' він ще й ВИДАЛЯВ старі js/*.js — тобто сам зносив єдину робочу копію.
+   Наслідок видно лише офлайн і лише наступного разу: сторінка просить модулі, яких
+   уже немає ні в кеші, ні в мережі. Тепер: не вдалось завантажити обов'язковий файл —
+   установка ПАДАЄ, нічого не прибирається, далі працює попередня версія, а браузер
+   спробує оновитись пізніше сам. */
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) =>
-      Promise.all(APP_SHELL.map((url) => cacheFresh(cache, url)))
-    )
+    caches.open(CACHE_NAME)
+      .then((cache) =>
+        Promise.all(APP_SHELL.map((url) => cacheFresh(cache, url).then((ok) => ({ url: url, ok: ok }))))
+      )
+      .then((results) => {
+        const missing = results.filter((r) => !r.ok && isRequired(r.url)).map((r) => r.url);
+        if (missing.length) {
+          throw new Error('Оболонка неповна, лишаємось на старій версії: ' + missing.join(', '));
+        }
+        return self.skipWaiting();
+      })
   );
 });
 
@@ -134,6 +163,16 @@ self.addEventListener('install', (event) => {
    Решти (зображення, іконки, бібліотеки) це не чіпає. */
 function pruneStaleModules(cache) {
   const keep = APP_SHELL.filter((u) => u.indexOf('/js/') >= 0);
+  /* Другий запобіжник до того самого (2026-10-19): прибираємо старі модулі ЛИШЕ коли
+     всі нові справді лежать у кеші. Інакше краще хай кеш побуде захаращеним — це
+     кілька сотень кілобайт, а не непрацюючий офлайн. */
+  return Promise.all(keep.map((u) => cache.match(u))).then((found) => {
+    if (found.some((r) => !r)) return null;
+    return prunePass(cache, keep);
+  });
+}
+
+function prunePass(cache, keep) {
   return cache.keys().then((reqs) =>
     Promise.all(
       reqs

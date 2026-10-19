@@ -27,14 +27,24 @@ const SPECS_FILES = {
 const specsCache = {};
 const specsLoading = {};
 
+/* ⚠️ 2026-10-19: збій мережі більше НЕ кешується як «характеристик немає».
+   Було: catch писав порожній об'єкт у specsCache назавжди, і той самий розділ до
+   перезапуску застосунку показував «немає характеристик» навіть після повернення
+   мережі. Тепер при помилці кеш не заповнюємо й відпускаємо specsLoading — наступне
+   відкриття картки (або повторна спроба) піде в мережу знову. Порожній результат від
+   СЕРВЕРА (файл є, даних немає) кешуємо, як і раніше: це відповідь, а не збій. */
 function loadSpecs(cfgKey) {
   if (specsCache[cfgKey]) return Promise.resolve(specsCache[cfgKey]);
   if (!SPECS_FILES[cfgKey]) return Promise.resolve(null);
   if (specsLoading[cfgKey]) return specsLoading[cfgKey];
   specsLoading[cfgKey] = fetch(SPECS_FILES[cfgKey] + '?v=' + APP_BUILD)
-    .then(r => r.ok ? r.json() : null)
-    .then(j => { specsCache[cfgKey] = (j && j.specs) || {}; return specsCache[cfgKey]; })
-    .catch(() => { specsCache[cfgKey] = {}; return specsCache[cfgKey]; });
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(j => {
+      specsCache[cfgKey] = (j && j.specs) || {};
+      specsLoading[cfgKey] = null;
+      return specsCache[cfgKey];
+    })
+    .catch(() => { specsLoading[cfgKey] = null; return null; });   // null = «не вдалося», не «порожньо»
   return specsLoading[cfgKey];
 }
 
@@ -48,13 +58,18 @@ const CARD_IMAGES_FILE = 'data/card-images.json';
 let cardImages = null;
 let cardImagesPromise = null;
 
+/* Те саме правило, що й у loadSpecs: збій мережі не записуємо як «фото немає». */
 function loadCardImages() {
   if (cardImages) return Promise.resolve(cardImages);
   if (!cardImagesPromise) {
     cardImagesPromise = fetch(CARD_IMAGES_FILE + '?v=' + APP_BUILD)
-      .then(r => r.ok ? r.json() : null)
-      .then(j => { cardImages = j && j.images ? j : { base: '', images: {} }; return cardImages; })
-      .catch(() => { cardImages = { base: '', images: {} }; return cardImages; });
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(j => {
+        cardImages = j && j.images ? j : { base: '', images: {} };
+        cardImagesPromise = null;
+        return cardImages;
+      })
+      .catch(() => { cardImagesPromise = null; return null; });
   }
   return cardImagesPromise;
 }
@@ -163,9 +178,14 @@ function specsHtml(spec) {
 function psNum(v) { return (isNaN(v) || v < 0) ? 0 : v; }
 function psCurLabel() { return psState.cur === 'UAH' ? '₴' : (psState.cur || ''); }
 function psCanUah() { return psState.nativeCur === '$' && usdRate > 0; }
+/* Якщо курс зник, поки панель відкрита (повернення в застосунок без мережі), валюту
+   примусово вертаємо в рідну — інакше конвертер віддав би null, а підпис лишився б
+   гривневим. Перемикач ₴ при наступному малюванні теж зникне: psCanUah() вже false. */
 function psBasePrice() {
   const s = psState;
-  return convertAmount(s.price, s.nativeCur, s.cur, usdRate);
+  const v = convertAmount(s.price, s.nativeCur, s.cur, usdRate);
+  if (v === null) { s.cur = s.nativeCur; return s.price; }
+  return v;
 }
 function psDiscPct() { return Math.min(100, psNum(psState.disc)); }
 /* Ціна після знижки в відсотках. */
@@ -344,6 +364,14 @@ function psTabBody() {
   }
   /* Фото картки — над характеристиками (прохання власника 2026-10-09). */
   if (s.specs === undefined) return psPhotoHtml() + '<div class="ps-loading">Завантажуємо характеристики…</div>';
+  /* Збій мережі — це НЕ «характеристик немає». Кажемо прямо й даємо повторити:
+     файл лежить поруч із застосунком, друга спроба після повернення мережі
+     майже завжди проходить (2026-10-19). */
+  if (s.specsFailed) {
+    return psPhotoHtml() +
+      '<div class="ps-empty">Не вдалося завантажити характеристики — схоже, немає звʼязку.' +
+      '<br><button type="button" class="ps-retry-btn" data-ps-specs-retry>Спробувати ще раз</button></div>';
+  }
   return psPhotoHtml() + specsHtml(s.specs);
 }
 
@@ -446,11 +474,29 @@ function openProductSheet(cfgKey, model, tileLabel) {
     if (psState.tab === 'specs') psRenderTabBody();
     return;
   }
+  psLoadSpecsInto(cfgKey, slug, model);
+}
+
+/* Вантажимо характеристики в ПОТОЧНУ панель. Окремою функцією, бо те саме робить
+   кнопка «Спробувати ще раз»: при збої loadSpecs() повертає null (а не порожній
+   об'єкт), і ми відрізняємо «сервер сказав, що даних немає» від «не докричались». */
+function psLoadSpecsInto(cfgKey, slug, model) {
+  psState.specs = undefined;          // стан «завантажуємо…»
+  psState.specsFailed = false;
+  psState.specsKey = cfgKey;
+  psState.specsSlug = slug;
+  if (psState.tab === 'specs') psRenderTabBody();
   loadSpecs(cfgKey).then(function (all) {
     if (!psState || psState.model !== model) return;   // встигли відкрити інший товар
-    psState.specs = (all && slug) ? (all[slug] || null) : null;
+    if (all === null) { psState.specs = null; psState.specsFailed = true; }
+    else { psState.specs = slug ? (all[slug] || null) : null; psState.specsFailed = false; }
     if (psState.tab === 'specs') psRenderTabBody();
   });
+}
+
+function psRetrySpecs() {
+  if (!psState || !psState.specsKey) return;
+  psLoadSpecsInto(psState.specsKey, psState.specsSlug, psState.model);
 }
 
 /* ЗАКРИТТЯ ПАНЕЛІ — ДВА РІЗНІ ШЛЯХИ, і їх не можна плутати (виправлено 2026-10-09).

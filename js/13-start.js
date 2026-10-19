@@ -446,6 +446,19 @@ document.addEventListener('visibilitychange', function () {
      initCatalog. PWA на телефоні висить у пам'яті тижнями — адміністратор міняв курс,
      а дилер далі рахував за старим, поки не перезапустить застосунок. */
   if (catalogInitDone) loadExchangeRate();
+  /* Прайс перепитуємо тут же (2026-10-19). Доступ і курс оновлювались при поверненні
+     ще з 19.09, а ціни — ні: їх звіряли рівно раз за запуск застосунку. Сама функція
+     має обмеження частоти (5 хв) і не повторює те, що вже качається. */
+  if (catalogInitDone) checkPriceUpdateInBackground();
+});
+
+/* Мережа з'явилась — найімовірніший момент, коли перевірка, що не дійшла до сервера,
+   нарешті пройде. Доступ перечитуємо теж: людина могла бути заблокована офлайн. */
+window.addEventListener('online', function () {
+  if (!catalogInitDone) return;
+  ensureAccessFresh(true);
+  loadExchangeRate();
+  checkPriceUpdateInBackground({ force: true });
 });
 document.getElementById('main').addEventListener('click', function(e) {
   const img = e.target.closest('.promo-image');
@@ -461,6 +474,19 @@ document.getElementById('main').addEventListener('click', function(e) {
 window.addEventListener('resize', () => updateNavIndicator(document.querySelector('.nav-btn.active')));
 
 /* --- з 10-crmontage.js --- */
+/* Повтор після невдалого завантаження списків (2026-10-19). Окремо від data-task-action,
+   бо кнопка з'являється всередині повідомлення про помилку, а не в тулбарі. */
+document.getElementById('main').addEventListener('click', async function (e) {
+  if (e.target.closest('[data-tasks-retry]')) {
+    await loadInstallerTasks();
+    renderInstallerTaskList();
+    return;
+  }
+  if (e.target.closest('[data-suppliers-retry]')) {
+    await loadSuppliers();
+    renderSuppliersList();
+  }
+});
 document.getElementById('main').addEventListener('click', function(e) {
   const target = e.target.closest('[data-task-action]');
   if (!target || target.tagName === 'SELECT') return;
@@ -546,7 +572,8 @@ document.getElementById('suppliers-list').addEventListener('click', async (e) =>
   const id = btn.getAttribute('data-supplier-id');
   if (!confirm('Видалити цього постачальника?')) return;
   const { error } = await sb.from('installer_suppliers').delete().eq('id', id);
-  if (!error) { await loadSuppliers(); renderSuppliersList(); }
+  if (error) { alert('Не вдалося видалити постачальника. Запис лишився на місці.'); return; }
+  await loadSuppliers(); renderSuppliersList();
 });
 document.getElementById('suppliers-list').addEventListener('change', async (e) => {
   const input = e.target.closest('input[data-supplier-action="amount"]');
@@ -854,6 +881,9 @@ document.getElementById('product-sheet-body').addEventListener('click', function
 
   const tabBtn = t.closest('[data-ps-tab]');
   if (tabBtn) { psState.tab = tabBtn.getAttribute('data-ps-tab'); psRenderTabBody(); psSyncTabs(); return; }
+
+  // «Спробувати ще раз» після невдалого завантаження характеристик (2026-10-19)
+  if (t.closest('[data-ps-specs-retry]')) { psRetrySpecs(); return; }
 
   /* Перемикач валюти в шапці: знижка в панелі лише відсотками, тому перераховувати
      введену суму не треба — міняється тільки показ ціни. */

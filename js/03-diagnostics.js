@@ -40,7 +40,8 @@ const DIAG_AREA = {
   groups: 'Групи прайсу',
   header: 'Шапка застосунку',
   push: 'Сповіщення (push)',
-  pricePublish: 'Публікація прайсу'
+  pricePublish: 'Публікація прайсу',
+  resilience: 'Поведінка при збоях'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -1090,6 +1091,86 @@ function diagCheckHeader(ctx) {
   return out;
 }
 
+
+/* ---- Поведінка при збоях мережі (2026-10-19, за підсумками зовнішнього аудиту).
+   Перевіряє не «чи є інтернет», а чи на місці самі ЗАПОБІЖНИКИ — їх легко втратити
+   при наступному рефакторингу, і зникнуть вони мовчки: на екрані все виглядає
+   нормально, просто застосунок знову почне видавати долари за гривні, а збій мережі
+   за «даних немає». Саме такі тихі втрати ми вже ловили (CLAUDE.md, пастки). ---- */
+async function diagCheckResilience(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.resilience;
+  const FIX = 'Виправляти в js/04-catalog.js (convertAmount), js/12-product-sheet.js, js/10-crmontage.js.';
+
+  // 1. Без курсу конвертація мусить ВІДМОВИТИ, а не повернути ту саму суму в іншій валюті.
+  const noRate = [convertAmount(100, '$', 'UAH', null), convertAmount(100, '$', 'UAH', 0),
+                  convertAmount(100, 'UAH', '$', null)];
+  if (noRate.some(v => v !== null)) {
+    out.issues.push(diagIssue(area, 'currency', 'error',
+      'Конвертація без курсу повертає число замість відмови',
+      ['Доларова сума може бути показана й надіслана як гривнева.', FIX], { tab: 'catalog' }));
+  } else {
+    out.checked.push({ area: area, sub: 'currency', label: 'Без курсу валюта не підміняється', detail: 'convertAmount → null' });
+  }
+  // А з курсом — рахує як раніше (щоб «відмова» не зʼїла звичайний випадок).
+  if (convertAmount(100, '$', 'UAH', 40) !== 4000) {
+    out.issues.push(diagIssue(area, 'currency', 'error',
+      'Конвертація з курсом рахує неправильно',
+      ['100 $ за курсом 40 має давати 4000 ₴.', FIX], { tab: 'catalog' }));
+  }
+
+  // 2. Перевірка прайсу не повинна витрачатись на невдалу спробу.
+  if (typeof PRICE_UPDATE_MIN_GAP_MS !== 'number' || !(PRICE_UPDATE_MIN_GAP_MS > 0) ||
+      typeof priceUpdateCheckAt !== 'number') {
+    out.issues.push(diagIssue(area, 'price-recheck', 'error',
+      'Зник механізм повторної перевірки прайсу',
+      ['Застосунок знову звірятиме прайс рівно раз за запуск, і невдала спроба буде останньою.', FIX], { tab: 'catalog' }));
+  } else {
+    out.checked.push({ area: area, sub: 'price-recheck', label: 'Прайс перевіряється повторно',
+      detail: 'не частіше ніж раз на ' + Math.round(PRICE_UPDATE_MIN_GAP_MS / 60000) + ' хв' });
+  }
+
+  // 3. Списки CRМонтаж мусять відрізняти «порожньо» від «не завантажилось».
+  if (typeof installerTasksFailed !== 'boolean' || typeof installerSuppliersFailed !== 'boolean') {
+    out.issues.push(diagIssue(area, 'crm-lists', 'error',
+      'Зник прапорець збою в списках CRМонтаж',
+      ['Відсутність звʼязку знову виглядатиме як «монтажів не знайдено».', FIX], { tab: 'crmontage' }));
+  } else {
+    out.checked.push({ area: area, sub: 'crm-lists', label: 'Збій мережі ≠ «записів немає»', detail: 'монтажі й постачальники' });
+  }
+
+  // 3б. Підбірка мусить памʼятати, з якої версії прайсу її ціни.
+  if (typeof cartPriceVersion !== 'function' || typeof cartIsStale !== 'function') {
+    out.issues.push(diagIssue(area, 'cart-version', 'error',
+      'Підбірка більше не памʼятає версію прайсу',
+      ['Збережені ціни знову показуватимуться як поточні без жодної позначки.', FIX], { tab: 'catalog' }));
+  } else {
+    out.checked.push({ area: area, sub: 'cart-version', label: 'Підбірка знає свою версію прайсу',
+      detail: cartIsStale() ? 'зараз позначена як застаріла' : 'ціни з поточного прайсу' });
+  }
+
+  // 3в. Ціни після входу мусять братись звідти ж, звідки на старті (опублікований прайс).
+  if (typeof reloadPriceAfterAccessGranted === 'function' &&
+      !/loadPublishedPrice/.test(String(reloadPriceAfterAccessGranted))) {
+    out.issues.push(diagIssue(area, 'access-price', 'error',
+      'Після входу прайс знову береться зі старого Excel',
+      ['Телефон качатиме 10 МБ, а ціни можуть розійтися з рештою застосунку.',
+       'Крім того, публічний бакет не можна буде закрити.', FIX], { tab: 'cabinet' }));
+  } else if (typeof reloadPriceAfterAccessGranted === 'function') {
+    out.checked.push({ area: area, sub: 'access-price', label: 'Після входу — опублікований прайс', detail: 'без завантаження Excel' });
+  }
+
+  // 4. Характеристики: помилка не повинна лишатись у кеші як порожній результат.
+  if (typeof psRetrySpecs !== 'function') {
+    out.issues.push(diagIssue(area, 'specs-retry', 'error',
+      'Зникла кнопка повтору для характеристик',
+      ['Після збою мережі картка показуватиме «характеристик немає» до перезапуску.', FIX], { tab: 'catalog' }));
+  } else {
+    out.checked.push({ area: area, sub: 'specs-retry', label: 'Характеристики можна перезавантажити', detail: 'кнопка «Спробувати ще раз»' });
+  }
+  return out;
+}
+
 const DIAG_CHECKS = [
   { id: 'modules', label: 'Модулі застосунку', auto: true, run: ctx => diagCheckModules(ctx) },
   { id: 'specs', label: 'Характеристики товарів', run: ctx => diagCheckSpecs(ctx) },
@@ -1104,6 +1185,7 @@ const DIAG_CHECKS = [
   { id: 'rates', label: 'Курси валют', run: ctx => diagCheckRates(ctx) },
   { id: 'push', label: 'Сповіщення (push)', run: ctx => diagCheckPush(ctx) },
   { id: 'price-publish', label: 'Публікація прайсу', run: ctx => diagCheckPricePublish(ctx) },
+  { id: 'resilience', label: 'Поведінка при збоях', auto: true, run: ctx => diagCheckResilience(ctx) },
   { id: 'build', label: 'Версія застосунку', run: ctx => diagCheckBuild(ctx) },
   { id: 'site-live', label: 'Картки на сайті (сервер)', run: ctx => diagCheckSiteLive(ctx) }
 ];

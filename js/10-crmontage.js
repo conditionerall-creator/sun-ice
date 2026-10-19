@@ -105,12 +105,21 @@ let installerTasksCache = [];
 let editingTaskId = null;
 let taskQuickFilter = 'all'; // 'all' | 'today' | 'week'
 
+/* ⚠️ 2026-10-19: збій запиту більше не стирає список.
+   Було: `installerTasksCache = error ? [] : data` — при пропажі мережі людина бачила
+   «Монтажів не знайдено», тобто застосунок повідомляв про ВІДСУТНІСТЬ записів там, де
+   насправді не зміг їх прочитати. Для списку власних монтажів це найгірший можливий
+   варіант помилки. Тепер при збої лишаємо те, що вже прочитали, і вмикаємо прапорець,
+   за яким малюється окреме повідомлення з кнопкою «Спробувати ще раз». */
+let installerTasksFailed = false;
 async function loadInstallerTasks() {
   const { data: sessionData } = await sb.auth.getSession();
   const session = sessionData ? sessionData.session : null;
-  if (!session) { installerTasksCache = []; return; }
+  if (!session) { installerTasksCache = []; installerTasksFailed = false; return; }
   const { data, error } = await sb.from('installer_tasks').select('*').eq('installer_id', session.user.id).order('scheduled_at');
-  installerTasksCache = error ? [] : (data || []);
+  if (error) { installerTasksFailed = true; return; }   // кеш лишаємо як є
+  installerTasksFailed = false;
+  installerTasksCache = data || [];
 }
 
 function taskPassesFilters(t, q, status, equipment, quick) {
@@ -153,12 +162,22 @@ function renderInstallerTaskList() {
   const filtered = getFilteredInstallerTasks();
 
   if (!filtered.length) {
-    listEl.innerHTML = '<div class="empty">Монтажів не знайдено.</div>';
+    listEl.innerHTML = installerTasksFailed
+      ? '<div class="empty">Не вдалося завантажити монтажі — схоже, немає звʼязку. ' +
+        'Ваші записи на місці, їх просто не вдалось прочитати.' +
+        '<br><button type="button" class="ps-retry-btn" data-tasks-retry>Спробувати ще раз</button></div>'
+      : '<div class="empty">Монтажів не знайдено.</div>';
     return;
   }
+  /* Список є, але він може бути застарілим: остання спроба оновлення не вдалась.
+     Тоді над списком — рядок із поясненням і повтором, а самі записи лишаються. */
+  const staleNote = installerTasksFailed
+    ? '<div class="empty">Показано останній завантажений список — оновити не вдалося.' +
+      '<br><button type="button" class="ps-retry-btn" data-tasks-retry>Спробувати ще раз</button></div>'
+    : '';
 
   let lastDateKey = null;
-  listEl.innerHTML = filtered.map(t => {
+  listEl.innerHTML = staleNote + filtered.map(t => {
     const d = new Date(t.scheduled_at);
     const dateKey = d.toDateString();
     let header = '';
@@ -231,15 +250,22 @@ async function handleTaskAction(action, id, value) {
     if (task) openTaskForm(task);
     return;
   }
+  /* ⚠️ 2026-10-19: невдала дія більше не виглядає виконаною.
+     Було: `if (!error) { … }` — при помилці застосунок мовчав, а галочка «виконано»
+     чи зниклий рядок лишались на екрані, доки людина не перемалює список. Тепер
+     кажемо прямо й ОДРАЗУ перемальовуємо з того, що в кеші: випадайка статусу
+     повертається до справжнього значення сама. */
   if (action === 'delete') {
     if (!confirm('Видалити цей монтаж?')) return;
     const { error } = await sb.from('installer_tasks').delete().eq('id', id);
-    if (!error) { await loadInstallerTasks(); renderInstallerTaskList(); }
+    if (error) { renderInstallerTaskList(); alert('Не вдалося видалити монтаж. Запис лишився на місці.'); return; }
+    await loadInstallerTasks(); renderInstallerTaskList();
     return;
   }
   if (action === 'status') {
     const { error } = await sb.from('installer_tasks').update({ status: value }).eq('id', id);
-    if (!error) { await loadInstallerTasks(); renderInstallerTaskList(); }
+    if (error) { renderInstallerTaskList(); alert('Не вдалося змінити статус. Залишився попередній.'); return; }
+    await loadInstallerTasks(); renderInstallerTaskList();
     return;
   }
   if (action === 'ics') {
@@ -504,12 +530,15 @@ async function handleTaskFormSubmit() {
    (task-field-client-debt), сюди не потрапляє. */
 let installerSuppliersCache = [];
 
+let installerSuppliersFailed = false;
 async function loadSuppliers() {
   const { data: sessionData } = await sb.auth.getSession();
   const session = sessionData ? sessionData.session : null;
-  if (!session) { installerSuppliersCache = []; return; }
+  if (!session) { installerSuppliersCache = []; installerSuppliersFailed = false; return; }
   const { data, error } = await sb.from('installer_suppliers').select('*').eq('installer_id', session.user.id).order('name');
-  installerSuppliersCache = error ? [] : (data || []);
+  if (error) { installerSuppliersFailed = true; return; }   // борги не стираємо через мережу
+  installerSuppliersFailed = false;
+  installerSuppliersCache = data || [];
 }
 
 function supplierRowHtml(s) {
@@ -536,7 +565,10 @@ function renderSuppliersList() {
   const totalEl = document.getElementById('suppliers-total');
   if (!listEl) return;
   if (!installerSuppliersCache.length) {
-    listEl.innerHTML = '<div class="empty">Постачальників ще нема.</div>';
+    listEl.innerHTML = installerSuppliersFailed
+      ? '<div class="empty">Не вдалося завантажити постачальників — схоже, немає звʼязку.' +
+        '<br><button type="button" class="ps-retry-btn" data-suppliers-retry>Спробувати ще раз</button></div>'
+      : '<div class="empty">Постачальників ще нема.</div>';
   } else {
     listEl.innerHTML = installerSuppliersCache.map(supplierRowHtml).join('');
   }

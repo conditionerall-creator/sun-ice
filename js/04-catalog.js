@@ -223,9 +223,19 @@ async function initCatalog() {
    інакше при кожному відкритті каталогу блимало б "Перевірка оновлень…" на рівному
    місці. Немає мережі — просто мовчимо, людина далі працює з тим, що є (у цьому й
    сенс кешу). Знайшли нову версію — докачуємо і перемальовуємо відкритий екран.
-   Захист від повторів: за один запуск застосунку перевіряємо один раз, і ніколи —
-   паралельно з ручним ↻ (handleRefreshClick), щоб не качати 10 МБ двічі. */
-let priceUpdateCheckDone = false;
+   Захист від повторів: не частіше ніж раз на PRICE_UPDATE_MIN_GAP_MS і ніколи —
+   паралельно з ручним ↻ (handleRefreshClick), щоб не качати зайве двічі.
+
+   ⚠️ 2026-10-19. Раніше тут був прапорець priceUpdateCheckDone, який ставився ДО
+   запиту й більше не скидався: за весь час життя сторінки перевірка була рівно одна,
+   а якщо вона не дійшла до сервера (метро, ліфт, перший запуск у дорозі) — то жодної.
+   PWA на телефоні живе тижнями, тож дилер міг увесь цей час рахувати за прайсом,
+   який адміністратор давно замінив. Тепер: невдала спроба не витрачає перевірку
+   (час ставимо лише коли сервер ВІДПОВІВ), і ми перепитуємо при поверненні в
+   застосунок та при появі мережі — так само, як уже робимо з курсом і доступом. */
+const PRICE_UPDATE_MIN_GAP_MS = 5 * 60 * 1000;
+let priceUpdateCheckAt = 0;        // час останньої перевірки, на яку СЕРВЕР відповів
+let priceUpdateCheckInFlight = false;
 let priceDownloadInFlight = false;
 
 /* ПРАЙС ЗМІНИВСЯ ПРЯМО ПІД РУКАМИ (етап D). Дилер міг саме зараз рахувати ціну
@@ -239,6 +249,7 @@ function notePriceVersionChanged() {
   const openSheet = sheet && sheet.classList.contains('show');
   const hasCart = typeof cart !== 'undefined' && Array.isArray(cart) && cart.length > 0;
   if (!openSheet && !hasCart) return;
+  if (hasCart) cartPricesStale = true;   // суми в підбірці — з попереднього прайсу
   const where = openSheet && hasCart ? 'відкритий розрахунок і підбірку'
               : (openSheet ? 'відкритий розрахунок' : 'підбірку');
   setCatalogStatus('Прайс оновився — перевірте ' + where + ', ціни могли змінитися');
@@ -262,9 +273,19 @@ function publishedLabel() {
   return 'Прайс від ' + p(at.getDate()) + '.' + p(at.getMonth() + 1) + '.' + at.getFullYear();
 }
 
-async function checkPriceUpdateInBackground() {
-  if (priceUpdateCheckDone || priceDownloadInFlight) return;
-  priceUpdateCheckDone = true;
+async function checkPriceUpdateInBackground(opts) {
+  opts = opts || {};
+  if (priceUpdateCheckInFlight || priceDownloadInFlight) return;
+  if (!opts.force && priceUpdateCheckAt && (Date.now() - priceUpdateCheckAt) < PRICE_UPDATE_MIN_GAP_MS) return;
+  priceUpdateCheckInFlight = true;
+  try {
+    await runPriceUpdateCheck();
+  } finally {
+    priceUpdateCheckInFlight = false;
+  }
+}
+
+async function runPriceUpdateCheck() {
 
   /* ⚠️ ПЕРЕХІД СТАРИХ ПРИСТРОЇВ. На телефоні, де застосунок уже працював, лежить
      localStorage-кеш, і initCatalog показує його МИТТЄВО, не чіпаючи мережу —
@@ -277,6 +298,7 @@ async function checkPriceUpdateInBackground() {
     try {
       const v = await fetchPublishedVersion();
       if (v && v.version_id != null) {
+        priceUpdateCheckAt = Date.now();     // сервер відповів — перевірка відбулась
         priceDownloadInFlight = true;
         try {
           const res = await loadPublishedPrice({ force: true });
@@ -303,7 +325,8 @@ async function checkPriceUpdateInBackground() {
   if (priceSourceUsed === 'published') {
     try {
       const v = await fetchPublishedVersion();
-      if (!v || v.version_id == null) return;              // немає зв'язку — мовчимо
+      if (!v || v.version_id == null) return;              // немає зв'язку — МОВЧИМО і перевірку не витрачаємо
+      priceUpdateCheckAt = Date.now();
       if (v.version_id === publishedVersionId) return;      // уже найсвіжіше
       priceDownloadInFlight = true;
       setCatalogStatus('Зʼявився новий прайс — завантажую…');
@@ -325,7 +348,8 @@ async function checkPriceUpdateInBackground() {
 
   try {
     const meta = await checkPriceVersion();
-    if (!meta || meta.version == null) return;                 // немає зв'язку — мовчимо
+    if (!meta || meta.version == null) return;                 // немає зв'язку — перевірку не витрачаємо
+    priceUpdateCheckAt = Date.now();
     if (priceVersion !== null && meta.version === priceVersion) return; // уже актуальний
     if (priceDownloadInFlight) return;
     priceDownloadInFlight = true;
@@ -782,10 +806,19 @@ function renderCatalogMenu() {
 /* Три режими: відняти % (знижка), додати % (маржа), або ввести кінцеву суму напряму.
    Плюс вибір валюти показу — нативна валюта прайсу ($) або перерахунок у гривню за
    курсом з шапки каталогу (usdRate), який редагують адміни/суперадміни. */
+/* ВАЖЛИВО (2026-10-19): без курсу функція повертає null, а НЕ початкову суму.
+   Раніше вона віддавала долари як є, а той, хто викликав, підписував їх гривнею —
+   1 200 $ показувались як «1 200 ₴». Кнопку ₴ без курсу ми й так не малюємо
+   (2026-09-21), але лишалось вузьке вікно: панель уже відкрита в гривні, людина
+   повертається в застосунок, loadExchangeRate() не доходить до сервера й обнуляє
+   курс — і наступний перерахунок брехав. Тепер кожен, хто кличе, мусить обробити
+   null: ми повертаємось до рідної валюти, а не показуємо неправду. */
 function convertAmount(amount, fromCur, toCur, rate) {
   if (fromCur === toCur || !toCur) return amount;
-  if (fromCur === '$' && toCur === 'UAH') return rate ? amount * rate : amount;
-  if (fromCur === 'UAH' && toCur === '$') return rate ? amount / rate : amount;
+  const r = Number(rate);
+  const ok = isFinite(r) && r > 0;
+  if (fromCur === '$' && toCur === 'UAH') return ok ? amount * r : null;
+  if (fromCur === 'UAH' && toCur === '$') return ok ? amount / r : null;
   return amount;
 }
 function formatCalcAmount(amount, cur) {
@@ -849,7 +882,7 @@ function computeCalcResult(panel) {
   const price = parseFloat(panel.getAttribute('data-price')) || 0;
   const nativeCur = panel.getAttribute('data-currency') || '';
   const mode = panel.getAttribute('data-mode') || 'sub_pct';
-  const cur = panel.getAttribute('data-cur') || nativeCur;
+  let cur = panel.getAttribute('data-cur') || nativeCur;
   const input = panel.querySelector('.calc-input');
   let val = input ? parseFloat(input.value) : NaN;
   if (isNaN(val) || val < 0) val = 0;
@@ -857,7 +890,16 @@ function computeCalcResult(panel) {
   // Рахуємо в тій валюті, яку зараз показує калькулятор (cur) — для %-режимів це байдуже
   // (відсоток однаково масштабується при конвертації), а для сум +/− так природніше:
   // введене число користувач сприймає як суму саме у видимій валюті ($ або ₴).
-  const priceInCur = convertAmount(price, nativeCur, cur, usdRate);
+  let priceInCur = convertAmount(price, nativeCur, cur, usdRate);
+  /* Курс зник, поки панель була відкрита — тихо вертаємось у рідну валюту замість
+     того, щоб підписати доларову суму гривнею. Кнопку ₴ при цьому прибираємо. */
+  if (priceInCur === null) {
+    cur = nativeCur;
+    panel.setAttribute('data-cur', nativeCur);
+    const curWrap = panel.querySelector('.calc-currency');
+    if (curWrap) curWrap.remove();
+    priceInCur = price;
+  }
   let result;
   if (mode === 'add_pct') result = priceInCur * (1 + val / 100);
   else if (mode === 'sub_flat') result = priceInCur - val;
@@ -933,10 +975,52 @@ function handleCalcDelegatedInput(e) {
    кеш прайсу (stripPricesFromSheets). Збій запису ігноруємо: підбірка — зручність,
    а не дані, через які можна зламати роботу. */
 const CART_STORAGE_KEY = 'sunice_cart';
+/* ⚠️ 2026-10-19: разом із цінами зберігаємо ВЕРСІЮ прайсу, з якої їх узято.
+   Було: лише savedAt — і після перезапуску застосунку підбірка тижневої давнини
+   показувала свої старі суми як поточні, мовчки. Попередження notePriceVersionChanged()
+   рятувало лише тих, хто не закривав застосунок. Самі ціни НЕ переписуємо автоматично:
+   підбірку дилер показує клієнту як пропозицію, і підміняти в ній числа за спиною
+   не можна. Наше завдання — щоб старе число ніколи не видавалось за сьогоднішнє. */
+function cartPriceVersion() {
+  if (typeof publishedVersionId !== 'undefined' && publishedVersionId != null) return 'pub:' + publishedVersionId;
+  if (priceVersion != null) return 'xlsx:' + priceVersion;
+  return null;
+}
+let cartPricesStale = false;      // ЛИПКИЙ прапорець: прайс оновився, поки підбірка лежала
+let cartStoredVersion = null;     // версія прайсу, з якої взято ціни в підбірці
+let cartSavedAt = 0;              // коли саме ці ціни були збережені
+
+/* Застарілість рахуємо В МОМЕНТ ПОКАЗУ, а не при читанні з localStorage.
+   Причина: loadStoredCart() виконується раніше, ніж приходить прайс, і там
+   cartPriceVersion() ще null — порівнювати нема з чим. Якщо порівняти тоді, вийде
+   або «не знаю» замість попередження, або фальшиве попередження на рівному місці. */
+function cartIsStale() {
+  if (!cart.length) return false;
+  if (cartPricesStale) return true;             // прайс оновився вже при нас
+  const now = cartPriceVersion();
+  if (!cartStoredVersion) return true;          // запис без версії (до 2026-10-19) — не ручаємось
+  return !!(now && cartStoredVersion !== now);
+}
+
 function persistCart() {
   try {
-    if (!hasFullAccess || !cart.length) { localStorage.removeItem(CART_STORAGE_KEY); return; }
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ savedAt: Date.now(), items: cart }));
+    if (!hasFullAccess || !cart.length) {
+      localStorage.removeItem(CART_STORAGE_KEY);
+      cartPricesStale = false; cartSavedAt = 0; cartStoredVersion = null;
+      return;
+    }
+    /* Прапорець «ціни застарілі» ЛИПКИЙ і теж зберігається: якщо прайс оновився, поки
+       підбірка лежала зібрана, то після перезапуску версія вже збіглася б із поточною,
+       і позначка зникла б — а суми в підбірці лишились би старими. Скидається він лише
+       разом із самою підбіркою (порожня підбірка — запис видаляється). */
+    const nowVer = cartPriceVersion();
+    if (!cartStoredVersion && nowVer) cartStoredVersion = nowVer;   // перша збірка на цьому прайсі
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({
+      savedAt: cartSavedAt || Date.now(),
+      priceVersion: cartStoredVersion,
+      stale: cartIsStale(),
+      items: cart
+    }));
   } catch (e) {}
 }
 function loadStoredCart() {
@@ -951,6 +1035,12 @@ function loadStoredCart() {
                 .map(c => ({ key: c.key, model: String(c.model || ''), price: Number(c.price) || 0,
                              currency: String(c.currency || ''), tileLabel: String(c.tileLabel || ''),
                              qty: Math.max(1, Math.round(c.qty)) }));
+    /* Ціни збережені з іншої версії прайсу, ніж та, що зараз у застосунку, — або
+       версії немає взагалі (запис, зроблений до 2026-10-19). Обидва випадки = «не
+       ручаємось», і в панелі підбірки зʼявиться дата, на яку ці суми правильні. */
+    cartStoredVersion = (parsed && parsed.priceVersion) ? String(parsed.priceVersion) : null;
+    cartPricesStale = !!(parsed && parsed.stale);
+    cartSavedAt = parsed && parsed.savedAt ? Number(parsed.savedAt) : 0;
   } catch (e) { cart = []; }
 }
 function cartQtyFor(key) {
@@ -1044,6 +1134,12 @@ function renderCartPanel() {
     body.innerHTML = '<div class="cart-empty-hint">Підбірка порожня — натисни ✓ біля позиції в прайсі</div>';
     return;
   }
+  /* Чесна позначка замість мовчання: суми в підбірці — з прайсу на дату збереження. */
+  const staleHtml = cartIsStale()
+    ? '<div class="cart-stale-note">Ціни збережено' +
+      (cartSavedAt ? ' ' + new Date(cartSavedAt).toLocaleDateString('uk-UA') : '') +
+      ', відтоді прайс оновився. Перевірте позиції перед тим, як називати суму клієнту.</div>'
+    : '';
   const itemsHtml = cart.map(c => {
     const priceStr = formatCalcAmount(c.price * c.qty, c.currency);
     return `
@@ -1068,7 +1164,7 @@ function renderCartPanel() {
     ? buildCalcPanelHtml(totals[singleCurrency], singleCurrency, formatCalcAmount(totals[singleCurrency], singleCurrency), { open: true, extraClass: 'cart-calc-panel', showBase: true })
     : `<div class="cart-empty-hint">Разом: ${totalsLineHtml}</div>`;
 
-  body.innerHTML = itemsHtml + `
+  body.innerHTML = staleHtml + itemsHtml + `
     <div class="cart-total-row">
       ${calcHtml}
       <button type="button" class="share-btn cart-share-btn" aria-label="Поділитися підбіркою">${ic('share-2', '')}</button>
