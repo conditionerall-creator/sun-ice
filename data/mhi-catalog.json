@@ -450,218 +450,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "yes",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "yes",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "option",
-     "page": 33,
-     "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 0,
    "accessories": [
     {
      "kind": "remote",
@@ -674,35 +463,35 @@
      "kind": "remote",
      "name": "RC-ES1",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 34
     },
     {
      "kind": "remote",
      "name": "RC-EX3A(D)",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 34
     },
     {
      "kind": "remote",
      "name": "RC-E5",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 34
     },
     {
      "kind": "remote",
      "name": "RCH-E3",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 34
     },
     {
      "kind": "adapter",
      "name": "SC-BIKN2-E",
      "state": "option",
-     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 34
     },
     {
@@ -1116,218 +905,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "yes",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "yes",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "option",
-     "page": 33,
-     "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 3,
    "accessories": [
     {
      "kind": "remote",
@@ -1340,35 +918,35 @@
      "kind": "remote",
      "name": "RC-ES1",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 36
     },
     {
      "kind": "remote",
      "name": "RC-EX3A(D)",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 36
     },
     {
      "kind": "remote",
      "name": "RC-E5",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 36
     },
     {
      "kind": "remote",
      "name": "RCH-E3",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 36
     },
     {
      "kind": "adapter",
      "name": "SC-BIKN2-E",
      "state": "option",
-     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi Бездротовий.",
+     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 36
     },
     {
@@ -1669,6 +1247,17 @@
      ]
     },
     {
+     "name": "Приєднання труб",
+     "unit": "мм(дюйм)",
+     "page": 38,
+     "values": [
+      "2",
+      "2",
+      "2",
+      "2"
+     ]
+    },
+    {
      "name": "Приєднання труб · Рідина / Газ",
      "unit": "мм(дюйм)",
      "page": 38,
@@ -1758,7 +1347,7 @@
     },
     {
      "name": "Кабель живлення",
-     "unit": "мм²",
+     "unit": "мм",
      "page": 38,
      "values": [
       "3 х 2.5",
@@ -1769,7 +1358,7 @@
     },
     {
      "name": "Міжблочний кабель",
-     "unit": "мм²",
+     "unit": "мм",
      "page": 38,
      "values": [
       "4 х 1.5",
@@ -1790,218 +1379,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "yes",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "yes",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "option",
-     "page": 33,
-     "note": "Для серій ZT та ZTL функцію «Тижневий таймер» можна використовувати лише через застосунок Smart M-Air."
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 1,
    "accessories": [
     {
      "kind": "remote",
@@ -2014,35 +1392,35 @@
      "kind": "remote",
      "name": "RC-ES1",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 38
     },
     {
      "kind": "remote",
      "name": "RC-EX3A(D)",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 38
     },
     {
      "kind": "remote",
      "name": "RC-E5",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 38
     },
     {
      "kind": "remote",
      "name": "RCH-E3",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 38
     },
     {
      "kind": "adapter",
      "name": "SC-BIKN2-E",
      "state": "option",
-     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E. Wi-Fi.",
+     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 38
     },
     {
@@ -2472,218 +1850,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "yes",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "yes",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "option",
-     "page": 33,
-     "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 2,
    "accessories": [
     {
      "kind": "remote",
@@ -2696,35 +1863,35 @@
      "kind": "remote",
      "name": "RC-ES1",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 40
     },
     {
      "kind": "remote",
      "name": "RC-EX3A(D)",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 40
     },
     {
      "kind": "remote",
      "name": "RC-E5",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 40
     },
     {
      "kind": "remote",
      "name": "RCH-E3",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 40
     },
     {
      "kind": "adapter",
      "name": "SC-BIKN2-E",
      "state": "option",
-     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 40
     },
     {
@@ -3058,7 +2225,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Охолодження",
-     "unit": "°C",
+     "unit": null,
      "page": 42,
      "values": [
       "-15~46",
@@ -3069,7 +2236,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Обігрів",
-     "unit": "°C",
+     "unit": null,
      "page": 42,
      "values": [
       "-15~24",
@@ -3134,218 +2301,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "yes",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "yes",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "option",
-     "page": 33,
-     "note": "Для серій ZT та ZTL функцію «Тижневий таймер» можна використовувати лише через застосунок Smart M-Air."
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 4,
    "accessories": [
     {
      "kind": "remote",
@@ -3678,7 +2634,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Охолодження",
-     "unit": "°C",
+     "unit": null,
      "page": 44,
      "values": [
       "-15~46",
@@ -3689,7 +2645,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Обігрів",
-     "unit": "°C",
+     "unit": null,
      "page": 44,
      "values": [
       "-15~24",
@@ -3754,218 +2710,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "no",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "no",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 5,
    "accessories": [
     {
      "kind": "remote",
@@ -4298,7 +3043,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Охолодження",
-     "unit": "°C",
+     "unit": null,
      "page": 46,
      "values": [
       "-15~46",
@@ -4309,7 +3054,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Обігрів",
-     "unit": "°C",
+     "unit": null,
      "page": 46,
      "values": [
       "-15~24",
@@ -4374,218 +3119,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "no",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "no",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 6,
    "accessories": [
     {
      "kind": "remote",
@@ -4887,7 +3421,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Охолодження",
-     "unit": "°C",
+     "unit": null,
      "page": 48,
      "values": [
       "-15~46",
@@ -4897,7 +3431,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Обігрів",
-     "unit": "°C",
+     "unit": null,
      "page": 48,
      "values": [
       "-15~24",
@@ -4956,218 +3490,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "yes",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "yes",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "option",
-     "page": 33,
-     "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 7,
    "accessories": [
     {
      "kind": "remote",
@@ -5180,35 +3503,35 @@
      "kind": "remote",
      "name": "RC-ES1",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 48
     },
     {
      "kind": "remote",
      "name": "RC-EX3A(D)",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 48
     },
     {
      "kind": "remote",
      "name": "RC-E5",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 48
     },
     {
      "kind": "remote",
      "name": "RCH-E3",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 48
     },
     {
      "kind": "adapter",
      "name": "SC-BIKN2-E",
      "state": "option",
-     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 48
     },
     {
@@ -5511,7 +3834,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Охолодження",
-     "unit": "°C",
+     "unit": null,
      "page": 50,
      "values": [
       "-15~46",
@@ -5521,7 +3844,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Обігрів",
-     "unit": "°C",
+     "unit": null,
      "page": 50,
      "values": [
       "-15~24",
@@ -5580,218 +3903,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "no",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "yes",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "option",
-     "page": 33,
-     "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 8,
    "accessories": [
     {
      "kind": "remote",
@@ -5804,35 +3916,35 @@
      "kind": "remote",
      "name": "RC-ES1",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 50
     },
     {
      "kind": "remote",
      "name": "RC-EX3A(D)",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 50
     },
     {
      "kind": "remote",
      "name": "RC-E5",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 50
     },
     {
      "kind": "remote",
      "name": "RCH-E3",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 50
     },
     {
      "kind": "adapter",
      "name": "SC-BIKN2-E",
      "state": "option",
-     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E. Бездротовий.",
+     "note": "Дротові пульти підключаються через адаптер SC-BIKN2-E.",
      "page": 50
     },
     {
@@ -6177,7 +4289,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Охолодження",
-     "unit": "°C",
+     "unit": null,
      "page": 51,
      "values": [
       "-15~46",
@@ -6188,7 +4300,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Обігрів",
-     "unit": "°C",
+     "unit": null,
      "page": 51,
      "values": [
       "-15~24",
@@ -6264,218 +4376,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "no",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "yes",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "option",
-     "page": 33,
-     "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 9,
    "accessories": [
     {
      "kind": "remote",
@@ -6488,35 +4389,35 @@
      "kind": "remote",
      "name": "RC-ES1",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E. Функції енергозбереження Системи очищення та фільтрації повітря.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E.",
      "page": 51
     },
     {
      "kind": "remote",
      "name": "RC-EX3A(D)",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E. Функції енергозбереження Системи очищення та фільтрації повітря.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E.",
      "page": 51
     },
     {
      "kind": "remote",
      "name": "RC-E5",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E. Функції енергозбереження Системи очищення та фільтрації повітря.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E.",
      "page": 51
     },
     {
      "kind": "remote",
      "name": "RCH-E3",
      "state": "option",
-     "note": "Дротовий пульт керування. Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E. Функції енергозбереження Системи очищення та фільтрації повітря.",
+     "note": "Дротовий пульт керування. Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E.",
      "page": 51
     },
     {
      "kind": "adapter",
      "name": "SC-BIKN2-E",
      "state": "option",
-     "note": "Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E. Функції енергозбереження Системи очищення та фільтрації повітря.",
+     "note": "Дротові пульти підключаються через пульт ДК ФУНКЦІЇ адаптер SC-BIKN2-E.",
      "page": 51
     },
     {
@@ -6893,7 +4794,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Охолодження",
-     "unit": "°C",
+     "unit": null,
      "page": 52,
      "values": [
       "-15~46",
@@ -6905,7 +4806,7 @@
     },
     {
      "name": "Робочий діапазон зовнішніх температур · Обігрів",
-     "unit": "°C",
+     "unit": null,
      "page": 52,
      "values": [
       "-15~24",
@@ -6988,218 +4889,7 @@
      ]
     }
    ],
-   "functions": [
-    {
-     "name": "РЕЖИМ FUZZY AUTO",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
-     "state": "option",
-     "page": 33,
-     "note": "Лише для FDTC-VH."
-    },
-    {
-     "name": "РЕЖИМ ECO",
-     "state": "option",
-     "page": 33,
-     "note": "Лише для FDTC-VH."
-    },
-    {
-     "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
-     "state": "option",
-     "page": 33,
-     "note": "Лише для FDTC-VH."
-    },
-    {
-     "name": "РЕЖИМ ECONOMY",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕАКТИВНИЙ ПОТІК",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
-     "state": "option",
-     "page": 33,
-     "note": "Лише для FDTC-VH."
-    },
-    {
-     "name": "ФУНКЦІЯ КАМІНА",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
-     "state": "no",
-     "page": 33,
-     "note": "У разі використання з мульти спліт-системи функція недоступна."
-    },
-    {
-     "name": "РЕЖИМ САМООЧИЩЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ЗНІМНА ПАНЕЛЬ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ОСУШЕННЯ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ HIGH POWER",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЕЗШУМНА РОБОТА",
-     "state": "no",
-     "page": 33,
-     "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
-    },
-    {
-     "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТИЖНЕВИЙ ТАЙМЕР",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР СНУ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ТАЙМЕР ВМИК/ВИМК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КОМФОРТНИЙ ПУСК",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
-     "state": "option",
-     "page": 33,
-     "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
-    },
-    {
-     "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
-     "state": "yes",
-     "page": 33,
-     "note": null
-    },
-    {
-     "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
-     "state": "no",
-     "page": 33,
-     "note": null
-    }
-   ],
+   "funcs_col": 10,
    "accessories": [
     {
      "kind": "remote",
@@ -7237,147 +4927,4784 @@
      "page": 52
     }
    ]
+  },
+  "MULTI-SCM-ZS-W": {
+   "page": 55,
+   "series": "Зовнішні блоки R32",
+   "marking": "SCM-ZS-W",
+   "block": "Зовнішній",
+   "title": "Зовнішні блоки R32 · SCM-ZS-W",
+   "columns": [
+    "SCM30ZS-W",
+    "SCM40ZS-W",
+    "SCM45ZS-W",
+    "SCM41ZS-W",
+    "SCM50ZS-W",
+    "SCM60ZS-W"
+   ],
+   "indoor": [
+    [],
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "outdoor": [
+    [
+     "SCM30ZS-W"
+    ],
+    [
+     "SCM40ZS-W"
+    ],
+    [
+     "SCM45ZS-W"
+    ],
+    [
+     "SCM41ZS-W"
+    ],
+    [
+     "SCM50ZS-W"
+    ],
+    [
+     "SCM60ZS-W"
+    ]
+   ],
+   "wifi_builtin": null,
+   "specs": [
+    {
+     "name": "Електроживлення",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "1 фаза, 220-240 В, 50 Гц",
+      "1 фаза, 220-240 В, 50 Гц",
+      "1 фаза, 220-240 В, 50 Гц",
+      "1 фаза, 220-240 В, 50 Гц",
+      "1 фаза, 220-240 В, 50 Гц",
+      "1 фаза, 220-240 В, 50 Гц"
+     ]
+    },
+    {
+     "name": "Холодопродуктивність (Min~Max)",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "3.0 (1.4 - 5.0)",
+      "4.0 (1.5 - 5.9)",
+      "4.5 (1.5 - 6.4)",
+      "4.0 (1.4 - 6.3)",
+      "5.0 (1.7 - 7.1)",
+      "6.0 (1.7 - 7.5)"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність (Min~Max)",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "4.0 (1.0 - 5.7)",
+      "4.5 (1.0 - 6.3)",
+      "5.3 (1.0 - 6.5)",
+      "4.5 (1.0 - 6.9)",
+      "6.0 (1.0 - 7.5)",
+      "6.8 (1.0 - 7.8)"
+     ]
+    },
+    {
+     "name": "Споживана потужність · Охолодження",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "0.52 (0.32 - 1.60)",
+      "0.80 (0.34 - 2.10)",
+      "0.96 (0.34 - 2.30)",
+      "0.72 (0.32 - 1.65)",
+      "1.02 (0.43 - 2.15)",
+      "1.32 (0.43 - 2.28)"
+     ]
+    },
+    {
+     "name": "Споживана потужність · Обігрів",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "0.74 (0.25 - 1.49)",
+      "0.83 (0.25 - 1.48)",
+      "1.06 (0.25 - 1.48)",
+      "0.81 (0.25 - 1.58)",
+      "1.16 (0.32 - 2.50)",
+      "1.40 (0.32 - 2.80)"
+     ]
+    },
+    {
+     "name": "SEER · Охолодження",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "8.60",
+      "9.10",
+      "9.10",
+      "9.20",
+      "8.80",
+      "8.80"
+     ]
+    },
+    {
+     "name": "SCOP · Обігрів",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "4.80",
+      "4.70",
+      "4.70",
+      "4.60",
+      "4.60",
+      "4.60"
+     ]
+    },
+    {
+     "name": "Макс. пусковий струм",
+     "unit": "A",
+     "page": 55,
+     "values": [
+      "14",
+      "14",
+      "14",
+      "15",
+      "15",
+      "15"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 55,
+     "values": [
+      "62",
+      "62",
+      "63",
+      "62",
+      "62",
+      "62"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 55,
+     "values": [
+      "64",
+      "64",
+      "65",
+      "64",
+      "64",
+      "64"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження",
+     "unit": "дБ(A)",
+     "page": 55,
+     "values": [
+      "49",
+      "49",
+      "50",
+      "49",
+      "49",
+      "50"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів",
+     "unit": "дБ(A)",
+     "page": 55,
+     "values": [
+      "51",
+      "51",
+      "52",
+      "52",
+      "52",
+      "52"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження",
+     "unit": "м³/хв",
+     "page": 55,
+     "values": [
+      "32.5",
+      "32.5",
+      "32.5",
+      "41.0",
+      "41.0",
+      "41.0"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів",
+     "unit": "м³/хв",
+     "page": 55,
+     "values": [
+      "32.5",
+      "32.5",
+      "32.5",
+      "41.0",
+      "41.0",
+      "41.0"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 55,
+     "values": [
+      "780(+90) x 595 x 290",
+      "780(+90) x 595 x 290",
+      "780(+90) x 595 x 290",
+      "850(+65) x 640 x 290",
+      "850(+65) x 640 x 290",
+      "850(+65) x 640 x 290"
+     ]
+    },
+    {
+     "name": "Міжлапна відстань опор зовнішнього блоку",
+     "unit": "мм",
+     "page": 55,
+     "values": [
+      "510",
+      "510",
+      "510",
+      "510",
+      "510",
+      "510"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 55,
+     "values": [
+      "35.5",
+      "40.0",
+      "40.0",
+      "42.5",
+      "48.5",
+      "48.5"
+     ]
+    },
+    {
+     "name": "Холодоагент · Тип/GWP",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "R32 / 675",
+      "R32 / 675",
+      "R32 / 675",
+      "R32 / 675",
+      "R32 / 675",
+      "R32 / 675"
+     ]
+    },
+    {
+     "name": "Холодоагент · Заправка",
+     "unit": "кг/TCO₂Eq",
+     "page": 55,
+     "values": [
+      "1.25 / 0.843",
+      "1.4 / 0.945",
+      "1.4 / 0.945",
+      "1.6 / 1.08",
+      "1.8 / 1.215",
+      "1.8 / 1.215"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина",
+     "unit": "мм(дюйм)",
+     "page": 55,
+     "values": [
+      "6.35(1/4\") x 2",
+      "6.35(1/4\") x 2",
+      "6.35(1/4\") x 2",
+      "6.35(1/4\") x 3",
+      "6.35(1/4\") x 3",
+      "6.35(1/4\") x 3"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Газ",
+     "unit": "мм(дюйм)",
+     "page": 55,
+     "values": [
+      "9.52(3/8\") x 2",
+      "9.52(3/8\") x 2",
+      "9.52(3/8\") x 2",
+      "9.52(3/8\") x 3",
+      "9.52(3/8\") x 3",
+      "9.52(3/8\") x 3"
+     ]
+    },
+    {
+     "name": "Робочий діапазон зовнішніх температур · Охолодження",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "-15~46",
+      "-15~46",
+      "-15~46",
+      "-15~46",
+      "-15~46",
+      "-15~46"
+     ]
+    },
+    {
+     "name": "Робочий діапазон зовнішніх температур · Обігрів",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "-15~24",
+      "-15~24",
+      "-15~24",
+      "-15~24",
+      "-15~24",
+      "-15~24"
+     ]
+    }
+   ],
+   "funcs_col": null,
+   "accessories": []
+  },
+  "MULTI-SCM-BIG": {
+   "page": 55,
+   "series": "Зовнішні блоки R32 / R410A",
+   "marking": "SCM-ZS-W / SCM-ZM-S",
+   "block": "Зовнішній",
+   "title": "Зовнішні блоки R32 / R410A · SCM-ZS-W / SCM-ZM-S",
+   "columns": [
+    "SCM71ZS-W",
+    "SCM80ZS-W",
+    "SCM100ZS-W",
+    "SCM125ZM-S"
+   ],
+   "indoor": [
+    [],
+    [],
+    [],
+    []
+   ],
+   "outdoor": [
+    [
+     "SCM71ZS-W"
+    ],
+    [
+     "SCM80ZS-W"
+    ],
+    [
+     "SCM100ZS-W"
+    ],
+    [
+     "SCM125ZM-S"
+    ]
+   ],
+   "wifi_builtin": null,
+   "specs": [
+    {
+     "name": "Електроживлення",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "1 фаза, 220-240 В, 50 Гц",
+      "1 фаза, 220-240 В, 50 Гц",
+      "1 фаза, 220-240 В, 50 Гц",
+      "1 фаза, 220-240 В, 50 Гц"
+     ]
+    },
+    {
+     "name": "Холодопродуктивність (Min~Max)",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "7.1 (1.8 - 8.8)",
+      "8.0 (1.8 - 9.2)",
+      "10.0 (1.7 - 11.5)",
+      "12.5 (1.8~14.0)"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність (Min~Max)",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "8.6 (1.1 - 9.4)",
+      "9.3 (1.1 - 9.8)",
+      "10.5 (0.9 - 11.5)",
+      "13.5 (1.5~14.0)"
+     ]
+    },
+    {
+     "name": "Споживана потужність · Охолодження",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "1.42 (0.48 - 2.75)",
+      "1.70 (0.48 - 2.83)",
+      "2.70 (0.48 - 3.65)",
+      "3.90 (0.65~4.80)"
+     ]
+    },
+    {
+     "name": "Споживана потужність · Обігрів",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "1.75 (0.35 - 3.00)",
+      "1.95 (0.35 - 3.12)",
+      "2.38 (0.37 - 2.90)",
+      "3.25 (0.70~3.42)"
+     ]
+    },
+    {
+     "name": "SEER · Охолодження",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "8.30",
+      "8.20",
+      "8.60",
+      "5.61 ***"
+     ]
+    },
+    {
+     "name": "SCOP · Обігрів",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "4.60",
+      "4.60",
+      "4.50",
+      "4.11 ***"
+     ]
+    },
+    {
+     "name": "Макс. пусковий струм",
+     "unit": "A",
+     "page": 55,
+     "values": [
+      "20",
+      "20",
+      "21",
+      "29"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 55,
+     "values": [
+      "63",
+      "66",
+      "67",
+      "69"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 55,
+     "values": [
+      "67",
+      "67",
+      "72",
+      "72"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження",
+     "unit": "дБ(A)",
+     "page": 55,
+     "values": [
+      "50",
+      "54",
+      "54",
+      "57"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів",
+     "unit": "дБ(A)",
+     "page": 55,
+     "values": [
+      "54",
+      "54",
+      "59",
+      "60"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження",
+     "unit": "м³/хв",
+     "page": 55,
+     "values": [
+      "50.0",
+      "56.0",
+      "75.0",
+      "75.0"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів",
+     "unit": "м³/хв",
+     "page": 55,
+     "values": [
+      "56.0",
+      "56.0",
+      "75.0",
+      "82.0"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 55,
+     "values": [
+      "880(+73) x 750 x 340",
+      "880(+73) x 750 x 340",
+      "970(+73) x 945 x 370",
+      "970(+73) x 945 x 370"
+     ]
+    },
+    {
+     "name": "Міжлапна відстань опор зовнішнього блоку",
+     "unit": "мм",
+     "page": 55,
+     "values": [
+      "580",
+      "580",
+      "580",
+      "580"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 55,
+     "values": [
+      "61.0",
+      "61.0",
+      "73.0",
+      "92.0"
+     ]
+    },
+    {
+     "name": "Холодоагент · Тип/GWP",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "R32 / 675",
+      "R32 / 675",
+      "R32 / 675",
+      "R410A / 2088"
+     ]
+    },
+    {
+     "name": "Холодоагент · Заправка",
+     "unit": "кг/TCO₂Eq",
+     "page": 55,
+     "values": [
+      "2.55 / 1.721",
+      "2.55 / 1.721",
+      "2.98 / 2.012",
+      "6.0 / 12.528"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина",
+     "unit": "мм(дюйм)",
+     "page": 55,
+     "values": [
+      "6.35(1/4\") x 4",
+      "6.35(1/4\") x 4",
+      "6.35(1/4\") x 5",
+      "6.35(1/4\") x 6"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Газ",
+     "unit": "мм(дюйм)",
+     "page": 55,
+     "values": [
+      "9.52(3/8\") x 4",
+      "9.52(3/8\") x 4",
+      "9.52(3/8\") x 5",
+      "9.52(3/8\") x 6"
+     ]
+    },
+    {
+     "name": "Робочий діапазон зовнішніх температур · Охолодження",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "-15~46",
+      "-15~46",
+      "-15~46",
+      "-15~46"
+     ]
+    },
+    {
+     "name": "Робочий діапазон зовнішніх температур · Обігрів",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "-15~24",
+      "-15~24",
+      "-15~24",
+      "-15~24"
+     ]
+    },
+    {
+     "name": "Кількість внутрішніх блоків, що можна підключити",
+     "unit": null,
+     "page": 55,
+     "values": [
+      "Min.2-Max.4",
+      "Min.2-Max.4",
+      "Min.2 * -Max.5 *",
+      "Min.2 ** -Max.6"
+     ]
+    },
+    {
+     "name": "Допустима холодопродуктивність внутр. блоків",
+     "unit": "кВт",
+     "page": 55,
+     "values": [
+      "7.0-12.5",
+      "8.0-13.5",
+      "9.0-16.0 *",
+      "19.5"
+     ]
+    },
+    {
+     "name": "Підключення живлення / Кабель живлення",
+     "unit": "мм²",
+     "page": 55,
+     "values": [
+      "зовнішній блок / 3 х 4.0",
+      "зовнішній блок / 3 х 4.0",
+      "зовнішній блок / 3 х 4.0",
+      "зовнішній блок / 3 х 6.0"
+     ]
+    }
+   ],
+   "funcs_col": null,
+   "accessories": []
+  },
+  "MULTI-SRK-ZSX": {
+   "page": 56,
+   "series": "Diamond Series",
+   "marking": "SRK-ZSX-WF, -W",
+   "block": "Настінний",
+   "title": "Diamond Series · SRK-ZSX-WF, -W",
+   "columns": [
+    "SRK20ZSX-WF",
+    "SRK25ZSX-WF",
+    "SRK35ZSX-WF",
+    "SRK50ZSX-WF",
+    "SRK60ZSX-WF"
+   ],
+   "indoor": [
+    [
+     "SRK20ZSX-WF",
+     "SRK20ZSX-WFB",
+     "SRK20ZSX-WFT",
+     "SRK20ZSX-W",
+     "SRK20ZSX-WB",
+     "SRK20ZSX-WT"
+    ],
+    [
+     "SRK25ZSX-WF",
+     "SRK25ZSX-WFB",
+     "SRK25ZSX-WFT",
+     "SRK25ZSX-W",
+     "SRK25ZSX-WB",
+     "SRK25ZSX-WT"
+    ],
+    [
+     "SRK35ZSX-WF",
+     "SRK35ZSX-WFB",
+     "SRK35ZSX-WFT",
+     "SRK35ZSX-W",
+     "SRK35ZSX-WB",
+     "SRK35ZSX-WT"
+    ],
+    [
+     "SRK50ZSX-WF",
+     "SRK50ZSX-WFB",
+     "SRK50ZSX-WFT",
+     "SRK50ZSX-W",
+     "SRK50ZSX-WB",
+     "SRK50ZSX-WT"
+    ],
+    [
+     "SRK60ZSX-WF",
+     "SRK60ZSX-WFB",
+     "SRK60ZSX-WFT",
+     "SRK60ZSX-W",
+     "SRK60ZSX-WB",
+     "SRK60ZSX-WT"
+    ]
+   ],
+   "outdoor": [
+    [],
+    [],
+    [],
+    [],
+    []
+   ],
+   "wifi_builtin": "ZSXWF",
+   "specs": [
+    {
+     "name": "Холодопродуктивність",
+     "unit": "кВт",
+     "page": 56,
+     "values": [
+      "2.0",
+      "2.5",
+      "3.5",
+      "5.0",
+      "6.0"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність",
+     "unit": "кВт",
+     "page": 56,
+     "values": [
+      "3.0",
+      "3.4",
+      "4.5",
+      "5.8",
+      "6.8"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "53",
+      "55",
+      "58",
+      "59",
+      "62"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "55",
+      "56",
+      "58",
+      "62",
+      "63"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "38 / 31 / 24 / 19",
+      "39 / 33 / 25 / 19",
+      "43 / 35 / 26 / 19",
+      "44 / 39 / 31 / 22",
+      "46 / 41 / 33 / 22"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "38 / 33[32] / 25 / 19",
+      "40 / 34 / 27 / 19",
+      "42[41] / 35 / 28 / 19",
+      "46 / 41 / 33 / 23",
+      "46 / 42 / 34 / 23"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 56,
+     "values": [
+      "11.3 / 9.1 / 6.0 / 5.0",
+      "12.2 / 10.0 / 6.7 / 5.0",
+      "13.1 / 10.8 / 7.3 / 5.0",
+      "14.3 / 12.4 / 7.8 / 5.4",
+      "16.3 / 13.4 / 8.9 / 5.4"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 56,
+     "values": [
+      "12.2 / 10.3 / 7.2 / 5.4",
+      "12.8 / 11.0 / 7.8 / 5.4",
+      "13.9 / 11.8 / 8.6 / 5.4",
+      "17.3 / 14.3 / 9.8 / 6.2",
+      "17.8 / 13.7 / 10.9 / 6.2"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 56,
+     "values": [
+      "920 × 305 × 220",
+      "920 × 305 × 220",
+      "920 × 305 × 220",
+      "920 × 305 × 220",
+      "920 × 305 × 220"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 56,
+     "values": [
+      "13.0",
+      "13.0",
+      "13.0",
+      "13.0",
+      "13.0"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина / Газ",
+     "unit": "мм(дюйм)",
+     "page": 56,
+     "values": [
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 12.7(1/2\")",
+      "6.35(1/4\") / 12.7(1/2\")"
+     ]
+    },
+    {
+     "name": "Повітряний фільтр",
+     "unit": null,
+     "page": 56,
+     "values": [
+      "Антиалергенний x 1, Фотокаталітичний x 1",
+      "Антиалергенний x 1, Фотокаталітичний x 1",
+      "Антиалергенний x 1, Фотокаталітичний x 1",
+      "Антиалергенний x 1, Фотокаталітичний x 1",
+      "Антиалергенний x 1, Фотокаталітичний x 1"
+     ]
+    }
+   ],
+   "funcs_col": 0,
+   "accessories": []
+  },
+  "MULTI-SRK-ZR": {
+   "page": 56,
+   "series": "Diamond Series",
+   "marking": "SRK-ZR-WF, -W",
+   "block": "Настінний",
+   "title": "Diamond Series · SRK-ZR-WF, -W",
+   "columns": [
+    "SRK71ZR-WF",
+    "SRK80ZR-WF"
+   ],
+   "indoor": [
+    [
+     "SRK71ZR-WF",
+     "SRK71ZR-W"
+    ],
+    [
+     "SRK80ZR-WF",
+     "SRK80ZR-W"
+    ]
+   ],
+   "outdoor": [
+    [],
+    []
+   ],
+   "wifi_builtin": "ZRWF",
+   "specs": [
+    {
+     "name": "Холодопродуктивність",
+     "unit": "кВт",
+     "page": 56,
+     "values": [
+      "7.1",
+      "8.0"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність",
+     "unit": "кВт",
+     "page": 56,
+     "values": [
+      "8.0",
+      "9.0"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "57",
+      "60"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "60",
+      "62"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "44 / 41 / 37 / 25",
+      "47 / 44 / 39 / 26"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "46 / 39 / 35 / 28",
+      "47 / 41 / 36 / 29"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 56,
+     "values": [
+      "20.5 / 18.6 / 16.2 / 10.4",
+      "20.5 / 20.2 / 17.5 / 10.4"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 56,
+     "values": [
+      "25.0[25.5] / 19.8 / 17.3 / 13.3",
+      "26.5 / 21.3 / 18.4 / 13.5"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 56,
+     "values": [
+      "1197 × 339 × 262",
+      "1197 × 339 × 262"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 56,
+     "values": [
+      "15.5",
+      "16.5"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина / Газ",
+     "unit": "мм(дюйм)",
+     "page": 56,
+     "values": [
+      "6.35 (1/4\") / 15.88 (5/8\")",
+      "6.35 (1/4\") / 15.88 (5/8\")"
+     ]
+    },
+    {
+     "name": "Повітряний фільтр",
+     "unit": null,
+     "page": 56,
+     "values": [
+      "x 1, Фотокаталітичний x 1",
+      "Антиалергенний x 1, Фотокаталітичний x 1"
+     ]
+    }
+   ],
+   "funcs_col": 3,
+   "accessories": []
+  },
+  "MULTI-SRK-ZS": {
+   "page": 56,
+   "series": "Premium Series",
+   "marking": "SRK-ZS-WF, -W",
+   "block": "Настінний",
+   "title": "Premium Series · SRK-ZS-WF, -W",
+   "columns": [
+    "SRK20ZS-WF",
+    "SRK25ZS-WF",
+    "SRK35ZS-WF",
+    "SRK50ZS-WF"
+   ],
+   "indoor": [
+    [
+     "SRK20ZS-WF",
+     "SRK20ZS-WFB",
+     "SRK20ZS-WFT",
+     "SRK20ZS-W",
+     "SRK20ZS-WB",
+     "SRK20ZS-WT"
+    ],
+    [
+     "SRK25ZS-WF",
+     "SRK25ZS-WFB",
+     "SRK25ZS-WFT",
+     "SRK25ZS-W",
+     "SRK25ZS-WB",
+     "SRK25ZS-WT"
+    ],
+    [
+     "SRK35ZS-WF",
+     "SRK35ZS-WFB",
+     "SRK35ZS-WFT",
+     "SRK35ZS-W",
+     "SRK35ZS-WB",
+     "SRK35ZS-WT"
+    ],
+    [
+     "SRK50ZS-WF",
+     "SRK50ZS-WFB",
+     "SRK50ZS-WFT",
+     "SRK50ZS-W",
+     "SRK50ZS-WB",
+     "SRK50ZS-WT"
+    ]
+   ],
+   "outdoor": [
+    [],
+    [],
+    [],
+    []
+   ],
+   "wifi_builtin": "ZSWF",
+   "specs": [
+    {
+     "name": "Холодопродуктивність",
+     "unit": "кВт",
+     "page": 56,
+     "values": [
+      "2.0",
+      "2.5",
+      "3.5",
+      "5.0"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність",
+     "unit": "кВт",
+     "page": 56,
+     "values": [
+      "3.0",
+      "3.4",
+      "4.5",
+      "5.8"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "48",
+      "50",
+      "54",
+      "59"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "50",
+      "53",
+      "56",
+      "60"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "34 / 25 / 22 / 19",
+      "36 / 28 / 23 / 19",
+      "40 / 30 / 26 / 19",
+      "46 / 36 / 29 / 22"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "36 / 29 / 23 / 19",
+      "39 / 30 / 24 / 19",
+      "41 / 36 / 25 / 19",
+      "46 / 37 / 31 / 24"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 56,
+     "values": [
+      "9.3 / 7.0 / 5.9 / 5.0",
+      "9.9 / 8.0 / 5.9 / 5.0",
+      "11.3 / 8.7 / 7.0 / 5.0",
+      "12.1 / 9.9 / 7.4 / 5.9"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 56,
+     "values": [
+      "10.0 / 8.5 / 6.5 / 5.9",
+      "11.3 / 8.7 / 6.7 / 5.9",
+      "12.3 / 11.0 / 7.0 / 5.6",
+      "13.9 / 11.2 / 9.1 / 7.4"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 56,
+     "values": [
+      "870 × 290 × 230",
+      "870 × 290 × 230",
+      "870 × 290 × 230",
+      "870 × 290 × 230"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 56,
+     "values": [
+      "9.5",
+      "9.5",
+      "9.5",
+      "10.0"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина / Газ",
+     "unit": "мм(дюйм)",
+     "page": 56,
+     "values": [
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 12.7(1/2\")"
+     ]
+    },
+    {
+     "name": "Повітряний фільтр",
+     "unit": null,
+     "page": 56,
+     "values": [
+      "Антиалергенний x 1, Фотокаталітичний x 1",
+      "Антиалергенний x 1, Фотокаталітичний x 1",
+      "Антиалергенний x 1, Фотокаталітичний x 1",
+      "Антиалергенний x 1, Фотокаталітичний x 1"
+     ]
+    }
+   ],
+   "funcs_col": 2,
+   "accessories": []
+  },
+  "MULTI-SKM-ZSP": {
+   "page": 56,
+   "series": "Standard Series",
+   "marking": "SKM-ZSP-W",
+   "block": "Настінний",
+   "title": "Standard Series · SKM-ZSP-W",
+   "columns": [
+    "SKM20ZSP-W",
+    "SKM25ZSP-W",
+    "SKM35ZSP-W"
+   ],
+   "indoor": [
+    [
+     "SKM20ZSP-W"
+    ],
+    [
+     "SKM25ZSP-W"
+    ],
+    [
+     "SKM35ZSP-W"
+    ]
+   ],
+   "outdoor": [
+    [],
+    [],
+    []
+   ],
+   "wifi_builtin": null,
+   "specs": [
+    {
+     "name": "Холодопродуктивність",
+     "unit": "кВт",
+     "page": 56,
+     "values": [
+      "2.0",
+      "2.5",
+      "3.5"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність",
+     "unit": "кВт",
+     "page": 56,
+     "values": [
+      "3.0",
+      "3.4",
+      "4.5"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "57",
+      "57",
+      "58"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "56",
+      "56",
+      "58"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "42 / 35 / 22",
+      "43 / 36 / 23",
+      "44 / 37 / 25"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 56,
+     "values": [
+      "41 / 36 / 26",
+      "41 / 36 / 27",
+      "42 / 37 / 30"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 56,
+     "values": [
+      "8.5 / 7.0 / 5.0",
+      "8.5 / 7.0 / 5.0",
+      "9.0 / 7.5 / 5.0"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 56,
+     "values": [
+      "8.0 / 7.0 / 5.5",
+      "8.0 / 7.0 / 5.5",
+      "8.5 / 7.0 / 6.0"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 56,
+     "values": [
+      "783 × 267 × 210",
+      "783 × 267 × 210",
+      "783 × 267 × 210"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 56,
+     "values": [
+      "7.5",
+      "7.5",
+      "7.5"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина / Газ",
+     "unit": "мм(дюйм)",
+     "page": 56,
+     "values": [
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")"
+     ]
+    },
+    {
+     "name": "Повітряний фільтр",
+     "unit": null,
+     "page": 56,
+     "values": [
+      "Пластиковий х 2 (багаторазовий, миється)",
+      "Пластиковий х 2 (багаторазовий, миється)",
+      "Пластиковий х 2 (багаторазовий, миється)"
+     ]
+    }
+   ],
+   "funcs_col": 11,
+   "accessories": []
+  },
+  "MULTI-SRF": {
+   "page": 57,
+   "series": "Підлогові",
+   "marking": "SRF-ZS / ZSX",
+   "block": "Підлоговий",
+   "title": "Підлогові · SRF-ZS / ZSX",
+   "columns": [
+    "SRF25ZS-W",
+    "SRF35ZS-W",
+    "SRF50ZSX-W"
+   ],
+   "indoor": [
+    [
+     "SRF25ZS-W"
+    ],
+    [
+     "SRF35ZS-W"
+    ],
+    [
+     "SRF50ZSX-W"
+    ]
+   ],
+   "outdoor": [
+    [],
+    [],
+    []
+   ],
+   "wifi_builtin": null,
+   "specs": [
+    {
+     "name": "Холодопродуктивність",
+     "unit": "кВт",
+     "page": 57,
+     "values": [
+      "2.5",
+      "3.5",
+      "5.0"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність",
+     "unit": "кВт",
+     "page": 57,
+     "values": [
+      "3.4",
+      "4.5",
+      "5.8"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "50",
+      "51",
+      "58"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "51",
+      "52",
+      "58"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "38 / 32 / 29 / 25",
+      "40 / 35 / 33 / 29",
+      "46 / 38 / 33 / 28"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "39 / 35 / 33 / 29",
+      "41 / 36 / 35 / 33",
+      "46 / 41 / 38 / 32"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 57,
+     "values": [
+      "9.0 / 7.6 / 6.7 / 5.8",
+      "9.2 / 7.8 / 7.3 / 6.4",
+      "11.5 / 9.6 / 7.4 / 6.6"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 57,
+     "values": [
+      "10.5 / 8.2 / 7.7 / 6.6",
+      "10.7 / 8.3 / 8.1 / 7.4",
+      "12.0 / 10.0 / 9.4 / 7.6"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 57,
+     "values": [
+      "860 × 600 × 238",
+      "860 × 600 × 238",
+      "860 × 600 × 238"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 57,
+     "values": [
+      "18.0",
+      "19.0",
+      "19.0"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина / Газ",
+     "unit": "мм(дюйм)",
+     "page": 57,
+     "values": [
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 12.7(1/2\")"
+     ]
+    }
+   ],
+   "funcs_col": 8,
+   "accessories": []
+  },
+  "MULTI-SRR": {
+   "page": 57,
+   "series": "Канальні низького тиску",
+   "marking": "SRR-ZS",
+   "block": "Канальний",
+   "title": "Канальні низького тиску · SRR-ZS",
+   "columns": [
+    "SRR25ZS-W",
+    "SRR35ZS-W",
+    "SRR50ZS-W",
+    "SRR60ZS-W"
+   ],
+   "indoor": [
+    [
+     "SRR25ZS-W"
+    ],
+    [
+     "SRR35ZS-W"
+    ],
+    [
+     "SRR50ZS-W"
+    ],
+    [
+     "SRR60ZS-W"
+    ]
+   ],
+   "outdoor": [
+    [],
+    [],
+    [],
+    []
+   ],
+   "wifi_builtin": null,
+   "specs": [
+    {
+     "name": "Холодопродуктивність",
+     "unit": "кВт",
+     "page": 57,
+     "values": [
+      "2.5",
+      "3.5",
+      "5.0",
+      "6.0"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність",
+     "unit": "кВт",
+     "page": 57,
+     "values": [
+      "3.4",
+      "4.5",
+      "5.8",
+      "6.8"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "56",
+      "57",
+      "59",
+      "60"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "59",
+      "60",
+      "61",
+      "63"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "37 / 33 / 30 / 24",
+      "38 / 34 / 31 / 25",
+      "41 / 37 / 34 / 29",
+      "44 / 38 / 35 / 30"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "40 / 37 / 34 / 28",
+      "42 / 38 / 35 / 29",
+      "43 / 39 / 37 / 32",
+      "45 / 41 / 38 / 33"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 57,
+     "values": [
+      "9.5 / 8.5 / 6.5 / 4.5",
+      "10.0 / 8.5 / 7.0 / 5.0",
+      "13.5 / 11.0 / 10.0 / 7.5",
+      "14.5 / 11.5 / 10.5 / 8.0"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 57,
+     "values": [
+      "10.0 / 9.0 / 8.0 / 6.0",
+      "10.5 / 9.5 / 8.5 / 6.5",
+      "14.5 / 12.5 / 11.0 / 8.5",
+      "15.0 / 13.0 / 11.5 / 9.0"
+     ]
+    },
+    {
+     "name": "Максимальний зовнішній статичний тиск",
+     "unit": "Па",
+     "page": 57,
+     "values": [
+      "35 (втрати статичного тиску з фільтром: 5 Па)",
+      "35 (втрати статичного тиску з фільтром: 5 Па)",
+      "50 (втрати статичного тиску з фільтром: 5 Па)",
+      "50 (втрати статичного тиску з фільтром: 5 Па)"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 57,
+     "values": [
+      "750 × 200 × 500",
+      "750 × 200 × 500",
+      "950 × 200 × 500",
+      "950 × 200 × 500"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 57,
+     "values": [
+      "20.5",
+      "20.5",
+      "24.0",
+      "24.0"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина / Газ",
+     "unit": "мм(дюйм)",
+     "page": 57,
+     "values": [
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 12.7(1/2\")",
+      "6.35(1/4\") / 12.7(1/2\")"
+     ]
+    }
+   ],
+   "funcs_col": 9,
+   "accessories": []
+  },
+  "MULTI-FDTC": {
+   "page": 57,
+   "series": "4-поточні касетні компактні",
+   "marking": "FDTC-VH",
+   "block": "Касетний",
+   "title": "4-поточні касетні компактні · FDTC-VH",
+   "columns": [
+    "FDTC25VH1",
+    "FDTC35VH1",
+    "FDTC50VH",
+    "FDTC60VH"
+   ],
+   "indoor": [
+    [
+     "FDTC25VH1"
+    ],
+    [
+     "FDTC35VH1"
+    ],
+    [
+     "FDTC50VH"
+    ],
+    [
+     "FDTC60VH"
+    ]
+   ],
+   "outdoor": [
+    [],
+    [],
+    [],
+    []
+   ],
+   "wifi_builtin": null,
+   "specs": [
+    {
+     "name": "Холодопродуктивність",
+     "unit": "кВт",
+     "page": 57,
+     "values": [
+      "2.5",
+      "3.5",
+      "5.0",
+      "6.0"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність",
+     "unit": "кВт",
+     "page": 57,
+     "values": [
+      "3.4",
+      "4.5",
+      "5.8",
+      "6.8"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "51",
+      "52",
+      "59",
+      "60"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "52",
+      "53",
+      "59",
+      "60"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "38 / 34 / 30 / 27",
+      "39 / 36 / 32 / 29",
+      "44 / 40 / 35 / 27",
+      "46 / 42 / 38 / 31"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "39 / 36 / 32 / 28",
+      "41 / 38 / 34 / 30",
+      "44 / 40 / 35 / 27",
+      "46 / 42 / 38 / 31"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження",
+     "unit": "м³/хв",
+     "page": 57,
+     "values": [
+      "8.5 / 7.5 / 7.0 / 6.0",
+      "9.0 / 8.0 / 7.5 / 6.5",
+      "13.0 / 11.0 / 9.0 / 7.0",
+      "14.0 / 12.0 / 10.0 / 8.0"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 57,
+     "values": [
+      "9.5 / 8.5 / 7.5 / 6.5",
+      "10.0 / 9.0 / 8.0 / 7.0",
+      "13.0 / 11.0 / 9.0 / 7.0",
+      "14.0 / 12.0 / 10.0 / 8.0"
+     ]
+    },
+    {
+     "name": "Розміри · Внутрішній",
+     "unit": "мм",
+     "page": 57,
+     "values": [
+      "570 × 248 × 570",
+      "570 × 248 × 570",
+      "570 × 248 × 570",
+      "570 × 248 × 570"
+     ]
+    },
+    {
+     "name": "(Ширина х Висота х Глибина) · Панель",
+     "unit": "мм",
+     "page": 57,
+     "values": [
+      "620 × 10 × 620",
+      "620 × 10 × 620",
+      "620 × 10 × 620",
+      "620 × 10 × 620"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 57,
+     "values": [
+      "16.0 (Блок:13.5 Панель:2.5)",
+      "16.0 (Блок:13.5 Панель:2.5)",
+      "16.5 (Блок:14 Панель:2.5)",
+      "16.5 (Блок:14 Панель:2.5)"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина / Газ",
+     "unit": "мм(дюйм)",
+     "page": 57,
+     "values": [
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 9.52(3/8\")",
+      "6.35(1/4\") / 12.7(1/2\")",
+      "6.35(1/4\") / 12.7(1/2\")"
+     ]
+    },
+    {
+     "name": "Панель",
+     "unit": null,
+     "page": 57,
+     "values": [
+      "TC-PSA-5AW-E, TC-PSAE-5AW-E",
+      "TC-PSA-5AW-E, TC-PSAE-5AW-E",
+      "TC-PSA-5AW-E, TC-PSAE-5AW-E",
+      "TC-PSA-5AW-E, TC-PSAE-5AW-E"
+     ]
+    }
+   ],
+   "funcs_col": 10,
+   "accessories": []
+  },
+  "MULTI-FDUM-FDE": {
+   "page": 57,
+   "series": "Канальні / стельові",
+   "marking": "FDUM-VH / FDE-VH",
+   "block": "Канальний, стельовий",
+   "title": "Канальні / стельові · FDUM-VH / FDE-VH",
+   "columns": [
+    "FDUM50VH",
+    "FDE50VH"
+   ],
+   "indoor": [
+    [
+     "FDUM50VH"
+    ],
+    [
+     "FDE50VH"
+    ]
+   ],
+   "outdoor": [
+    [],
+    []
+   ],
+   "wifi_builtin": null,
+   "specs": [
+    {
+     "name": "Холодопродуктивність",
+     "unit": "кВт",
+     "page": 57,
+     "values": [
+      "5.0",
+      "5.0"
+     ]
+    },
+    {
+     "name": "Теплопродуктивність",
+     "unit": "кВт",
+     "page": 57,
+     "values": [
+      "5.8",
+      "5.8"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Охолодження",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "60",
+      "60"
+     ]
+    },
+    {
+     "name": "Рівень звукової потужності · Обігрів",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "60",
+      "60"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "37 / 32 / 29 / 26",
+      "46 / 38/ 36/ 31"
+     ]
+    },
+    {
+     "name": "Рівень звукового тиску · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "дБ(A)",
+     "page": 57,
+     "values": [
+      "37 / 32 / 29 / 26",
+      "46 / 38/ 36/ 31"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Охолодження (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 57,
+     "values": [
+      "13.0 / 10.0 / 9.0 / 8.0",
+      "13.0 / 10.0 / 9.0 / 7.0"
+     ]
+    },
+    {
+     "name": "Циркуляція повітря · Обігрів (Hi/Me/Lo/Ulo)",
+     "unit": "м³/хв",
+     "page": 57,
+     "values": [
+      "13.0 / 10.0 / 9.0 / 8.0",
+      "13.0 / 10.0 / 9.0 / 7.0"
+     ]
+    },
+    {
+     "name": "Максимальний зовнішній статичний тиск",
+     "unit": "Па",
+     "page": 57,
+     "values": [
+      "Стандартний : 35 Max : 100",
+      "ー"
+     ]
+    },
+    {
+     "name": "Розміри (Ширина х Висота х Глибина)",
+     "unit": "мм",
+     "page": 57,
+     "values": [
+      "750 × 280 × 635",
+      "1070 × 210 × 690"
+     ]
+    },
+    {
+     "name": "Вага нетто",
+     "unit": "кг",
+     "page": 57,
+     "values": [
+      "29.0",
+      "28.0"
+     ]
+    },
+    {
+     "name": "Приєднання труб · Рідина / Газ",
+     "unit": "мм(дюйм)",
+     "page": 57,
+     "values": [
+      "6.35(1/4\") / 12.7(1/2\")",
+      "6.35(1/4\") / 12.7(1/2\")"
+     ]
+    },
+    {
+     "name": "Повітряний фільтр",
+     "unit": null,
+     "page": 57,
+     "values": [
+      "UM-FL1EF (опція)",
+      "Пластиковий фільтр × 2 (Миється)"
+     ]
+    }
+   ],
+   "funcs_col": null,
+   "accessories": []
   }
  },
+ "functions": {
+  "0": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "yes",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "yes",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "option",
+    "page": 33,
+    "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "3": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "yes",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "yes",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "option",
+    "page": 33,
+    "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "1": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "yes",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "yes",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "option",
+    "page": 33,
+    "note": "Для серій ZT та ZTL функцію «Тижневий таймер» можна використовувати лише через застосунок Smart M-Air."
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "2": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "yes",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "yes",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "option",
+    "page": 33,
+    "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "4": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "yes",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "yes",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "option",
+    "page": 33,
+    "note": "Для серій ZT та ZTL функцію «Тижневий таймер» можна використовувати лише через застосунок Smart M-Air."
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "5": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "no",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "no",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "6": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "no",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "no",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "7": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "yes",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "yes",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "option",
+    "page": 33,
+    "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "8": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "no",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "yes",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "option",
+    "page": 33,
+    "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "9": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "no",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "yes",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "option",
+    "page": 33,
+    "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "10": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "option",
+    "page": 33,
+    "note": "Лише для FDTC-VH."
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "option",
+    "page": 33,
+    "note": "Лише для FDTC-VH."
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "option",
+    "page": 33,
+    "note": "Лише для FDTC-VH."
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "option",
+    "page": 33,
+    "note": "Лише для FDTC-VH."
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "no",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "no",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "option",
+    "page": 33,
+    "note": "Для типів -W, -S потрібна опційно встановлювати Wi-Fi-модуль для використання функції бездротового керування."
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   }
+  ],
+  "11": [
+   {
+    "name": "РЕЖИМ FUZZY AUTO",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ДАТЧИК АКТИВНОСТІ ЛЮДИНИ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECO",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНЕ ВИМКНЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ECONOMY",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕАКТИВНИЙ ПОТІК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТРИВИМІРНЕ УПРАВЛІННЯ ПОВІТРЯНИМ ПОТОКОМ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТО УПРАВЛІННЯ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗАПАМ'ЯТОВУВАННЯ ПОЗИЦІЇ ЖАЛЮЗІ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВГОРУ/ВНИЗ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ГОЙДАННЯ ЖАЛЮЗІ ВПРАВО/ВЛІВО",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ ЗАХИСТУ ВІД ПРОТЯГУ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ КАМІНА",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "СИСТЕМА ОЧИЩЕННЯ ПОВІТРЯ ВІД АЛЕРГЕНІВ",
+    "state": "no",
+    "page": 33,
+    "note": "У разі використання з мульти спліт-системи функція недоступна."
+   },
+   {
+    "name": "РЕЖИМ САМООЧИЩЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АНТИАЛЕРГЕННИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФОТОКАТАЛІТИЧНИЙ ДЕЗОДОРУЮЧИЙ ФІЛЬТР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ЗНІМНА ПАНЕЛЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ОСУШЕННЯ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ HIGH POWER",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЕЗШУМНА РОБОТА",
+    "state": "no",
+    "page": 33,
+    "note": "Не можна використовувати для SCM40・45ZS-S, SCM100・125ZM-S."
+   },
+   {
+    "name": "ЧЕРГОВЕ ОПАЛЕННЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТИЖНЕВИЙ ТАЙМЕР",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ПРОГРАМОВАНИЙ 24-ГОДИННИЙ ТАЙМЕР",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР СНУ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ТАЙМЕР ВМИК/ВИМК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КОМФОРТНИЙ ПУСК",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЖИМ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "БЛОКУВАННЯ ВІД ДІТЕЙ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕГУЛЮВАННЯ ЯСКРАВОСТІ ДИСПЛЕЯ",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "КЕРУВАННЯ ЧЕРЕЗ WI-FI",
+    "state": "no",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РОЗМОРОЖУВАННЯ ПІД УПРАВЛІННЯМ МІКРОКОНТРОЛЕРА",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "ФУНКЦІЯ САМОДІАГНОСТИКИ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "АВТОМАТИЧНИЙ РЕСТАРТ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   },
+   {
+    "name": "РЕЗЕРВНИЙ ВИМИКАЧ",
+    "state": "yes",
+    "page": 33,
+    "note": null
+   }
+  ]
+ },
  "index": {
-  "SRK20ZSXW": "SRK-ZSX-W|0",
-  "SRK20ZSXWB": "SRK-ZSX-W|0",
-  "SRK20ZSXWT": "SRK-ZSX-W|0",
-  "SRK20ZSXWF": "SRK-ZSX-W|0",
-  "SRK20ZSXWFB": "SRK-ZSX-W|0",
-  "SRK20ZSXWFT": "SRK-ZSX-W|0",
-  "SRC20ZSXW": "SRK-ZSX-W|0",
-  "SRK25ZSXW": "SRK-ZSX-W|1",
-  "SRK25ZSXWB": "SRK-ZSX-W|1",
-  "SRK25ZSXWT": "SRK-ZSX-W|1",
-  "SRK25ZSXWF": "SRK-ZSX-W|1",
-  "SRK25ZSXWFB": "SRK-ZSX-W|1",
-  "SRK25ZSXWFT": "SRK-ZSX-W|1",
-  "SRC25ZSXW": "SRK-ZSX-W|1",
-  "SRK35ZSXW": "SRK-ZSX-W|2",
-  "SRK35ZSXWB": "SRK-ZSX-W|2",
-  "SRK35ZSXWT": "SRK-ZSX-W|2",
-  "SRK35ZSXWF": "SRK-ZSX-W|2",
-  "SRK35ZSXWFB": "SRK-ZSX-W|2",
-  "SRK35ZSXWFT": "SRK-ZSX-W|2",
-  "SRC35ZSXW": "SRK-ZSX-W|2",
-  "SRK50ZSXW": "SRK-ZSX-W|3",
-  "SRK50ZSXWB": "SRK-ZSX-W|3",
-  "SRK50ZSXWT": "SRK-ZSX-W|3",
-  "SRK50ZSXWF": "SRK-ZSX-W|3",
-  "SRK50ZSXWFB": "SRK-ZSX-W|3",
-  "SRK50ZSXWFT": "SRK-ZSX-W|3",
-  "SRC50ZSXW3": "FDTC-VH|3",
-  "SRK60ZSXW": "SRK-ZSX-W|4",
-  "SRK60ZSXWB": "SRK-ZSX-W|4",
-  "SRK60ZSXWT": "SRK-ZSX-W|4",
-  "SRK60ZSXWF": "SRK-ZSX-W|4",
-  "SRK60ZSXWFB": "SRK-ZSX-W|4",
-  "SRK60ZSXWFT": "SRK-ZSX-W|4",
-  "SRC60ZSXW3": "FDTC-VH|4",
-  "SRK63ZRW": "SRK-ZR-W|0",
-  "SRK63ZRWF": "SRK-ZR-W|0",
-  "SRC63ZRW": "SRK-ZR-W|0",
-  "SRK71ZRW": "SRK-ZR-W|1",
-  "SRK71ZRWF": "SRK-ZR-W|1",
-  "SRC71ZRW": "SRK-ZR-W|1",
-  "SRK80ZRW": "SRK-ZR-W|2",
-  "SRK80ZRWF": "SRK-ZR-W|2",
-  "SRC80ZRW": "SRK-ZR-W|2",
-  "SRK100ZRW": "SRK-ZR-W|3",
-  "SRK100ZRWF": "SRK-ZR-W|3",
-  "FDC100VNPW": "SRK-ZR-W|3",
-  "SRK20ZTWF": "SRK-ZT-WF|0",
-  "SRK20ZTWFB": "SRK-ZT-WF|0",
-  "SRK20ZTWFT": "SRK-ZT-WF|0",
-  "SRC20ZTW": "SRK-ZT-WF|0",
-  "SRC20ZTWB": "SRK-ZT-WF|0",
-  "SRK25ZTWF": "SRK-ZT-WF|1",
-  "SRK25ZTWFB": "SRK-ZT-WF|1",
-  "SRK25ZTWFT": "SRK-ZT-WF|1",
-  "SRC25ZTW": "SRK-ZT-WF|1",
-  "SRC25ZTWB": "SRK-ZT-WF|1",
-  "SRK35ZTWF": "SRK-ZT-WF|2",
-  "SRK35ZTWFB": "SRK-ZT-WF|2",
-  "SRK35ZTWFT": "SRK-ZT-WF|2",
-  "SRC35ZTW": "SRK-ZT-WF|2",
-  "SRC35ZTWB": "SRK-ZT-WF|2",
-  "SRK50ZTWF": "SRK-ZT-WF|3",
-  "SRK50ZTWFB": "SRK-ZT-WF|3",
-  "SRK50ZTWFT": "SRK-ZT-WF|3",
-  "SRC50ZTW": "SRK-ZT-WF|3",
-  "SRC50ZTWB": "SRK-ZT-WF|3",
-  "SRK20ZSW": "SRK-ZS-W|0",
-  "SRK20ZSWB": "SRK-ZS-W|0",
-  "SRK20ZSWT": "SRK-ZS-W|0",
-  "SRK20ZSWF": "SRK-ZS-W|0",
-  "SRK20ZSWFB": "SRK-ZS-W|0",
-  "SRK20ZSWFT": "SRK-ZS-W|0",
-  "SRC20ZSW": "SRK-ZS-W|0",
-  "SRK25ZSW": "SRK-ZS-W|1",
-  "SRK25ZSWB": "SRK-ZS-W|1",
-  "SRK25ZSWT": "SRK-ZS-W|1",
-  "SRK25ZSWF": "SRK-ZS-W|1",
-  "SRK25ZSWFB": "SRK-ZS-W|1",
-  "SRK25ZSWFT": "SRK-ZS-W|1",
-  "SRC25ZSW2": "FDTC-VH|0",
-  "SRK35ZSW": "SRK-ZS-W|2",
-  "SRK35ZSWB": "SRK-ZS-W|2",
-  "SRK35ZSWT": "SRK-ZS-W|2",
-  "SRK35ZSWF": "SRK-ZS-W|2",
-  "SRK35ZSWFB": "SRK-ZS-W|2",
-  "SRK35ZSWFT": "SRK-ZS-W|2",
-  "SRC35ZSW2": "FDTC-VH|1",
-  "SRK50ZSW": "SRK-ZS-W|3",
-  "SRK50ZSWB": "SRK-ZS-W|3",
-  "SRK50ZSWT": "SRK-ZS-W|3",
-  "SRK50ZSWF": "SRK-ZS-W|3",
-  "SRK50ZSWFB": "SRK-ZS-W|3",
-  "SRK50ZSWFT": "SRK-ZS-W|3",
-  "SRC50ZSW": "SRK-ZS-W|3",
-  "SRK15ZTLW": "SRK-ZTL-W|0",
-  "SRC15ZTLW": "SRK-ZTL-W|0",
-  "SRK20ZTLW": "SRK-ZTL-W|1",
-  "SRC20ZTLW": "SRK-ZTL-W|1",
-  "SRK25ZTLW": "SRK-ZTL-W|2",
-  "SRC25ZTLW": "SRK-ZTL-W|2",
-  "SRK35ZTLW": "SRK-ZTL-W|3",
-  "SRC35ZTLW": "SRK-ZTL-W|3",
-  "SRK25ZSPW1": "SRK-ZSP-W1|0",
-  "SRC25ZSPW1": "SRK-ZSP-W1|0",
-  "SRK35ZSPW1": "SRK-ZSP-W1|1",
-  "SRC35ZSPW1": "SRK-ZSP-W1|1",
-  "SRK45ZSPW1": "SRK-ZSP-W1|2",
-  "SRC45ZSPW1": "SRK-ZSP-W1|2",
-  "SRK50ZSPW1": "SRK-ZSP-W1|3",
-  "SRC50ZSPW1": "SRK-ZSP-W1|3",
-  "SRK20ZSPRS": "SRK-ZSPR-S|0",
-  "SRC20ZSPRS": "SRK-ZSPR-S|0",
-  "SRK25ZSPRS": "SRK-ZSPR-S|1",
-  "SRC25ZSPRS": "SRK-ZSPR-S|1",
-  "SRK35ZSPRS": "SRK-ZSPR-S|2",
-  "SRC35ZSPRS": "SRK-ZSPR-S|2",
-  "SRK45ZSPRS": "SRK-ZSPR-S|3",
-  "SRC45ZSPRS": "SRK-ZSPR-S|3",
-  "SRK63ZSPRS": "SRK-ZSPR-S-63|0",
-  "SRC63ZSPRS": "SRK-ZSPR-S-63|0",
-  "SRK71ZSPRS": "SRK-ZSPR-S-63|1",
-  "SRC71ZSPRS": "SRK-ZSPR-S-63|1",
-  "SRK80ZSPRS": "SRK-ZSPR-S-63|2",
-  "SRC80ZSPRS": "SRK-ZSPR-S-63|2",
-  "SRF25ZSW": "SRF-ZS-ZSX|0",
-  "SRF35ZSW": "SRF-ZS-ZSX|1",
-  "SRF50ZSXW": "SRF-ZS-ZSX|2",
-  "SRR25ZSW": "SRR-ZS|0",
-  "SRR35ZSW": "SRR-ZS|1",
-  "SRR50ZSW": "SRR-ZS|2",
-  "SRR60ZSW": "SRR-ZS|3",
-  "FDTC25VH1": "FDTC-VH|0",
-  "FDTC35VH1": "FDTC-VH|1",
-  "FDTC40VH": "FDTC-VH|2",
-  "SRC40ZSXW1": "FDTC-VH|2",
-  "FDTC50VH": "FDTC-VH|3",
-  "FDTC60VH": "FDTC-VH|4"
+  "split_mhi": {
+   "SRK20ZSXW": "SRK-ZSX-W|0",
+   "SRK20ZSXWB": "SRK-ZSX-W|0",
+   "SRK20ZSXWT": "SRK-ZSX-W|0",
+   "SRK20ZSXWF": "SRK-ZSX-W|0",
+   "SRK20ZSXWFB": "SRK-ZSX-W|0",
+   "SRK20ZSXWFT": "SRK-ZSX-W|0",
+   "SRC20ZSXW": "SRK-ZSX-W|0",
+   "SRK25ZSXW": "SRK-ZSX-W|1",
+   "SRK25ZSXWB": "SRK-ZSX-W|1",
+   "SRK25ZSXWT": "SRK-ZSX-W|1",
+   "SRK25ZSXWF": "SRK-ZSX-W|1",
+   "SRK25ZSXWFB": "SRK-ZSX-W|1",
+   "SRK25ZSXWFT": "SRK-ZSX-W|1",
+   "SRC25ZSXW": "SRK-ZSX-W|1",
+   "SRK35ZSXW": "SRK-ZSX-W|2",
+   "SRK35ZSXWB": "SRK-ZSX-W|2",
+   "SRK35ZSXWT": "SRK-ZSX-W|2",
+   "SRK35ZSXWF": "SRK-ZSX-W|2",
+   "SRK35ZSXWFB": "SRK-ZSX-W|2",
+   "SRK35ZSXWFT": "SRK-ZSX-W|2",
+   "SRC35ZSXW": "SRK-ZSX-W|2",
+   "SRK50ZSXW": "SRK-ZSX-W|3",
+   "SRK50ZSXWB": "SRK-ZSX-W|3",
+   "SRK50ZSXWT": "SRK-ZSX-W|3",
+   "SRK50ZSXWF": "SRK-ZSX-W|3",
+   "SRK50ZSXWFB": "SRK-ZSX-W|3",
+   "SRK50ZSXWFT": "SRK-ZSX-W|3",
+   "SRC50ZSXW3": "FDTC-VH|3",
+   "SRK60ZSXW": "SRK-ZSX-W|4",
+   "SRK60ZSXWB": "SRK-ZSX-W|4",
+   "SRK60ZSXWT": "SRK-ZSX-W|4",
+   "SRK60ZSXWF": "SRK-ZSX-W|4",
+   "SRK60ZSXWFB": "SRK-ZSX-W|4",
+   "SRK60ZSXWFT": "SRK-ZSX-W|4",
+   "SRC60ZSXW3": "FDTC-VH|4",
+   "SRK63ZRW": "SRK-ZR-W|0",
+   "SRK63ZRWF": "SRK-ZR-W|0",
+   "SRC63ZRW": "SRK-ZR-W|0",
+   "SRK71ZRW": "SRK-ZR-W|1",
+   "SRK71ZRWF": "SRK-ZR-W|1",
+   "SRC71ZRW": "SRK-ZR-W|1",
+   "SRK80ZRW": "SRK-ZR-W|2",
+   "SRK80ZRWF": "SRK-ZR-W|2",
+   "SRC80ZRW": "SRK-ZR-W|2",
+   "SRK100ZRW": "SRK-ZR-W|3",
+   "SRK100ZRWF": "SRK-ZR-W|3",
+   "FDC100VNPW": "SRK-ZR-W|3",
+   "SRK20ZTWF": "SRK-ZT-WF|0",
+   "SRK20ZTWFB": "SRK-ZT-WF|0",
+   "SRK20ZTWFT": "SRK-ZT-WF|0",
+   "SRC20ZTW": "SRK-ZT-WF|0",
+   "SRC20ZTWB": "SRK-ZT-WF|0",
+   "SRK25ZTWF": "SRK-ZT-WF|1",
+   "SRK25ZTWFB": "SRK-ZT-WF|1",
+   "SRK25ZTWFT": "SRK-ZT-WF|1",
+   "SRC25ZTW": "SRK-ZT-WF|1",
+   "SRC25ZTWB": "SRK-ZT-WF|1",
+   "SRK35ZTWF": "SRK-ZT-WF|2",
+   "SRK35ZTWFB": "SRK-ZT-WF|2",
+   "SRK35ZTWFT": "SRK-ZT-WF|2",
+   "SRC35ZTW": "SRK-ZT-WF|2",
+   "SRC35ZTWB": "SRK-ZT-WF|2",
+   "SRK50ZTWF": "SRK-ZT-WF|3",
+   "SRK50ZTWFB": "SRK-ZT-WF|3",
+   "SRK50ZTWFT": "SRK-ZT-WF|3",
+   "SRC50ZTW": "SRK-ZT-WF|3",
+   "SRC50ZTWB": "SRK-ZT-WF|3",
+   "SRK20ZSW": "SRK-ZS-W|0",
+   "SRK20ZSWB": "SRK-ZS-W|0",
+   "SRK20ZSWT": "SRK-ZS-W|0",
+   "SRK20ZSWF": "SRK-ZS-W|0",
+   "SRK20ZSWFB": "SRK-ZS-W|0",
+   "SRK20ZSWFT": "SRK-ZS-W|0",
+   "SRC20ZSW": "SRK-ZS-W|0",
+   "SRK25ZSW": "SRK-ZS-W|1",
+   "SRK25ZSWB": "SRK-ZS-W|1",
+   "SRK25ZSWT": "SRK-ZS-W|1",
+   "SRK25ZSWF": "SRK-ZS-W|1",
+   "SRK25ZSWFB": "SRK-ZS-W|1",
+   "SRK25ZSWFT": "SRK-ZS-W|1",
+   "SRC25ZSW2": "FDTC-VH|0",
+   "SRK35ZSW": "SRK-ZS-W|2",
+   "SRK35ZSWB": "SRK-ZS-W|2",
+   "SRK35ZSWT": "SRK-ZS-W|2",
+   "SRK35ZSWF": "SRK-ZS-W|2",
+   "SRK35ZSWFB": "SRK-ZS-W|2",
+   "SRK35ZSWFT": "SRK-ZS-W|2",
+   "SRC35ZSW2": "FDTC-VH|1",
+   "SRK50ZSW": "SRK-ZS-W|3",
+   "SRK50ZSWB": "SRK-ZS-W|3",
+   "SRK50ZSWT": "SRK-ZS-W|3",
+   "SRK50ZSWF": "SRK-ZS-W|3",
+   "SRK50ZSWFB": "SRK-ZS-W|3",
+   "SRK50ZSWFT": "SRK-ZS-W|3",
+   "SRC50ZSW": "SRK-ZS-W|3",
+   "SRK15ZTLW": "SRK-ZTL-W|0",
+   "SRC15ZTLW": "SRK-ZTL-W|0",
+   "SRK20ZTLW": "SRK-ZTL-W|1",
+   "SRC20ZTLW": "SRK-ZTL-W|1",
+   "SRK25ZTLW": "SRK-ZTL-W|2",
+   "SRC25ZTLW": "SRK-ZTL-W|2",
+   "SRK35ZTLW": "SRK-ZTL-W|3",
+   "SRC35ZTLW": "SRK-ZTL-W|3",
+   "SRK25ZSPW1": "SRK-ZSP-W1|0",
+   "SRC25ZSPW1": "SRK-ZSP-W1|0",
+   "SRK35ZSPW1": "SRK-ZSP-W1|1",
+   "SRC35ZSPW1": "SRK-ZSP-W1|1",
+   "SRK45ZSPW1": "SRK-ZSP-W1|2",
+   "SRC45ZSPW1": "SRK-ZSP-W1|2",
+   "SRK50ZSPW1": "SRK-ZSP-W1|3",
+   "SRC50ZSPW1": "SRK-ZSP-W1|3",
+   "SRK20ZSPRS": "SRK-ZSPR-S|0",
+   "SRC20ZSPRS": "SRK-ZSPR-S|0",
+   "SRK25ZSPRS": "SRK-ZSPR-S|1",
+   "SRC25ZSPRS": "SRK-ZSPR-S|1",
+   "SRK35ZSPRS": "SRK-ZSPR-S|2",
+   "SRC35ZSPRS": "SRK-ZSPR-S|2",
+   "SRK45ZSPRS": "SRK-ZSPR-S|3",
+   "SRC45ZSPRS": "SRK-ZSPR-S|3",
+   "SRK63ZSPRS": "SRK-ZSPR-S-63|0",
+   "SRC63ZSPRS": "SRK-ZSPR-S-63|0",
+   "SRK71ZSPRS": "SRK-ZSPR-S-63|1",
+   "SRC71ZSPRS": "SRK-ZSPR-S-63|1",
+   "SRK80ZSPRS": "SRK-ZSPR-S-63|2",
+   "SRC80ZSPRS": "SRK-ZSPR-S-63|2",
+   "SRF25ZSW": "SRF-ZS-ZSX|0",
+   "SRF35ZSW": "SRF-ZS-ZSX|1",
+   "SRF50ZSXW": "SRF-ZS-ZSX|2",
+   "SRR25ZSW": "SRR-ZS|0",
+   "SRR35ZSW": "SRR-ZS|1",
+   "SRR50ZSW": "SRR-ZS|2",
+   "SRR60ZSW": "SRR-ZS|3",
+   "FDTC25VH1": "FDTC-VH|0",
+   "FDTC35VH1": "FDTC-VH|1",
+   "FDTC40VH": "FDTC-VH|2",
+   "SRC40ZSXW1": "FDTC-VH|2",
+   "FDTC50VH": "FDTC-VH|3",
+   "FDTC60VH": "FDTC-VH|4"
+  },
+  "multisplit_mhi": {
+   "SCM30ZSW": "MULTI-SCM-ZS-W|0",
+   "SCM40ZSW": "MULTI-SCM-ZS-W|1",
+   "SCM45ZSW": "MULTI-SCM-ZS-W|2",
+   "SCM41ZSW": "MULTI-SCM-ZS-W|3",
+   "SCM50ZSW": "MULTI-SCM-ZS-W|4",
+   "SCM60ZSW": "MULTI-SCM-ZS-W|5",
+   "SCM71ZSW": "MULTI-SCM-BIG|0",
+   "SCM80ZSW": "MULTI-SCM-BIG|1",
+   "SCM100ZSW": "MULTI-SCM-BIG|2",
+   "SCM125ZMS": "MULTI-SCM-BIG|3",
+   "SRK20ZSXWF": "MULTI-SRK-ZSX|0",
+   "SRK20ZSXWFB": "MULTI-SRK-ZSX|0",
+   "SRK20ZSXWFT": "MULTI-SRK-ZSX|0",
+   "SRK20ZSXW": "MULTI-SRK-ZSX|0",
+   "SRK20ZSXWB": "MULTI-SRK-ZSX|0",
+   "SRK20ZSXWT": "MULTI-SRK-ZSX|0",
+   "SRK25ZSXWF": "MULTI-SRK-ZSX|1",
+   "SRK25ZSXWFB": "MULTI-SRK-ZSX|1",
+   "SRK25ZSXWFT": "MULTI-SRK-ZSX|1",
+   "SRK25ZSXW": "MULTI-SRK-ZSX|1",
+   "SRK25ZSXWB": "MULTI-SRK-ZSX|1",
+   "SRK25ZSXWT": "MULTI-SRK-ZSX|1",
+   "SRK35ZSXWF": "MULTI-SRK-ZSX|2",
+   "SRK35ZSXWFB": "MULTI-SRK-ZSX|2",
+   "SRK35ZSXWFT": "MULTI-SRK-ZSX|2",
+   "SRK35ZSXW": "MULTI-SRK-ZSX|2",
+   "SRK35ZSXWB": "MULTI-SRK-ZSX|2",
+   "SRK35ZSXWT": "MULTI-SRK-ZSX|2",
+   "SRK50ZSXWF": "MULTI-SRK-ZSX|3",
+   "SRK50ZSXWFB": "MULTI-SRK-ZSX|3",
+   "SRK50ZSXWFT": "MULTI-SRK-ZSX|3",
+   "SRK50ZSXW": "MULTI-SRK-ZSX|3",
+   "SRK50ZSXWB": "MULTI-SRK-ZSX|3",
+   "SRK50ZSXWT": "MULTI-SRK-ZSX|3",
+   "SRK60ZSXWF": "MULTI-SRK-ZSX|4",
+   "SRK60ZSXWFB": "MULTI-SRK-ZSX|4",
+   "SRK60ZSXWFT": "MULTI-SRK-ZSX|4",
+   "SRK60ZSXW": "MULTI-SRK-ZSX|4",
+   "SRK60ZSXWB": "MULTI-SRK-ZSX|4",
+   "SRK60ZSXWT": "MULTI-SRK-ZSX|4",
+   "SRK71ZRWF": "MULTI-SRK-ZR|0",
+   "SRK71ZRW": "MULTI-SRK-ZR|0",
+   "SRK80ZRWF": "MULTI-SRK-ZR|1",
+   "SRK80ZRW": "MULTI-SRK-ZR|1",
+   "SRK20ZSWF": "MULTI-SRK-ZS|0",
+   "SRK20ZSWFB": "MULTI-SRK-ZS|0",
+   "SRK20ZSWFT": "MULTI-SRK-ZS|0",
+   "SRK20ZSW": "MULTI-SRK-ZS|0",
+   "SRK20ZSWB": "MULTI-SRK-ZS|0",
+   "SRK20ZSWT": "MULTI-SRK-ZS|0",
+   "SRK25ZSWF": "MULTI-SRK-ZS|1",
+   "SRK25ZSWFB": "MULTI-SRK-ZS|1",
+   "SRK25ZSWFT": "MULTI-SRK-ZS|1",
+   "SRK25ZSW": "MULTI-SRK-ZS|1",
+   "SRK25ZSWB": "MULTI-SRK-ZS|1",
+   "SRK25ZSWT": "MULTI-SRK-ZS|1",
+   "SRK35ZSWF": "MULTI-SRK-ZS|2",
+   "SRK35ZSWFB": "MULTI-SRK-ZS|2",
+   "SRK35ZSWFT": "MULTI-SRK-ZS|2",
+   "SRK35ZSW": "MULTI-SRK-ZS|2",
+   "SRK35ZSWB": "MULTI-SRK-ZS|2",
+   "SRK35ZSWT": "MULTI-SRK-ZS|2",
+   "SRK50ZSWF": "MULTI-SRK-ZS|3",
+   "SRK50ZSWFB": "MULTI-SRK-ZS|3",
+   "SRK50ZSWFT": "MULTI-SRK-ZS|3",
+   "SRK50ZSW": "MULTI-SRK-ZS|3",
+   "SRK50ZSWB": "MULTI-SRK-ZS|3",
+   "SRK50ZSWT": "MULTI-SRK-ZS|3",
+   "SKM20ZSPW": "MULTI-SKM-ZSP|0",
+   "SKM25ZSPW": "MULTI-SKM-ZSP|1",
+   "SKM35ZSPW": "MULTI-SKM-ZSP|2",
+   "SRF25ZSW": "MULTI-SRF|0",
+   "SRF35ZSW": "MULTI-SRF|1",
+   "SRF50ZSXW": "MULTI-SRF|2",
+   "SRR25ZSW": "MULTI-SRR|0",
+   "SRR35ZSW": "MULTI-SRR|1",
+   "SRR50ZSW": "MULTI-SRR|2",
+   "SRR60ZSW": "MULTI-SRR|3",
+   "FDTC25VH1": "MULTI-FDTC|0",
+   "FDTC35VH1": "MULTI-FDTC|1",
+   "FDTC50VH": "MULTI-FDTC|2",
+   "FDTC60VH": "MULTI-FDTC|3",
+   "FDUM50VH": "MULTI-FDUM-FDE|0",
+   "FDE50VH": "MULTI-FDUM-FDE|1"
+  }
  },
  "cards": [
   {

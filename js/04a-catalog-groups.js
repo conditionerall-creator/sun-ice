@@ -208,13 +208,14 @@ function cgEnsureCatalog(cfgKey) {
   loadMhiCatalog().then(function (c) { if (c) renderCatalogList(); });
 }
 
-function cgCatalogCard(models) {
+function cgCatalogCard(models, cfgKey) {
   if (typeof mhiCatalog === 'undefined' || !mhiCatalog) return null;
   /* Спершу серія з розібраної таблиці (там і сторінка, і дані), потім — картка
      з «МОДЕЛЬНОГО РЯДУ». Картки покривають і мульти спліт-системи, таблиці яких
      ще не розібрані: назва серії й тип блока від пари блоків не залежать. */
+  const idx = (mhiCatalog.index && mhiCatalog.index[cfgKey]) || {};
   for (let i = 0; i < models.length; i++) {
-    const ref = mhiCatalog.index && mhiCatalog.index[catKey(models[i])];
+    const ref = idx[catKey(models[i])];
     if (!ref) continue;
     const sr = mhiCatalog.series[String(ref).split('|')[0]];
     if (sr) return sr;
@@ -450,7 +451,7 @@ function cgGroupHtml(cfg, g) {
      інформативний, людині важливіше, який це блок. */
   const models = [];
   g.blocks.forEach(b => b.entries.forEach(e => models.push(e.item.model)));
-  const card = cgCatalogCard(models);
+  const card = cgCatalogCard(models, cfg && cfg.key);
   const badge = card ? (card.block === 'Настінний' ? card.series : card.block) : '';
 
   /* «7 позицій» → перелік типорозмірів (рішення власника 2026-10-19): дилеру

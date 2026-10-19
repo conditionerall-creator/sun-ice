@@ -705,20 +705,24 @@ async function diagCheckMhiCatalog(ctx) {
   const seen = new Set();
   let covered = 0, total = 0;
   MHI_KEYS.forEach(key => {
+    const idx = cat.index[key] || {};
     const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
     items.forEach(it => {
       total++;
       const marks = psMarkings(key, it);
-      const hit = marks.map(m => cat.index[catKey(m)]).find(Boolean);
+      const hit = marks.map(m => idx[catKey(m)]).find(Boolean);
       if (!hit) return;
       covered++;
-      marks.forEach(m => seen.add(catKey(m)));
+      marks.forEach(m => seen.add(key + '|' + catKey(m)));
     });
   });
   out.checked.push({ area: area, sub: 'coverage', label: 'Покриття прайсу',
     detail: covered + ' з ' + total + ' позицій MHI мають дані каталогу' });
 
-  const orphans = Object.keys(cat.index).filter(k => !seen.has(k));
+  const orphans = [];
+  Object.keys(cat.index).forEach(app => Object.keys(cat.index[app]).forEach(k => {
+    if (!seen.has(app + '|' + k)) orphans.push(app + ': ' + k);
+  }));
   if (orphans.length) {
     out.issues.push(diagIssue(area, 'orphans', 'warning',
       'Маркувань каталогу, яких немає в прайсі — ' + orphans.length,
@@ -741,7 +745,8 @@ async function diagCheckMhiCatalog(ctx) {
       const map = links.links[key] || {};
       const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
       items.forEach(it => {
-        const ref = psMarkings(key, it).map(m => cat.index[catKey(m)]).find(Boolean);
+        const appIdx = cat.index[key] || {};
+        const ref = psMarkings(key, it).map(m => appIdx[catKey(m)]).find(Boolean);
         const slug = map[siteLinkKey(it)];
         if (!ref || !slug || !specs[slug]) return;
         const bits = String(ref).split('|');

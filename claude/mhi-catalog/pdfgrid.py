@@ -149,6 +149,8 @@ def assign_spans(cells, col_centers, tol=6.0):
         return None
     if k == n:
         return [1] * n
+    if k == 1:
+        return [n]          # одна комірка на всю ширину — об'єднана, без варіантів
 
     best = [None]
 

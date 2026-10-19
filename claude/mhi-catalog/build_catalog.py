@@ -52,27 +52,27 @@ FUNCS_COL_TOL = 6.0
 # --------------------------------------------------------------------------
 SERIES = [
     {'page': 34, 'key': 'SRK-ZSX-W', 'series': 'Diamond Series', 'marking': 'SRK-ZSX-W, -WF',
-     'block': 'Настінний', 'funcs_col': 0, 'wifi_builtin': 'ZSXWF'},
+     'block': 'Настінний', 'funcs_col': 0, 'wifi_builtin': 'ZSXWF', 'app': 'split_mhi'},
     {'page': 36, 'key': 'SRK-ZR-W', 'series': 'Diamond Series', 'marking': 'SRK-ZR-W, -WF',
-     'block': 'Настінний', 'funcs_col': 3, 'wifi_builtin': 'ZRWF'},
+     'block': 'Настінний', 'funcs_col': 3, 'wifi_builtin': 'ZRWF', 'app': 'split_mhi'},
     {'page': 38, 'key': 'SRK-ZT-WF', 'series': 'Premium Series', 'marking': 'SRK-ZT-WF',
-     'block': 'Настінний', 'funcs_col': 1},
+     'block': 'Настінний', 'funcs_col': 1, 'app': 'split_mhi'},
     {'page': 40, 'key': 'SRK-ZS-W', 'series': 'Premium Series', 'marking': 'SRK-ZS-W, -WF',
-     'block': 'Настінний', 'funcs_col': 2, 'wifi_builtin': 'ZSWF'},
+     'block': 'Настінний', 'funcs_col': 2, 'wifi_builtin': 'ZSWF', 'app': 'split_mhi'},
     {'page': 42, 'key': 'SRK-ZTL-W', 'series': 'Standard Plus Series', 'marking': 'SRK-ZTL-W',
-     'block': 'Настінний', 'funcs_col': 4},
+     'block': 'Настінний', 'funcs_col': 4, 'app': 'split_mhi'},
     {'page': 44, 'key': 'SRK-ZSP-W1', 'series': 'Standard Series', 'marking': 'SRK-ZSP-W1',
-     'block': 'Настінний', 'funcs_col': 5},
+     'block': 'Настінний', 'funcs_col': 5, 'app': 'split_mhi'},
     {'page': 46, 'key': 'SRK-ZSPR-S', 'series': 'Standard Series', 'marking': 'SRK-ZSPR-S',
-     'block': 'Настінний', 'funcs_col': 6},
+     'block': 'Настінний', 'funcs_col': 6, 'app': 'split_mhi'},
     {'page': 48, 'key': 'SRK-ZSPR-S-63', 'series': 'Standard Series', 'marking': 'SRK-ZSPR-S (63–80)',
-     'block': 'Настінний', 'funcs_col': 7},
+     'block': 'Настінний', 'funcs_col': 7, 'app': 'split_mhi'},
     {'page': 50, 'key': 'SRF-ZS-ZSX', 'series': 'Підлогові', 'marking': 'SRF-ZS / ZSX',
-     'block': 'Підлоговий', 'funcs_col': 8},
+     'block': 'Підлоговий', 'funcs_col': 8, 'app': 'split_mhi'},
     {'page': 51, 'key': 'SRR-ZS', 'series': 'Канальні низького тиску', 'marking': 'SRR-ZS',
-     'block': 'Канальний', 'funcs_col': 9},
+     'block': 'Канальний', 'funcs_col': 9, 'app': 'split_mhi'},
     {'page': 52, 'key': 'FDTC-VH', 'series': '4-поточні касетні компактні', 'marking': 'FDTC-VH',
-     'block': 'Касетний', 'funcs_col': 10},
+     'block': 'Касетний', 'funcs_col': 10, 'app': 'split_mhi'},
 ]
 
 
@@ -103,6 +103,42 @@ CARDS = [
     (r'^SCM\d+ZS', 'Мульти, зовнішній блок R32', 'SCM-ZS-W', 'Зовнішній'),
     (r'^SCM\d+ZM', 'Мульти, зовнішній блок R410A', 'SCM-ZM-S', 'Зовнішній'),
 ]
+
+
+# Мульти спліт-системи (стор. 55–57). Сторінка містить КІЛЬКА таблиць — по одній
+# на серію внутрішніх блоків, — тому ділянку шукаємо за `match` у її заголовку
+# або в маркуванні першої колонки.
+#
+# ОКРЕМИЙ ІНДЕКС. Внутрішні блоки мульти мають ті самі маркування, що й спліт
+# (SRK20ZSX-W), але інші характеристики: інший зовнішній блок, інші труби й
+# заправка. Тому index у файлі розділено по розділах застосунку — інакше одне
+# затерло б інше, і дилер побачив би чужі цифри.
+MULTI = [
+    {'page': 55, 'match': 'SCM30ZS-W', 'key': 'MULTI-SCM-ZS-W', 'series': 'Зовнішні блоки R32',
+     'marking': 'SCM-ZS-W', 'block': 'Зовнішній'},
+    {'page': 55, 'match': 'SCM71ZS-W', 'key': 'MULTI-SCM-BIG', 'series': 'Зовнішні блоки R32 / R410A',
+     'marking': 'SCM-ZS-W / SCM-ZM-S', 'block': 'Зовнішній'},
+    {'page': 56, 'match': 'SRK-ZSX', 'key': 'MULTI-SRK-ZSX', 'series': 'Diamond Series',
+     'marking': 'SRK-ZSX-WF, -W', 'block': 'Настінний', 'funcs_col': 0, 'wifi_builtin': 'ZSXWF'},
+    {'page': 56, 'match': 'SRK-ZR', 'key': 'MULTI-SRK-ZR', 'series': 'Diamond Series',
+     'marking': 'SRK-ZR-WF, -W', 'block': 'Настінний', 'funcs_col': 3,
+     'suffixes': ['-WF', '-W'], 'wifi_builtin': 'ZRWF'},
+    {'page': 56, 'match': 'SRK-ZS ', 'key': 'MULTI-SRK-ZS', 'series': 'Premium Series',
+     'marking': 'SRK-ZS-WF, -W', 'block': 'Настінний', 'funcs_col': 2, 'wifi_builtin': 'ZSWF'},
+    {'page': 56, 'match': 'SKM-ZSP', 'key': 'MULTI-SKM-ZSP', 'series': 'Standard Series',
+     'marking': 'SKM-ZSP-W', 'block': 'Настінний', 'funcs_col': 11},
+    {'page': 57, 'match': 'SRF-ZS', 'key': 'MULTI-SRF', 'series': 'Підлогові',
+     'marking': 'SRF-ZS / ZSX', 'block': 'Підлоговий', 'funcs_col': 8},
+    {'page': 57, 'match': 'SRR-ZS', 'key': 'MULTI-SRR', 'series': 'Канальні низького тиску',
+     'marking': 'SRR-ZS', 'block': 'Канальний', 'funcs_col': 9},
+    {'page': 57, 'match': 'FDTC', 'key': 'MULTI-FDTC', 'series': '4-поточні касетні компактні',
+     'marking': 'FDTC-VH', 'block': 'Касетний', 'funcs_col': 10},
+    {'page': 57, 'match': 'FDUM', 'key': 'MULTI-FDUM-FDE', 'series': 'Канальні / стельові',
+     'marking': 'FDUM-VH / FDE-VH', 'block': 'Канальний, стельовий'},
+]
+for _m in MULTI:
+    _m['app'] = 'multisplit_mhi'
+    _m['sections'] = True
 
 
 class Problem(Exception):
@@ -193,7 +229,10 @@ def parse_accessories(words, page, filter_value, report, label):
     text = re.sub(r'\s+', ' ', text)
     out, seen = [], set()
 
-    stars = [s.strip() for s in re.findall(r'\*\s*([^*]{10,200}?)(?=\s*\*|$)', text)]
+    # Виноска — ОДНЕ речення. Без обрізання в примітку приклеювався підпис
+    # сусіднього малюнка («…через адаптер SC-BIKN2-E. Бездротовий.»).
+    stars = [re.split(r'(?<=\.)\s', s.strip())[0].strip()
+             for s in re.findall(r'\*\s*([^*]{10,200}?)(?=\s*\*|$)', text)]
     wired_note = next((s for s in stars if 'адаптер' in s.lower()), None)
 
     if 'Бездротовий' in text:
@@ -237,20 +276,43 @@ def parse_accessories(words, page, filter_value, report, label):
 
 
 # --------------------------------------------------------------------------
+def pick_section(words, cfg, label):
+    """Ділянка сторінки, що належить цій серії (сторінки мульти містять кілька)."""
+    for sec in T.find_sections(words):
+        rows, centers, header = T.read_table(words, cfg['page'], sec['y_from'], sec['y_to'])
+        if not rows or len(rows) < 5:
+            continue
+        marks = ' '.join(w.text for w in header['words'])
+        if cfg['match'] in sec['title'] or cfg['match'] in marks:
+            return sec, rows, centers, header
+    raise Problem('Стор. %d (%s): ділянки з «%s» не знайшлось'
+                  % (cfg['page'], label, cfg['match']))
+
+
 def build_series(cfg, funcs_cache, report):
     page, label = cfg['page'], cfg['key']
     words = G.page_words(PDF, page)
-    rows, centers, header = T.read_table(words, page)
+    if cfg.get('sections'):
+        sec, rows, centers, header = pick_section(words, cfg, label)
+        y_to, suffixes = sec['y_to'], cfg.get('suffixes') or sec['suffixes']
+    else:
+        rows, centers, header = T.read_table(words, page)
+        y_to, suffixes = None, cfg.get('suffixes')
     if not rows:
         raise Problem('Стор. %d (%s): таблиці знайомого вигляду немає' % (page, label))
 
-    indoor, outdoor = T.read_header(words, centers, min(w.y0 for w in header) - 20)
-    if not any(indoor):
-        raise Problem('Стор. %d (%s): не прочитались маркування внутрішніх блоків' % (page, label))
+    indoor, outdoor = T.read_header(words, centers, min(w.y0 for w in header['words']) - 2,
+                                    header['x_vals'], y_to, suffixes)
+    if not any(indoor) and not any(outdoor):
+        raise Problem('Стор. %d (%s): не прочитались маркування блоків' % (page, label))
 
     ncol = len(centers)
     specs, filter_value = [], None
     for r in rows:
+        # Виноски й підписи під таблицею («* Опціонально…», «• Датчик руху»)
+        # рядками характеристик не є.
+        if re.match(r'^[*•]', r['name']) or not r['name']:
+            continue
         vals = T.row_values(r, ncol)
         if vals is None:
             report.append('СУМНІВНО  стор. %d (%s), «%s»: %d комірок на %d колонок — %s'
@@ -274,8 +336,12 @@ def build_series(cfg, funcs_cache, report):
         'outdoor': outdoor,
         'wifi_builtin': cfg.get('wifi_builtin'),
         'specs': specs,
-        'functions': parse_functions(funcs_cache, cfg.get('funcs_col'), report, label),
-        'accessories': parse_accessories(words, page, filter_value, report, label),
+        # Самі функції лежать ОДИН раз у doc['functions'] за номером колонки
+        # матриці: той самий внутрішній блок трапляється в кількох серіях, і
+        # копія списку на кожну роздувала файл удвічі.
+        'funcs_col': cfg.get('funcs_col'),
+        'accessories': ([] if cfg.get('sections')
+                        else parse_accessories(words, page, filter_value, report, label)),
     }
 
     index = {}
@@ -335,14 +401,17 @@ def main():
     fw = G.page_words(PDF, FUNCS_PAGE)
     funcs_cache = {'words': fw, 'notes': parse_footnotes(fw), 'cols': funcs_columns(fw)}
 
-    report, out_series, index = [], {}, {}
-    for cfg in SERIES:
+    report, out_series, index, funcs_by_col = [], {}, {}, {}
+    for cfg in SERIES + MULTI:
         if only and cfg['page'] not in only:
             continue
         s, idx = build_series(cfg, funcs_cache, report)
+        col = cfg.get('funcs_col')
+        if col is not None and str(col) not in funcs_by_col:
+            funcs_by_col[str(col)] = parse_functions(funcs_cache, col, report, cfg['key'])
         check(s, cfg['key'], report)
         out_series[cfg['key']] = s
-        index.update(idx)
+        index.setdefault(cfg['app'], {}).update(idx)
         if args.render:
             os.makedirs(SHOTS, exist_ok=True)
             G.render_page(PDF, cfg['page'], os.path.join(SHOTS, 'p%d' % cfg['page']))
@@ -355,6 +424,7 @@ def main():
         'source': 'catalog-mhi-rac-pac.pdf',
         'built': datetime.date.today().isoformat(),
         'series': out_series,
+        'functions': funcs_by_col,
         'index': index,
         'cards': [{'re': r, 'series': se, 'marking': mk, 'block': bl} for r, se, mk, bl in CARDS],
     }
@@ -364,10 +434,12 @@ def main():
 
     print('Записано %s' % os.path.relpath(OUT, ROOT))
     for k, s in out_series.items():
-        print('  %-14s стор.%3d  колонок %d  рядків %2d  функцій %2d  аксесуарів %2d'
+        print('  %-14s стор.%3d  колонок %d  рядків %2d  функції %-4s аксесуарів %2d'
               % (k, s['page'], len(s['columns']), len(s['specs']),
-                 len(s['functions']), len(s['accessories'])))
-    print('  Усього маркувань: %d' % len(index))
+                 ('кол.%s' % s['funcs_col']) if s['funcs_col'] is not None else '—',
+                 len(s['accessories'])))
+    for app, m in index.items():
+        print('  Маркувань у розділі %s: %d' % (app, len(m)))
     if report:
         print('\nРОЗБІЖНОСТІ Й СУМНІВНІ МІСЦЯ (%d) — дивиться людина:' % len(report))
         for line in report:

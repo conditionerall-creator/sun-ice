@@ -79,15 +79,15 @@ function catKey(s) { return psKey(s).replace(/[-_]/g, ''); }
    (внутрішній, зовнішній): у прайсі комплект може бути записаний по-різному. */
 function mhiCatalogHit(cfgKey, it) {
   if (!mhiCatalog || !mhiCatalog.index) return null;
-  /* ЛИШЕ спліт-системи. У мульти спліт-системі внутрішні блоки мають ТІ САМІ
-     маркування (SRK20ZSX-W), але працюють з іншим зовнішнім блоком — споживана
-     потужність, труби й заправка там інші. Підставити їм дані зі сторінки
-     спліта означало б показати дилеру чужі цифри, і жодна перевірка цього б не
-     спіймала. Таблиці мульти й напівпрому — окремий крок. */
-  if (cfgKey !== 'split_mhi') return null;
+  /* Індекс РОЗДІЛЬНИЙ по розділах застосунку. У мульти спліт-системі внутрішні
+     блоки мають ТІ САМІ маркування (SRK20ZSX-W), але працюють з іншим зовнішнім
+     блоком — споживана потужність, труби й заправка там інші. Спільний індекс
+     тихо підставив би їм дані зі сторінки спліта. */
+  const idx = mhiCatalog.index[cfgKey];
+  if (!idx) return null;
   const marks = psMarkings(cfgKey, it);
   for (let i = 0; i < marks.length; i++) {
-    const ref = mhiCatalog.index[catKey(marks[i])];
+    const ref = idx[catKey(marks[i])];
     if (!ref) continue;
     const bits = String(ref).split('|');
     const series = mhiCatalog.series && mhiCatalog.series[bits[0]];
@@ -319,11 +319,19 @@ function catStateFor(hit, item) {
   return catWifiBuiltin(hit) ? 'yes' : 'option';
 }
 
+/* Список функцій лежить у файлі ОДИН раз на колонку матриці стор. 33 — той
+   самий внутрішній блок буває в кількох серіях. */
+function catFunctions(hit) {
+  const col = hit.series.funcs_col;
+  if (col === null || col === undefined) return [];
+  return (mhiCatalog.functions && mhiCatalog.functions[String(col)]) || [];
+}
+
 /* Функції: показуємо те, що в цій серії Є, і те, що доплатою. Чого немає —
    не малюємо: матриця каталогу спільна на 14 серій, і довгий список «немає»
    лише заважає читати. */
 function catFuncsHtml(hit) {
-  const list = hit.series.functions || [];
+  const list = catFunctions(hit);
   const block = function (title, state, empty) {
     const rows = list.filter(function (f) { return catStateFor(hit, f) === state; });
     if (!rows.length) return empty ? '<div class="ps-block-title">' + title + '</div>' +
@@ -618,8 +626,8 @@ function psRender() {
     /* Підписи короткі: чотири вкладки ділять ширину порівну, і на екрані 360 px
        «Характеристики» обрізалось би многоточием (рішення власника 2026-10-19). */
     '<div class="ps-tabs">' + tab('specs', s.cat ? 'Тех. дані' : 'Характеристики', 'file-text') +
-      (s.cat ? tab('funcs', 'Функції', 'activity') : '') +
-      (s.cat ? tab('acc', 'Аксесуари', 'wrench') : '') +
+      (s.cat && catFunctions(s.cat).length ? tab('funcs', 'Функції', 'activity') : '') +
+      (s.cat && (s.cat.series.accessories || []).length ? tab('acc', 'Аксесуари', 'wrench') : '') +
       (psHasStock() ? tab('stock', 'Наявність', 'package') : '') +
     '</div>' +
     '<div class="ps-tabbody">' + psTabBody() + '</div>';
