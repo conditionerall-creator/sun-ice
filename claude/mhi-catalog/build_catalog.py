@@ -134,6 +134,10 @@ SERIES = [{
         ['SRK60ZSX-W', 'SRK60ZSX-WB', 'SRK60ZSX-WT', 'SRK60ZSX-WF', 'SRK60ZSX-WFB', 'SRK60ZSX-WFT'],
     ],
     'outdoor': ['SRC20ZSX-W', 'SRC25ZSX-W', 'SRC35ZSX-W', 'SRC50ZSX-W3', 'SRC60ZSX-W3'],
+    # Маркування, у яких Wi-Fi вбудований (решта серії — опція). Це написано на тій
+    # самій сторінці каталогу, тому не домислювання: «Моделі SRK-ZSX-WF мають
+    # вбудований Wi-Fi-модуль… Для моделей SRK-ZSX-W — як опція».
+    'wifi_builtin': 'ZSXWF',
     'funcs_col_x': 277.0,          # колонка ZSX у матриці функцій на стор. 33
     'accessories': ZSX_ACCESSORIES,
 }]
@@ -368,6 +372,7 @@ def build_series(cfg, report):
         'title': cfg['title'],
         'group': cfg['group'],
         'outdoor': cfg['outdoor'],
+        'wifi_builtin': cfg.get('wifi_builtin'),
         'columns': [g[0] for g in cfg['models']],
         'specs': specs,
         'functions': parse_functions(cfg['funcs_col_x'], report),

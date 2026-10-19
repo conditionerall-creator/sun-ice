@@ -709,10 +709,10 @@ async function diagCheckMhiCatalog(ctx) {
     items.forEach(it => {
       total++;
       const marks = psMarkings(key, it);
-      const hit = marks.map(m => cat.index[psKey(m)]).find(Boolean);
+      const hit = marks.map(m => cat.index[catKey(m)]).find(Boolean);
       if (!hit) return;
       covered++;
-      marks.forEach(m => seen.add(psKey(m)));
+      marks.forEach(m => seen.add(catKey(m)));
     });
   });
   out.checked.push({ area: area, sub: 'coverage', label: 'Покриття прайсу',
@@ -741,7 +741,7 @@ async function diagCheckMhiCatalog(ctx) {
       const map = links.links[key] || {};
       const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
       items.forEach(it => {
-        const ref = psMarkings(key, it).map(m => cat.index[psKey(m)]).find(Boolean);
+        const ref = psMarkings(key, it).map(m => cat.index[catKey(m)]).find(Boolean);
         const slug = map[siteLinkKey(it)];
         if (!ref || !slug || !specs[slug]) return;
         const bits = String(ref).split('|');

@@ -69,17 +69,26 @@ function loadMhiCatalog() {
   return mhiCatalogPromise;
 }
 
+/* Ключ маркування для каталогу: верхній регістр, без пробілів, дефісів і підкреслень.
+   МУСИТЬ збігатися з norm_model() у claude/mhi-catalog/pdfgrid.py — саме так зібрано
+   index у файлі. psKey() тут не годиться: він лишає дефіси, і жодне маркування
+   («SRK35ZSX-W» проти «SRK35ZSXW») не знайшлося б. */
+function catKey(s) { return psKey(s).replace(/[-_]/g, ''); }
+
 /* Серія + колонка каталогу для цього товару. Пробуємо всі маркування рядка
    (внутрішній, зовнішній): у прайсі комплект може бути записаний по-різному. */
 function mhiCatalogHit(cfgKey, it) {
   if (!mhiCatalog || !mhiCatalog.index) return null;
   const marks = psMarkings(cfgKey, it);
   for (let i = 0; i < marks.length; i++) {
-    const ref = mhiCatalog.index[psKey(marks[i])];
+    const ref = mhiCatalog.index[catKey(marks[i])];
     if (!ref) continue;
     const bits = String(ref).split('|');
     const series = mhiCatalog.series && mhiCatalog.series[bits[0]];
-    if (series) return { series: series, model: bits[1], key: bits[0] };
+    /* mark — маркування САМЕ цього товару (у колонці каталогу їх кілька: -W, -WB,
+       -WT, -WF…). Потрібне там, де відповідь залежить від виконання, а не від
+       серії: у -WF Wi-Fi вбудований, у -W це опція. */
+    if (series) return { series: series, model: bits[1], key: bits[0], mark: catKey(marks[i]) };
   }
   return null;
 }
@@ -254,19 +263,55 @@ function catSourceHtml(hit) {
     escapeHtml(hit.series.title) + ', стор. ' + hit.series.page + '.</div>';
 }
 
+/* Назви функцій у каталозі набрані капсом. Тридцять таких рядків поспіль читати
+   важко, тому кирилицю опускаємо до звичайного вигляду, а латиницю (FUZZY AUTO,
+   ECO, HIGH POWER) лишаємо як є — це назви режимів, вони так і пишуться.
+   Зміст не чіпаємо: це лише регістр. */
+function catNiceName(name) {
+  const low = name.split(' ').map(function (w) {
+    return /[А-ЯЁІЇЄҐ]/.test(w) && !/[A-Z]/.test(w) ? w.toLowerCase() : w;
+  }).join(' ').replace(/\bWI-FI\b/i, 'Wi-Fi');
+  return low.charAt(0).toUpperCase() + low.slice(1);
+}
+
+/* Стан функції/аксесуара для КОНКРЕТНОГО виконання, а не для серії загалом
+   (рішення власника 2026-10-19: «сторінці товару віримо і відповідно до неї
+   робимо»). Поки що так відрізняється лише Wi-Fi. */
+function catWifiBuiltin(hit) {
+  const pat = hit.series.wifi_builtin;
+  return !!(pat && hit.mark && hit.mark.indexOf(pat) >= 0);
+}
+/* Виноска теж залежить від виконання: у -WF показувати «для типів -W потрібно
+   доставити модуль» — означає плутати людину тим, що її моделі не стосується.
+   Обидва речення взяті зі сторінки каталогу. */
+function catNoteFor(hit, item) {
+  const isWifi = /WI-?FI/i.test(item.name) || item.kind === 'wifi';
+  if (isWifi && hit.series.wifi_builtin && catWifiBuiltin(hit)) {
+    return 'Wi-Fi-модуль вбудований у стандартній комплектації.';
+  }
+  return item.note;
+}
+
+function catStateFor(hit, item) {
+  const isWifi = /WI-?FI/i.test(item.name) || item.kind === 'wifi';
+  if (!isWifi) return item.state;
+  if (!hit.series.wifi_builtin) return item.state;
+  return catWifiBuiltin(hit) ? 'yes' : 'option';
+}
+
 /* Функції: показуємо те, що в цій серії Є, і те, що доплатою. Чого немає —
    не малюємо: матриця каталогу спільна на 14 серій, і довгий список «немає»
    лише заважає читати. */
 function catFuncsHtml(hit) {
   const list = hit.series.functions || [];
   const block = function (title, state, empty) {
-    const rows = list.filter(function (f) { return f.state === state; });
+    const rows = list.filter(function (f) { return catStateFor(hit, f) === state; });
     if (!rows.length) return empty ? '<div class="ps-block-title">' + title + '</div>' +
       '<div class="ps-empty-line">' + empty + '</div>' : '';
     return '<div class="ps-block-title">' + title + '</div><div class="ps-fn-list">' +
       rows.map(function (f) {
-        return '<div class="ps-fn"><span class="ps-fn-name">' + escapeHtml(f.name) + '</span>' +
-          (f.note ? '<span class="ps-fn-note">' + escapeHtml(f.note) + '</span>' : '') + '</div>';
+        return '<div class="ps-fn"><span class="ps-fn-name">' + escapeHtml(catNiceName(f.name)) + '</span>' +
+          (catNoteFor(hit, f) ? '<span class="ps-fn-note">' + escapeHtml(catNoteFor(hit, f)) + '</span>' : '') + '</div>';
       }).join('') + '</div>';
   };
   if (!list.length) return '<div class="ps-empty">Для цієї моделі перелік функцій у каталозі не знайшовся.</div>';
@@ -278,7 +323,7 @@ function catFuncsHtml(hit) {
 const CAT_ACC_TITLES = {
   remote: 'Пульти керування',
   adapter: 'Адаптери',
-  wifi: 'Керування через Wi-Fi',
+  wifi: 'Wi-Fi',
   filter: 'Фільтри'
 };
 const CAT_ACC_STATE = {
@@ -297,10 +342,11 @@ function catAccHtml(hit) {
     if (!rows.length) return;
     html += '<div class="ps-block-title">' + escapeHtml(CAT_ACC_TITLES[kind] || kind) + '</div>' +
       '<div class="ps-fn-list">' + rows.map(function (a) {
+        const st = catStateFor(hit, a);
         return '<div class="ps-fn"><span class="ps-fn-name">' + escapeHtml(a.name) +
-          '<span class="ps-acc-state ps-acc-' + escapeHtml(a.state) + '">' +
-          escapeHtml(CAT_ACC_STATE[a.state] || a.state) + '</span></span>' +
-          (a.note ? '<span class="ps-fn-note">' + escapeHtml(a.note) + '</span>' : '') + '</div>';
+          '<span class="ps-acc-state ps-acc-' + escapeHtml(st) + '">' +
+          escapeHtml(CAT_ACC_STATE[st] || st) + '</span></span>' +
+          (catNoteFor(hit, a) ? '<span class="ps-fn-note">' + escapeHtml(catNoteFor(hit, a)) + '</span>' : '') + '</div>';
       }).join('') + '</div>';
   });
   return html + catSourceHtml(hit);
