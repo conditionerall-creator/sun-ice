@@ -575,9 +575,9 @@ function psTabBody() {
     return '<div class="ps-stock-wrap" data-stock-parts="' +
       escapeHtml(encodeURIComponent(JSON.stringify(s.stockParts))) + '">' + inner + '</div>';
   }
-  /* Функції й аксесуари існують лише для моделей, що є в каталозі MHI. */
-  if (s.tab === 'funcs') return s.cat ? catFuncsHtml(s.cat) : '<div class="ps-empty">Немає даних.</div>';
-  if (s.tab === 'acc') return s.cat ? catAccHtml(s.cat) : '<div class="ps-empty">Немає даних.</div>';
+  /* Функції й аксесуари беруться лише з каталогу MHI; без запису — порожня вкладка з поясненням. */
+  if (s.tab === 'funcs') return s.cat ? catFuncsHtml(s.cat) : psCatEmpty();
+  if (s.tab === 'acc') return s.cat ? catAccHtml(s.cat) : psCatEmpty();
   /* Фото картки — над характеристиками (прохання власника 2026-10-09). */
   if (s.cat) return psPhotoHtml() + catSpecsHtml(s.cat);
   if (s.catPending) return psPhotoHtml() + '<div class="ps-loading">Завантажуємо характеристики…</div>';
@@ -599,6 +599,22 @@ function psTabBody() {
 function psHasStock() {
   const s = psState;
   return !!(s && !s.locked && rateViewerIsAdmin && window.Stock && Stock.panelHtml && s.stockParts);
+}
+
+/* «Тех. дані» · «Функції» · «Аксесуари» — у КОЖНІЙ картці розділів MHI і Galactic, навіть коли для моделі
+   в каталозі нічого немає: порожня вкладка з поясненням краще за вкладку, що то є, то зникає
+   (рішення власника 2026-10-19; що туди додати замість порожнечі — ще вирішується). Технічні дані Galactic
+   поки не заповнюємо (рішення власника): у «Тех. дані» лишаються дані сайту, «Функції» й «Аксесуари» порожні. */
+function psCatTabs() {
+  const s = psState;
+  return !!(s && (s.cat || /_(mhi|gal)$/.test(s.cfgKey)));
+}
+
+function psCatEmpty() {
+  const s = psState;
+  return '<div class="ps-empty">' + (s && s.catPending
+    ? 'Завантажуємо дані каталогу…'
+    : (s && /_gal$/.test(s.cfgKey) ? 'Дані каталогу Galactic ще не додано.' : 'Для цієї моделі даних каталогу ще немає.')) + '</div>';
 }
 
 function psRender() {
@@ -625,9 +641,8 @@ function psRender() {
     psHeroHtml() +
     /* Підписи короткі: чотири вкладки ділять ширину порівну, і на екрані 360 px
        «Характеристики» обрізалось би многоточием (рішення власника 2026-10-19). */
-    '<div class="ps-tabs">' + tab('specs', s.cat ? 'Тех. дані' : 'Характеристики', 'file-text') +
-      (s.cat && catFunctions(s.cat).length ? tab('funcs', 'Функції', 'activity') : '') +
-      (s.cat && (s.cat.series.accessories || []).length ? tab('acc', 'Аксесуари', 'wrench') : '') +
+    '<div class="ps-tabs">' + tab('specs', psCatTabs() ? 'Тех. дані' : 'Характеристики', 'file-text') +
+      (psCatTabs() ? tab('funcs', 'Функції', 'activity') + tab('acc', 'Аксесуари', 'wrench') : '') +
       (psHasStock() ? tab('stock', 'Наявність', 'package') : '') +
     '</div>' +
     '<div class="ps-tabbody">' + psTabBody() + '</div>';
@@ -675,6 +690,27 @@ function openProductSheet(cfgKey, model, tileLabel) {
     siteUrl: slug ? ((siteLinks.base || 'https://sun-ice.com.ua/') + slug) : null
   };
 
+  /* Каталог MHI — лише для розділів MHI. Файл один на всі серії, тому
+     вантажимо раз і далі беремо з пам'яті. ВИЗНАЧАЄМО ДО ПЕРШОГО psRender():
+     файл підвантажує ще 04a-catalog-groups.js (шапки груп), тож до тапу по картці він
+     уже в пам'яті, гілка «чекаємо файл» не спрацьовує — і панель малювалась з cat=null
+     без вкладок «Функції»/«Аксесуари», а перемальовки вже ніхто не робив (2026-10-19). Поки не приїхав — показуємо
+     «Завантажуємо…», а не дані сайту: інакше при кожному відкритті картки
+     вміст встигав би моргнути з сайтового на каталожний. */
+  if (/_mhi$/.test(cfgKey) && !mhiCatalogFailed) {
+    psState.cat = mhiCatalogHit(cfgKey, it);
+    if (!mhiCatalog) {
+      psState.catPending = true;
+      loadMhiCatalog().then(function () {
+        if (!psState || psState.model !== model) return;
+        psState.catPending = false;
+        psState.cat = mhiCatalogHit(cfgKey, it);
+        psRender();
+        psFitAll();
+      });
+    }
+  }
+
   document.getElementById('product-sheet-title').innerHTML = psTitleHtml(psMarkings(cfgKey, it));
   psRender();
   document.getElementById('product-sheet-overlay').classList.add('show');
@@ -691,24 +727,6 @@ function openProductSheet(cfgKey, model, tileLabel) {
       psState.img = cardImageUrl(slug);
       if (psState.tab === 'specs') psRenderTabBody();
     });
-  }
-
-  /* Каталог MHI — лише для розділів MHI. Файл один на всі серії, тому
-     вантажимо раз і далі беремо з пам'яті. Поки не приїхав — показуємо
-     «Завантажуємо…», а не дані сайту: інакше при кожному відкритті картки
-     вміст встигав би моргнути з сайтового на каталожний. */
-  if (/_mhi$/.test(cfgKey) && !mhiCatalogFailed) {
-    psState.cat = mhiCatalogHit(cfgKey, it);
-    if (!mhiCatalog) {
-      psState.catPending = true;
-      loadMhiCatalog().then(function () {
-        if (!psState || psState.model !== model) return;
-        psState.catPending = false;
-        psState.cat = mhiCatalogHit(cfgKey, it);
-        psRender();
-        psFitAll();
-      });
-    }
   }
 
   if (!SPECS_FILES[cfgKey]) {

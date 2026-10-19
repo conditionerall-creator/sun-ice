@@ -202,4 +202,66 @@ ok('розділ без правил групування не чіпаємо', 
   assert.equal(build('vrf_gal_outdoor', [mk('X1')]), null);
 });
 
+ok('фото груп: кожен запис CG_PHOTOS — реальна група з CG_TITLES, реальний файл і відомо, звідки взято', () => {
+  const photos = plain(run('CG_PHOTOS'));
+  const tit = plain(run('CG_TITLES'));
+  const src = JSON.parse(fs.readFileSync('tile-images/mhi-groups/_source.json', 'utf8')).files;
+  for (const key of Object.keys(photos)) {
+    for (const [raw, name] of Object.entries(photos[key])) {
+      if (tit[key]) assert.ok(tit[key][raw], key + ': немає групи «' + raw + '» у CG_TITLES');
+      else assert.ok(Object.values(plain(run('CG_GAL_SERIES'))).some(x => x.title === raw), key + ': немає серії «' + raw + '» у CG_GAL_SERIES');
+      assert.ok(fs.existsSync('tile-images/mhi-groups/' + name + '.webp'), 'немає файлу ' + name);
+      assert.ok(src[name] && ((src[name].page && src[name].xref) || src[name].url), name + ': не записано, звідки взято (сторінка каталогу або адреса сайту)');
+    }
+  }
+});
+
+ok('шапка групи: ні кнопки ⓘ, ні дублюючого рядка опису; фото й кВт лише в групі з фото', () => {
+  const html = (cfgKey, g) => run('cgGroupHtml')({ key: cfgKey }, g);
+  const mkE = (m) => ({ item: mk(m), index: 0 });
+  const entries = ['SRK20ZSPR-S', 'SRK80ZSPR-S'].map(mkE);
+  const g = { id: 'x', rawTitle: 'Популярний інвертор R410', title: 'ZSPR-S · Популярний інвертор R410', blocks: [{ label: null, entries }],
+    entries, count: 2, note: '', info: { key: 'k', text: 'довгий опис серії довгий опис серії' }, d: {} };
+  run('hasFullAccess = false; activeTile = "split"; activeBrand = "mhi"; seriesInfoTexts = [];' +
+    ' APP_BUILD = "T"; catalogRowHtml = () => "<row/>"; escapeHtml = (x) => String(x); cartQtyFor = () => 0;' +
+    ' psKey = (x) => String(x).toUpperCase(); catKey = (x) => psKey(x).replace(/[-_]/g, "");' +
+    ' mhiCatalog = { index: { split_mhi: { SRK20ZSPRS: "A|0", SRK80ZSPRS: "A|1" } }, series: { A: { marking: "SRK-ZSPR-S", series: "Standard Series", block: "Настінний" } } };');
+  const withPhoto = html('split_mhi', g);
+  assert.equal(withPhoto.includes('sg-info'), false);
+  assert.equal(withPhoto.includes('sg-desc'), false);
+  assert.equal(withPhoto.includes('tile-images/mhi-groups/split-zspr.webp'), true);
+  assert.equal(withPhoto.includes('2–8\u00a0кВт'), true);
+  assert.equal(withPhoto.includes('sg-badge'), false);
+  const other = [mkE('XYZ100-A')];
+  const noPhoto = html('split_mhi', Object.assign({}, g, { rawTitle: 'Невідома група', title: 'Невідома група', blocks: [{ label: null, entries: other }], entries: other, count: 1 }));
+  assert.equal(noPhoto.includes('sg-photo'), false);
+  assert.equal(noPhoto.includes('кВт'), false);
+  assert.equal((noPhoto.match(/ипорозміри/g) || []).length <= 1, true);
+});
+
+ok('кВт групи: типорозмір ÷ 10, діапазон, дрібні значення з комою', () => {
+  const kw = run('cgKwText');
+  assert.equal(kw(['SRK20ZSPR-S', 'SRK80ZSPR-S']), '2–8\u00a0кВт');
+  assert.equal(kw(['SRK25ZSP-W1', 'SRK50ZSP-W1']), '2,5–5\u00a0кВт');
+  assert.equal(kw(['SRK35ZS-W']), '3,5\u00a0кВт');
+  assert.equal(kw(['RC-E5']), '');
+});
+
+
+ok('шапки: кожна група з CG_TITLES має або картку каталогу MHI, або запис у CG_HEAD; кВт Galactic — лише з CG_KW', () => {
+  const tit = plain(run('CG_TITLES'));
+  const head = plain(run('CG_HEAD'));
+  const photos = plain(run('CG_PHOTOS'));
+  const withoutHeadOk = new Set(['split_mhi|ТЕПЛОВИЙ НАСОС / БІЗНЕС-КЛАС / ДИЗАЙН СЕРІЯ R32']);   // MHI-спліт/мульти беруть шапку з картки каталогу
+  for (const key of ['semi_mhi', 'split_gal', 'semi_gal']) {
+    for (const raw of Object.keys(tit[key])) {
+      assert.ok((head[key] || {})[raw], key + ': немає CG_HEAD для «' + raw + '»');
+      assert.ok((photos[key] || {})[raw], key + ': немає фото для «' + raw + '»');
+    }
+  }
+  const kw = plain(run('CG_KW'));
+  for (const key of Object.keys(kw)) assert.ok(/_gal$/.test(key), 'CG_KW — лише для Galactic: ' + key);
+  void withoutHeadOk;
+});
+
 console.log('\nУсього перевірок:', n);

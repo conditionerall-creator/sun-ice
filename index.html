@@ -1595,8 +1595,8 @@
   .sg-head {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, auto) auto minmax(8px, 1fr) auto auto;
-    grid-template-areas: "tg inf . meta chev";
+    grid-template-columns: minmax(0, auto) minmax(8px, 1fr) auto auto;
+    grid-template-areas: "tg . meta chev";
     align-items: center;
     column-gap: 8px;
     min-height: 52px;
@@ -1618,7 +1618,30 @@
     margin: 0; padding: 0; border: 0; background: none; cursor: pointer;
     font: inherit; color: inherit; text-align: left;
   }
-  .sg-toggle:focus-visible, .sg-info:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+  /* Рядок групи з фото (прототип 2026-10-19): ліворуч маркування й під ним потужність у кВт із
+     серією, праворуч вирізане фото внутрішнього блока (прозорий WebP, без плитки й рамки — блок
+     «лежить» просто на шапці). Контактна тінь під ним — зі зсувом і розмиттям, щоб біле на
+     світлому тлі не губило краю; тінь повторює форму самого блока (drop-shadow по альфі). Фото
+     не кнопка: клік по ньому спливає до .sg-head і розкриває групу. */
+  .sg-head.has-photo {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-areas: "tg ph meta chev";
+    padding-top: 10px; padding-bottom: 10px;
+  }
+  .sg-photo {
+    grid-area: ph; display: block; width: clamp(84px, 31vw, 120px); height: 48px;
+    object-fit: contain; object-position: right center;      /* блоки різної форми — в один слот */
+    margin: 0 2px 0 4px; pointer-events: none; -webkit-user-drag: none;
+    filter: drop-shadow(0 3px 4px rgba(40, 30, 20, .22));
+  }
+  .sg-head.has-head .sg-mark, .sg-kw { white-space: nowrap; }
+  .sg-head.has-head .sg-sub { display: flex; flex-wrap: wrap; align-items: baseline; }
+  .sg-kw { font-weight: 650; color: var(--text); font-variant-numeric: tabular-nums; }
+  .sg-head.has-head .sg-sub { column-gap: 8px; }       /* без вертикальної риски: при переносі вона б повисла на початку рядка */
+  @media (max-width: 359px) {
+    .sg-head.has-head .sg-sub { flex-direction: column; }
+  }
+  .sg-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
   .sg-title { font-size: 17px; font-weight: 650; line-height: 1.25; color: var(--text); overflow-wrap: break-word; }
   .sg-sub { font-size: 12.5px; line-height: 1.3; color: var(--text-secondary); }
   /* Шапка групи в стилі таблиці «МОДЕЛЬНИЙ РЯД» (стор. 6 каталогу): бейдж із
@@ -1632,17 +1655,6 @@
     text-transform: uppercase; letter-spacing: .03em; line-height: 1.25;
   }
   .sg-mark { font-size: 17px; font-weight: 650; line-height: 1.25; }
-  .sg-desc { font-size: 11.5px; line-height: 1.3; color: var(--text-secondary); opacity: .85; }
-  .sg-info {
-    grid-area: inf; position: relative;
-    width: 32px; height: 32px; margin: 0 0 0 -2px; padding: 0;
-    border: 0; border-radius: 50%; background: none; cursor: pointer;
-    font: inherit; font-size: 18px; line-height: 1; color: var(--text-secondary);
-  }
-  .sg-info::after {            /* зона дотику 44×44 при видимій іконці 32 */
-    content: ''; position: absolute; left: 50%; top: 50%; width: 44px; height: 44px; transform: translate(-50%, -50%);
-  }
-  .sg-info:active { color: var(--accent); }
   .sg-meta {
     grid-area: meta;
     display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
@@ -1688,8 +1700,8 @@
   .sg-body .row:has(.cart-check-btn.active) { background: color-mix(in srgb, var(--accent) 7%, transparent); }
   @media (max-width: 359px) {
     .sg-head {
-      grid-template-columns: minmax(0, auto) auto 1fr auto;
-      grid-template-areas: "tg inf . chev" "meta meta meta meta";
+      grid-template-columns: minmax(0, auto) 1fr auto;
+      grid-template-areas: "tg . chev" "meta meta meta";
       row-gap: 4px;
     }
     .sg-meta { flex-direction: row; align-items: baseline; gap: 10px; }
@@ -4053,19 +4065,19 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-19.32"></script>
-<script src="js/02-price-parse.js?v=2026-10-19.32"></script>
-<script src="js/03-diagnostics.js?v=2026-10-19.32"></script>
-<script src="js/04-catalog.js?v=2026-10-19.32"></script>
-<script src="js/04a-catalog-groups.js?v=2026-10-19.32"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-19.32"></script>
-<script src="js/06-cart-promo.js?v=2026-10-19.32"></script>
-<script src="js/07-access-info.js?v=2026-10-19.32"></script>
-<script src="js/08-info-tables.js?v=2026-10-19.32"></script>
-<script src="js/09-cabinet.js?v=2026-10-19.32"></script>
-<script src="js/10-crmontage.js?v=2026-10-19.32"></script>
-<script src="js/11-shell.js?v=2026-10-19.32"></script>
-<script src="js/12-product-sheet.js?v=2026-10-19.32"></script>
-<script src="js/13-start.js?v=2026-10-19.32"></script>
+<script src="js/01-config.js?v=2026-10-19.41"></script>
+<script src="js/02-price-parse.js?v=2026-10-19.41"></script>
+<script src="js/03-diagnostics.js?v=2026-10-19.41"></script>
+<script src="js/04-catalog.js?v=2026-10-19.41"></script>
+<script src="js/04a-catalog-groups.js?v=2026-10-19.41"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-19.41"></script>
+<script src="js/06-cart-promo.js?v=2026-10-19.41"></script>
+<script src="js/07-access-info.js?v=2026-10-19.41"></script>
+<script src="js/08-info-tables.js?v=2026-10-19.41"></script>
+<script src="js/09-cabinet.js?v=2026-10-19.41"></script>
+<script src="js/10-crmontage.js?v=2026-10-19.41"></script>
+<script src="js/11-shell.js?v=2026-10-19.41"></script>
+<script src="js/12-product-sheet.js?v=2026-10-19.41"></script>
+<script src="js/13-start.js?v=2026-10-19.41"></script>
 </body>
 </html>

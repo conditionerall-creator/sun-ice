@@ -113,6 +113,125 @@ const CG_TITLES = {
   /* multisplit_gal: серія й фреон уже в назві («Серія M-W» + «Фреон R32») — CG_GAL_SERIES. */
 };
 
+/* Фото групи в шапці — вирізка з каталогу (рішення власника 2026-10-19: «брати з каталогу й сайту
+   galactic.ua, не вигадувати неіснуючих»; «як вирізане, без білої підложки»). Файли будує
+   claude/mhi-catalog/build_group_images.py; tile-images/mhi-groups/_source.json каже, з якої
+   сторінки якого каталогу (чи з якого URL сайту) кожне. Ключ — назва групи з прайсу, як у CG_TITLES.
+   Один виріб = один файл: касета FDTC, канальний FDUM і стельовий FDE однакові у спліті, мульти й
+   напівпромі; настінні ZSX/ZR/ZS, SRF і SRR у мульти — ті самі блоки, що в спліті. Групи без запису
+   (лише HE — серія знята, зображення в каталозі немає) лишаються без фото. */
+const CG_PHOTOS = {
+  split_mhi: {
+    'ТЕПЛОВИЙ НАСОС / БІЗНЕС-КЛАС / ДИЗАЙН СЕРІЯ R32': 'split-zsx',
+    'Потужний інвертор R32': 'split-zr',
+    'Premium Series ZT-W R32': 'split-zt',
+    'БІЗНЕС-КЛАС ДИЗАЙН СЕРІЯ R32': 'split-zs',
+    'Серія ZTL-W R32': 'split-ztl',
+    'Популярний інвертор R32': 'split-zsp',
+    'Популярний інвертор R410': 'split-zspr',
+    'Моделі 2-х потокові підлогового виконання': 'split-srf',
+    'Моделі канальні R32 DC PAM Inverter': 'split-srr',
+    'Моделі 4-х потокові компактні касети 600х600': 'mhi-fdtc'
+  },
+  multisplit_mhi: {
+    'Популярний інвертор R32': 'multi-zsp',
+    'БІЗНЕС-КЛАС ДИЗАЙН СЕРІЯ R32': 'split-zs',
+    'ТЕПЛОВИЙ НАСОС / БІЗНЕС-КЛАС / ДИЗАЙН СЕРІЯ R32': 'split-zsx',
+    'Потужний інвертор R32': 'split-zr',
+    'Касетний без панелі': 'mhi-fdtc',
+    'Підстельовий': 'mhi-fde',
+    'Канальний середнього тиску': 'mhi-fdum',
+    'Канальний': 'split-srr',
+    'Підлоговий': 'split-srf'
+  },
+  semi_mhi: {
+    'Настінні SRK': 'semi-srk',
+    'Стельові FDE': 'mhi-fde',
+    'Касетні 4-потокові FDT': 'semi-fdt',
+    'Касетні компактні FDTC': 'mhi-fdtc',
+    'Канальні середнього тиску FDUM': 'mhi-fdum',
+    'Канальні високого тиску FDU': 'semi-fdu',
+    'Колонні FDF': 'semi-fdf'
+  },
+  split_gal: {
+    'Моделі INFINI INVERTER Фреон R32.': 'gal-infini',
+    'Моделі VEGA INVERTER Фреон R32.': 'gal-vega',
+    'Моделі Proxima INVERTER Фреон R32.': 'gal-proxima',
+    'Моделі Orient INVERTER Фреон R410.': 'gal-orient'
+  },
+  semi_gal: {
+    'Касетний': 'gal-gbz',
+    'Канальний': 'gal-gdz',
+    'Підлогово-стельовий': 'gal-gfz'
+  },
+  multisplit_gal: {
+    'Серія M-W': 'gal-freespace',
+    'Серія H-W': 'gal-multi',
+    'Серія H-S': 'gal-multi'
+  }
+};
+
+/* Шапка групи, у якої НЕМАЄ картки в каталозі MHI (напівпром MHI, Galactic, HE, пульти): що писати
+   в першому рядку (mark — маркування серії) і поруч із потужністю (sub). Явна таблиця, не здогадка:
+   значення — з назв прайсу й каталогів. Групи MHI з карткою (спліт, мульти) беруть маркування й
+   тип/серію з картки каталогу. */
+const CG_HEAD = {
+  split_mhi: {
+    'HE': { mark: 'HE-S1', sub: '' },
+    'Пульти': { mark: 'Пульти', sub: '' }
+  },
+  multisplit_mhi: {
+    'Підстельовий': { mark: 'FDE-VH', sub: 'Підстельовий' },
+    'Канальний середнього тиску': { mark: 'FDUM-VH', sub: 'Канальний середнього тиску' }
+  },
+  semi_mhi: {
+    'Настінні SRK': { mark: 'SRK', sub: 'Настінні' },
+    'Стельові FDE': { mark: 'FDE', sub: 'Стельові' },
+    'Касетні 4-потокові FDT': { mark: 'FDT', sub: 'Касетні 4-потокові' },
+    'Касетні компактні FDTC': { mark: 'FDTC', sub: 'Касетні компактні' },
+    'Канальні середнього тиску FDUM': { mark: 'FDUM', sub: 'Канальні середнього тиску' },
+    'Канальні високого тиску FDU': { mark: 'FDU', sub: 'Канальні високого тиску' },
+    'Колонні FDF': { mark: 'FDF', sub: 'Колонні' }
+  },
+  split_gal: {
+    'Моделі INFINI INVERTER Фреон R32.': { mark: 'SH-W', sub: 'INFINI Inverter · R32' },
+    'Моделі VEGA INVERTER Фреон R32.': { mark: 'A-W', sub: 'VEGA Inverter · R32' },
+    'Моделі Proxima INVERTER Фреон R32.': { mark: 'M-W', sub: 'Proxima Inverter · R32' },
+    'Моделі Orient INVERTER Фреон R410.': { mark: 'HF-S', sub: 'Orient Inverter · R410' }
+  },
+  semi_gal: {
+    'Касетний': { mark: 'GBZ MLQ-W', sub: 'Касетний' },
+    'Канальний': { mark: 'GDZ MLQ-W', sub: 'Канальний' },
+    'Підлогово-стельовий': { mark: 'GFZ MLQ-W', sub: 'Підлогово-стельовий' }
+  },
+  multisplit_gal: {
+    'Серія M-W': { mark: 'M-W', sub: 'Free Space · R32' },
+    'Серія H-W': { mark: 'H-W', sub: 'R32' },
+    'Серія H-S': { mark: 'H-S', sub: 'R410' }
+  }
+};
+
+/* Потужність групи Galactic в кВт — ДОСЛІВНО з таблиць каталогу cat_Galactic.pdf (холодопродуктивність
+   номінальна; діапазон від найменшого до найбільшого блока групи, округлено до 0,1). У MHI кВт рахується
+   з типорозміра (cgKwText), у Galactic типорозмір — це тис. BTU (09 → 2,6 кВт), тож тут явні значення.
+   Групи без запису (Orient, мульти H-W / H-S — у каталозі їх немає) покажуть типорозміри, як раніше:
+   вигадувати кВт не можна. */
+const CG_KW = {
+  split_gal: {
+    'Моделі INFINI INVERTER Фреон R32.': '2,6–3,5',        // стор. 11: 2,64 / 3,51
+    'Моделі VEGA INVERTER Фреон R32.': '2,6–7,3',          // стор. 15: 2,60 … 7,30
+    'Моделі Proxima INVERTER Фреон R32.': '2,4–7'          // стор. 13: 2,35 … 7,04
+  },
+  semi_gal: {
+    'Касетний': '5,3–16,1',                                 // стор. 35, 37: 5,27 … 16,13
+    'Канальний': '5,3–16,1',                                // стор. 29, 31: 5,28 … 16,12
+    'Підлогово-стельовий': '5,3–16,1'                       // стор. 39, 41: 5,28 … 16,13
+  },
+  multisplit_gal: {
+    'Серія M-W': 'внутр. 2,6–5,3'                           // стор. 17: GKM09…18 — 2,64 / 3,52 / 5,28
+  }
+};
+
 /* Позиції, що за рішенням власника належать до сусідньої групи, хоч у прайсі стоять окремо.
    Чіпляються ЛИШЕ коли йдуть одразу за своєю групою (порядок прайсу не міняємо); інакше
    лишаються самі, як були. parent — назва групи з прайсу; label — підзаголовок усередині. */
@@ -228,6 +347,18 @@ function cgCatalogCard(models, cfgKey) {
     }
   }
   return null;
+}
+
+/* Потужність групи в кВт: типорозмір MHI = холодопродуктивність ×10 (SRK20 → 2,0 кВт, SRK80 → 8,0),
+   тож «20…80» → «2–8 кВт», «25…50» → «2,5–5 кВт». Беремо ті самі числа, що й cgTypeSizes,
+   тому аксесуари (пульти, модулі) сюди не потрапляють. */
+function cgKwText(models) {
+  const ns = [];
+  models.forEach(m => { const c = cgCapacity(m); if (c) ns.push(c.n); });
+  if (!ns.length) return '';
+  const f = n => { const v = n / 10; return (Number.isInteger(v) ? String(v) : v.toFixed(1)).replace('.', ','); };
+  const lo = Math.min.apply(null, ns), hi = Math.max.apply(null, ns);
+  return (lo === hi ? f(lo) : f(lo) + '–' + f(hi)) + ' кВт';
 }
 
 /* Типорозміри групи: «20 · 25 · 35 · 50 · 60». Беремо число з маркування тим самим
@@ -430,13 +561,6 @@ function cgGroupHtml(cfg, g) {
   cgRegistry.set(String(uid), { cartKeys: cartKeys });
   const selected = hasFullAccess ? cartKeys.filter(k => cartQtyFor(k) > 0).length : 0;
 
-  let infoBtn = '';
-  if (g.info) {
-    const idx = seriesInfoTexts.length;
-    seriesInfoTexts.push(catalogSeriesInfoEntry(g.info.key, g.info.text));
-    infoBtn = '<button type="button" class="sg-info" data-info-idx="' + idx + '" aria-label="Інформація про серію: ' +
-      escapeHtml(g.title) + '">ⓘ</button>';
-  }
   const body = g.blocks.map(b => {
     const head = b.label
       ? '<div class="sg-subhead">' + escapeHtml(b.label) + (b.sizes ? ' · ' + escapeHtml(b.sizes) : '') + '</div>'
@@ -464,26 +588,50 @@ function cgGroupHtml(cfg, g) {
 
   /* Назва: якщо серія є в каталозі MHI — «бейдж + маркування», як у таблиці
      «МОДЕЛЬНИЙ РЯД» на стор. 6. Для настінних у бейджі назва серії (Diamond
-     Series), для решти — тип блока (Канальний, Касетний, Підлоговий): назва
-     серії там не інформативна, людині важливіше, який це блок.
-     Третім рядком лишається опис із прайсу — у ньому те, чого в каталозі немає
-     («тепловий насос», «бізнес-клас»). */
-  const titleHtml = card
-    ? '<span class="sg-title"><span class="sg-badge">' + escapeHtml(badge) + '</span>' +
-        '<span class="sg-mark">' + escapeHtml(card.marking) + '</span></span>' +
-      '<span class="sg-sub">' + escapeHtml(sizesText) + '</span>' +
-      '<span class="sg-desc">' + escapeHtml(cgPretty(g.title)) + '</span>'
+     Series), для решти — тип блока (Канальний, Касетний, Підлоговий).
+     Нижнього рядка з описом із прайсу («Потужний інвертор R32…») більше НЕМАЄ — він
+     повторював маркування й фреон зверху (рішення власника 2026-10-19). Так само без
+     другого рядка «типорозміри 09–12» над «Типорозміри: 09 · 12» (Galactic): лишається
+     один. У g.d.subtitle лишилось тільки те, чого в іншому місці немає («Фреон R32»). */
+  const photoName = (CG_PHOTOS[cfg.key] || {})[g.rawTitle] || '';
+  /* Явна таблиця має ПРІОРИТЕТ над карткою каталогу: у картки FDUM-VH / FDE-VH спільний рядок
+     «Канальний, стельовий» на два різні типи блока, а в мульти це дві окремі групи. */
+  const head = (CG_HEAD[cfg.key] || {})[g.rawTitle] ||
+    (card ? { mark: card.marking, sub: badge } : null);
+  /* Строка групи: ліворуч маркування, під ним потужність у кВт і серія/тип, праворуч вирізане фото
+     блока. Бейдж «STANDARD SERIES» над маркуванням не потрібен: серія стоїть у другому рядку. Потужність:
+     MHI — з типорозміра (÷10), Galactic — явно з каталогу (CG_KW); де значення нема, лишається перелік
+     типорозмірів (чи кількість позицій). Групи без шапки в таблицях малюються як раніше. */
+  let kwText = '';
+  if (head) {
+    const explicit = (CG_KW[cfg.key] || {})[g.rawTitle];
+    kwText = explicit ? explicit + ' кВт' : (/_mhi$/.test(cfg.key) ? cgKwText(models) : '');
+  }
+  const titleHtml = head
+    ? '<span class="sg-title"><span class="sg-mark">' + escapeHtml(head.mark) + '</span></span>' +
+      '<span class="sg-sub">' +
+        (kwText ? '<b class="sg-kw">' + escapeHtml(kwText) + '</b>' : '<span class="sg-sizes">' + escapeHtml(sizesText) + '</span>') +
+        (head.sub ? '<span class="sg-series">' + escapeHtml(head.sub) + '</span>' : '') +
+      '</span>'
     : '<span class="sg-title">' + escapeHtml(g.title) + '</span>' +
-      (g.subtitle ? '<span class="sg-sub">' + escapeHtml(g.subtitle) + '</span>' : '') +
+      (g.d.subtitle ? '<span class="sg-sub">' + escapeHtml(g.d.subtitle) + '</span>' : '') +
       '<span class="sg-sub">' + escapeHtml(sizesText) + '</span>';
+
+  /* Фото — окремий елемент шапки (не в кнопці), клік по ньому спливає до .sg-head і так само
+     розкриває групу. ?v=APP_BUILD — бо service worker віддає картинки з кешу: без версії після
+     заміни файлу телефон показував би стару (так було з білою підложкою 2026-10-19). */
+  const photoHtml = (head && photoName)
+    ? '<img class="sg-photo" src="tile-images/mhi-groups/' + photoName + '.webp?v=' + APP_BUILD + '" alt=""' +
+      ' decoding="async" draggable="false">'
+    : '';
 
   return '<section class="sg' + (open ? ' open' : '') + '"' +
       ' data-sg-uid="' + uid + '" data-sg-key="' + escapeHtml(key) + '">' +
-    '<div class="sg-head">' +
+    '<div class="sg-head' + (head ? ' has-head' : '') + (photoHtml ? ' has-photo' : '') + '">' +
       '<button type="button" class="sg-toggle" id="sg-h-' + uid + '" aria-expanded="' + (open ? 'true' : 'false') +
         '" aria-controls="sg-b-' + uid + '" aria-describedby="sg-m-' + uid + '">' +
         titleHtml +
-      '</button>' + infoBtn +
+      '</button>' + photoHtml +
       '<span class="sg-meta" id="sg-m-' + uid + '">' +
         '<span class="sg-sel"' + (selected ? '' : ' hidden') + '>Вибрано: ' + selected + '</span>' +
 

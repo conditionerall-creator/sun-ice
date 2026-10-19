@@ -68,15 +68,9 @@ document.getElementById('main').addEventListener('click', function(e) {
     showRegisterGate();
     return;
   }
-  /* Згортні блоки серій (js/04a-catalog-groups.js). Кнопка «ⓘ» — окремий сусідній
-     елемент, не вкладений у шапку: вона відкриває інформацію й НЕ згортає групу. Усе
-     інше в шапці (і кнопка-назва з клавіатури, і вільне місце, лічильник, стрілка)
-     розкриває/згортає. */
-  const sgInfo = e.target.closest('.sg-info');
-  if (sgInfo) {
-    openSeriesInfoEntry(seriesInfoTexts[Number(sgInfo.getAttribute('data-info-idx'))]);
-    return;
-  }
+  /* Згортні блоки серій (js/04a-catalog-groups.js): уся шапка (фото, назва, вільне місце,
+     лічильник, стрілка) розкриває/згортає. Кнопки «ⓘ» у шапках більше немає
+     (рішення власника 2026-10-19). */
   const sgHead = e.target.closest('.sg-head');
   if (sgHead) {
     cgToggle(sgHead.closest('.sg'));

@@ -1,0 +1,456 @@
+{
+ "files": {
+  "split-zspr": {
+   "source": "mhi",
+   "what": "SRK-ZSPR-S — настінний",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 46,
+   "xref": 1520,
+   "src_px": [
+    867,
+    341
+   ],
+   "out_px": [
+    280,
+    101
+   ],
+   "bytes": 2962,
+   "mask": "з зображення"
+  },
+  "split-zsx": {
+   "source": "mhi",
+   "what": "SRK-ZSX-W, -WF — настінний",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 34,
+   "xref": 1336,
+   "src_px": [
+    861,
+    320
+   ],
+   "out_px": [
+    280,
+    104
+   ],
+   "bytes": 4198,
+   "mask": "з PDF"
+  },
+  "split-zr": {
+   "source": "mhi",
+   "what": "SRK-ZR-W, -WF — настінний",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 36,
+   "xref": 1381,
+   "src_px": [
+    982,
+    310
+   ],
+   "out_px": [
+    280,
+    88
+   ],
+   "bytes": 3858,
+   "mask": "з зображення"
+  },
+  "split-zt": {
+   "source": "mhi",
+   "what": "SRK-ZT-WF — настінний (біле виконання)",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 38,
+   "xref": 1407,
+   "src_px": [
+    1158,
+    453
+   ],
+   "out_px": [
+    280,
+    109
+   ],
+   "bytes": 4644,
+   "mask": "з зображення"
+  },
+  "split-zs": {
+   "source": "mhi",
+   "what": "SRK-ZS-W — настінний",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 40,
+   "xref": 1434,
+   "src_px": [
+    867,
+    338
+   ],
+   "out_px": [
+    280,
+    101
+   ],
+   "bytes": 3376,
+   "mask": "з PDF"
+  },
+  "split-ztl": {
+   "source": "mhi",
+   "what": "SRK-ZTL-W — настінний",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 42,
+   "xref": 1455,
+   "src_px": [
+    785,
+    304
+   ],
+   "out_px": [
+    280,
+    112
+   ],
+   "bytes": 3814,
+   "mask": "з зображення"
+  },
+  "split-zsp": {
+   "source": "mhi",
+   "what": "SRK-ZSP-W1 — настінний",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 44,
+   "xref": 1475,
+   "src_px": [
+    838,
+    344
+   ],
+   "out_px": [
+    280,
+    104
+   ],
+   "bytes": 3626,
+   "mask": "з PDF"
+  },
+  "split-srf": {
+   "source": "mhi",
+   "what": "SRF-ZS/ZSX — підлоговий (спліт і мульти)",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 50,
+   "xref": 1569,
+   "src_px": [
+    415,
+    297
+   ],
+   "out_px": [
+    280,
+    200
+   ],
+   "bytes": 7026,
+   "mask": "з PDF"
+  },
+  "split-srr": {
+   "source": "mhi",
+   "what": "SRR-ZS — канальний (спліт і мульти)",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 51,
+   "xref": 1587,
+   "src_px": [
+    411,
+    176
+   ],
+   "out_px": [
+    280,
+    109
+   ],
+   "bytes": 9354,
+   "mask": "з зображення"
+  },
+  "mhi-fdtc": {
+   "source": "mhi",
+   "what": "FDTC-VH — касетний компактний (спліт, мульти, напівпром — один виріб)",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 104,
+   "xref": 2989,
+   "src_px": [
+    546,
+    403
+   ],
+   "out_px": [
+    280,
+    206
+   ],
+   "bytes": 15600,
+   "mask": "з зображення"
+  },
+  "multi-zsp": {
+   "source": "mhi",
+   "what": "SKM-ZSP-W — настінний (в мульти код SKM, не SRK)",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 56,
+   "xref": 1795,
+   "src_px": [
+    255,
+    103
+   ],
+   "out_px": [
+    241,
+    89
+   ],
+   "bytes": 1808,
+   "mask": "з зображення"
+  },
+  "semi-fdt": {
+   "source": "mhi",
+   "what": "FDT-VH — касетний 4-потоковий",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 94,
+   "xref": 2733,
+   "src_px": [
+    565,
+    370
+   ],
+   "out_px": [
+    280,
+    183
+   ],
+   "bytes": 10444,
+   "mask": "з зображення"
+  },
+  "semi-fdu": {
+   "source": "mhi",
+   "what": "FDU — канальний високого тиску",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 108,
+   "xref": 3073,
+   "src_px": [
+    439,
+    207
+   ],
+   "out_px": [
+    280,
+    123
+   ],
+   "bytes": 10600,
+   "mask": "з PDF"
+  },
+  "mhi-fdum": {
+   "source": "mhi",
+   "what": "FDUM — канальний середнього тиску (напівпром і мульти — один виріб)",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 114,
+   "xref": 3152,
+   "src_px": [
+    494,
+    155
+   ],
+   "out_px": [
+    280,
+    88
+   ],
+   "bytes": 10166,
+   "mask": "з зображення"
+  },
+  "semi-srk": {
+   "source": "mhi",
+   "what": "SRK — настінний (напівпром)",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 122,
+   "xref": 3232,
+   "src_px": [
+    606,
+    212
+   ],
+   "out_px": [
+    280,
+    88
+   ],
+   "bytes": 3620,
+   "mask": "з PDF"
+  },
+  "mhi-fde": {
+   "source": "mhi",
+   "what": "FDE-VH — підстельовий (напівпром і мульти). Фото на стор. 126 стоїть на сірому тлі — не вирізається",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 57,
+   "xref": 1810,
+   "src_px": [
+    263,
+    113
+   ],
+   "out_px": [
+    259,
+    107
+   ],
+   "bytes": 5058,
+   "mask": "з PDF"
+  },
+  "semi-fdf": {
+   "source": "mhi",
+   "what": "FDF — колонний (x3345 на тлі магазину — не вирізається, взято чистий x3350)",
+   "catalog": "catalog-mhi-rac-pac.pdf",
+   "page": 132,
+   "xref": 3350,
+   "src_px": [
+    258,
+    504
+   ],
+   "out_px": [
+    157,
+    445
+   ],
+   "bytes": 12418,
+   "mask": "з PDF"
+  },
+  "gal-infini": {
+   "source": "gal",
+   "what": "Infini (SH-W)",
+   "catalog": "cat_Galactic.pdf",
+   "page": 11,
+   "xref": 246,
+   "src_px": [
+    526,
+    197
+   ],
+   "out_px": [
+    280,
+    101
+   ],
+   "bytes": 2166,
+   "mask": "з PDF"
+  },
+  "gal-proxima": {
+   "source": "gal",
+   "what": "Proxima (M-W)",
+   "catalog": "cat_Galactic.pdf",
+   "page": 13,
+   "xref": 270,
+   "src_px": [
+    600,
+    302
+   ],
+   "out_px": [
+    280,
+    140
+   ],
+   "bytes": 4534,
+   "mask": "з PDF"
+  },
+  "gal-vega": {
+   "source": "gal",
+   "what": "Vega (A-W)",
+   "catalog": "cat_Galactic.pdf",
+   "page": 15,
+   "xref": 296,
+   "src_px": [
+    749,
+    275
+   ],
+   "out_px": [
+    280,
+    99
+   ],
+   "bytes": 1398,
+   "mask": "з PDF"
+  },
+  "gal-freespace": {
+   "source": "gal",
+   "what": "Free Space — внутрішній блок мульти (M-W)",
+   "catalog": "cat_Galactic.pdf",
+   "page": 17,
+   "xref": 320,
+   "src_px": [
+    506,
+    255
+   ],
+   "out_px": [
+    280,
+    140
+   ],
+   "bytes": 4690,
+   "mask": "з PDF"
+  },
+  "gal-gdz": {
+   "source": "gal",
+   "what": "GDZ — канальний",
+   "catalog": "cat_Galactic.pdf",
+   "page": 29,
+   "xref": 643,
+   "src_px": [
+    664,
+    287
+   ],
+   "out_px": [
+    280,
+    84
+   ],
+   "bytes": 7830,
+   "mask": "з PDF"
+  },
+  "gal-gbz": {
+   "source": "gal",
+   "what": "GBZ — касетний",
+   "catalog": "cat_Galactic.pdf",
+   "page": 35,
+   "xref": 729,
+   "src_px": [
+    589,
+    435
+   ],
+   "out_px": [
+    280,
+    203
+   ],
+   "bytes": 14264,
+   "mask": "з PDF"
+  },
+  "gal-gfz": {
+   "source": "gal",
+   "what": "GFZ — підлогово-стельовий",
+   "catalog": "cat_Galactic.pdf",
+   "page": 39,
+   "xref": 780,
+   "src_px": [
+    475,
+    389
+   ],
+   "out_px": [
+    280,
+    226
+   ],
+   "bytes": 15394,
+   "mask": "з PDF"
+  },
+  "gal-orient": {
+   "source": "site",
+   "what": "Orient (HF-S, R410A) — внутрішній блок зверху композиції на сайті",
+   "file": "orient.jpg",
+   "url": "https://galactic.ua/wp-content/uploads/2020/07/orient.jpg",
+   "crop": [
+    0,
+    0,
+    1890,
+    790
+   ],
+   "src_px": [
+    1890,
+    790
+   ],
+   "out_px": [
+    280,
+    108
+   ],
+   "bytes": 2546,
+   "mask": "з зображення"
+  },
+  "gal-multi": {
+   "source": "site",
+   "what": "Мульти (H-W R32, H-S R410A) — верхній внутрішній блок композиції на сайті; у R32 і R410A він той самий",
+   "file": "r32-multi.jpg",
+   "url": "https://galactic.ua/wp-content/uploads/2021/07/r32-multi.jpg",
+   "crop": [
+    80,
+    0,
+    300,
+    138
+   ],
+   "src_px": [
+    220,
+    138
+   ],
+   "out_px": [
+    216,
+    138
+   ],
+   "bytes": 3278,
+   "mask": "з зображення"
+  }
+ }
+}
