@@ -814,9 +814,10 @@ function renderHeatpumpsList() {
 async function ensurePriceRawBuffer() {
   if (priceRawBuffer) return priceRawBuffer;
   try {
-    const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
-    if (!res.ok) return null;
-    priceRawBuffer = await res.arrayBuffer();
+    /* Через сесію, а не по публічній адресі (2026-10-19, етап E) — див.
+       fetchPriceFileBuffer() у js/02-price-parse.js. Сюди взагалі заходять лише коли
+       фото серій ще не опубліковані: інакше всі, хто кличе, виходять раніше. */
+    priceRawBuffer = await fetchPriceFileBuffer();
     return priceRawBuffer;
   } catch (e) {
     return null;

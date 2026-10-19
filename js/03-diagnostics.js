@@ -548,6 +548,26 @@ async function diagCheckPricePublish(ctx) {
   const out = { issues: [], checked: [] };
   const area = DIAG_AREA.pricePublish;
 
+  /* 0. ЧИ ЗАКРИТИЙ СТАРИЙ price.xlsx (етап E, з 2026-10-19).
+     Питання не теоретичне: 2026-10-12 і 2026-10-19 файл справді віддавався будь-кому за
+     прямим посиланням — тобто весь прайс із цінами качався без жодного входу, і ніякі
+     гейти доступу в застосунку цього не міняли. Беремо ОДИН байт (Range), щоб перевірка
+     не тягнула 10 МБ, і свідомо БЕЗ заголовків авторизації. */
+  try {
+    const probe = await fetch(PRICE_FILE_URL, { cache: 'no-store', headers: { Range: 'bytes=0-0' } });
+    if (probe.ok || probe.status === 206) {
+      out.issues.push(diagIssue(area, 'bucket', 'error',
+        'Старий price.xlsx усе ще відкритий усім',
+        ['Повний прайс із цінами качається за прямим посиланням без входу в застосунок.',
+         'Закрити: claude/sql/2026-10-19-close-price-bucket.sql (спершу переконатись, що всі пристрої на новій версії).'],
+        null));
+    } else {
+      out.checked.push({ area: area, sub: 'bucket', label: 'Старий price.xlsx закритий', detail: 'HTTP ' + probe.status + ' без авторизації' });
+    }
+  } catch (e) {
+    out.checked.push({ area: area, sub: 'bucket', label: 'Старий price.xlsx недоступний ззовні', detail: 'запит не пройшов' });
+  }
+
   // 1. Чи відповідає серверна частина
   let info = null;
   try {

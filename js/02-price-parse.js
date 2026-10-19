@@ -1465,6 +1465,24 @@ async function checkPriceVersion() {
 // явно викликачем (а не читається з глобальної priceVersion), бо в обох місцях виклику
 // (initCatalog/handleRefreshClick) priceVersion оновлюється ПІСЛЯ цього виклику — інакше
 // самодіагностика підписувала б знахідки старою версією.
+/* ЗАВАНТАЖЕННЯ САМОГО price.xlsx — ЄДИНЕ МІСЦЕ (2026-10-19, етап E).
+   Спершу пробуємо через сесію (`sb.storage.download`): так файл віддається лише тому,
+   кого пускає політика сховища, і працюватиме далі, коли бакет стане приватним.
+   Публічна адреса лишилась другою спробою — рівно для перехідного періоду, поки бакет
+   ще відкритий і поки на телефонах трапляється старий код. Прибрати її можна буде, коли
+   в логах Storage зникнуть звернення до /object/public/price/price.xlsx.
+   Нагадування: цей шлях — АВАРІЙНИЙ. У звичайній роботі прайс приходить готовим
+   (loadPublishedPrice), і сюди потрапляють лише після гучного reportPriceFallback. */
+async function fetchPriceFileBuffer() {
+  try {
+    const { data, error } = await sb.storage.from('price').download('price.xlsx');
+    if (!error && data) return await data.arrayBuffer();
+  } catch (e) { /* немає сесії або політика не пускає — пробуємо публічний шлях */ }
+  const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return await res.arrayBuffer();
+}
+
 async function downloadAndParsePrice(newVersion, opts) {
   /* onStage — щоб екран міг сказати людині, що саме зараз відбувається: файл прайсу
      важить близько 10 МБ, і між «качаю» та «розбираю» на слабкому телефоні відчутна
@@ -1473,9 +1491,7 @@ async function downloadAndParsePrice(newVersion, opts) {
   stage('download');
   /* Бібліотека розбору тепер вантажиться на вимогу — саме тут вона й потрібна. */
   await ensureXlsx();
-  const res = await fetch(PRICE_FILE_URL, { cache: 'no-store' });
-  if (!res.ok) throw new Error('HTTP ' + res.status);
-  const buf = await res.arrayBuffer();
+  const buf = await fetchPriceFileBuffer();
   priceRawBuffer = buf; // для extractSeriesImages() — той самий буфер, без повторного качання
   seriesImageCache = {}; // новий файл прайсу — стара прив'язка картинок до серій більше не валідна
   stage('parse');
