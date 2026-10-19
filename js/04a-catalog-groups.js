@@ -187,6 +187,60 @@ function cgCountText(n) {
   return n + ' ' + word;
 }
 
+
+/* ---------- Шапка групи: серія, маркування, типорозміри (2026-10-19) ----------
+   Рішення власника: у шапці групи має стояти те саме, що в таблиці «МОДЕЛЬНИЙ РЯД»
+   на стор. 6 каталогу — назва серії з шестикутника плюс маркування; для не
+   настінних блоків замість назви серії — тип блока. Замість «7 позицій» —
+   перелік типорозмірів усередині.
+
+   Джерело — той самий data/mhi-catalog.json, що живить панель товару: інакше
+   шапка й картка товару почали б розходитись. Серій, яких у каталозі ще немає
+   (Galactic, напівпром), це не стосується — там лишається назва з прайсу. */
+/* Файл каталогу вантажиться лише раз і лише в розділах MHI. Поки його немає,
+   шапки малюються як раніше (назва з прайсу) — список не чекає мережі; коли
+   приїхав, перемальовуємо один раз. */
+let cgCatalogAsked = false;
+function cgEnsureCatalog(cfgKey) {
+  if (cgCatalogAsked || typeof loadMhiCatalog !== 'function') return;
+  if (!/_mhi$/.test(cfgKey)) return;
+  cgCatalogAsked = true;
+  loadMhiCatalog().then(function (c) { if (c) renderCatalogList(); });
+}
+
+function cgCatalogCard(models) {
+  if (typeof mhiCatalog === 'undefined' || !mhiCatalog) return null;
+  /* Спершу серія з розібраної таблиці (там і сторінка, і дані), потім — картка
+     з «МОДЕЛЬНОГО РЯДУ». Картки покривають і мульти спліт-системи, таблиці яких
+     ще не розібрані: назва серії й тип блока від пари блоків не залежать. */
+  for (let i = 0; i < models.length; i++) {
+    const ref = mhiCatalog.index && mhiCatalog.index[catKey(models[i])];
+    if (!ref) continue;
+    const sr = mhiCatalog.series[String(ref).split('|')[0]];
+    if (sr) return sr;
+  }
+  const cards = mhiCatalog.cards || [];
+  for (let i = 0; i < models.length; i++) {
+    const m = psKey(models[i]);
+    for (let j = 0; j < cards.length; j++) {
+      if (new RegExp(cards[j].re).test(m)) return cards[j];
+    }
+  }
+  return null;
+}
+
+/* Типорозміри групи: «20 · 25 · 35 · 50 · 60». Беремо число з маркування тим самим
+   cgCapacity(), що й діапазон, тому аксесуари (пульти, модулі) сюди не потрапляють. */
+function cgTypeSizes(models) {
+  const seen = [];
+  models.forEach(m => {
+    const c = cgCapacity(m);
+    if (c && !seen.some(x => x.n === c.n)) seen.push(c);
+  });
+  seen.sort((a, b) => a.n - b.n);
+  return seen.map(x => x.text);
+}
+
 /* ---------- Класифікація однієї позиції ----------
    Повертає опис групи або null — тоді позиція лишається звичайним відкритим рядком.
      id        — стійкий ідентифікатор групи в межах аркуша (НЕ індекс і не сам заголовок)
@@ -390,17 +444,48 @@ function cgGroupHtml(cfg, g) {
   }).join('');
   const note = g.note ? '<div class="sg-note">' + escapeHtml(g.note) + '</div>' : '';
 
+  /* Назва: якщо серія є в каталозі MHI — «бейдж + маркування», як на стор. 6.
+     Для настінних у бейджі назва серії (Diamond Series), для решти — тип блока
+     (Канальний, Касетний, Підлоговий): шестикутник із назвою серії там не
+     інформативний, людині важливіше, який це блок. */
+  const models = [];
+  g.blocks.forEach(b => b.entries.forEach(e => models.push(e.item.model)));
+  const card = cgCatalogCard(models);
+  const badge = card ? (card.block === 'Настінний' ? card.series : card.block) : '';
+
+  /* «7 позицій» → перелік типорозмірів (рішення власника 2026-10-19): дилеру
+     важливо, які потужності всередині, а не скільки рядків. Стоїть ПІД
+     маркуванням, а не праворуч: рядок задовгий, і в правій колонці він
+     стискав маркування в три рядки. Праворуч лишається тільки «Вибрано».
+     Групи без типорозмірів (пульти, аксесуари) показують кількість, як раніше. */
+  const sizes = cgTypeSizes(models);
+  const sizesText = sizes.length ? 'Типорозміри: ' + sizes.join(' · ') : cgCountText(g.count);
+
+  /* Назва: якщо серія є в каталозі MHI — «бейдж + маркування», як у таблиці
+     «МОДЕЛЬНИЙ РЯД» на стор. 6. Для настінних у бейджі назва серії (Diamond
+     Series), для решти — тип блока (Канальний, Касетний, Підлоговий): назва
+     серії там не інформативна, людині важливіше, який це блок.
+     Третім рядком лишається опис із прайсу — у ньому те, чого в каталозі немає
+     («тепловий насос», «бізнес-клас»). */
+  const titleHtml = card
+    ? '<span class="sg-title"><span class="sg-badge">' + escapeHtml(badge) + '</span>' +
+        '<span class="sg-mark">' + escapeHtml(card.marking) + '</span></span>' +
+      '<span class="sg-sub">' + escapeHtml(sizesText) + '</span>' +
+      '<span class="sg-desc">' + escapeHtml(cgPretty(g.title)) + '</span>'
+    : '<span class="sg-title">' + escapeHtml(g.title) + '</span>' +
+      (g.subtitle ? '<span class="sg-sub">' + escapeHtml(g.subtitle) + '</span>' : '') +
+      '<span class="sg-sub">' + escapeHtml(sizesText) + '</span>';
+
   return '<section class="sg' + (open ? ' open' : '') + '"' +
       ' data-sg-uid="' + uid + '" data-sg-key="' + escapeHtml(key) + '">' +
     '<div class="sg-head">' +
       '<button type="button" class="sg-toggle" id="sg-h-' + uid + '" aria-expanded="' + (open ? 'true' : 'false') +
         '" aria-controls="sg-b-' + uid + '" aria-describedby="sg-m-' + uid + '">' +
-        '<span class="sg-title">' + escapeHtml(g.title) + '</span>' +
-        (g.subtitle ? '<span class="sg-sub">' + escapeHtml(g.subtitle) + '</span>' : '') +
+        titleHtml +
       '</button>' + infoBtn +
       '<span class="sg-meta" id="sg-m-' + uid + '">' +
         '<span class="sg-sel"' + (selected ? '' : ' hidden') + '>Вибрано: ' + selected + '</span>' +
-        '<span class="sg-count">' + cgCountText(g.count) + '</span>' +
+
       '</span>' +
       '<span class="sg-chev" aria-hidden="true"></span>' +
     '</div>' +
@@ -412,6 +497,7 @@ function cgGroupHtml(cfg, g) {
 
 /* Весь список розділу: HTML із групами. Викликається з renderCatalogList(). */
 function cgRenderListHtml(cfg, items, animate) {
+  cgEnsureCatalog(cfg && cfg.key);
   cgRegistry.clear();
   const nodes = cgBuildNodes(cfg.key, items);
   const valid = {};

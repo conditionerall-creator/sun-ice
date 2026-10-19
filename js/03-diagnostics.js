@@ -748,7 +748,7 @@ async function diagCheckMhiCatalog(ctx) {
         const series = cat.series[bits[0]];
         if (!series) return;
         const row = (series.specs || []).find(x => x.name.indexOf('Холодопродуктивність') === 0);
-        const fromCat = num(row && row.values[bits[1]]);
+        const fromCat = num(row && row.values[parseInt(bits[1], 10)]);
         let fromSite = null;
         (specs[slug]['основні'] || []).forEach(g => g.rows.forEach(r => {
           if (fromSite === null && r[0].indexOf('Холодопродуктивність') === 0) fromSite = num(r[1]);

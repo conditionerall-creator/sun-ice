@@ -79,6 +79,12 @@ function catKey(s) { return psKey(s).replace(/[-_]/g, ''); }
    (внутрішній, зовнішній): у прайсі комплект може бути записаний по-різному. */
 function mhiCatalogHit(cfgKey, it) {
   if (!mhiCatalog || !mhiCatalog.index) return null;
+  /* ЛИШЕ спліт-системи. У мульти спліт-системі внутрішні блоки мають ТІ САМІ
+     маркування (SRK20ZSX-W), але працюють з іншим зовнішнім блоком — споживана
+     потужність, труби й заправка там інші. Підставити їм дані зі сторінки
+     спліта означало б показати дилеру чужі цифри, і жодна перевірка цього б не
+     спіймала. Таблиці мульти й напівпрому — окремий крок. */
+  if (cfgKey !== 'split_mhi') return null;
   const marks = psMarkings(cfgKey, it);
   for (let i = 0; i < marks.length; i++) {
     const ref = mhiCatalog.index[catKey(marks[i])];
@@ -88,7 +94,11 @@ function mhiCatalogHit(cfgKey, it) {
     /* mark — маркування САМЕ цього товару (у колонці каталогу їх кілька: -W, -WB,
        -WT, -WF…). Потрібне там, де відповідь залежить від виконання, а не від
        серії: у -WF Wi-Fi вбудований, у -W це опція. */
-    if (series) return { series: series, model: bits[1], key: bits[0], mark: catKey(marks[i]) };
+    if (series) {
+      const col = parseInt(bits[1], 10);
+      return { series: series, col: col, model: (series.columns || [])[col] || '',
+               key: bits[0], mark: catKey(marks[i]) };
+    }
   }
   return null;
 }
@@ -218,49 +228,59 @@ function specsHtml(spec) {
    Решта таблиці — під кнопкою «Усі характеристики», і там ці десять теж є:
    власник просив бачити таблицю так само, як у друкованому каталозі, а не
    «залишок» без початку. */
+/* Десять рядків, які видно одразу (склад і порядок — рішення власника 2026-10-19).
+   Решта таблиці — під кнопкою «Усі характеристики», і там ці десять теж є:
+   власник просив бачити таблицю так само, як у друкованому каталозі.
+   Зіставляємо за ПОЧАТКОМ назви: у різних серіях хвіст буває різний
+   («Холодоагент · Заводська заправка» на стор. 34, «Холодоагент · Charge» на 51). */
 const CAT_KEY_ROWS = [
-  'Холодопродуктивність (Min~Max)',
-  'Теплопродуктивність (Min~Max)',
-  'SEER / SCOP',
-  'Розміри внутрішнього блока (Ш х В х Г)',
-  'Розміри зовнішнього блока (Ш х В х Г)',
-  'Міжлапна відстань опор зовнішнього блока',
-  'Максимальна довжина труб [заводська заправка]',
-  'Макс. перепад висот, зовнішн. вище / нижче',
-  'Холодоагент, заводська заправка',
-  'Дозаправка холодоагенту'
+  'Холодопродуктивність',
+  'Теплопродуктивність',
+  'SEER',
+  'Розміри · Внутр',
+  'Розміри · Зовнішн',
+  'Міжлапна',
+  'Максимальна довжина труб',
+  'Макс. перепад висот',
+  'Холодоагент · Заводська', 'Холодоагент · Charge',
+  'Дозаправка'
 ];
 
 /* Значення немає в каталозі → «—». Не підставляти «як у сусіда» й не рахувати. */
-function catValue(spec, model) {
-  const v = spec && spec.values ? spec.values[model] : null;
+function catValue(spec, col) {
+  const v = spec && spec.values ? spec.values[col] : null;
   return (v === undefined || v === null || v === '') ? '—' : v;
 }
 
-function catRowsHtml(list, model) {
+function catRowsHtml(list, col) {
   return list.map(function (sp) {
     const unit = sp.unit ? ' <span class="ps-spec-unit">' + escapeHtml(sp.unit) + '</span>' : '';
     return '<div class="ps-spec-row"><span class="ps-spec-name">' + escapeHtml(sp.name) + unit +
-           '</span><span class="ps-spec-val">' + escapeHtml(catValue(sp, model)) + '</span></div>';
+           '</span><span class="ps-spec-val">' + escapeHtml(catValue(sp, col)) + '</span></div>';
   }).join('');
 }
 
 function catSpecsHtml(hit) {
   const all = hit.series.specs || [];
-  const byName = {};
-  all.forEach(function (sp) { byName[sp.name] = sp; });
-  const key = CAT_KEY_ROWS.map(function (n) { return byName[n]; }).filter(Boolean);
-  return '<div class="ps-spec-table">' + catRowsHtml(key, hit.model) + '</div>' +
+  const key = [];
+  CAT_KEY_ROWS.forEach(function (pref) {
+    all.forEach(function (sp) {
+      if (sp.name.indexOf(pref) === 0 && key.indexOf(sp) < 0) key.push(sp);
+    });
+  });
+  return '<div class="ps-spec-table">' + catRowsHtml(key, hit.col) + '</div>' +
     '<details class="ps-all"><summary><span>Усі характеристики</span>' +
     '<span class="ps-group-n">' + all.length + '</span></summary>' +
-    '<div class="ps-spec-table">' + catRowsHtml(all, hit.model) + '</div></details>' +
+    '<div class="ps-spec-table">' + catRowsHtml(all, hit.col) + '</div></details>' +
     catSourceHtml(hit);
 }
 
 /* Звідки взято — щоб будь-яку цифру можна було перевірити за десять секунд. */
 function catSourceHtml(hit) {
   return '<div class="ps-source">Джерело: каталог Mitsubishi Heavy Industries, ' +
-    escapeHtml(hit.series.title) + ', стор. ' + hit.series.page + '.</div>';
+    escapeHtml(hit.series.marking || hit.series.title || '') +
+    (hit.series.series ? ' (' + escapeHtml(hit.series.series) + ')' : '') +
+    ', стор. ' + hit.series.page + '.</div>';
 }
 
 /* Назви функцій у каталозі набрані капсом. Тридцять таких рядків поспіль читати

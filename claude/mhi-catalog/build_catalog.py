@@ -3,26 +3,24 @@
 
 Запуск (з кореня репозиторію):
     python claude/mhi-catalog/build_catalog.py
-    python claude/mhi-catalog/build_catalog.py --render   # + PNG сторінок для звірки очима
+    python claude/mhi-catalog/build_catalog.py --render   # + PNG сторінок для звірки
 
 ЩО РОБИТЬ МАШИНА, А ЩО ЛЮДИНА
 ------------------------------
-Машина читає ЗНАЧЕННЯ — по координатах слів, разом із об'єднаними комірками.
-Саме тут помиляється людина, і саме тут плоский `pdftotext -layout` дає брехню
-(перевірено на стор. 34: він зсуває значення на рядок).
+Машина читає таблицю по координатах слів: значення, об'єднані комірки, назви рядків,
+одиниці, маркування по колонках (`tables.py`). Плоский `pdftotext -layout` для цього
+каталогу непридатний — він зсуває значення на рядок.
 
-Людина виписує НАЗВИ рядків (`ROWS` у конфігу серії) — подивившись на сторінку.
-Колонка назв у цьому каталозі багаторядкова («Рівень / звукової / потужності»
-трьома рядками з вертикальним центруванням), і жодна автоматика не визначить
-надійно, до якого рядка значень належить який заголовок.
+Людина задає лише те, чого на сторінці немає: який це розділ застосунку, як серія
+зветься в каталозі (шестикутник на стор. 6) і її маркування. І один раз звіряє
+сторінку очима.
 
-Щоб ця ручна частина не роз'їхалась із PDF, кожен запис має `match` — шматок
-тексту, який МУСИТЬ знайтись у власній (автоматично прочитаній) підпису-колонці
-того самого рядка. Не збіглось або кількість рядків інша — скрипт падає з
-переліком розбіжностей і нічого не записує. Тихої підміни бути не може.
+ДОВЕДЕННЯ ПРАВИЛЬНОСТІ: сторінка 34 звірена очима рядок за рядком, її очікуваний
+результат зашитий у `tests/test_tables.py`. Будь-яка правка розбору, що зіпсує цю
+сторінку, завалить тест.
 
-ПРАВИЛО ПРО ЦИФРИ: немає значення в каталозі → `null`. Не інтерполювати, не
-брати «у сусіда так само», не рахувати за формулою, не брати з інтернету.
+ПРАВИЛО ПРО ЦИФРИ: немає значення в каталозі → `null`. Не інтерполювати, не брати
+«у сусіда так само», не рахувати за формулою, не брати з інтернету.
 """
 
 import os
@@ -34,137 +32,88 @@ import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pdfgrid as G                                            # noqa: E402
+import tables as T                                             # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PDF = os.path.join(os.path.dirname(ROOT), 'Sun-ice — довідники', 'catalog-mhi-rac-pac.pdf')
 OUT = os.path.join(ROOT, 'data', 'mhi-catalog.json')
 SHOTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'shots')
 
-# Зони сторінки по X (pt). Однакові для всіх сторінок таблиць цього каталогу.
-X_LABEL_MAIN = 86.0      # головна колонка назв: x < 86
-X_LABEL_SUB = 120.0      # підколонка «Внутр./Зовнішн.»: 86 ≤ x < 120
-X_UNIT = 200.0           # друга підколонка назв: 120 ≤ x < 200
-X_VALUES = 240.0         # колонка одиниць: 200 ≤ x < 240; значення: x ≥ 240
-
-
-# --------------------------------------------------------------------------
-# Серія SRK-ZSX-W Diamond, стор. 34. Пілот (рішення власника 2026-10-19).
-# ROWS — (назва, що має знайтись у власному підписі рядка, [одиниця]).
-# Порядок такий самий, як у надрукованій таблиці. Третій елемент потрібен там, де
-# одиницю надруковано один раз на кілька рядків (об'єднана комірка) — машині вона
-# дістається лише одному з них. Це транскрипція зі сторінки, не обчислення.
-# --------------------------------------------------------------------------
-ZSX_ROWS = [
-    ('Електроживлення',                                      r'Електроживлення'),
-    ('Холодопродуктивність (Min~Max)',                       r'Холодопродуктивність'),
-    ('Теплопродуктивність (Min~Max)',                        r'Теплопродуктивність'),
-    ('Споживана потужність, охолодження / обігрів',          r'Споживана потужність'),
-    ('SEER / SCOP',                                          r'SEER', ''),
-    ('Макс. пусковий струм',                                 r'пусковий струм'),
-    ('Рівень звукової потужності, внутр., охолодження / обігрів',  r'Внутр', 'дБ(A)'),
-    ('Рівень звукової потужності, зовнішн., охолодження / обігрів', r'Зовнішн', 'дБ(A)'),
-    ('Рівень звукового тиску, внутр., охолодження (Hi/Me/Lo/Ulo)',  r'Внутр', 'дБ(A)'),
-    ('Рівень звукового тиску, внутр., обігрів (Hi/Me/Lo/Ulo)',      r'Обігрів'),
-    ('Рівень звукового тиску, зовнішн., охолодження / обігрів',     r'Зовнішн', 'дБ(A)'),
-    ('Циркуляція повітря, внутр., охолодження (Hi/Me/Lo/Ulo)',      r'Охолодження', 'м³/хв'),
-    ('Циркуляція повітря, внутр., обігрів (Hi/Me/Lo/Ulo)',          r'Обігрів', 'м³/хв'),
-    ('Циркуляція повітря, зовнішн., охолодження / обігрів',         r'Зовнішн', 'м³/хв'),
-    ('Розміри внутрішнього блока (Ш х В х Г)',               r'Внутр', 'мм'),
-    ('Розміри зовнішнього блока (Ш х В х Г)',                r'Зовнішн', 'мм'),
-    ('Міжлапна відстань опор зовнішнього блока',             r'Міжлапна'),
-    ('Вага нетто, внутрішній / зовнішній',                   r'Вага нетто'),
-    ('Холодоагент, тип / GWP',                               r'Тип/GWP'),
-    ('Холодоагент, заводська заправка',                      r'Заводська заправка', 'кг/TCO₂Eq'),
-    ('Приєднання труб, рідина / газ',                        r'Рідина'),
-    ('Максимальна довжина труб [заводська заправка]',        r'Максимальна довжина труб'),
-    ('Дозаправка холодоагенту',                              r'Дозаправка'),
-    ('Макс. перепад висот, зовнішн. вище / нижче',           r'вище'),
-    ('Робочий діапазон зовнішніх температур, охолодження',   r'Охолодження', '°C'),
-    ('Робочий діапазон зовнішніх температур, обігрів',       r'Обігрів', '°C'),
-    ('Повітряний фільтр',                                    r'Повітряний фільтр'),
-    ('Підключення живлення',                                 r'Підключення живлення'),
-    ('Кабель живлення',                                      r'Кабель живлення', 'мм²'),
-    ('Міжблочний кабель',                                    r'Міжблочний кабель', 'мм²'),
-    ('Номінал автоматичного вимикача',                       r'Номінал автоматичного'),
-]
-
-# Аксесуари й пульти — виписані зі сторінки серії (це підписи під малюнками, а не
-# таблиця, автоматично їх не зібрати без домислювання). `verify` — текст, який
-# МУСИТЬ бути на тій сторінці; немає його — збірка падає, а не мовчить.
-ZSX_ACCESSORIES = [
-    {'kind': 'remote', 'name': 'Бездротовий пульт ДК', 'state': 'yes',
-     'note': None, 'verify': 'Бездротовий'},
-    {'kind': 'remote', 'name': 'RC-ES1', 'state': 'option',
-     'note': 'Дротовий пульт. Підключається через адаптер SC-BIKN2-E.', 'verify': 'RC-ES1'},
-    {'kind': 'remote', 'name': 'RC-EX3A(D)', 'state': 'option',
-     'note': 'Дротовий пульт. Підключається через адаптер SC-BIKN2-E.', 'verify': 'RC-EX3A(D)'},
-    {'kind': 'remote', 'name': 'RC-E5', 'state': 'option',
-     'note': 'Дротовий пульт. Підключається через адаптер SC-BIKN2-E.', 'verify': 'RC-E5'},
-    {'kind': 'remote', 'name': 'RCH-E3', 'state': 'option',
-     'note': 'Дротовий пульт. Підключається через адаптер SC-BIKN2-E.', 'verify': 'RCH-E3'},
-    {'kind': 'adapter', 'name': 'SC-BIKN2-E', 'state': 'option',
-     'note': ('Адаптер для дротового пульта. Для моделей SRK-ZSX-WF його можна '
-              'підключити тільки після відключення Wi-Fi-модуля.'),
-     'verify': 'SC-BIKN2-E'},
-    {'kind': 'wifi', 'name': 'Керування через Wi-Fi', 'state': 'depends',
-     'note': ('Моделі SRK-ZSX-WF мають вбудований Wi-Fi-модуль у стандартній '
-              'комплектації. Для моделей SRK-ZSX-W Wi-Fi-модуль доступний як опція.'),
-     'verify': 'Wi-Fi-модуль'},
-    {'kind': 'filter', 'name': 'Антиалергенний фільтр', 'state': 'yes',
-     'note': 'x 1, у стандартній комплектації.', 'verify': 'Антиалергенний'},
-    {'kind': 'filter', 'name': 'Фотокаталітичний дезодоруючий фільтр', 'state': 'yes',
-     'note': 'x 1, у стандартній комплектації. Багаторазовий, миється.',
-     'verify': 'Фотокаталітичний'},
-]
-
-SERIES = [{
-    'key': 'SRK-ZSX-W',
-    'title': 'Серія SRK-ZSX-W, -WF. Diamond Series',
-    'group': 'Побутові спліт-системи настінного типу',
-    'page': 34,
-    'table_below': 505.0,          # таблиця починається нижче заголовка «ТЕХНІЧНІ ХАРАКТЕРИСТИКИ»
-    'rows': ZSX_ROWS,
-    # Маркування внутрішніх блоків по колонках. У каталозі на одну колонку припадає
-    # кілька кольорових виконань — вони там так і надруковані, це не домислювання.
-    'models': [
-        ['SRK20ZSX-W', 'SRK20ZSX-WB', 'SRK20ZSX-WT', 'SRK20ZSX-WF', 'SRK20ZSX-WFB', 'SRK20ZSX-WFT'],
-        ['SRK25ZSX-W', 'SRK25ZSX-WB', 'SRK25ZSX-WT', 'SRK25ZSX-WF', 'SRK25ZSX-WFB', 'SRK25ZSX-WFT'],
-        ['SRK35ZSX-W', 'SRK35ZSX-WB', 'SRK35ZSX-WT', 'SRK35ZSX-WF', 'SRK35ZSX-WFB', 'SRK35ZSX-WFT'],
-        ['SRK50ZSX-W', 'SRK50ZSX-WB', 'SRK50ZSX-WT', 'SRK50ZSX-WF', 'SRK50ZSX-WFB', 'SRK50ZSX-WFT'],
-        ['SRK60ZSX-W', 'SRK60ZSX-WB', 'SRK60ZSX-WT', 'SRK60ZSX-WF', 'SRK60ZSX-WFB', 'SRK60ZSX-WFT'],
-    ],
-    'outdoor': ['SRC20ZSX-W', 'SRC25ZSX-W', 'SRC35ZSX-W', 'SRC50ZSX-W3', 'SRC60ZSX-W3'],
-    # Маркування, у яких Wi-Fi вбудований (решта серії — опція). Це написано на тій
-    # самій сторінці каталогу, тому не домислювання: «Моделі SRK-ZSX-WF мають
-    # вбудований Wi-Fi-модуль… Для моделей SRK-ZSX-W — як опція».
-    'wifi_builtin': 'ZSXWF',
-    'funcs_col_x': 277.0,          # колонка ZSX у матриці функцій на стор. 33
-    'accessories': ZSX_ACCESSORIES,
-}]
-
-
-# --------------------------------------------------------------------------
-# Матриця «ПЕРЕЛІК ФУНКЦІЙ», стор. 33: рядок — функція, колонка — серія.
-# Беремо ЛИШЕ колонку своєї серії. «●» = є штатно, «опція» = доплатою,
-# порожньо = немає. Виноски (*1…*6) переносимо текстом, бо без них можна
-# продати пульт без адаптера.
-# --------------------------------------------------------------------------
 FUNCS_PAGE = 33
-FUNCS_X_NAME = (90.0, 270.0)      # назва функції
-FUNCS_X_GROUP = (30.0, 90.0)      # назва групи функцій (вертикально, по кілька слів)
+FUNCS_X_NAME = (90.0, 270.0)
 FUNCS_Y_FROM, FUNCS_Y_TO = 130.0, 770.0
 FUNCS_COL_TOL = 6.0
+
+# --------------------------------------------------------------------------
+# СЕРІЇ. `series`/`marking`/`block` — з таблиці «МОДЕЛЬНИЙ РЯД» на стор. 6–7
+# (шестикутник із назвою серії + маркування + тип блока ліворуч). Саме ці три
+# речі показує шапка групи в прайсі, тому вони тут, а не в коді застосунку.
+# `funcs_col` — номер колонки серії в матриці функцій на стор. 33 (0 — перша).
+# --------------------------------------------------------------------------
+SERIES = [
+    {'page': 34, 'key': 'SRK-ZSX-W', 'series': 'Diamond Series', 'marking': 'SRK-ZSX-W, -WF',
+     'block': 'Настінний', 'funcs_col': 0, 'wifi_builtin': 'ZSXWF'},
+    {'page': 36, 'key': 'SRK-ZR-W', 'series': 'Diamond Series', 'marking': 'SRK-ZR-W, -WF',
+     'block': 'Настінний', 'funcs_col': 3, 'wifi_builtin': 'ZRWF'},
+    {'page': 38, 'key': 'SRK-ZT-WF', 'series': 'Premium Series', 'marking': 'SRK-ZT-WF',
+     'block': 'Настінний', 'funcs_col': 1},
+    {'page': 40, 'key': 'SRK-ZS-W', 'series': 'Premium Series', 'marking': 'SRK-ZS-W, -WF',
+     'block': 'Настінний', 'funcs_col': 2, 'wifi_builtin': 'ZSWF'},
+    {'page': 42, 'key': 'SRK-ZTL-W', 'series': 'Standard Plus Series', 'marking': 'SRK-ZTL-W',
+     'block': 'Настінний', 'funcs_col': 4},
+    {'page': 44, 'key': 'SRK-ZSP-W1', 'series': 'Standard Series', 'marking': 'SRK-ZSP-W1',
+     'block': 'Настінний', 'funcs_col': 5},
+    {'page': 46, 'key': 'SRK-ZSPR-S', 'series': 'Standard Series', 'marking': 'SRK-ZSPR-S',
+     'block': 'Настінний', 'funcs_col': 6},
+    {'page': 48, 'key': 'SRK-ZSPR-S-63', 'series': 'Standard Series', 'marking': 'SRK-ZSPR-S (63–80)',
+     'block': 'Настінний', 'funcs_col': 7},
+    {'page': 50, 'key': 'SRF-ZS-ZSX', 'series': 'Підлогові', 'marking': 'SRF-ZS / ZSX',
+     'block': 'Підлоговий', 'funcs_col': 8},
+    {'page': 51, 'key': 'SRR-ZS', 'series': 'Канальні низького тиску', 'marking': 'SRR-ZS',
+     'block': 'Канальний', 'funcs_col': 9},
+    {'page': 52, 'key': 'FDTC-VH', 'series': '4-поточні касетні компактні', 'marking': 'FDTC-VH',
+     'block': 'Касетний', 'funcs_col': 10},
+]
+
+
+# --------------------------------------------------------------------------
+# КАРТКИ СЕРІЙ для шапок груп у прайсі. Виписані з таблиці «МОДЕЛЬНИЙ РЯД»
+# (стор. 6 — спліт-системи, стор. 7 — мульти): назва серії з шестикутника,
+# маркування та тип блока з лівої колонки.
+#
+# Навіщо окремо від `SERIES`: у мульти спліт-системі внутрішні блоки мають ТІ
+# САМІ маркування, що й у спліті (SRK20ZSX-W), але характеристики інші — там
+# інший зовнішній блок. Тому таблиці мульти ще не розібрані, а шапка групи
+# показати серію вже може: назва й тип блока від пари не залежать.
+# --------------------------------------------------------------------------
+CARDS = [
+    (r'^SRK\d+ZSX', 'Diamond Series', 'SRK-ZSX-WF, -W', 'Настінний'),
+    (r'^SRK\d+ZR', 'Diamond Series', 'SRK-ZR-WF, -W', 'Настінний'),
+    (r'^SRK\d+ZT-', 'Premium Series', 'SRK-ZT-WF', 'Настінний'),
+    (r'^SRK\d+ZTL', 'Standard Plus Series', 'SRK-ZTL-W', 'Настінний'),
+    (r'^SRK\d+ZS-', 'Premium Series', 'SRK-ZS-WF, -W', 'Настінний'),
+    (r'^SRK\d+ZSPR', 'Standard Series', 'SRK-ZSPR-S', 'Настінний'),
+    (r'^SRK\d+ZSP', 'Standard Series', 'SRK-ZSP-W1', 'Настінний'),
+    (r'^SKM\d+ZSP', 'Standard Series', 'SKM-ZSP-W', 'Настінний'),
+    (r'^SRF\d+ZS', 'Підлогові', 'SRF-ZS / ZSX', 'Підлоговий'),
+    (r'^SRR\d+ZS', 'Канальні низького тиску', 'SRR-ZS', 'Канальний'),
+    (r'^FDTC', '4-поточні касетні компактні 600×600', 'FDTC-VH', 'Касетний'),
+    (r'^FDUM', 'Канальні середнього тиску', 'FDUM-VH', 'Канальний'),
+    (r'^FDE', 'Стельові', 'FDE-VH', 'Стельовий'),
+    (r'^SCM\d+ZS', 'Мульти, зовнішній блок R32', 'SCM-ZS-W', 'Зовнішній'),
+    (r'^SCM\d+ZM', 'Мульти, зовнішній блок R410A', 'SCM-ZM-S', 'Зовнішній'),
+]
 
 
 class Problem(Exception):
     pass
 
 
+# --------------------------------------------------------------------------
+# Функції (матриця «ПЕРЕЛІК ФУНКЦІЙ», стор. 33)
+# --------------------------------------------------------------------------
 def parse_footnotes(words):
-    """*N → текст виноски (нижній колонтитул сторінки 33)."""
     notes, cur = {}, None
-    # Номер сторінки стоїть у тому ж нижньому полі — без цього він приклеюється
-    # в кінець останньої виноски («…керування.. 33.»).
     foot = [w for w in words if w.y0 >= FUNCS_Y_TO
             and not (w.x0 > 520.0 and re.fullmatch(r'\d{1,3}', w.text))]
     for r in G.group_rows(foot, tol=3.0):
@@ -179,267 +128,224 @@ def parse_footnotes(words):
                 buf.append(w.text)
         if cur and buf:
             notes[cur] = (notes.get(cur, '') + ' ' + ' '.join(buf)).strip()
-            buf = []
     return {k: re.sub(r'\.+$', '', v).strip() + '.' for k, v in notes.items()}
 
 
-def parse_functions(col_x, report):
-    """Функції своєї серії зі стор. 33."""
-    words = G.page_words(PDF, FUNCS_PAGE)
-    notes = parse_footnotes(words)
-    body = [w for w in words if FUNCS_Y_FROM <= w.y0 < FUNCS_Y_TO]
+def funcs_columns(words):
+    """Центри колонок матриці функцій — за рядком, де позначок найбільше."""
+    best = []
+    for r in G.group_rows([w for w in words if FUNCS_Y_FROM <= w.y0 < FUNCS_Y_TO], tol=3.0):
+        dots = [w for w in r if w.text == '●']
+        if len(dots) > len(best):
+            best = dots
+    return [w.cx for w in sorted(best, key=lambda w: w.x0)]
+
+
+def parse_functions(cache, col_index, report, label):
+    words = cache['words']
+    notes = cache['notes']
+    cols = cache['cols']
+    if col_index is None or col_index >= len(cols):
+        report.append('ПЕРЕВІРКА  %s: колонки %s немає в матриці функцій (усього %d)'
+                      % (label, col_index, len(cols)))
+        return []
+    col_x = cols[col_index]
 
     out = []
-    for r in G.group_rows(body, tol=6.0):
+    for r in G.group_rows([w for w in words if FUNCS_Y_FROM <= w.y0 < FUNCS_Y_TO], tol=6.0):
         name = ' '.join(w.text for w in r
                         if FUNCS_X_NAME[0] <= w.x0 < FUNCS_X_NAME[1]
                         and not re.fullmatch(r'\*\d', w.text)).strip()
         if not name:
             continue
-        # Рядок без жодної позначки в УСІХ колонках — це продовження назви
-        # попередньої функції («…ПОВІТРЯНИМ / ПОТОКОМ»), а не окрема функція.
         if not any(w.text in ('●', 'опція') for w in r if w.x0 >= FUNCS_X_NAME[1]):
             if out:
-                out[-1]['name'] += ' ' + name
+                out[-1]['name'] += ' ' + name        # продовження назви, не нова функція
             continue
         mine = [w for w in r if abs(w.cx - col_x) <= FUNCS_COL_TOL]
-        has_dot = any(w.text == '●' for w in mine)
-        has_opt = any(w.text == 'опція' for w in mine)
-        # Виноски беремо і біля позначки своєї колонки, і біля самої назви:
-        # «*1 У разі використання з мульти спліт-системи функція недоступна»
-        # стоїть саме при назві й стосується всіх серій.
         refs = []
         for w in r:
             m = re.fullmatch(r'\*(\d)', w.text)
-            if not m:
-                continue
-            if w.x0 < FUNCS_X_NAME[1] or abs(w.x0 - col_x) <= 10.0:
+            if m and (w.x0 < FUNCS_X_NAME[1] or abs(w.x0 - col_x) <= 10.0):
                 if m.group(1) not in refs:
                     refs.append(m.group(1))
-        if not has_dot and not has_opt:
-            state = 'no'
-        elif has_opt:
-            state = 'option'
-        else:
-            state = 'yes'
-        out.append({
-            'name': name,
-            'state': state,
-            'note': ' '.join(notes.get(n, '') for n in refs).strip() or None,
-            'page': FUNCS_PAGE,
-        })
+        state = ('option' if any(w.text == 'опція' for w in mine)
+                 else 'yes' if any(w.text == '●' for w in mine) else 'no')
+        out.append({'name': name, 'state': state, 'page': FUNCS_PAGE,
+                    'note': ' '.join(notes.get(n, '') for n in refs).strip() or None})
 
     if not any(f['state'] != 'no' for f in out):
-        report.append('ПЕРЕВІРКА  стор. 33: у колонці x=%.0f не знайдено жодної '
-                      'позначки — схоже, колонка серії вказана неправильно' % col_x)
+        report.append('ПЕРЕВІРКА  %s: у колонці функцій №%d немає жодної позначки — '
+                      'схоже, колонку вказано неправильно' % (label, col_index))
     return out
 
 
-def zone(words, lo, hi):
-    return [w for w in words if lo <= w.x0 < hi]
+# --------------------------------------------------------------------------
+# Аксесуари: підписи під малюнками на сторінці серії.
+# Беремо лише те, що на сторінці НАПИСАНО словами; нічого не добудовуємо.
+# --------------------------------------------------------------------------
+REMOTE_RE = re.compile(r'^RC[H]?-[A-Z0-9()]+$')
+ADAPTER_RE = re.compile(r'^SC-[A-Z0-9-]+E$')
 
 
-def text_of(words):
-    return ' '.join(w.text for w in words).strip()
+def parse_accessories(words, page, filter_value, report, label):
+    text = ' '.join(w.text for w in words)
+    text = re.sub(r'\s+', ' ', text)
+    out, seen = [], set()
 
+    stars = [s.strip() for s in re.findall(r'\*\s*([^*]{10,200}?)(?=\s*\*|$)', text)]
+    wired_note = next((s for s in stars if 'адаптер' in s.lower()), None)
 
-def parse_table(words, cfg):
-    """Рядки таблиці: власний підпис (як прочитано), одиниця, значення по колонках."""
-    body = [w for w in words if w.y0 > cfg['table_below']]
-    rows = G.group_rows(body)
+    if 'Бездротовий' in text:
+        out.append({'kind': 'remote', 'name': 'Бездротовий пульт ДК', 'state': 'yes',
+                    'note': None, 'page': page})
+    for w in words:
+        t = w.text.strip().rstrip('.,')
+        if REMOTE_RE.match(t) and t not in seen:
+            seen.add(t)
+            note = 'Дротовий пульт керування.'
+            if wired_note:
+                note += ' ' + wired_note.rstrip('.') + '.'
+            out.append({'kind': 'remote', 'name': t, 'state': 'option', 'note': note, 'page': page})
+        elif ADAPTER_RE.match(t) and t not in seen:
+            seen.add(t)
+            adp = next((s for s in stars if t in s), None)
+            out.append({'kind': 'adapter', 'name': t, 'state': 'option',
+                        'note': (adp.rstrip('.') + '.') if adp else 'Адаптер для дротового пульта.',
+                        'page': page})
 
-    # Колонки — з рядка маркувань зовнішніх блоків: кожне маркування окреме слово,
-    # і воно відцентроване над своєю колонкою.
-    want = [G.norm_model(m) for m in cfg['outdoor']]
-    centers = None
-    for r in rows:
-        got = [w for w in r if G.norm_model(w.text) in want]
-        if len(got) == len(want):
-            centers = [w.cx for w in sorted(got, key=lambda w: w.x0)]
-            break
-    if centers is None:
-        raise Problem('Не знайдено рядок маркувань зовнішніх блоків %s на стор. %d'
-                      % (cfg['outdoor'], cfg['page']))
-    bounds = [(centers[i] + centers[i + 1]) / 2.0 for i in range(len(centers) - 1)]
+    wifi = re.search(r'(Моделі [^.]*Wi-Fi-модуль[^.]*\.(?:\s*Для моделей[^.]*\.)?)', text)
+    if 'Wi-Fi' in text:
+        out.append({'kind': 'wifi', 'name': 'Керування через Wi-Fi',
+                    'state': 'depends' if wifi else ('yes' if 'Вбудований Wi-Fi' in text else 'option'),
+                    'note': wifi.group(1).strip() if wifi else None, 'page': page})
 
-    out = []
-    for r in rows:
-        vals_z = [w for w in r if w.x0 >= X_VALUES]
-        if not vals_z:
-            continue                                   # рядок без значень — лише шматок підпису
-        # Рядки-шапки з маркуваннями (внутрішні блоки йдуть двома рядками, з
-        # кольоровими суфіксами через кому) значеннями не є.
-        if any(re.match(r'^(SRK|SRC|SCM|FD)\d', w.text, re.I) for w in vals_z):
-            continue
-
-        # Комірки: спершу дрібним кроком, потім склеюємо сусідні, між якими немає
-        # межі колонки. Інакше «38 / 31 / 24 / 19» п'яти моделей зливається в одну.
-        small = G.group_cells(vals_z, gap=8.0)
-        cells = [small[0]]
-        for c in small[1:]:
-            gap_lo, gap_hi = cells[-1][-1].x1, c[0].x0
-            if any(gap_lo <= b <= gap_hi for b in bounds):
-                cells.append(c)
-            else:
-                cells[-1] = cells[-1] + c
-
-        spans = G.assign_spans(cells, centers)
-        row = {
-            'y': r[0].y0,
-            'label_main': text_of(zone(r, 0, X_LABEL_MAIN)),
-            'label_sub': text_of(zone(r, X_LABEL_MAIN, X_LABEL_SUB)),
-            'label_sub2': text_of(zone(r, X_LABEL_SUB, X_UNIT)),
-            'unit': re.sub(r'\s+', '', text_of(zone(r, X_UNIT, X_VALUES))),
-            'cells': [G.cell_text(c) for c in cells],
-            'spans': spans,
-        }
-        out.append(row)
-    return out, centers
-
-
-def rows_to_values(row, cfg):
-    """Значення по колонках з урахуванням об'єднаних комірок."""
-    ncol = len(cfg['outdoor'])
-    if row['spans'] is None:
-        return None
-    vals, i = [], 0
-    for text, span in zip(row['cells'], row['spans']):
-        vals.extend([text] * span)
-        i += span
-    return vals if len(vals) == ncol else None
-
-
-def parse_accessories(cfg, page_words_, report):
-    page_text = ' '.join(w.text for w in page_words_)
-    out = []
-    for a in cfg['accessories']:
-        if a['verify'] not in page_text:
-            raise Problem('Стор. %d: не знайдено «%s» — сторінку серії перемалювали, '
-                          'аксесуар «%s» треба звірити заново'
-                          % (cfg['page'], a['verify'], a['name']))
-        out.append({'kind': a['kind'], 'name': a['name'], 'state': a['state'],
-                    'note': a['note'], 'page': cfg['page']})
+    if filter_value:
+        for part in re.split(r',', filter_value):
+            part = part.strip()
+            if not part:
+                continue
+            m = re.match(r'^(.*?)(\s*[xх]\s*\d+)$', part)
+            out.append({'kind': 'filter', 'name': (m.group(1) if m else part).strip(),
+                        'state': 'yes',
+                        'note': ('У комплекті' + (m.group(2).strip() and ', ' + m.group(2).strip()) + '.')
+                                if m else 'У комплекті.',
+                        'page': page})
+    if not out:
+        report.append('ПЕРЕВІРКА  %s: на сторінці не знайшлось жодного аксесуара' % label)
     return out
 
 
-def build_series(cfg, report):
-    words = G.page_words(PDF, cfg['page'])
-    rows, centers = parse_table(words, cfg)
+# --------------------------------------------------------------------------
+def build_series(cfg, funcs_cache, report):
+    page, label = cfg['page'], cfg['key']
+    words = G.page_words(PDF, page)
+    rows, centers, header = T.read_table(words, page)
+    if not rows:
+        raise Problem('Стор. %d (%s): таблиці знайомого вигляду немає' % (page, label))
 
-    if len(rows) != len(cfg['rows']):
-        raise Problem(
-            'Стор. %d: у таблиці %d рядків зі значеннями, а в конфігу %d.\n'
-            'Прочитані підписи:\n  %s'
-            % (cfg['page'], len(rows), len(cfg['rows']),
-               '\n  '.join('%2d  %-38s | %s' % (i, r['label_main'] + ' ' + r['label_sub'] +
-                                                ' ' + r['label_sub2'], ' | '.join(r['cells']))
-                           for i, r in enumerate(rows))))
+    indoor, outdoor = T.read_header(words, centers, min(w.y0 for w in header) - 20)
+    if not any(indoor):
+        raise Problem('Стор. %d (%s): не прочитались маркування внутрішніх блоків' % (page, label))
 
-    specs = []
-    for r, row_cfg in zip(rows, cfg['rows']):
-        name, match = row_cfg[0], row_cfg[1]
-        unit_cfg = row_cfg[2] if len(row_cfg) > 2 else None
-        own = ' '.join([r['label_main'], r['label_sub'], r['label_sub2']])
-        if not re.search(match, own, re.I):
-            raise Problem('Стор. %d, y=%.1f: очікували «%s» (шукали /%s/), '
-                          'а в підписі рядка «%s». Конфіг розійшовся з PDF.'
-                          % (cfg['page'], r['y'], name, match, own.strip()))
-        vals = rows_to_values(r, cfg)
+    ncol = len(centers)
+    specs, filter_value = [], None
+    for r in rows:
+        vals = T.row_values(r, ncol)
         if vals is None:
-            report.append('СУМНІВНО  стор. %d, «%s»: не вдалось розкласти %d комірок '
-                          'по %d колонках — %s'
-                          % (cfg['page'], name, len(r['cells']), len(cfg['outdoor']),
-                             ' | '.join(r['cells'])))
+            report.append('СУМНІВНО  стор. %d (%s), «%s»: %d комірок на %d колонок — %s'
+                          % (page, label, r['name'], len(r['cells']), ncol, ' | '.join(r['cells'])))
             continue
-        values = {}
-        for col, v in enumerate(vals):
-            for model in cfg['models'][col]:
-                values[model] = v
-        unit = unit_cfg if unit_cfg is not None else (r['unit'] or None)
-        specs.append({'name': name, 'unit': unit or None,
-                      'page': cfg['page'], 'values': values})
+        if r['name'].startswith('Повітряний фільтр'):
+            filter_value = vals[0]
+        # Значення — списком ПО КОЛОНКАХ, а не по кожному маркуванню: у серії до
+        # шести кольорових виконань на колонку, і розкладка по маркуваннях роздувала
+        # файл у п'ять разів (282 КБ проти 60 КБ). Колонку дає index.
+        specs.append({'name': r['name'], 'unit': r['unit'], 'page': page, 'values': vals})
 
-    # Індекс: нормалізоване маркування з прайсу → «серія|колонка». Колонка потрібна,
-    # бо значення в specs лежать під канонічним маркуванням колонки.
-    index = {}
-    for group in cfg['models']:
-        for model in group:
-            index[G.norm_model(model)] = cfg['key'] + '|' + model
-    for col, model in enumerate(cfg['outdoor']):
-        index.setdefault(G.norm_model(model), cfg['key'] + '|' + cfg['models'][col][0])
-    return {
-        'page': cfg['page'],
-        'title': cfg['title'],
-        'group': cfg['group'],
-        'outdoor': cfg['outdoor'],
+    series = {
+        'page': page,
+        'series': cfg['series'],
+        'marking': cfg['marking'],
+        'block': cfg['block'],
+        'title': cfg['series'] + ' · ' + cfg['marking'],
+        'columns': [(indoor[i] or outdoor[i] or [''])[0] for i in range(ncol)],
+        'indoor': indoor,
+        'outdoor': outdoor,
         'wifi_builtin': cfg.get('wifi_builtin'),
-        'columns': [g[0] for g in cfg['models']],
         'specs': specs,
-        'functions': parse_functions(cfg['funcs_col_x'], report),
-        'accessories': parse_accessories(cfg, words, report),
-    }, index
+        'functions': parse_functions(funcs_cache, cfg.get('funcs_col'), report, label),
+        'accessories': parse_accessories(words, page, filter_value, report, label),
+    }
+
+    index = {}
+    for col in range(ncol):
+        for model in (indoor[col] or []) + (outdoor[col] or []):
+            index.setdefault(G.norm_model(model), cfg['key'] + '|' + str(col))
+    return series, index
 
 
-def check(series, report):
-    """Автоперевірки «чи не з'їхала колонка» (вимога власника: мовчки не виправляти)."""
+def check(series, label, report):
     def num(s):
         m = re.match(r'^-?\d+(?:[.,]\d+)?', (s or '').strip())
         return float(m.group(0).replace(',', '.')) if m else None
 
-    by_name = {s['name']: s for s in series['specs']}
+    by = {}
+    for s in series['specs']:
+        by.setdefault(s['name'].split(' · ')[0], s)
     cols = series['columns']
-
-    cool, heat = by_name.get('Холодопродуктивність (Min~Max)'), by_name.get('Теплопродуктивність (Min~Max)')
-    power = by_name.get('Споживана потужність, охолодження / обігрів')
-    if cool and power:
-        for m in cols:
-            c, p = num(cool['values'].get(m)), num(power['values'].get(m))
-            if c and p and p >= c:
-                report.append('ПЕРЕВІРКА  %s: споживана потужність %s ≥ холодопродуктивності %s'
-                              % (m, p, c))
-    if cool and heat:
-        for m in cols:
-            c, h = num(cool['values'].get(m)), num(heat['values'].get(m))
-            if c and h and not (0.5 <= c / h <= 1.6):
-                report.append('ПЕРЕВІРКА  %s: холодо/тепло = %.2f — підозріле співвідношення' % (m, c / h))
-    seer = by_name.get('SEER / SCOP')
+    cool, heat, power = by.get('Холодопродуктивність (Min~Max)'), by.get('Теплопродуктивність (Min~Max)'), by.get('Споживана потужність')
+    for m in cols:
+        i = cols.index(m)
+        c = num(cool['values'][i]) if cool else None
+        h = num(heat['values'][i]) if heat else None
+        p = num(power['values'][i]) if power else None
+        if c and p and p >= c:
+            report.append('ПЕРЕВІРКА  %s / %s: споживана %s ≥ холодопродуктивності %s' % (label, m, p, c))
+        if c and h and not (0.5 <= c / h <= 1.6):
+            report.append('ПЕРЕВІРКА  %s / %s: холодо/тепло = %.2f — підозріле співвідношення' % (label, m, c / h))
+    seer = by.get('SEER / SCOP')
     if seer:
         for m in cols:
-            v = seer['values'].get(m) or ''
-            parts = [num(p) for p in v.split('/')]
-            for p in parts:
+            for p in [num(x) for x in (seer['values'][cols.index(m)] or '').split('/')]:
                 if p is not None and not (2.0 <= p <= 13.0):
-                    report.append('ПЕРЕВІРКА  %s: SEER/SCOP «%s» поза розумними межами' % (m, v))
+                    report.append('ПЕРЕВІРКА  %s / %s: SEER/SCOP «%s» поза межами'
+                                  % (label, m, seer['values'][cols.index(m)]))
                     break
     for s in series['specs']:
-        vals = [s['values'].get(m) for m in cols]
-        if len(set(v for v in vals if v)) == 1 and len(cols) > 1 and s['name'] in (
-                'Холодопродуктивність (Min~Max)', 'Теплопродуктивність (Min~Max)',
-                'Споживана потужність, охолодження / обігрів'):
-            report.append('ПЕРЕВІРКА  «%s»: усі моделі мають однакове значення «%s» — '
-                          'схоже на з\'їхану комірку' % (s['name'], vals[0]))
-        if not any(vals):
-            report.append('ПЕРЕВІРКА  «%s»: порожньо в усіх колонках' % s['name'])
+        if not any(s['values']):
+            report.append('ПЕРЕВІРКА  %s: «%s» порожнє в усіх колонках' % (label, s['name']))
+    if len(cols) > 1:
+        for key in ('Холодопродуктивність (Min~Max)', 'Споживана потужність'):
+            s = by.get(key)
+            if s and len(set(s['values'])) == 1:
+                report.append('ПЕРЕВІРКА  %s: «%s» однакове в усіх колонках — схоже на з\'їхану комірку'
+                              % (label, key))
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--render', action='store_true', help='зберегти PNG сторінок для звірки очима')
+    ap.add_argument('--render', action='store_true')
+    ap.add_argument('--only', help='зібрати лише ці сторінки, через кому')
     args = ap.parse_args()
-
     if not os.path.exists(PDF):
         raise SystemExit('Не знайдено каталог: ' + PDF)
 
+    only = set(int(x) for x in args.only.split(',')) if args.only else None
+    fw = G.page_words(PDF, FUNCS_PAGE)
+    funcs_cache = {'words': fw, 'notes': parse_footnotes(fw), 'cols': funcs_columns(fw)}
+
     report, out_series, index = [], {}, {}
     for cfg in SERIES:
-        s, idx = build_series(cfg, report)
-        check(s, report)
+        if only and cfg['page'] not in only:
+            continue
+        s, idx = build_series(cfg, funcs_cache, report)
+        check(s, cfg['key'], report)
         out_series[cfg['key']] = s
         index.update(idx)
         if args.render:
             os.makedirs(SHOTS, exist_ok=True)
-            p = G.render_page(PDF, cfg['page'], os.path.join(SHOTS, 'p%d' % cfg['page']))
-            print('PNG для звірки: ' + str(p))
+            G.render_page(PDF, cfg['page'], os.path.join(SHOTS, 'p%d' % cfg['page']))
 
     doc = {
         '_about': ('Технічні дані з каталогу MHI (catalog-mhi-rac-pac.pdf). Будує '
@@ -450,17 +356,18 @@ def main():
         'built': datetime.date.today().isoformat(),
         'series': out_series,
         'index': index,
+        'cards': [{'re': r, 'series': se, 'marking': mk, 'block': bl} for r, se, mk, bl in CARDS],
     }
-    os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'w', encoding='utf-8') as f:
         json.dump(doc, f, ensure_ascii=False, indent=1)
         f.write('\n')
 
-    n = sum(len(s['specs']) for s in out_series.values())
-    nf = sum(len(s['functions']) for s in out_series.values())
-    na = sum(len(s['accessories']) for s in out_series.values())
-    print('Записано %s: серій %d, рядків характеристик %d, функцій %d, аксесуарів %d, маркувань %d'
-          % (os.path.relpath(OUT, ROOT), len(out_series), n, nf, na, len(index)))
+    print('Записано %s' % os.path.relpath(OUT, ROOT))
+    for k, s in out_series.items():
+        print('  %-14s стор.%3d  колонок %d  рядків %2d  функцій %2d  аксесуарів %2d'
+              % (k, s['page'], len(s['columns']), len(s['specs']),
+                 len(s['functions']), len(s['accessories'])))
+    print('  Усього маркувань: %d' % len(index))
     if report:
         print('\nРОЗБІЖНОСТІ Й СУМНІВНІ МІСЦЯ (%d) — дивиться людина:' % len(report))
         for line in report:

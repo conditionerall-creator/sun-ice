@@ -1621,6 +1621,18 @@
   .sg-toggle:focus-visible, .sg-info:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
   .sg-title { font-size: 17px; font-weight: 650; line-height: 1.25; color: var(--text); overflow-wrap: break-word; }
   .sg-sub { font-size: 12.5px; line-height: 1.3; color: var(--text-secondary); }
+  /* Шапка групи в стилі таблиці «МОДЕЛЬНИЙ РЯД» (стор. 6 каталогу): бейдж із
+     назвою серії (для не настінних — тип блока) і поруч маркування. Бейдж
+     переноситься на свій рядок лише на дуже вузьких екранах. */
+  .sg-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sg-badge {
+    flex: 0 0 auto; padding: 3px 9px; border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent); font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .03em; line-height: 1.25;
+  }
+  .sg-mark { font-size: 17px; font-weight: 650; line-height: 1.25; }
+  .sg-desc { font-size: 11.5px; line-height: 1.3; color: var(--text-secondary); opacity: .85; }
   .sg-info {
     grid-area: inf; position: relative;
     width: 32px; height: 32px; margin: 0 0 0 -2px; padding: 0;
@@ -4041,19 +4053,19 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-19.26"></script>
-<script src="js/02-price-parse.js?v=2026-10-19.26"></script>
-<script src="js/03-diagnostics.js?v=2026-10-19.26"></script>
-<script src="js/04-catalog.js?v=2026-10-19.26"></script>
-<script src="js/04a-catalog-groups.js?v=2026-10-19.26"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-19.26"></script>
-<script src="js/06-cart-promo.js?v=2026-10-19.26"></script>
-<script src="js/07-access-info.js?v=2026-10-19.26"></script>
-<script src="js/08-info-tables.js?v=2026-10-19.26"></script>
-<script src="js/09-cabinet.js?v=2026-10-19.26"></script>
-<script src="js/10-crmontage.js?v=2026-10-19.26"></script>
-<script src="js/11-shell.js?v=2026-10-19.26"></script>
-<script src="js/12-product-sheet.js?v=2026-10-19.26"></script>
-<script src="js/13-start.js?v=2026-10-19.26"></script>
+<script src="js/01-config.js?v=2026-10-19.29"></script>
+<script src="js/02-price-parse.js?v=2026-10-19.29"></script>
+<script src="js/03-diagnostics.js?v=2026-10-19.29"></script>
+<script src="js/04-catalog.js?v=2026-10-19.29"></script>
+<script src="js/04a-catalog-groups.js?v=2026-10-19.29"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-19.29"></script>
+<script src="js/06-cart-promo.js?v=2026-10-19.29"></script>
+<script src="js/07-access-info.js?v=2026-10-19.29"></script>
+<script src="js/08-info-tables.js?v=2026-10-19.29"></script>
+<script src="js/09-cabinet.js?v=2026-10-19.29"></script>
+<script src="js/10-crmontage.js?v=2026-10-19.29"></script>
+<script src="js/11-shell.js?v=2026-10-19.29"></script>
+<script src="js/12-product-sheet.js?v=2026-10-19.29"></script>
+<script src="js/13-start.js?v=2026-10-19.29"></script>
 </body>
 </html>
