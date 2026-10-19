@@ -1180,6 +1180,25 @@ async function diagCheckResilience(ctx) {
     out.checked.push({ area: area, sub: 'access-price', label: 'Після входу — опублікований прайс', detail: 'без завантаження Excel' });
   }
 
+  /* 3г. Жодна картинка не повинна мати порожній src (2026-10-19).
+     Порожній src="" браузер трактує як адресу поточної сторінки: він качає HTML
+     застосунку як зображення, отримує ERR_FAILED і засмічує консоль. Саме це й
+     ховало від нас інші помилки — у консолі завжди щось червоніло. Перевірка
+     дешева (один запит до DOM) і ловить це одразу, у кого б воно не зʼявилось. */
+  try {
+    const emptySrc = Array.from(document.querySelectorAll('img'))
+      .filter(i => i.hasAttribute('src') && !i.getAttribute('src').trim());
+    if (emptySrc.length) {
+      out.issues.push(diagIssue(area, 'empty-img', 'warning',
+        'Є картинки з порожнім src (' + emptySrc.length + ')',
+        ['Браузер качає сторінку застосунку як зображення: зайвий запит і помилка в консолі.',
+         'Прибрати src із розмітки, а в коді — removeAttribute замість порожнього рядка.',
+         emptySrc.map(i => i.id || i.className || 'без імені').slice(0, 5).join(', ')], null));
+    } else {
+      out.checked.push({ area: area, sub: 'empty-img', label: 'Немає картинок із порожнім src', detail: 'перевірено ' + document.querySelectorAll('img').length });
+    }
+  } catch (e) { /* DOM недоступний — не привід ламати перевірку */ }
+
   // 4. Характеристики: помилка не повинна лишатись у кеші як порожній результат.
   if (typeof psRetrySpecs !== 'function') {
     out.issues.push(diagIssue(area, 'specs-retry', 'error',

@@ -645,7 +645,10 @@ updateNotifyBanner();
 
   function closeLightbox() {
     overlay.classList.remove('active');
-    imgEl.src = '';
+    /* removeAttribute, а НЕ src = '' (2026-10-19): порожній рядок браузер перетворює на
+       адресу поточної сторінки й качає її як зображення — зайвий запит і ERR_FAILED у
+       консолі при кожному закритті картинки акції. */
+    imgEl.removeAttribute('src');
     pointers.clear();
     pinchStartDist = null;
     dragStart = null;
