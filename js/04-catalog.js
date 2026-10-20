@@ -1248,6 +1248,11 @@ function catalogSeriesInfoEntry(effectiveKey, text) {
   return entry;
 }
 
+/* Позначка «Акція — без додаткових знижок» у рядку прайсу (лист дилерам від 01.06.2026,
+   GAL Vega). Ключ — маркування внутрішнього блоку, як у прайсі. Нова акція = дописати
+   маркування сюди. Гості без доступу до цін позначки не бачать (ціни теж). */
+const CATALOG_PROMO_NO_EXTRA = new Set(['GKZ07A-W', 'GKZ18A-W', 'GKZ24A-W']);
+
 /* Один рядок прайсу (одна товарна позиція). opts: { animate, rowNo } — поява зі
    зсувом у плоскому списку; { grouped:true } — рядок усередині згортного блоку: без
    кольорових смуг і без власної анімації появи, вигляд задає .sg-body .row у CSS.
@@ -1278,6 +1283,7 @@ function catalogRowHtml(it, index, opts) {
         <div class="row-top">
           <div class="row-info">
             <p class="row-name" data-site-list="${cfg.key}" data-site-key="${escapeHtml(siteLinkKey(it))}">${modelHtml(it.model)}</p>
+            ${!locked && CATALOG_PROMO_NO_EXTRA.has(String(it.model).trim().toUpperCase()) ? `<p class="row-promo"><span class="row-promo-tag">${ic('flame', '')}Акція</span><span class="row-promo-note">без додаткових знижок</span></p>` : ''}
           </div>
           <div class="row-right">
             ${window.Stock ? Stock.slotHtml(it, cfg.key) : ''}
