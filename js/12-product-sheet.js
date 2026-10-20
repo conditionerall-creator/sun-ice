@@ -304,8 +304,22 @@ function catWifiBuiltin(hit) {
 /* Виноска теж залежить від виконання: у -WF показувати «для типів -W потрібно
    доставити модуль» — означає плутати людину тим, що її моделі не стосується.
    Обидва речення взяті зі сторінки каталогу. */
+/* Серія має мульти-версію в каталозі (стор. 55–57)? Виноски «…з мульти спліт-системи функція недоступна» (*1) і «Не можна
+   використовувати для SCM…» (*2) стоять у зведеній таблиці для всіх серій, але серії,
+   що в мульти не працюють (ZT, ZTL, ZSPR-63), вона лише плутає (власник 2026-10-20). Колонки
+   стор. 33, які мають мульти-серію, видно з самих даних: це funcs_col серій MULTI-*. */
+function catHasMulti(hit) {
+  const col = hit.series.funcs_col;
+  if (col === null || col === undefined) return true;   // невідомо — нічого не ховаємо
+  const all = (mhiCatalog && mhiCatalog.series) || {};
+  return Object.keys(all).some(function (k) {
+    return k.indexOf('MULTI-') === 0 && all[k].funcs_col === col;
+  });
+}
+
 function catNoteFor(hit, item) {
   const isWifi = /WI-?FI/i.test(item.name) || item.kind === 'wifi';
+  if (item.note && /мульти\s+спліт|\bSCM\d/i.test(item.note) && !catHasMulti(hit)) return null;
   if (isWifi && hit.series.wifi_builtin && catWifiBuiltin(hit)) {
     return 'Wi-Fi-модуль вбудований у стандартній комплектації.';
   }

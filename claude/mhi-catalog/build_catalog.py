@@ -61,6 +61,8 @@ SERIES = [
      'block': 'Настінний', 'funcs_col': 2, 'wifi_builtin': 'ZSWF', 'app': 'split_mhi'},
     {'page': 42, 'key': 'SRK-ZTL-W', 'series': 'Standard Plus Series', 'marking': 'SRK-ZTL-W',
      'block': 'Настінний', 'funcs_col': 4, 'app': 'split_mhi'},
+    {'page': 43, 'key': 'SRK-ZTL-W-50', 'series': 'Standard Plus Series', 'marking': 'SRK-ZTL-W (50–71)',
+     'block': 'Настінний', 'funcs_col': 4, 'app': 'split_mhi'},
     {'page': 44, 'key': 'SRK-ZSP-W1', 'series': 'Standard Series', 'marking': 'SRK-ZSP-W1',
      'block': 'Настінний', 'funcs_col': 5, 'app': 'split_mhi'},
     {'page': 46, 'key': 'SRK-ZSPR-S', 'series': 'Standard Series', 'marking': 'SRK-ZSPR-S',
@@ -260,7 +262,7 @@ def parse_accessories(words, page, filter_value, report, label):
                     'note': wifi.group(1).strip() if wifi else None, 'page': page})
 
     if filter_value:
-        for part in re.split(r',', filter_value):
+        for part in re.split(r',(?![^(]*\))', filter_value):   # кома в дужках («багаторазовий, миється») — не розділювач
             part = part.strip()
             if not part:
                 continue
@@ -389,11 +391,92 @@ def check(series, label, report):
                               % (label, key))
 
 
+def align_wifi_with_overview(doc):
+    """Wi-Fi в «Аксесуарах» — за зведеною таблицею функцій (стор. 33), а не за словом
+    «Wi-Fi» на сторінці серії (рішення власника 2026-10-20: «орієнтуйся на основну
+    сторінку каталогу»). Пошук слова давав хибне: у ZT (вбудований Wi-Fi, у таблиці
+    «●» без «опція») стояла «опція», а в FDTC (опція) рядка не було зовсім.
+      yes    → «у комплекті» (вбудований);
+      option → «опція»; якщо сторінка серії вже каже «залежить від моделі» (-WF
+               вбудований, -W опція) — лишаємо її, вона точніша;
+      no     → рядка немає.
+    Серії без колонки на стор. 33 не чіпаємо. Те саме для мульти: їхні сторінки Wi-Fi
+    не згадують, а таблиця стор. 33 спільна для спліт і мульти."""
+    fn = doc['functions']
+    note_opt = next((f['note'] for lst in fn.values() for f in lst
+                     if 'WI-FI' in f['name'].upper() and f.get('note')), None)
+    for key, s in doc['series'].items():
+        col = s.get('funcs_col')
+        if col is None or str(col) not in fn:
+            continue
+        row = next((f for f in fn[str(col)] if 'WI-FI' in f['name'].upper()), None)
+        if row is None:
+            continue
+        acc = s.get('accessories') or []
+        for a in acc:   # сміття з розбору: підпис сусіднього значка влипав у виноску
+            if a.get('note'):
+                a['note'] = a['note'].replace('пульт ДК ФУНКЦІЇ ', '')
+        old = next((a for a in acc if a['kind'] == 'wifi'), None)
+        rest = [a for a in acc if a['kind'] != 'wifi']
+        if row['state'] == 'no':
+            new = None
+        elif row['state'] == 'yes':
+            new = {'kind': 'wifi', 'name': 'Керування через Wi-Fi', 'state': 'yes',
+                   'note': 'Wi-Fi-модуль вбудований у стандартній комплектації.', 'page': row['page']}
+        elif old and old['state'] == 'depends':
+            new = old
+        else:
+            new = {'kind': 'wifi', 'name': 'Керування через Wi-Fi', 'state': 'option',
+                   'note': row.get('note') or note_opt, 'page': row['page']}
+        # Wi-Fi стоїть там, де був (після пультів і адаптерів, перед фільтрами).
+        pos = next((i for i, a in enumerate(acc) if a['kind'] in ('wifi', 'filter')), len(rest))
+        pos = min(pos, len(rest))
+        s['accessories'] = rest[:pos] + ([new] if new else []) + rest[pos:]
+
+
+def fix_known_cells(doc, report=None):
+    """Дві клітинки, які розбір по координатах читає з обрізом; звірено з PDF очима
+    (стор. 56 і 57, 2026-10-20). Це ЄДИНІ ручні правки даних; кожна має умову, тому
+    після виправлення розбору чи заміни каталогу вона просто перестане спрацьовувати.
+    1) MULTI-SRK-ZR, «Повітряний фільтр»: у першій колонці загубилось слово
+       «Антиалергенний» (на стор. 56 обидві колонки — «Антиалергенний x 1, Фотокаталітичний x 1»).
+    2) MULTI-FDTC: назва рядка «Розміри (Ширина х Висота х Глибина)» розірвана між двома
+       підрядками («Внутрішній блок» / «Панель»)."""
+    out = []
+    zr = doc['series'].get('MULTI-SRK-ZR')
+    if zr:
+        for sp in zr['specs']:
+            if sp['name'] == 'Повітряний фільтр' and sp['values'] and sp['values'][0].startswith(('x 1', 'х 1')):
+                sp['values'][0] = 'Антиалергенний ' + sp['values'][0]
+                out.append('MULTI-SRK-ZR: повернуто слово «Антиалергенний» у фільтрі')
+    fd = doc['series'].get('MULTI-FDTC')
+    if fd:
+        for sp in fd['specs']:
+            if sp['name'] == 'Розміри · Внутрішній':
+                sp['name'] = 'Розміри (Ширина х Висота х Глибина) · Внутрішній блок'
+                out.append('MULTI-FDTC: назва рядка «Розміри … Внутрішній блок»')
+            elif sp['name'] == '(Ширина х Висота х Глибина) · Панель':
+                sp['name'] = 'Розміри (Ширина х Висота х Глибина) · Панель'
+                out.append('MULTI-FDTC: назва рядка «Розміри … Панель»')
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--render', action='store_true')
     ap.add_argument('--only', help='зібрати лише ці сторінки, через кому')
+    ap.add_argument('--patch-wifi', action='store_true',
+                    help='лише вирівняти Wi-Fi в наявному data/mhi-catalog.json (PDF не потрібен)')
     args = ap.parse_args()
+    if args.patch_wifi:
+        with open(OUT, encoding='utf-8') as f:
+            doc = json.load(f)
+        align_wifi_with_overview(doc)
+        with open(OUT, 'w', encoding='utf-8') as f:
+            json.dump(doc, f, ensure_ascii=False, indent=1)
+            f.write('\n')
+        print('Wi-Fi вирівняно за стор. 33: ' + os.path.relpath(OUT, ROOT))
+        return
     if not os.path.exists(PDF):
         raise SystemExit('Не знайдено каталог: ' + PDF)
 
@@ -428,6 +511,9 @@ def main():
         'index': index,
         'cards': [{'re': r, 'series': se, 'marking': mk, 'block': bl} for r, se, mk, bl in CARDS],
     }
+    align_wifi_with_overview(doc)
+    for line in fix_known_cells(doc):
+        print('ПРАВКА  ' + line)
     with open(OUT, 'w', encoding='utf-8') as f:
         json.dump(doc, f, ensure_ascii=False, indent=1)
         f.write('\n')
