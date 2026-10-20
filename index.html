@@ -1856,16 +1856,14 @@
   .row-promo-tag .ic { width: 11px; height: 11px; stroke: currentColor; fill: rgba(255,255,255,.25); }
   .row-promo-note { font-size: 10.5px; color: var(--text-secondary); line-height: 1.2; }
   /* Тип інвертора зовнішнього блока в напівпромі (стор. 86 каталогу MHI): колір каталогу — синій
-     Hyper, рожевий Micro, зелений Standard. Заливка + смуга зліва + ПІДПИС: колір — не єдина ознака. */
+     Hyper, рожевий Micro, зелений Standard. Смуга зліва + кольоровий ПІДПИС: колір — не єдина ознака. */
   /* Кольори навмисно приглушені (рішення власника 2026-10-20: «щоб в очі не кидались»). */
   [data-inv="hyper"]    { --inv-c: #8CA3C7; --inv-t: #566F96; }
   [data-inv="micro"]    { --inv-c: #C79AAE; --inv-t: #8F5A72; }
   [data-inv="standard"] { --inv-c: #93B8A0; --inv-t: #55785F; }
-  .row[data-inv] {
-    background: color-mix(in srgb, var(--inv-c) 9%, transparent);
-    box-shadow: inset 3px 0 0 var(--inv-c);
-  }
-  .sg-body .row[data-inv] { background: color-mix(in srgb, var(--inv-c) 9%, transparent); }
+  /* Заливки рядка немає (рішення власника 2026-10-20: «сильно відрізнятиметься від інших груп») —
+     лише тонка лінія зліва й кольоровий підпис. */
+  .row[data-inv] { box-shadow: inset 3px 0 0 var(--inv-c); }
   .row-meta { display: flex; align-items: baseline; gap: 9px; margin: 2px 0 0; line-height: 1.2; }
   .row-inv { font-size: 10.5px; font-weight: 600; letter-spacing: .02em; color: var(--inv-t); }
   /* Фазність напівпрому: «фоном» — нейтральний сірий, без жирності (рішення власника 2026-10-20). */
@@ -4089,19 +4087,19 @@
 
 <!-- Код застосунку. Порядок ОБОВ'ЯЗКОВИЙ: спільна область видимості, блок старту —
      останнім. ?v= мусить збігатися з APP_BUILD і зі списком APP_SHELL у sw.js. -->
-<script src="js/01-config.js?v=2026-10-20.16"></script>
-<script src="js/02-price-parse.js?v=2026-10-20.16"></script>
-<script src="js/03-diagnostics.js?v=2026-10-20.16"></script>
-<script src="js/04-catalog.js?v=2026-10-20.16"></script>
-<script src="js/04a-catalog-groups.js?v=2026-10-20.16"></script>
-<script src="js/05-catalog-custom.js?v=2026-10-20.16"></script>
-<script src="js/06-cart-promo.js?v=2026-10-20.16"></script>
-<script src="js/07-access-info.js?v=2026-10-20.16"></script>
-<script src="js/08-info-tables.js?v=2026-10-20.16"></script>
-<script src="js/09-cabinet.js?v=2026-10-20.16"></script>
-<script src="js/10-crmontage.js?v=2026-10-20.16"></script>
-<script src="js/11-shell.js?v=2026-10-20.16"></script>
-<script src="js/12-product-sheet.js?v=2026-10-20.16"></script>
-<script src="js/13-start.js?v=2026-10-20.16"></script>
+<script src="js/01-config.js?v=2026-10-20.17"></script>
+<script src="js/02-price-parse.js?v=2026-10-20.17"></script>
+<script src="js/03-diagnostics.js?v=2026-10-20.17"></script>
+<script src="js/04-catalog.js?v=2026-10-20.17"></script>
+<script src="js/04a-catalog-groups.js?v=2026-10-20.17"></script>
+<script src="js/05-catalog-custom.js?v=2026-10-20.17"></script>
+<script src="js/06-cart-promo.js?v=2026-10-20.17"></script>
+<script src="js/07-access-info.js?v=2026-10-20.17"></script>
+<script src="js/08-info-tables.js?v=2026-10-20.17"></script>
+<script src="js/09-cabinet.js?v=2026-10-20.17"></script>
+<script src="js/10-crmontage.js?v=2026-10-20.17"></script>
+<script src="js/11-shell.js?v=2026-10-20.17"></script>
+<script src="js/12-product-sheet.js?v=2026-10-20.17"></script>
+<script src="js/13-start.js?v=2026-10-20.17"></script>
 </body>
 </html>
