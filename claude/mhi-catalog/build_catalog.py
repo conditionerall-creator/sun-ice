@@ -33,6 +33,7 @@ import datetime
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import pdfgrid as G                                            # noqa: E402
 import tables as T                                             # noqa: E402
+import semi_catalog as SC                                      # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PDF = os.path.join(os.path.dirname(ROOT), 'Sun-ice — довідники', 'catalog-mhi-rac-pac.pdf')
@@ -353,7 +354,142 @@ def build_series(cfg, funcs_cache, report):
     return series, index
 
 
-def check(series, label, report):
+# --------------------------------------------------------------------------
+# НАПІВПРОМИСЛОВІ (стор. 99–136). Читає `semi_catalog.py` — окремий розбірник по лініях
+# таблиці, бо `tables.py` на цих сторінках плутає підписи рядків (див. його заголовок).
+#
+# ОКРЕМИЙ РОЗДІЛ ІНДЕКСУ `semi_mhi` — не зливати зі `split_mhi`/`multisplit_mhi`. Внутрішній
+# блок напівпрому з тим самим іменем, що в побутовому (SRK71ZR-W), працює з іншим зовнішнім
+# (FDC71VNX-W), і цифри там інші. Ключ — ПАРА «внутрішній+зовнішній»: той самий FDT100VH
+# стоїть у п'яти різних колонках (VNX, VNA, VNP, VSA, VSX).
+# --------------------------------------------------------------------------
+SEMI_PAGES = [99, 100, 101, 102, 103, 106, 107, 111, 112, 113, 117, 118, 119, 120, 121,
+              124, 125, 129, 130, 131, 133, 134, 135, 136]
+# Стор. 105, 109, 115, 123, 127, 132 — опис блоків, таблиця ЗОВНІШНІХ блоків (FDC) і фото;
+# стор. 98, 110, 116, 128 — габаритні креслення. Характеристик комплектів там немає.
+SEMI_FAMILIES = {
+    'FDT':  ('Касетні 4-поточні', 'FDT-VH', 'Касетний'),
+    'FDTC': ('Касетні компактні 600×600', 'FDTC-VH', 'Касетний'),
+    'FDU':  ('Канальні високого статичного тиску', 'FDU-VH', 'Канальний'),
+    'FDUM': ('Канальні низького та середнього статичного тиску', 'FDUM-VH', 'Канальний'),
+    'FDE':  ('Стельові', 'FDE-VH', 'Стельовий'),
+    'FDF':  ('Колонні', 'FDF-VH', 'Колонний'),
+    'SRK':  ('Настінні напівпромислові', 'SRK-ZR / ZSX', 'Настінний'),
+}
+
+
+# Функції родини напівпрому. Два джерела, обидва — НАПИСАНІ в каталозі:
+#  1) зведена матриця стор. 33 — для FDTC (колонка 10), FDUM (12), FDE (13) і настінних SRK
+#     (ті самі внутрішні блоки ZR → 3 і ZSX → 0, що й побутові);
+#  2) рядок значків із підписами на ТИТУЛЬНІЙ сторінці родини — для FDT (стор. 94), FDU (стор. 108)
+#     і FDF (стор. 132), яких у матриці немає. Це рядок із 7 значків («Функція енергозбереження»,
+#     «Режим відпустки»…), підписи звірено з зображенням сторінки очима 2026-10-20. Решту тексту
+#     цих сторінок (креслення, переваги монтажу) — функціями не вважаємо.
+SEMI_FUNCS_COL = {'FDTC': 10, 'FDUM': 12, 'FDE': 13, 'FDT': 'FDT', 'FDU': 'FDU', 'FDF': 'FDF'}
+SEMI_ICON_FUNCS = {
+    'FDT': (94, [('Функція енергозбереження', 'yes'), ('Режим відпустки', 'yes'), ('Hi Power', 'yes'),
+                 ('Керування через Wi-Fi', 'option'), ('Безшумна робота', 'yes'),
+                 ('Система керування жалюзі', 'yes'), ('Улюблений режим', 'yes')]),
+    'FDU': (108, [('Функція енергозбереження', 'yes'), ('Автоматична робота', 'yes'), ('Безшумна робота', 'yes'),
+                  ('Керування через Wi-Fi', 'option'), ('Hi Power', 'yes'),
+                  ('Таймер сну / Тижневий таймер / Ліміт потужності', 'yes'), ('Самодіагностика', 'yes')]),
+    'FDF': (132, [('Hi Power', 'yes'), ('Автоматична робота', 'yes'), ('Гойдання жалюзі вгору/вниз', 'yes'),
+                  ('Керування через Wi-Fi', 'option'), ('Тижневий таймер', 'yes'),
+                  ('Повідомлення про очищення фільтра', 'yes'), ('Самодіагностика', 'yes')]),
+}
+
+
+def semi_funcs_col(fam, indoor_mark):
+    if fam in SEMI_FUNCS_COL:
+        return SEMI_FUNCS_COL[fam]
+    if fam == 'SRK':
+        if 'ZR' in indoor_mark:
+            return 3
+        if 'ZSX' in indoor_mark:
+            return 0
+    return None
+
+
+def semi_family(system):
+    for f in ('FDTC', 'FDUM', 'FDT', 'FDU', 'FDE', 'FDF', 'SRK'):
+        if system.startswith(f):
+            return f
+    raise Problem('Невідома родина комплекту ' + system)
+
+
+def build_semi(report):
+    series, index, pair_src, acc_sets = {}, {}, {}, []
+    for page in SEMI_PAGES:
+        words = G.page_words(PDF, page)
+        segs = SC.page_segments(PDF, page)
+        for n, (top, bot) in enumerate(SC.find_tables(words, segs)):
+            t = SC.parse_table(words, segs, top, bot, page, report)
+            fam = semi_family(t['columns'][0]['system'])
+            label, marking, block = SEMI_FAMILIES[fam]
+            key = 'SEMI-%s-%d-%d' % (fam, page, n + 1)
+            cols = t['columns']
+
+            def side(c, kind):
+                return [x['m'] + (' x %d' % x['n'] if x['n'] > 1 else '') for x in c[kind]]
+            for c in cols:
+                if not c['indoor'] or not c['outdoor']:
+                    raise Problem('Стор. %d (%s): у колонці %s немає внутрішнього або зовнішнього блока'
+                                  % (page, key, c['system']))
+            specs = []
+            for r in t['rows']:
+                specs.append({'name': r['name'], 'unit': r['unit'] or None, 'page': page,
+                              'values': r['values']})
+            s = {
+                'page': page,
+                'series': label + (' · ' + t['tech'] if t['tech'] else ''),
+                'marking': marking,
+                'block': block,
+                'title': label + ' · ' + marking,
+                'columns': [c['system'] for c in cols],
+                'indoor': [side(c, 'indoor') for c in cols],
+                'outdoor': [side(c, 'outdoor') for c in cols],
+                # «Подвійна»/«Потрійна» — два-три внутрішні блоки на один зовнішній
+                'configs': [c['tag'] for c in cols],
+                'semi': True,
+                'wifi_builtin': None,
+                'specs': specs,
+                'funcs_col': None,
+                'accessories': [],
+            }
+            # Аксесуари кожної колонки — зі строк таблиці. Однакові набори зберігаємо один раз
+            # (глобальний `acc_sets`), у серії лише номери: інакше файл розпухає в рази.
+            def cell(prefix, col):
+                sp = next((x for x in specs if x['name'].startswith(prefix)), None)
+                return sp['values'][col] if sp else None
+            idxs = []
+            for col in range(len(cols)):
+                lst = SC.parse_semi_accessories({'remote': cell('Пульт керування', col), 'panel': cell('Панель', col),
+                                                 'opts': cell('Опції та аксесуари', col),
+                                                 'filter': cell('Повітряний фільтр', col)}, page)
+                if fam == 'SRK':   # стор. 122: під бездротовим пультом підпис «В комплекті»
+                    lst = [{'kind': 'remote', 'name': 'Бездротовий пульт ДК', 'state': 'yes', 'note': None, 'page': 122}] + lst
+                if lst not in acc_sets:
+                    acc_sets.append(lst)
+                idxs.append(acc_sets.index(lst))
+            s['acc_idx'] = idxs
+            s['funcs_cols'] = [semi_funcs_col(fam, c['indoor'][0]['m']) for c in cols]
+            for sp in specs:   # ті самі друкарські вади, що й в аксесуарах (звірено з зображенням)
+                sp['values'] = [SC.clean_text(v) if isinstance(v, str) else v for v in sp['values']]
+            check(s, key, report, same_ok=True)
+            series[key] = s
+            # Індекс — лише одинарні комплекти «один внутрішній + один зовнішній»: саме такі
+            # є в прайсі. Подвійні й потрійні лежать у даних, але ключа в прайсі не мають.
+            for col, c in enumerate(cols):
+                if len(c['indoor']) == 1 and c['indoor'][0]['n'] == 1 and len(c['outdoor']) == 1:
+                    pair = G.norm_model(c['indoor'][0]['m']) + '+' + G.norm_model(c['outdoor'][0]['m'])
+                    if pair in index:
+                        raise Problem('Пара %s зустрілась двічі: %s і %s' % (pair, index[pair], pair_src[pair]))
+                    index[pair] = key + '|' + str(col)
+                    pair_src[pair] = '%s стор. %d' % (key, page)
+    return series, index, acc_sets
+
+
+def check(series, label, report, same_ok=False):
     def num(s):
         m = re.match(r'^-?\d+(?:[.,]\d+)?', (s or '').strip())
         return float(m.group(0).replace(',', '.')) if m else None
@@ -383,7 +519,7 @@ def check(series, label, report):
     for s in series['specs']:
         if not any(s['values']):
             report.append('ПЕРЕВІРКА  %s: «%s» порожнє в усіх колонках' % (label, s['name']))
-    if len(cols) > 1:
+    if len(cols) > 1 and not same_ok:   # у напівпромі однакова потужність у колонках різного живлення — норма
         for key in ('Холодопродуктивність (Min~Max)', 'Споживана потужність'):
             s = by.get(key)
             if s and len(set(s['values'])) == 1:
@@ -435,7 +571,7 @@ def align_wifi_with_overview(doc):
 
 
 def fix_known_cells(doc, report=None):
-    """Дві клітинки, які розбір по координатах читає з обрізом; звірено з PDF очима
+    """Клітинки, які розбір по координатах читає з обрізом чи друкує з помилкою каталог; звірено з PDF очима
     (стор. 56 і 57, 2026-10-20). Це ЄДИНІ ручні правки даних; кожна має умову, тому
     після виправлення розбору чи заміни каталогу вона просто перестане спрацьовувати.
     1) MULTI-SRK-ZR, «Повітряний фільтр»: у першій колонці загубилось слово
@@ -458,6 +594,17 @@ def fix_known_cells(doc, report=None):
             elif sp['name'] == '(Ширина х Висота х Глибина) · Панель':
                 sp['name'] = 'Розміри (Ширина х Висота х Глибина) · Панель'
                 out.append('MULTI-FDTC: назва рядка «Розміри … Панель»')
+    # 3) стор. 124, SRK71ZR-W: у першій колонці розмірів друкарська помилка каталогу —
+    #    пропущено другий «x» («1197 x 339  262»); у сусідній колонці того самого блока
+    #    надруковано «1197 x 339 x 262» (звірено очима).
+    sk = doc['series'].get('SEMI-SRK-124-1')
+    if sk:
+        for sp in sk['specs']:
+            if sp['name'].startswith('Розміри · Внутр'):
+                for i, v in enumerate(sp['values']):
+                    if v == '1197 x 339 262':
+                        sp['values'][i] = '1197 x 339 x 262'
+                        out.append('SEMI-SRK-124-1: розмір «1197 x 339 262» → «1197 x 339 x 262» (друкарська помилка каталогу)')
     return out
 
 
@@ -473,7 +620,7 @@ def main():
             doc = json.load(f)
         align_wifi_with_overview(doc)
         with open(OUT, 'w', encoding='utf-8') as f:
-            json.dump(doc, f, ensure_ascii=False, indent=1)
+            json.dump(doc, f, ensure_ascii=False, separators=(',', ':'))
             f.write('\n')
         print('Wi-Fi вирівняно за стор. 33: ' + os.path.relpath(OUT, ROOT))
         return
@@ -499,6 +646,20 @@ def main():
             os.makedirs(SHOTS, exist_ok=True)
             G.render_page(PDF, cfg['page'], os.path.join(SHOTS, 'p%d' % cfg['page']))
 
+    if not only:
+        semi_series, semi_index, acc_sets = build_semi(report)
+        out_series.update(semi_series)
+        index['semi_mhi'] = semi_index
+        for key, ss in semi_series.items():
+            for fc in ss['funcs_cols']:
+                if fc is None or str(fc) in funcs_by_col:
+                    continue
+                if isinstance(fc, str):   # родина з рядком значків на титульній сторінці
+                    pg, items = SEMI_ICON_FUNCS[fc]
+                    funcs_by_col[fc] = [{'name': n, 'state': st, 'page': pg, 'note': None} for n, st in items]
+                else:
+                    funcs_by_col[str(fc)] = parse_functions(funcs_cache, fc, report, key)
+
     doc = {
         '_about': ('Технічні дані з каталогу MHI (catalog-mhi-rac-pac.pdf). Будує '
                    'claude/mhi-catalog/build_catalog.py по координатах слів. У кожного '
@@ -508,6 +669,7 @@ def main():
         'built': datetime.date.today().isoformat(),
         'series': out_series,
         'functions': funcs_by_col,
+        'acc_sets': acc_sets if not only else [],
         'index': index,
         'cards': [{'re': r, 'series': se, 'marking': mk, 'block': bl} for r, se, mk, bl in CARDS],
     }
@@ -515,7 +677,7 @@ def main():
     for line in fix_known_cells(doc):
         print('ПРАВКА  ' + line)
     with open(OUT, 'w', encoding='utf-8') as f:
-        json.dump(doc, f, ensure_ascii=False, indent=1)
+        json.dump(doc, f, ensure_ascii=False, separators=(',', ':'))
         f.write('\n')
 
     print('Записано %s' % os.path.relpath(OUT, ROOT))

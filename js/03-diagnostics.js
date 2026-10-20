@@ -709,11 +709,12 @@ async function diagCheckMhiCatalog(ctx) {
     const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
     items.forEach(it => {
       total++;
-      const marks = psMarkings(key, it);
-      const hit = marks.map(m => idx[catKey(m)]).find(Boolean);
-      if (!hit) return;
+      /* Той самий пошук, що й у панелі товару (mhiCatalogLookup): для напівпрому ключ — ПАРА
+         «внутрішній+зовнішній», і перебір окремих маркувань її не знайшов би. */
+      const f = mhiCatalogLookup(key, it);
+      if (!f) return;
       covered++;
-      marks.forEach(m => seen.add(key + '|' + catKey(m)));
+      seen.add(key + '|' + f.k);
     });
   });
   out.checked.push({ area: area, sub: 'coverage', label: 'Покриття прайсу',
@@ -746,7 +747,8 @@ async function diagCheckMhiCatalog(ctx) {
       const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
       items.forEach(it => {
         const appIdx = cat.index[key] || {};
-        const ref = psMarkings(key, it).map(m => appIdx[catKey(m)]).find(Boolean);
+        const f2 = mhiCatalogLookup(key, it);
+        const ref = f2 && f2.ref;
         const slug = map[siteLinkKey(it)];
         if (!ref || !slug || !specs[slug]) return;
         const bits = String(ref).split('|');

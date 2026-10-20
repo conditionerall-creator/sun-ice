@@ -77,7 +77,7 @@ function catKey(s) { return psKey(s).replace(/[-_]/g, ''); }
 
 /* Серія + колонка каталогу для цього товару. Пробуємо всі маркування рядка
    (внутрішній, зовнішній): у прайсі комплект може бути записаний по-різному. */
-function mhiCatalogHit(cfgKey, it) {
+function mhiCatalogLookup(cfgKey, it) {
   if (!mhiCatalog || !mhiCatalog.index) return null;
   /* Індекс РОЗДІЛЬНИЙ по розділах застосунку. У мульти спліт-системі внутрішні
      блоки мають ТІ САМІ маркування (SRK20ZSX-W), але працюють з іншим зовнішнім
@@ -86,21 +86,47 @@ function mhiCatalogHit(cfgKey, it) {
   const idx = mhiCatalog.index[cfgKey];
   if (!idx) return null;
   const marks = psMarkings(cfgKey, it);
-  for (let i = 0; i < marks.length; i++) {
-    const ref = idx[catKey(marks[i])];
-    if (!ref) continue;
-    const bits = String(ref).split('|');
-    const series = mhiCatalog.series && mhiCatalog.series[bits[0]];
-    /* mark — маркування САМЕ цього товару (у колонці каталогу їх кілька: -W, -WB,
-       -WT, -WF…). Потрібне там, де відповідь залежить від виконання, а не від
-       серії: у -WF Wi-Fi вбудований, у -W це опція. */
-    if (series) {
-      const col = parseInt(bits[1], 10);
-      return { series: series, col: col, model: (series.columns || [])[col] || '',
-               key: bits[0], mark: catKey(marks[i]) };
+  /* НАПІВПРОМ: колонка каталогу — це КОМПЛЕКТ, ключ — пара «внутрішній+зовнішній».
+     Один внутрішній FDT100VH стоїть у п'яти колонках (VNX, VNA, VNP, VSA, VSX), тож за окремим
+     маркуванням його не відрізнити, а підставити першу-ліпшу колонку означало б показати
+     дилеру чужі цифри. У прайсі зовнішній блок інколи записаний з варіантами в дужках —
+     «SRC50ZSX-W2(3)» = W2 або W3, у каталозі стоїть W3: розгортаємо в обидва. */
+  if (cfgKey === 'semi_mhi') {
+    if (marks.length !== 2) return null;
+    const alt = function (m) {
+      const x = /^(.*?)(\d+)\((\d+)\)$/.exec(String(m).replace(/\s+/g, ''));
+      return x ? [x[1] + x[2], x[1] + x[3]] : [m];
+    };
+    const ins = alt(marks[0]), outs = alt(marks[1]);
+    for (let a = 0; a < ins.length; a++) {
+      for (let b = 0; b < outs.length; b++) {
+        const k = catKey(ins[a]) + '+' + catKey(outs[b]);
+        if (idx[k]) return { k: k, ref: idx[k] };
+      }
     }
+    return null;
+  }
+  for (let i = 0; i < marks.length; i++) {
+    const k = catKey(marks[i]);
+    if (idx[k]) return { k: k, ref: idx[k] };
   }
   return null;
+}
+
+/* Серія + колонка каталогу для цього товару. Пробуємо всі маркування рядка
+   (внутрішній, зовнішній): у прайсі комплект може бути записаний по-різному. */
+function mhiCatalogHit(cfgKey, it) {
+  const f = mhiCatalogLookup(cfgKey, it);
+  if (!f) return null;
+  const bits = String(f.ref).split('|');
+  const series = mhiCatalog.series && mhiCatalog.series[bits[0]];
+  /* mark — маркування САМЕ цього товару (у колонці каталогу їх кілька: -W, -WB,
+     -WT, -WF…). Потрібне там, де відповідь залежить від виконання, а не від
+     серії: у -WF Wi-Fi вбудований, у -W це опція. */
+  if (!series) return null;
+  const col = parseInt(bits[1], 10);
+  return { series: series, col: col, model: (series.columns || [])[col] || '',
+           key: bits[0], mark: f.k };
 }
 
 /* Фото картки товару з сайту (2026-10-09, прохання власника: «у кожній картці зверху
@@ -242,7 +268,9 @@ const CAT_KEY_ROWS = [
   'Міжлапна',
   'Максимальна довжина труб',
   'Макс. перепад висот',
+  'Зовнішній статичний тиск', 'Максимальний зовнішній статичний тиск',   // канальні (Па)
   'Холодоагент · Заводська', 'Холодоагент · Charge',
+  'Заводська заправка',            // напівпром: одним рядком «заправлений на 15 м, дозаправка 20 г/м»
   'Дозаправка'
 ];
 
@@ -276,11 +304,14 @@ function catSpecsHtml(hit) {
 }
 
 /* Звідки взято — щоб будь-яку цифру можна було перевірити за десять секунд. */
-function catSourceHtml(hit) {
+function catSourceHtml(hit, pages) {
+  /* pages — сторінки, з яких взято САМЕ цей вміст (функції лежать на стор. 33 або на титульній
+     сторінці родини, а не на сторінці таблиці); без нього — сторінка серії. */
+  const pg = (pages && pages.length) ? pages.join(', ') : hit.series.page;
   return '<div class="ps-source">Джерело: каталог Mitsubishi Heavy Industries, ' +
     escapeHtml(hit.series.marking || hit.series.title || '') +
     (hit.series.series ? ' (' + escapeHtml(hit.series.series) + ')' : '') +
-    ', стор. ' + hit.series.page + '.</div>';
+    ', стор. ' + pg + '.</div>';
 }
 
 /* Назви функцій у каталозі набрані капсом. Тридцять таких рядків поспіль читати
@@ -309,6 +340,7 @@ function catWifiBuiltin(hit) {
    що в мульти не працюють (ZT, ZTL, ZSPR-63), вона лише плутає (власник 2026-10-20). Колонки
    стор. 33, які мають мульти-серію, видно з самих даних: це funcs_col серій MULTI-*. */
 function catHasMulti(hit) {
+  if (hit.series.semi) return false;   // напівпромислові комплекти — не мульти-системи
   const col = hit.series.funcs_col;
   if (col === null || col === undefined) return true;   // невідомо — нічого не ховаємо
   const all = (mhiCatalog && mhiCatalog.series) || {};
@@ -336,7 +368,8 @@ function catStateFor(hit, item) {
 /* Список функцій лежить у файлі ОДИН раз на колонку матриці стор. 33 — той
    самий внутрішній блок буває в кількох серіях. */
 function catFunctions(hit) {
-  const col = hit.series.funcs_col;
+  const fc = hit.series.funcs_cols;
+  const col = (fc && fc[hit.col] !== undefined) ? fc[hit.col] : hit.series.funcs_col;
   if (col === null || col === undefined) return [];
   return (mhiCatalog.functions && mhiCatalog.functions[String(col)]) || [];
 }
@@ -359,13 +392,16 @@ function catFuncsHtml(hit) {
   if (!list.length) return '<div class="ps-empty">Для цієї моделі перелік функцій у каталозі не знайшовся.</div>';
   return block('Є в цій серії', 'yes', 'Каталог не вказує жодної.') +
          block('Доступно як опція', 'option', '') +
-         catSourceHtml(hit);
+         catSourceHtml(hit, Array.from(new Set(list.map(function (f) { return f.page; }).filter(Boolean))));
 }
 
 const CAT_ACC_TITLES = {
   remote: 'Пульти керування',
   adapter: 'Адаптери',
+  panel: 'Панелі',
+  sensor: 'Датчики',
   wifi: 'Wi-Fi',
+  other: 'Додатково',
   filter: 'Фільтри'
 };
 const CAT_ACC_STATE = {
@@ -374,10 +410,18 @@ const CAT_ACC_STATE = {
   depends: 'залежить від моделі'
 };
 
+/* Аксесуари колонки: у побутових серіях — список серії; у напівпромі — набір зі спільного
+   довідника acc_sets за номером колонки (колонки однієї таблиці мають різні панелі й пульти). */
+function catAccList(hit) {
+  const idx = hit.series.acc_idx;
+  if (idx && mhiCatalog && mhiCatalog.acc_sets) return mhiCatalog.acc_sets[idx[hit.col]] || [];
+  return hit.series.accessories || [];
+}
+
 function catAccHtml(hit) {
-  const list = hit.series.accessories || [];
+  const list = catAccList(hit);
   if (!list.length) return '<div class="ps-empty">Для цієї моделі аксесуарів у каталозі не знайшлось.</div>';
-  const order = ['remote', 'adapter', 'wifi', 'filter'];
+  const order = ['remote', 'adapter', 'panel', 'sensor', 'wifi', 'other', 'filter'];
   let html = '';
   order.forEach(function (kind) {
     const rows = list.filter(function (a) { return a.kind === kind; });
@@ -655,7 +699,7 @@ function psRender() {
     psHeroHtml() +
     /* Підписи короткі: чотири вкладки ділять ширину порівну, і на екрані 360 px
        «Характеристики» обрізалось би многоточием (рішення власника 2026-10-19). */
-    '<div class="ps-tabs">' + tab('specs', psCatTabs() ? 'Тех. дані' : 'Характеристики', 'file-text') +
+    '<div class="ps-tabs">' + tab('specs', (psCatTabs() || (psState && psState.cat)) ? 'Тех. дані' : 'Характеристики', 'file-text') +
       (psCatTabs() ? tab('funcs', 'Функції', 'activity') + tab('acc', 'Аксесуари', 'wrench') : '') +
       (psHasStock() ? tab('stock', 'Наявність', 'package') : '') +
     '</div>' +
