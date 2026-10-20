@@ -493,6 +493,8 @@ function renderCatalogView() {
     document.getElementById('th-ezy-instruction-btn').style.display = 'none';
     document.getElementById('q-ton-instruction-btn').style.display = 'none';
     applyCatalogStatusUi(); // на головній статус іде в рядок під курсами
+    /* Меню плиток = людина не в розділі: розгорнуті групи прайсу скидаємо (04a). */
+    if (typeof cgResetState === 'function') cgResetState();
     renderCatalogMenu();
   } else {
     backBtn.style.display = 'flex';
