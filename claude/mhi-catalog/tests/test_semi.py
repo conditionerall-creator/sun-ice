@@ -162,6 +162,21 @@ def main():
     check(not any('адапXтер' in a['name'] or 'свижого' in (a['note'] or '') for st in sets for a in st),
           'друкарські вади тексту мають бути прибрані')
 
+    # --- тип інвертора зовнішнього блока (стор. 86) --------------------------------------
+    ot = doc['outdoor_types']
+    check(sorted(k for k, v in ot.items() if v == 'hyper') ==
+          sorted(G.norm_model(x) for x in ('SRC40ZSX-W1', 'SRC50ZSX-W3', 'SRC60ZSX-W3', 'FDC71VNX-W', 'FDC100VNX-W', 'FDC100VSX-W',
+                                           'FDC125VNX-W', 'FDC125VSX-W', 'FDC140VNX-W', 'FDC140VSX-W')), 'Hyper Inverter зі стор. 86')
+    check(sorted(k for k, v in ot.items() if v == 'micro') ==
+          sorted(G.norm_model(x) for x in ('FDC100VNA-W', 'FDC100VSA-W', 'FDC125VNA-W', 'FDC125VSA-W', 'FDC140VNA-W',
+                                           'FDC140VSA-W', 'FDC200VSA-W', 'FDC250VSA-W', 'FDC280VSA-W')), 'Micro Inverter зі стор. 86')
+    check(sorted(k for k, v in ot.items() if v == 'standard') ==
+          sorted(G.norm_model(x) for x in ('FDC71VNP-W', 'FDC90VNP-W', 'FDC100VNP-W', 'FDC125VNP-W')), 'Standard Inverter зі стор. 86')
+    for s in semi.values():   # кожен зовнішній блок комплекту має тип
+        for outs in s['outdoor']:
+            for o in outs:
+                check(G.norm_model(o.split(' x ')[0]) in ot, 'немає типу інвертора для %s' % o)
+
     print('test_semi: усе сходиться (42 таблиці, 106 пар).')
 
 

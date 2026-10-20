@@ -209,9 +209,16 @@ function specsTotalCount(spec) {
 /* Рядок характеристики. Назва й значення в одній таблиці із «зеброю»: до 2026-10-09
    вони були розтягнуті по краях екрана (назва ліворуч, значення праворуч), і на 56
    рядках око губило, яке значення до якої назви належить. */
+/* Довге значення не вміщується в рядок поруч з назвою (на телефоні ~190 px): такий рядок
+   малюємо «назва над значенням» (.is-long). Коротке лишаємо в nowrap — число не рвати. */
+function psRowLong(v) {
+  const t = String(v == null ? '' : v);
+  return t.length > 22 || (t.match(/\s/g) || []).length > 4;
+}
+
 function specRowsHtml(rows) {
   return rows.map(function (r) {
-    return '<div class="ps-spec-row"><span class="ps-spec-name">' + escapeHtml(r[0]) +
+    return '<div class="ps-spec-row' + (psRowLong(r[1]) ? ' is-long' : '') + '"><span class="ps-spec-name">' + escapeHtml(r[0]) +
            '</span><span class="ps-spec-val">' + escapeHtml(r[1]) + '</span></div>';
   }).join('');
 }
@@ -283,7 +290,8 @@ function catValue(spec, col) {
 function catRowsHtml(list, col) {
   return list.map(function (sp) {
     const unit = sp.unit ? ' <span class="ps-spec-unit">' + escapeHtml(sp.unit) + '</span>' : '';
-    return '<div class="ps-spec-row"><span class="ps-spec-name">' + escapeHtml(sp.name) + unit +
+    const val = catValue(sp, col);
+    return '<div class="ps-spec-row' + (psRowLong(val) ? ' is-long' : '') + '"><span class="ps-spec-name">' + escapeHtml(sp.name) + unit +
            '</span><span class="ps-spec-val">' + escapeHtml(catValue(sp, col)) + '</span></div>';
   }).join('');
 }
@@ -293,7 +301,10 @@ function catSpecsHtml(hit) {
   const key = [];
   CAT_KEY_ROWS.forEach(function (pref) {
     all.forEach(function (sp) {
-      if (sp.name.indexOf(pref) === 0 && key.indexOf(sp) < 0) key.push(sp);
+      if (sp.name.indexOf(pref) !== 0 || key.indexOf(sp) >= 0) return;
+      /* Тиск у Па є лише в канальних; у стельових мульти там «—» — порожній рядок у «Головне» не потрібен. */
+      if (/статичний тиск/.test(sp.name) && catValue(sp, hit.col) === '—') return;
+      key.push(sp);
     });
   });
   return '<div class="ps-spec-table">' + catRowsHtml(key, hit.col) + '</div>' +

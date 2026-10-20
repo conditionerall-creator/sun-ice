@@ -410,6 +410,47 @@ def semi_funcs_col(fam, indoor_mark):
     return None
 
 
+# Тип інвертора ЗОВНІШНЬОГО блока напівпрому — стор. 86 каталогу («Зовнішні блоки»): три розділи під
+# великими заголовками «Hyper Inverter» (синя смуга), «Micro Inverter» (рожева), «Standard Inverter»
+# (зелена); під кожним — підписи блоків («FDC100VNX/VSX-W (10 кВт)»). Розділ визначаємо за положенням
+# підпису між великими заголовками (висота шрифту ≈ 27 пт), назви блоків беремо зі сторінки, не вгадуємо.
+INVERTER_PAGE = 86
+
+
+def parse_inverter_types(report):
+    words = G.page_words(PDF, INVERTER_PAGE)
+    heads = {}
+    for w in words:
+        if (w.y1 - w.y0) > 20 and w.text in ('Micro', 'Standard') and w.text not in heads:
+            heads[w.text] = w.y0
+    if set(heads) != {'Micro', 'Standard'}:
+        raise Problem('Стор. 86: не знайдено великі заголовки «Micro Inverter» і «Standard Inverter»')
+    out = {}
+
+    def kind(y):
+        return 'hyper' if y < heads['Micro'] else ('micro' if y < heads['Standard'] else 'standard')
+
+    for w in words:
+        t = w.text
+        if not re.match(r'^(FDC|SRC)\d', t):
+            continue
+        names = []
+        m = re.match(r'^(FDC\d+V)([A-Z]{2})/V([A-Z]{2})(-W)$', t)          # FDC100VNX/VSX-W
+        m2 = re.match(r'^(FDC\d+V)([A-Z]{2})-W/V([A-Z]{2})-W$', t)          # FDC100VNA-W/VSA-W
+        if m:
+            names = [m.group(1) + m.group(2) + m.group(4), m.group(1) + m.group(3) + m.group(4)]
+        elif m2:
+            names = [m2.group(1) + m2.group(2) + '-W', m2.group(1) + m2.group(3) + '-W']
+        elif re.match(r'^(FDC\d+V[A-Z]{2}-W|SRC\d+ZSX-W\d)$', t):
+            names = [t]
+        else:
+            report.append('ПЕРЕВІРКА  стор. 86: незрозумілий підпис блока «%s»' % t)
+            continue
+        for n in names:
+            out[G.norm_model(n)] = kind(w.y0)
+    return out
+
+
 def semi_family(system):
     for f in ('FDTC', 'FDUM', 'FDT', 'FDU', 'FDE', 'FDF', 'SRK'):
         if system.startswith(f):
@@ -579,6 +620,10 @@ def fix_known_cells(doc, report=None):
     2) MULTI-FDTC: назва рядка «Розміри (Ширина х Висота х Глибина)» розірвана між двома
        підрядками («Внутрішній блок» / «Панель»)."""
     out = []
+    # Японський знак «ー» замість тире в таблицях мульти (немає значення) → звичайне «—».
+    for sr in doc['series'].values():
+        for sp in sr['specs']:
+            sp['values'] = ['—' if v in ('ー', '－') else v for v in sp['values']]
     zr = doc['series'].get('MULTI-SRK-ZR')
     if zr:
         for sp in zr['specs']:
@@ -646,9 +691,16 @@ def main():
             os.makedirs(SHOTS, exist_ok=True)
             G.render_page(PDF, cfg['page'], os.path.join(SHOTS, 'p%d' % cfg['page']))
 
+    inverter_types = {}
     if not only:
+        inverter_types = parse_inverter_types(report)
         semi_series, semi_index, acc_sets = build_semi(report)
         out_series.update(semi_series)
+        for key, ss in semi_series.items():   # кожен зовнішній блок комплектів має тип зі стор. 86
+            for outs in ss['outdoor']:
+                for o in outs:
+                    if G.norm_model(o.split(' x ')[0]) not in inverter_types and not any(('блока %s немає' % o) in r for r in report):
+                        report.append('ПЕРЕВІРКА  %s: для зовнішнього блока %s немає типу інвертора на стор. 86' % (key, o))
         index['semi_mhi'] = semi_index
         for key, ss in semi_series.items():
             for fc in ss['funcs_cols']:
@@ -670,6 +722,7 @@ def main():
         'series': out_series,
         'functions': funcs_by_col,
         'acc_sets': acc_sets if not only else [],
+        'outdoor_types': inverter_types if not only else {},
         'index': index,
         'cards': [{'re': r, 'series': se, 'marking': mk, 'block': bl} for r, se, mk, bl in CARDS],
     }

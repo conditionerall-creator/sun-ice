@@ -720,6 +720,57 @@ async function diagCheckMhiCatalog(ctx) {
   out.checked.push({ area: area, sub: 'coverage', label: 'Покриття прайсу',
     detail: covered + ' з ' + total + ' позицій MHI мають дані каталогу' });
 
+  /* Тип інвертора зовнішнього блока (стор. 86): без нього рядок напівпрому лишається без кольору. */
+  {
+    const noType = [];
+    let kits = 0;
+    ((ctx.data && ctx.data.semi_mhi) || (sheetsData && sheetsData.semi_mhi) || []).forEach(it => {
+      if (String(it.model).indexOf('+') < 0) return;
+      kits++;
+      if (!semiInverterType(it.model)) noType.push(it.model);
+    });
+    out.checked.push({ area: area, sub: 'inverter', label: 'Тип інвертора (Hyper/Micro/Standard)',
+      detail: (kits - noType.length) + ' з ' + kits + ' комплектів напівпрому мають тип зі стор. 86' });
+    if (noType.length) {
+      out.issues.push(diagIssue(area, 'inverter', 'warning',
+        'Комплектів напівпрому без типу інвертора — ' + noType.length,
+        noType.slice(0, 20).concat(['Зовнішнього блока немає на стор. 86 каталогу (новий блок?) — рядок показується без кольору.', FIX]),
+        { app: { tile: 'semi', brand: 'mhi' } }));
+    }
+  }
+
+  /* Фазність (1ф/3ф) у рядках напівпрому: без неї підпис просто не малюється. MHI — з каталогу,
+     Galactic — з даних сайту (потрібні specs-semi-gal.json і site-links): комплекти Galactic без картки
+     на сайті даних не мають — це ВІДОМА прогалина, тому для них лише примітка, а не помилка. */
+  {
+    const miss = { semi_mhi: [], semi_gal: [] };
+    const total = { semi_mhi: 0, semi_gal: 0 };
+    try { await loadSpecs('semi_gal'); await loadSiteLinks(); } catch (e) { /* без мережі перевірку GAL пропускаємо */ }
+    ['semi_mhi', 'semi_gal'].forEach(key => {
+      ((ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || []).forEach(it => {
+        const isKit = key === 'semi_gal' ? !!it.outdoorModel : String(it.model).indexOf('+') >= 0;
+        if (!isKit) return;
+        total[key]++;
+        if (!semiPhaseOf(key, it)) miss[key].push(it.model + (key === 'semi_gal' ? ' + ' + it.outdoorModel : ''));
+      });
+    });
+    out.checked.push({ area: area, sub: 'phase', label: 'Фазність напівпрому (1ф/3ф)',
+      detail: 'MHI: ' + (total.semi_mhi - miss.semi_mhi.length) + ' з ' + total.semi_mhi +
+              '; Galactic: ' + (total.semi_gal - miss.semi_gal.length) + ' з ' + total.semi_gal });
+    if (miss.semi_mhi.length) {
+      out.issues.push(diagIssue(area, 'phase', 'warning',
+        'Комплектів напівпрому MHI без фазності — ' + miss.semi_mhi.length,
+        miss.semi_mhi.slice(0, 20).concat(['У технічних даних каталогу немає рядка «Електроживлення» — підпис 1ф/3ф не показується.', FIX]),
+        { app: { tile: 'semi', brand: 'mhi' } }));
+    }
+    if (miss.semi_gal.length) {
+      out.issues.push(diagIssue(area, 'phase', 'info',
+        'Комплектів напівпрому Galactic без фазності — ' + miss.semi_gal.length,
+        miss.semi_gal.slice(0, 20).concat(['На сайті немає картки цього комплекту (або без рядка «Електроживлення») — підпис 1ф/3ф не показується.']),
+        { app: { tile: 'semi', brand: 'gal' } }));
+    }
+  }
+
   const orphans = [];
   Object.keys(cat.index).forEach(app => Object.keys(cat.index[app]).forEach(k => {
     if (!seen.has(app + '|' + k)) orphans.push(app + ': ' + k);

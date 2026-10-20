@@ -1255,6 +1255,63 @@ function catalogSeriesInfoEntry(effectiveKey, text) {
    маркування сюди. Гості без доступу до цін позначки не бачать (ціни теж). */
 const CATALOG_PROMO_NO_EXTRA = new Set(['GKZ07A-W', 'GKZ18A-W', 'GKZ24A-W']);
 
+/* Тип інвертора ЗОВНІШНЬОГО блока в напівпромі — Hyper / Micro / Standard (стор. 86 каталогу MHI,
+   рішення власника 2026-10-20: рядки комплектів виділяються кольором і підписом). Тип дає файл
+   каталогу (`outdoor_types`), у коді моделей не вгадуємо. Поки файл не приїхав, або в позиції немає
+   зовнішнього блока (пульти, панелі), — null, і рядок малюється як звичайно; коли файл приїде, список
+   перемалюється (cgEnsureCatalog). У прайсі зовнішній блок інколи з варіантами в дужках —
+   «SRC50ZSX-W2(3)» = W2 або W3: перебираємо обидва. */
+const INVERTER_LABELS = { hyper: 'Hyper Inverter', micro: 'Micro Inverter', standard: 'Standard Inverter' };
+function semiInverterType(model) {
+  if (typeof mhiCatalog === 'undefined' || !mhiCatalog || !mhiCatalog.outdoor_types) return null;
+  const parts = String(model || '').split('+');
+  if (parts.length !== 2) return null;
+  const m = /^(.*?)(\d+)\((\d+)\)$/.exec(parts[1].replace(/\s+/g, ''));
+  const alts = m ? [m[1] + m[2], m[1] + m[3]] : [parts[1]];
+  for (let i = 0; i < alts.length; i++) {
+    const t = mhiCatalog.outdoor_types[catKey(alts[i])];
+    if (t) return t;
+  }
+  return null;
+}
+
+/* Фазність напівпромислового комплекту — «1» або «3» (рішення власника 2026-10-20: підпис «1ф»/«3ф» у рядку,
+   нейтральним сірим, фоном). Беремо з тих самих технічних характеристик, що й панель товару, рядок
+   «Електроживлення» («1 фаза, 220-240 В» / «3 фази, 380-415 В»): MHI — з каталогу, Galactic — з даних сайту
+   (data/specs-semi-gal.json, адреса картки з site-links). Поки дані не приїхали — null (нічого не малюємо),
+   коли приїдуть — список перемальовується один раз (semiPhaseEnsure). */
+function semiPhaseParse(text) {
+  const m = /(\d)\s*фаз/i.exec(String(text || ''));
+  return m ? m[1] : null;
+}
+function semiPhaseOf(cfgKey, it) {
+  if (cfgKey === 'semi_mhi') {
+    if (typeof mhiCatalogHit !== 'function') return null;
+    const h = mhiCatalogHit(cfgKey, it);
+    if (!h) return null;
+    const row = (h.series.specs || []).find(sp => sp.name.indexOf('Електроживлення') === 0);
+    return row ? semiPhaseParse(row.values[h.col]) : null;
+  }
+  if (cfgKey === 'semi_gal') {
+    const specs = (typeof specsCache !== 'undefined') && specsCache[cfgKey];
+    const slug = siteLinks && siteLinks.links && siteLinks.links[cfgKey] ? siteLinks.links[cfgKey][siteLinkKey(it)] : null;
+    const spec = specs && slug ? specs[slug] : null;
+    if (!spec) return null;
+    let found = null;
+    ['основні', 'додаткові'].forEach(part => (spec[part] || []).forEach(g => g.rows.forEach(r => {
+      if (found === null && r[0].indexOf('Електроживлення') === 0) found = semiPhaseParse(r[1]);
+    })));
+    return found;
+  }
+  return null;
+}
+const semiPhaseAsked = {};
+function semiPhaseEnsure(cfgKey) {
+  if (cfgKey !== 'semi_gal' || semiPhaseAsked[cfgKey] || typeof loadSpecs !== 'function') return;
+  semiPhaseAsked[cfgKey] = true;
+  Promise.all([loadSpecs(cfgKey), loadSiteLinks()]).then(function (r) { if (r[0]) renderCatalogList(); });
+}
+
 /* Один рядок прайсу (одна товарна позиція). opts: { animate, rowNo } — поява зі
    зсувом у плоскому списку; { grouped:true } — рядок усередині згортного блоку: без
    кольорових смуг і без власної анімації появи, вигляд задає .sg-body .row у CSS.
@@ -1274,6 +1331,8 @@ function catalogRowHtml(it, index, opts) {
   const cartQty = cartQtyFor(cartKey);
   const animate = !!opts.animate && !opts.grouped;
   const rowCls = 'row' + (locked ? ' row-locked' : '') + (animate ? ' tile-enter' : '');
+  const inv = cfg.key === 'semi_mhi' ? semiInverterType(it.model) : null;
+  const phase = (cfg.key === 'semi_mhi' || cfg.key === 'semi_gal') ? semiPhaseOf(cfg.key, it) : null;
   const rowStyle = opts.grouped ? '' :
     (it.color ? 'border-left:4px solid ' + it.color + ';border-right:4px solid ' + it.color + ';' : '') +
     (animate ? 'animation-delay:' + ((opts.rowNo || 0) * 45) + 'ms;' : '');
@@ -1281,10 +1340,11 @@ function catalogRowHtml(it, index, opts) {
   /* data-row-* — щоб панель товару (П-9) знала, що саме відкривати: дотик приходить
      по порожньому місцю рядка, а рядок сам по собі знає лише свою модель. */
   return `
-      <div class="${rowCls}" style="${rowStyle}" data-row-cfg="${escapeHtml(cfg.key)}" data-row-model="${escapeHtml(it.model)}" data-row-idx="${index}" data-row-tile="${escapeHtml(tile.label)}">
+      <div class="${rowCls}"${inv ? ' data-inv="' + inv + '"' : ''} style="${rowStyle}" data-row-cfg="${escapeHtml(cfg.key)}" data-row-model="${escapeHtml(it.model)}" data-row-idx="${index}" data-row-tile="${escapeHtml(tile.label)}">
         <div class="row-top">
           <div class="row-info">
             <p class="row-name" data-site-list="${cfg.key}" data-site-key="${escapeHtml(siteLinkKey(it))}">${modelHtml(it.model)}</p>
+            ${(inv || phase) ? `<span class="row-meta">${inv ? `<span class="row-inv">${INVERTER_LABELS[inv]}</span>` : ''}${phase ? `<span class="row-phase">${phase}ф</span>` : ''}</span>` : ''}
             ${!locked && CATALOG_PROMO_NO_EXTRA.has(String(it.model).trim().toUpperCase()) ? `<p class="row-promo"><span class="row-promo-tag">${ic('flame', '')}Акція</span><span class="row-promo-note">без додаткових знижок</span></p>` : ''}
           </div>
           <div class="row-right">
@@ -1339,6 +1399,7 @@ function renderCatalogList() {
   }
 
   const filtered = allItems;
+  semiPhaseEnsure(cfg.key);
 
   const countHtml = '<div class="count">Всього: ' + filtered.length + '</div>';
   const showSegments = true;
