@@ -55,9 +55,29 @@ function loadSpecs(cfgKey) {
    значення є номер сторінки.
    Модель, якої в каталозі ще немає, працює як раніше — на даних із сайту. */
 const MHI_CATALOG_FILE = 'data/mhi-catalog.json';
+const GAL_CATALOG_FILE = 'data/gal-catalog.json';   // каталог Galactic: та сама форма, окремий файл (вантажиться лише в розділах Galactic)
 let mhiCatalog = null;
 let mhiCatalogPromise = null;
 let mhiCatalogFailed = false;
+let galCatalog = null;
+let galCatalogPromise = null;
+let galCatalogFailed = false;
+
+function loadGalCatalog() {
+  if (galCatalog) return Promise.resolve(galCatalog);
+  if (galCatalogPromise) return galCatalogPromise;
+  galCatalogPromise = fetch(GAL_CATALOG_FILE + '?v=' + APP_BUILD)
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(j => { galCatalog = j; galCatalogPromise = null; galCatalogFailed = false; return j; })
+    .catch(() => { galCatalogPromise = null; galCatalogFailed = true; return null; });
+  return galCatalogPromise;
+}
+
+/* Каталог для розділу застосунку: *_mhi — каталог MHI, *_gal — каталог Galactic. Файли окремі, бо кожен
+   вантажиться лише тим, хто відкрив відповідний бренд (рішення 2026-10-20 — обсяг даних не складається). */
+function catalogOf(cfgKey) { return /_gal$/.test(cfgKey) ? galCatalog : mhiCatalog; }
+function loadCatalogFor(cfgKey) { return /_gal$/.test(cfgKey) ? loadGalCatalog() : loadMhiCatalog(); }
+function catalogFailedFor(cfgKey) { return /_gal$/.test(cfgKey) ? galCatalogFailed : mhiCatalogFailed; }
 
 function loadMhiCatalog() {
   if (mhiCatalog) return Promise.resolve(mhiCatalog);
@@ -77,13 +97,14 @@ function catKey(s) { return psKey(s).replace(/[-_]/g, ''); }
 
 /* Серія + колонка каталогу для цього товару. Пробуємо всі маркування рядка
    (внутрішній, зовнішній): у прайсі комплект може бути записаний по-різному. */
-function mhiCatalogLookup(cfgKey, it) {
-  if (!mhiCatalog || !mhiCatalog.index) return null;
+function catalogLookup(cfgKey, it) {
+  const cat = catalogOf(cfgKey);
+  if (!cat || !cat.index) return null;
   /* Індекс РОЗДІЛЬНИЙ по розділах застосунку. У мульти спліт-системі внутрішні
      блоки мають ТІ САМІ маркування (SRK20ZSX-W), але працюють з іншим зовнішнім
      блоком — споживана потужність, труби й заправка там інші. Спільний індекс
      тихо підставив би їм дані зі сторінки спліта. */
-  const idx = mhiCatalog.index[cfgKey];
+  const idx = cat.index[cfgKey];
   if (!idx) return null;
   const marks = psMarkings(cfgKey, it);
   /* НАПІВПРОМ: колонка каталогу — це КОМПЛЕКТ, ключ — пара «внутрішній+зовнішній».
@@ -91,7 +112,7 @@ function mhiCatalogLookup(cfgKey, it) {
      маркуванням його не відрізнити, а підставити першу-ліпшу колонку означало б показати
      дилеру чужі цифри. У прайсі зовнішній блок інколи записаний з варіантами в дужках —
      «SRC50ZSX-W2(3)» = W2 або W3, у каталозі стоїть W3: розгортаємо в обидва. */
-  if (cfgKey === 'semi_mhi') {
+  if (cfgKey === 'semi_mhi' || cfgKey === 'semi_gal') {
     if (marks.length !== 2) return null;
     const alt = function (m) {
       const x = /^(.*?)(\d+)\((\d+)\)$/.exec(String(m).replace(/\s+/g, ''));
@@ -115,18 +136,19 @@ function mhiCatalogLookup(cfgKey, it) {
 
 /* Серія + колонка каталогу для цього товару. Пробуємо всі маркування рядка
    (внутрішній, зовнішній): у прайсі комплект може бути записаний по-різному. */
-function mhiCatalogHit(cfgKey, it) {
-  const f = mhiCatalogLookup(cfgKey, it);
+function catalogHit(cfgKey, it) {
+  const f = catalogLookup(cfgKey, it);
   if (!f) return null;
+  const cat = catalogOf(cfgKey);
   const bits = String(f.ref).split('|');
-  const series = mhiCatalog.series && mhiCatalog.series[bits[0]];
+  const series = cat.series && cat.series[bits[0]];
   /* mark — маркування САМЕ цього товару (у колонці каталогу їх кілька: -W, -WB,
      -WT, -WF…). Потрібне там, де відповідь залежить від виконання, а не від
      серії: у -WF Wi-Fi вбудований, у -W це опція. */
   if (!series) return null;
   const col = parseInt(bits[1], 10);
   return { series: series, col: col, model: (series.columns || [])[col] || '',
-           key: bits[0], mark: f.k };
+           key: bits[0], mark: f.k, cat: cat, cfgKey: cfgKey };
 }
 
 /* Фото картки товару з сайту (2026-10-09, прохання власника: «у кожній картці зверху
@@ -267,14 +289,16 @@ function specsHtml(spec) {
    Зіставляємо за ПОЧАТКОМ назви: у різних серіях хвіст буває різний
    («Холодоагент · Заводська заправка» на стор. 34, «Холодоагент · Charge» на 51). */
 const CAT_KEY_ROWS = [
-  'Холодопродуктивність',
-  'Теплопродуктивність',
-  'SEER',
-  'Розміри · Внутр',
-  'Розміри · Зовнішн',
-  'Міжлапна',
+  'Холодопродуктивність', 'Потужність охолодження',                 // Galactic: спліт / напівпром
+  'Теплопродуктивність', 'Теплова продуктивність', 'Потужність обігріву',
+  'SEER', 'Коефіцієнт енергоефективності SEER',
+  'Розміри · Внутр', 'Розмір внутрішнього', 'Розмір (ШхВхГ) · Внутр',
+  'Розміри · Зовнішн', 'Розмір зовнішнього', 'Розмір (ШхВхГ) · Зовнішн',
+  'Міжлапна', 'Відстань між опорами',
+  'Макс. довж. магістралі', 'Максимальна довжина магістралі',
   'Максимальна довжина труб',
-  'Макс. перепад висот',
+  'Макс. перепад висот', 'Максимальний перепад висот',
+  'Статичний тиск',
   'Зовнішній статичний тиск', 'Максимальний зовнішній статичний тиск',   // канальні (Па)
   'Холодоагент · Заводська', 'Холодоагент · Charge',
   'Заводська заправка',            // напівпром: одним рядком «заправлений на 15 м, дозаправка 20 г/м»
@@ -319,7 +343,7 @@ function catSourceHtml(hit, pages) {
   /* pages — сторінки, з яких взято САМЕ цей вміст (функції лежать на стор. 33 або на титульній
      сторінці родини, а не на сторінці таблиці); без нього — сторінка серії. */
   const pg = (pages && pages.length) ? pages.join(', ') : hit.series.page;
-  return '<div class="ps-source">Джерело: каталог Mitsubishi Heavy Industries, ' +
+  return '<div class="ps-source">Джерело: каталог ' + escapeHtml(psBrandName(hit.cfgKey) || '') + ', ' +
     escapeHtml(hit.series.marking || hit.series.title || '') +
     (hit.series.series ? ' (' + escapeHtml(hit.series.series) + ')' : '') +
     ', стор. ' + pg + '.</div>';
@@ -330,6 +354,9 @@ function catSourceHtml(hit, pages) {
    ECO, HIGH POWER) лишаємо як є — це назви режимів, вони так і пишуться.
    Зміст не чіпаємо: це лише регістр. */
 function catNiceName(name) {
+  /* Регістр правимо ЛИШЕ в назвах, надрукованих капсом (MHI). Galactic пише звичайно («Функція «Авторестарт»»,
+     «Регулювання фреонового потоку – ЕРВ»), і «виправлення» перетворило б ЕРВ на «ерв». */
+  if (/[а-яіїєґ]/.test(name)) return name.charAt(0).toUpperCase() + name.slice(1);
   const low = name.split(' ').map(function (w) {
     return /[А-ЯЁІЇЄҐ]/.test(w) && !/[A-Z]/.test(w) ? w.toLowerCase() : w;
   }).join(' ').replace(/\bWI-FI\b/i, 'Wi-Fi');
@@ -354,7 +381,7 @@ function catHasMulti(hit) {
   if (hit.series.semi) return false;   // напівпромислові комплекти — не мульти-системи
   const col = hit.series.funcs_col;
   if (col === null || col === undefined) return true;   // невідомо — нічого не ховаємо
-  const all = (mhiCatalog && mhiCatalog.series) || {};
+  const all = (hit.cat && hit.cat.series) || {};
   return Object.keys(all).some(function (k) {
     return k.indexOf('MULTI-') === 0 && all[k].funcs_col === col;
   });
@@ -382,14 +409,20 @@ function catFunctions(hit) {
   const fc = hit.series.funcs_cols;
   const col = (fc && fc[hit.col] !== undefined) ? fc[hit.col] : hit.series.funcs_col;
   if (col === null || col === undefined) return [];
-  return (mhiCatalog.functions && mhiCatalog.functions[String(col)]) || [];
+  return (hit.cat.functions && hit.cat.functions[String(col)]) || [];
+}
+
+/* Пункт може бути не для всіх моделей колонки (`not_for` — регулярний вираз за нормалізованим маркуванням):
+   Wi-Fi у мульти Galactic є лише в GKM-M-WR, а таблиця й значки в каталозі спільні для GKM-M-W і -WR. */
+function catAvail(hit, item) {
+  return !(item && item.not_for && hit.mark && new RegExp(item.not_for).test(hit.mark));
 }
 
 /* Функції: показуємо те, що в цій серії Є, і те, що доплатою. Чого немає —
    не малюємо: матриця каталогу спільна на 14 серій, і довгий список «немає»
    лише заважає читати. */
 function catFuncsHtml(hit) {
-  const list = catFunctions(hit);
+  const list = catFunctions(hit).filter(function (f) { return catAvail(hit, f); });
   const block = function (title, state, empty) {
     const rows = list.filter(function (f) { return catStateFor(hit, f) === state; });
     if (!rows.length) return empty ? '<div class="ps-block-title">' + title + '</div>' +
@@ -425,12 +458,12 @@ const CAT_ACC_STATE = {
    довідника acc_sets за номером колонки (колонки однієї таблиці мають різні панелі й пульти). */
 function catAccList(hit) {
   const idx = hit.series.acc_idx;
-  if (idx && mhiCatalog && mhiCatalog.acc_sets) return mhiCatalog.acc_sets[idx[hit.col]] || [];
+  if (idx && hit.cat && hit.cat.acc_sets) return hit.cat.acc_sets[idx[hit.col]] || [];
   return hit.series.accessories || [];
 }
 
 function catAccHtml(hit) {
-  const list = catAccList(hit);
+  const list = catAccList(hit).filter(function (a) { return catAvail(hit, a); });
   if (!list.length) return '<div class="ps-empty">Для цієї моделі аксесуарів у каталозі не знайшлось.</div>';
   const order = ['remote', 'adapter', 'panel', 'sensor', 'wifi', 'other', 'filter'];
   let html = '';
@@ -683,7 +716,7 @@ function psCatEmpty() {
   const s = psState;
   return '<div class="ps-empty">' + (s && s.catPending
     ? 'Завантажуємо дані каталогу…'
-    : (s && /_gal$/.test(s.cfgKey) ? 'Дані каталогу Galactic ще не додано.' : 'Для цієї моделі даних каталогу ще немає.')) + '</div>';
+    : 'Для цієї моделі даних каталогу ще немає.') + '</div>';
 }
 
 function psRender() {
@@ -766,14 +799,14 @@ function openProductSheet(cfgKey, model, tileLabel) {
      без вкладок «Функції»/«Аксесуари», а перемальовки вже ніхто не робив (2026-10-19). Поки не приїхав — показуємо
      «Завантажуємо…», а не дані сайту: інакше при кожному відкритті картки
      вміст встигав би моргнути з сайтового на каталожний. */
-  if (/_mhi$/.test(cfgKey) && !mhiCatalogFailed) {
-    psState.cat = mhiCatalogHit(cfgKey, it);
-    if (!mhiCatalog) {
+  if (/_(mhi|gal)$/.test(cfgKey) && !catalogFailedFor(cfgKey)) {
+    psState.cat = catalogHit(cfgKey, it);
+    if (!catalogOf(cfgKey)) {
       psState.catPending = true;
-      loadMhiCatalog().then(function () {
+      loadCatalogFor(cfgKey).then(function () {
         if (!psState || psState.model !== model) return;
         psState.catPending = false;
-        psState.cat = mhiCatalogHit(cfgKey, it);
+        psState.cat = catalogHit(cfgKey, it);
         psRender();
         psFitAll();
       });

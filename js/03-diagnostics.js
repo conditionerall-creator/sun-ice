@@ -42,7 +42,8 @@ const DIAG_AREA = {
   push: 'Сповіщення (push)',
   pricePublish: 'Публікація прайсу',
   resilience: 'Поведінка при збоях',
-  mhiCatalog: 'Каталог MHI (тех. дані)'
+  mhiCatalog: 'Каталог MHI (тех. дані)',
+  galCatalog: 'Каталог Galactic (тех. дані)'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -685,6 +686,59 @@ async function diagCheckPricePublish(ctx) {
      головніший), але власник має бачити, де сайт бреше.
    Покриття («скільки позицій прайсу мають дані каталогу») пишемо в «перевірено»,
    щоб було видно, як росте заповнення по серіях. */
+/* Каталог Galactic (data/gal-catalog.json, claude/galactic-catalog/build_galactic.py): файл вантажиться;
+   скільки позицій прайсу Galactic мають дані каталогу (решта лишається на даних сайту — це відомі прогалини:
+   у каталозі немає серії Orient, мульти H-W/H-S, частини Q7-комплектів); ключі каталогу, яких немає в прайсі. */
+async function diagCheckGalCatalog(ctx) {
+  const out = { issues: [], checked: [] };
+  const area = DIAG_AREA.galCatalog;
+  const FIX = 'Перезібрати: python claude/galactic-catalog/build_galactic.py';
+  const cat = await loadGalCatalog();
+  if (!cat || !cat.index) {
+    out.issues.push(diagIssue(area, 'file', 'error', 'Файл каталогу Galactic не завантажився',
+      ['data/gal-catalog.json недоступний — панель товару показує дані з сайту замість каталожних.', FIX],
+      { app: { tile: 'split', brand: 'gal' } }));
+    return out;
+  }
+  out.checked.push({ area: area, sub: 'file', label: 'Файл каталогу',
+    detail: 'зібрано ' + (cat.built || '?') + ', серій ' + Object.keys(cat.series || {}).length });
+  const seen = new Set();
+  const uncovered = [];
+  let covered = 0, total = 0;
+  ['split_gal', 'multisplit_gal', 'semi_gal'].forEach(key => {
+    const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
+    items.forEach(it => {
+      // аксесуари (пульти, Wi-Fi модулі) характеристик у каталозі не мають — лише техніка
+      const isUnit = key === 'semi_gal' ? !!it.outdoorModel : (it.unitType === 'indoor' || it.unitType === 'outdoor');
+      if (!isUnit) return;
+      total++;
+      const f = catalogLookup(key, it);
+      if (f) { covered++; seen.add(key + '|' + f.ref); } else uncovered.push(key + ': ' + it.model + (it.outdoorModel ? ' + ' + it.outdoorModel : ''));
+    });
+  });
+  out.checked.push({ area: area, sub: 'coverage', label: 'Покриття прайсу',
+    detail: covered + ' з ' + total + ' позицій Galactic мають дані каталогу' });
+  if (uncovered.length) {
+    out.issues.push(diagIssue(area, 'coverage', 'info',
+      'Позицій Galactic без даних каталогу — ' + uncovered.length,
+      uncovered.slice(0, 25).concat(['Для них у панелі товару — дані картки сайту (там, де вони є).']),
+      { app: { tile: 'split', brand: 'gal' } }));
+  }
+  const orphans = [];
+  Object.keys(cat.index).forEach(sec => Object.keys(cat.index[sec]).forEach(k => {
+    /* Колонка каталогу може мати кілька ключів (внутрішній і зовнішній блок спліта) — «осиротілою» вона
+       вважається, лише коли її не знайшла жодна позиція прайсу, тому порівнюємо за посиланням на колонку. */
+    if (!seen.has(sec + '|' + cat.index[sec][k])) orphans.push(sec + ': ' + k);
+  }));
+  if (orphans.length) {
+    out.issues.push(diagIssue(area, 'orphans', 'info',
+      'Ключів каталогу Galactic, яких немає в прайсі — ' + orphans.length,
+      orphans.slice(0, 25).concat(['Дані зібрані, але жодна позиція прайсу їх не бачить (модель знята з прайсу чи записана інакше).', FIX]),
+      { app: { tile: 'split', brand: 'gal' } }));
+  }
+  return out;
+}
+
 async function diagCheckMhiCatalog(ctx) {
   const out = { issues: [], checked: [] };
   const area = DIAG_AREA.mhiCatalog;
@@ -709,9 +763,9 @@ async function diagCheckMhiCatalog(ctx) {
     const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
     items.forEach(it => {
       total++;
-      /* Той самий пошук, що й у панелі товару (mhiCatalogLookup): для напівпрому ключ — ПАРА
+      /* Той самий пошук, що й у панелі товару (catalogLookup): для напівпрому ключ — ПАРА
          «внутрішній+зовнішній», і перебір окремих маркувань її не знайшов би. */
-      const f = mhiCatalogLookup(key, it);
+      const f = catalogLookup(key, it);
       if (!f) return;
       covered++;
       seen.add(key + '|' + f.k);
@@ -798,7 +852,7 @@ async function diagCheckMhiCatalog(ctx) {
       const items = (ctx.data && ctx.data[key]) || (sheetsData && sheetsData[key]) || [];
       items.forEach(it => {
         const appIdx = cat.index[key] || {};
-        const f2 = mhiCatalogLookup(key, it);
+        const f2 = catalogLookup(key, it);
         const ref = f2 && f2.ref;
         const slug = map[siteLinkKey(it)];
         if (!ref || !slug || !specs[slug]) return;
@@ -1371,6 +1425,7 @@ const DIAG_CHECKS = [
   { id: 'groups', label: 'Групи прайсу', auto: true, run: ctx => diagCheckGroups(ctx) },
   { id: 'header', label: 'Шапка застосунку', run: ctx => diagCheckHeader(ctx) },
   { id: 'mhicat', label: 'Каталог MHI (тех. дані)', auto: true, run: ctx => diagCheckMhiCatalog(ctx) },
+  { id: 'galcat', label: 'Каталог Galactic (тех. дані)', auto: true, run: ctx => diagCheckGalCatalog(ctx) },
   { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
   { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },
   { id: 'files', label: 'Зображення та файли застосунку', run: ctx => diagCheckFiles(ctx) },

@@ -222,6 +222,13 @@ card-images дорівнює `APP_BUILD`, руками не писати.
 інший. Пошук колонки — одна функція `mhiCatalogLookup()` (панель і самодіагностика). Тести:
 `python claude/mhi-catalog/tests/test_tables.py` і `…/test_semi.py` — запускати після кожної правки розбору.
 
+### Технічні дані Galactic з каталогу (з 2026-10-22)
+
+`data/gal-catalog.json` будує `claude/galactic-catalog/build_galactic.py` з `cat_Galactic.pdf` (форма та сама, що в MHI; файл окремий і
+вантажиться лише в розділах Galactic). Таблиці читає `galactic_catalog.py` по лініях сітки. Панель працює з двома каталогами одним
+кодом: `catalogOf(cfgKey)`, `catalogLookup()`, `catalogHit()` (`hit.cat`). Індекс роздільний по розділах; `semi_gal` — ПАРА блоків.
+Покриття й відкриті питання — `claude/galactic-catalog/00-ПЛАН-І-СТАТУС.md`. Тест: `python claude/galactic-catalog/tests/test_galactic.py`.
+
 ## Групи в прайсі кондиціонерів (з 2026-10-19; код — `js/04a-catalog-groups.js`)
 
 Спліт, Мульти спліт і Напівпром (MHI+GAL) малюються згортними блоками серій/типів. Правила

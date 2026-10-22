@@ -1285,12 +1285,15 @@ function semiPhaseParse(text) {
   return m ? m[1] : null;
 }
 function semiPhaseOf(cfgKey, it) {
-  if (cfgKey === 'semi_mhi') {
-    if (typeof mhiCatalogHit !== 'function') return null;
-    const h = mhiCatalogHit(cfgKey, it);
-    if (!h) return null;
-    const row = (h.series.specs || []).find(sp => sp.name.indexOf('Електроживлення') === 0);
-    return row ? semiPhaseParse(row.values[h.col]) : null;
+  if (cfgKey !== 'semi_mhi' && cfgKey !== 'semi_gal') return null;
+  /* Спершу друкований каталог (обидва бренди), потім — для Galactic — дані картки сайту. */
+  if (typeof catalogHit === 'function') {
+    const h = catalogHit(cfgKey, it);
+    if (h) {
+      const row = (h.series.specs || []).find(sp => sp.name.indexOf('Електроживлення') === 0);
+      const v = row ? semiPhaseParse(row.values[h.col]) : null;
+      if (v) return v;
+    }
   }
   if (cfgKey === 'semi_gal') {
     const specs = (typeof specsCache !== 'undefined') && specsCache[cfgKey];
@@ -1309,7 +1312,7 @@ const semiPhaseAsked = {};
 function semiPhaseEnsure(cfgKey) {
   if (cfgKey !== 'semi_gal' || semiPhaseAsked[cfgKey] || typeof loadSpecs !== 'function') return;
   semiPhaseAsked[cfgKey] = true;
-  Promise.all([loadSpecs(cfgKey), loadSiteLinks()]).then(function (r) { if (r[0]) renderCatalogList(); });
+  Promise.all([loadGalCatalog(), loadSpecs(cfgKey), loadSiteLinks()]).then(function (r) { if (r[0] || r[1]) renderCatalogList(); });
 }
 
 /* Один рядок прайсу (одна товарна позиція). opts: { animate, rowNo } — поява зі
