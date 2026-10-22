@@ -305,11 +305,19 @@ async function renderPromotionsTab() {
       <span>Добре, добре, буду мати на увазі</span>
     </label>` : '';
 
-  const cardsHtml = (!data || data.length === 0)
+  /* Звичайний користувач (і гість) бачить ЛИШЕ останню завантажену акцію — найбільший id,
+     те саме правило, що для кульки й push. Попередні (нижче в списку) бачать адміни
+     (рішення власника 2026-10-22). Це лише показ: дані з бази приходять ті самі. */
+  const isAdminViewer = role === 'regional_admin' || role === 'super_admin';
+  const visiblePromos = (data && data.length && !isAdminViewer)
+    ? data.filter(function (p) { return p.id === latestPromoId; })
+    : data;
+
+  const cardsHtml = (!visiblePromos || visiblePromos.length === 0)
     ? '<div class="empty">Наразі активних акцій немає.<br>Заходьте пізніше!</div>'
-    : data.map(p => `
+    : visiblePromos.map(p => `
     <div class="promo-card">
-      ${p.image_url ? `<img class="promo-image" src="${escapeHtml(p.image_url)}" alt="" role="button" aria-label="Переглянути зображення">` : ''}
+      ${p.image_url ? `<img class="promo-image" loading="lazy" decoding="async" src="${escapeHtml(p.image_url)}" alt="" role="button" aria-label="Переглянути зображення">` : ''}
       <div class="promo-body">
         <p class="promo-title">${escapeHtml(p.title)}</p>
         ${p.description ? `<p class="promo-desc">${escapeHtml(p.description)}</p>` : ''}
@@ -355,10 +363,37 @@ function guessImageContentType(file) {
   return 'image/png';
 }
 
+/* Стиснення зображення акції перед завантаженням (2026-10-22). Знімок із телефона легко
+   важить 3–5 МБ і потім качається кожному дилеру. Стискаємо лише коли файл більший за
+   300 КБ або ширший за 1920 px; GIF не чіпаємо (анімація). Будь-яка невдача — вантажимо
+   оригінал як є, тож завантаження акції через це зламатись не може. */
+async function compressPromoImage(file) {
+  try {
+    if (guessImageContentType(file) === 'image/gif') return file;
+    if (typeof createImageBitmap !== 'function') return file;
+    const MAX_SIDE = 1920;
+    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const longSide = Math.max(bmp.width, bmp.height);
+    if (file.size <= 300 * 1024 && longSide <= MAX_SIDE) { bmp.close && bmp.close(); return file; }
+    const k = Math.min(1, MAX_SIDE / longSide);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(bmp.width * k));
+    canvas.height = Math.max(1, Math.round(bmp.height * k));
+    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close && bmp.close();
+    const blob = await new Promise(function (res) { canvas.toBlob(res, 'image/webp', 0.88); });
+    if (!blob || blob.type !== 'image/webp' || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' });
+  } catch (e) {
+    return file;
+  }
+}
+
 async function uploadPromoFile(file) {
   if (!isAllowedPromoImage(file)) {
     throw new Error('Непідтримуваний формат файлу. Дозволені: PNG, JPG, WEBP, GIF.');
   }
+  file = await compressPromoImage(file);
   const contentType = guessImageContentType(file);
   const fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
   const { error: uploadError } = await sb.storage.from('promo-pdfs').upload(fileName, file, {

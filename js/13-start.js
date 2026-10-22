@@ -433,13 +433,17 @@ document.getElementById('promo-balloon-close').addEventListener('click', functio
 });
 
 /* --- з 07-access-info.js --- */
+let lastRateReloadAt = 0;
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState !== 'visible') return;
   ensureAccessFresh(true);
   /* Курс теж перечитуємо (2026-09-21). До цього він вантажився РАЗ за запуск, в
      initCatalog. PWA на телефоні висить у пам'яті тижнями — адміністратор міняв курс,
      а дилер далі рахував за старим, поки не перезапустить застосунок. */
-  if (catalogInitDone) loadExchangeRate();
+  /* Не частіше разу на 2 хв: перемикання між застосунками на телефоні відбувається
+     десятки разів на день, і кожне давало зайвий запит (2026-10-22). Адмін, що змінив
+     курс, бачить його одразу — редактор сам оновлює значення. */
+  if (catalogInitDone && Date.now() - lastRateReloadAt > 120000) { lastRateReloadAt = Date.now(); loadExchangeRate(); }
   /* Прайс перепитуємо тут же (2026-10-19). Доступ і курс оновлювались при поверненні
      ще з 19.09, а ціни — ні: їх звіряли рівно раз за запуск застосунку. Сама функція
      має обмеження частоти (5 хв) і не повторює те, що вже качається. */
