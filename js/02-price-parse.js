@@ -1427,12 +1427,34 @@ async function fetchPublishedVersion() {
    opts.onStage('download'|'parse') — щоб екран міг сказати, що відбувається. */
 async function loadPublishedPrice(opts) {
   const stage = (opts && opts.onStage) || function () {};
-  const uid = await currentUserId();
 
   /* 1. Кеш пристрою. Чужий кеш не показуємо НІКОЛИ: інакше наступний користувач
-        цього телефону побачив би ціни попереднього. */
+        цього телефону побачив би ціни попереднього.
+     ⚡ Швидкий шлях (з 2026-11-18): для ЧИТАННЯ кеша власника звіряємо з підказкою з
+     localStorage (currentUserIdQuick), не чекаючи sb.auth.getSession(). Після перерви понад
+     годину getSession спершу ЙДЕ В МЕРЕЖУ продовжувати токен — і на слабкому зв'язку прайс,
+     що вже лежить на телефоні, чекав цього секундами. Безпека та сама:
+       • запис із цінами показуємо лише тому самому id, що підписав його достовірною сесією;
+       • без токена на пристрої (вийшов → priceCacheClear) підказка null → лише копія без цін;
+       • ЦІНИ на екрані все одно малюються лише при hasFullAccess, а його ставить перевірка
+         доступу через сервер (refreshAccessState), не цей кеш.
+     Офлайн застосунок і раніше йшов саме цією підказкою (catch у currentUserId). Підписувати
+     кеш (запис нижче) — як і раніше, ЛИШЕ достовірною сесією. */
   const cached = await priceCacheRead();
   const fresh = (opts && opts.force) ? null : cached;
+  const quickUid = currentUserIdQuick();
+  if (fresh && fresh.parserVersion === PARSER_VERSION && fresh.data &&
+      fresh.userId === quickUid && (quickUid || fresh.stripped)) {
+    sheetsData = fresh.data;
+    priceDataStripped = !!fresh.stripped;
+    publishedVersionId = fresh.versionId;
+    publishedPublishedAt = fresh.publishedAt || null;
+    publishedMedia = fresh.media || null;
+    publishedExtrasRev = fresh.extrasRev == null ? null : fresh.extrasRev;
+    priceSourceUsed = 'published';
+    return { ok: true, fromCache: true };
+  }
+  const uid = await currentUserId();
   let wanted = null;
   /* Подвійний замок. Перший — збіг власника. Другий — запис із ЦІНАМИ не показуємо
      нікому без сесії взагалі, навіть якщо позначка власника якимось чином збіглася:

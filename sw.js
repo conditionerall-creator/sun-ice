@@ -28,20 +28,20 @@ const APP_SHELL = [
      застосунок не підніметься. Перевірка «Модулі застосунку» в самодіагностиці
      стежить за цим збігом. */
   ...[
-    'js/01-config.js?v=2026-11-18.4',
-    'js/02-price-parse.js?v=2026-11-18.4',
-    'js/03-diagnostics.js?v=2026-11-18.4',
-    'js/04-catalog.js?v=2026-11-18.4',
-    'js/04a-catalog-groups.js?v=2026-11-18.4',
-    'js/05-catalog-custom.js?v=2026-11-18.4',
-    'js/06-cart-promo.js?v=2026-11-18.4',
-    'js/07-access-info.js?v=2026-11-18.4',
-    'js/08-info-tables.js?v=2026-11-18.4',
-    'js/09-cabinet.js?v=2026-11-18.4',
-    'js/10-crmontage.js?v=2026-11-18.4',
-    'js/11-shell.js?v=2026-11-18.4',
-    'js/12-product-sheet.js?v=2026-11-18.4',
-    'js/13-start.js?v=2026-11-18.4'
+    'js/01-config.js?v=2026-11-18.5',
+    'js/02-price-parse.js?v=2026-11-18.5',
+    'js/03-diagnostics.js?v=2026-11-18.5',
+    'js/04-catalog.js?v=2026-11-18.5',
+    'js/04a-catalog-groups.js?v=2026-11-18.5',
+    'js/05-catalog-custom.js?v=2026-11-18.5',
+    'js/06-cart-promo.js?v=2026-11-18.5',
+    'js/07-access-info.js?v=2026-11-18.5',
+    'js/08-info-tables.js?v=2026-11-18.5',
+    'js/09-cabinet.js?v=2026-11-18.5',
+    'js/10-crmontage.js?v=2026-11-18.5',
+    'js/11-shell.js?v=2026-11-18.5',
+    'js/12-product-sheet.js?v=2026-11-18.5',
+    'js/13-start.js?v=2026-11-18.5'
   ].map((p) => new URL(p, self.registration.scope).href),
   /* Плитки каталогу. Раніше їх тут НЕ БУЛО — вони потрапляли в кеш лише після того,
      як користувач їх побачив, а браузер на Android чистить сховище у рідко відкриваних
@@ -196,9 +196,28 @@ self.addEventListener('activate', (event) => {
 
 /* Стратегія кешування для звичайних GET-запитів (не Supabase):
    - HTML-сторінка застосунку: спершу мережа (щоб одразу підхопити новий деплой на
-     GitHub Pages), а якщо офлайн/немає зв'язку — віддаємо останню закешовану версію.
-   - Все інше статичне (свій CSS/JS, шрифти, supabase-js, xlsx.js з CDN): спершу кеш
-     (миттєве відкриття), паралельно у фоні тихо оновлюємо кеш свіжою версією. */
+     GitHub Pages), але НЕ ДОВШЕ HTML_NET_TIMEOUT_MS (з 2026-11-18). Мережа не встигла —
+     віддаємо закешовану сторінку, а мережевий запит доходить у фоні й кладе свіжу копію
+     в кеш (нова версія відкриється наступного разу). До 2026-11-18 таймауту не було:
+     при слабкому інтернеті застосунок стояв білим, доки мережа не віддасть сторінку або не
+     впаде, хоча робоча копія лежала в кеші. Без кеша (перший запуск) чекаємо мережу як раніше.
+     Узгодженість не страждає: start_url = «.» = scope, і цю адресу install кладе в кеш
+     разом із модулями (все або нічого), тож закешована сторінка просить ті модулі, що є в кеші.
+   - Файли з версією в адресі (?v=… — модулі js/, stock.js, price-admin.js, data/*.json, фото
+     груп; і бібліотеки з CDN з точною версією в шляху, @x.y.z): лише кеш, БЕЗ фонової
+     перевірки (з 2026-11-18). Та сама адреса = той самий вміст: нова версія — нова адреса
+     (set-build.py). Раніше кожен запуск слав ~20 запитів «чи не змінилось», і на слабкому
+     зв'язку вони забирали смугу в прайсу й входу. ⚠️ Наслідок: змінив файл з ?v= і не підняв
+     версію — телефони, де він уже є, НЕ побачать зміни ніколи. Версію піднімати завжди.
+   - Решта статики (іконки, плитки, шрифти Google): спершу кеш (миттєве відкриття),
+     паралельно у фоні тихо оновлюємо кеш свіжою версією. */
+const HTML_NET_TIMEOUT_MS = 3000;
+
+function isVersionedAsset(url) {
+  if (url.searchParams.has('v')) return true;
+  return url.hostname === 'cdn.jsdelivr.net' && /@\d+\.\d+\.\d+\//.test(url.pathname);
+}
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
@@ -209,16 +228,40 @@ self.addEventListener('fetch', (event) => {
   const isHtmlNavigation = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
 
   if (isHtmlNavigation) {
+    const network = fetch(req).then((res) => {
+      if (res && res.ok) {
+        const copy = res.clone();
+        return caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {}).then(() => res);
+      }
+      return res;
+    });
+    const fromCache = () =>
+      caches.match(req).then((cached) => cached || caches.match(new URL('index.html', self.registration.scope).href));
+    event.respondWith(new Promise((resolve) => {
+      let settled = false;
+      const finish = (res) => { if (!settled && res) { settled = true; resolve(res); } };
+      const timer = setTimeout(() => { fromCache().then(finish); }, HTML_NET_TIMEOUT_MS);
+      network
+        .then((res) => { clearTimeout(timer); finish(res); })
+        .catch(() => {
+          clearTimeout(timer);
+          fromCache().then((cached) => finish(cached || Response.error()));
+        });
+    }));
+    // Сторінку вже віддали з кеша — але свіжа копія має доїхати в кеш навіть після цього.
+    event.waitUntil(network.catch(() => {}));
+    return;
+  }
+
+  if (isVersionedAsset(url)) {
     event.respondWith(
-      fetch(req)
-        .then((res) => {
+      caches.match(req).then((cached) => cached || fetch(req).then((res) => {
+        if (res && res.ok) {
           const copy = res.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
-          return res;
-        })
-        .catch(() =>
-          caches.match(req).then((cached) => cached || caches.match(new URL('index.html', self.registration.scope).href))
-        )
+        }
+        return res;
+      }))
     );
     return;
   }
