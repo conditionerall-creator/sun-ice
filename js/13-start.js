@@ -962,6 +962,20 @@ document.querySelectorAll('.info-sheet-overlay').forEach(function (ov) {
   }).observe(ov, { attributes: true, attributeFilter: ['class'] });
 });
 
+/* Ціни ОДРАЗУ на старті (рішення власника 2026-11-18). Перевірка доступу йде через сервер (продовжити
+   вхід + прочитати профіль) і на слабкому звʼязку займає секунди — увесь цей час дилер бачив «—» замість
+   цін, хоча вчора їх бачив. Тепер, якщо на пристрої є вхід і збережений стан «доступ є» не старший за
+   7 діб (ACCESS_OFFLINE_GRACE_MS — той самий строк, що офлайн), ціни показуються авансом, а перевірка йде
+   слідом і, якщо сервер скаже «ні», прибирає їх і стирає прайс з телефону (refreshAccessState →
+   dropPriceCache), як і раніше. Свідома ціна (погоджено з власником): заблокований дилер на перший запуск
+   після блокування секунду-дві бачить свої старі ціни. Підбірку (там теж ціни) авансом НЕ піднімаємо —
+   лише після підтвердження (ensureAccessFresh). */
+(function startAccessOptimistic() {
+  if (currentUserIdQuick() && storedAccessAllows()) {
+    hasFullAccess = true;
+    syncStockModule(true);
+  }
+})();
 ensureAccessFresh(true);
 updateNavIndicator(document.querySelector('.nav-btn.active'));
 renderCurrentTab();

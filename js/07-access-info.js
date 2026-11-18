@@ -201,18 +201,28 @@ async function refreshAccessState(opts) {
 async function ensureAccessFresh(force) {
   const before = hasFullAccess;
   await refreshAccessState({ force: force === true });
-  if (hasFullAccess === before) return hasFullAccess;
-  if (!hasFullAccess) cart = [];
   /* Перше підтвердження доступу за цей запуск — саме тут піднімаємо збережену підбірку
      з пристрою. Раніше не можна: у підбірці ціни, і поки доступ не підтверджено, ми не
      маємо права їх відновлювати. Прапорець — щоб повторний перехід "немає доступу →
-     є доступ" не воскресив підбірку, яку щойно свідомо скинули. */
-  if (hasFullAccess && !cartRestored) { cartRestored = true; loadStoredCart(); }
+     є доступ" не воскресив підбірку, яку щойно свідомо скинули.
+     З 2026-11-18 це стоїть ДО перевірки «чи змінився доступ»: на старті доступ може бути
+     виставлений авансом (startAccessOptimistic у 13-start.js), і тоді «зміни» немає, а
+     підбірку однаково треба підняти — після підтвердження, не раніше. */
+  if (hasFullAccess && !cartRestored) { cartRestored = true; loadStoredCart(); renderCartBar(); }
+  /* Доступ є, а в памʼяті копія без цін (аванс на старті прийшов разом із гостьовою копією
+     чи доступ щойно зʼявився) — перекачати. Теж незалежно від «зміни». */
+  if (hasFullAccess && priceDataStripped && !priceDownloadInFlight) {
+    if (hasFullAccess !== before && typeof syncStockModule === 'function') syncStockModule(true);
+    reloadPriceAfterAccessGranted();
+    return hasFullAccess;
+  }
+  if (hasFullAccess === before) return hasFullAccess;
+  if (!hasFullAccess) cart = [];
   /* Доступ з'явився (підтвердили заявку, розблокували, увійшли), але в пам'яті лежить
      копія прайсу без цін — показувати нема чого, треба перекачати. */
   /* Доступ змінився — наявність іде за цінами: або підвантажуємо модуль, або прибираємо з екрана. */
   if (typeof syncStockModule === 'function') syncStockModule(hasFullAccess);
-  if (hasFullAccess && priceDataStripped) { reloadPriceAfterAccessGranted(); return hasFullAccess; }
+  if (hasFullAccess && priceDataStripped) return hasFullAccess; // прайс уже качається (priceDownloadInFlight) — дочекаємось його
   if (currentTab === 'catalog' && activeTile) renderCatalogList();
   renderCartBar();
   return hasFullAccess;
