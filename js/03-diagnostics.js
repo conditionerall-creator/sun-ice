@@ -1016,8 +1016,22 @@ async function diagCheckSpecs(ctx) {
         if (!ci.images[slug]) noPhoto.push((DIAG_SUB_LABELS[key] || key) + ': ' + it.model);
       });
     }
+    const swapped = Object.keys(ci.swapped || {}).length;
     out.checked.push({ area: area, sub: 'photos', label: 'Фото карток товару з сайту',
-      detail: (total - noPhoto.length) + ' з ' + total + ' позицій із карткою мають фото' });
+      detail: (total - noPhoto.length) + ' з ' + total + ' позицій із карткою мають фото' +
+              (swapped ? '; ' + swapped + ' збірних фото сайту замінено одним внутрішнім блоком' : '') });
+    /* Вирізки лежать у самому застосунку (tile-images/cards/) — файл мусить бути на місці, інакше панель
+       тихо прибере фото (onerror). */
+    const own = Array.from(new Set(Object.values(ci.local || {})));
+    const lost = [];
+    for (const f of own) {
+      try { const r = await fetch(f + '?v=' + APP_BUILD, { method: 'HEAD' }); if (!r.ok) lost.push(f + ' (' + r.status + ')'); }
+      catch (e) { /* без мережі не перевіряємо */ }
+    }
+    if (lost.length) {
+      out.issues.push(diagIssue(area, 'photos', 'error', 'Немає файлів вирізаних фото карток — ' + lost.length,
+        lost.concat(['Перевирізати: python claude/site-catalog/build_card_images.py --apply', FIX_IMG]), null));
+    }
     if (noPhoto.length) {
       out.issues.push(diagIssue(area, 'photos', 'warning',
         'Позицій із карткою на сайті, але без фото — ' + noPhoto.length,

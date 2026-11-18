@@ -179,6 +179,11 @@ function loadCardImages() {
 
 function cardImageUrl(slug) {
   if (!slug || !cardImages || !cardImages.images) return null;
+  /* Вирізка в самому застосунку має пріоритет (з 2026-11-18): на частині карток сайту головне фото
+     збірне — внутрішній + зовнішній блок + пульт (FDF, Orient). Що на що замінено — поле swapped
+     у data/card-images.json, таблиці — у claude/site-catalog/build_card_images.py. */
+  const own = cardImages.local && cardImages.local[slug];
+  if (own) return own + '?v=' + APP_BUILD;
   const p = cardImages.images[slug];
   return p ? ((cardImages.base || 'https://sun-ice.com.ua/') + p) : null;
 }
