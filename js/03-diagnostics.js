@@ -43,7 +43,8 @@ const DIAG_AREA = {
   pricePublish: 'Публікація прайсу',
   resilience: 'Поведінка при збоях',
   mhiCatalog: 'Каталог MHI (тех. дані)',
-  galCatalog: 'Каталог Galactic (тех. дані)'
+  galCatalog: 'Каталог Galactic (тех. дані)',
+  priceExtras: 'Позиції поза прайсом'
 };
 
 /* Код застосунку живе в js/*.js з 2026-10-08. По одній «якірній» функції з кожного
@@ -168,6 +169,10 @@ function diagSheetOffset(sheet) {
 }
 function diagReconcileList(out, label, listKey, sheetName, rows, rowOffset, g, items, factor, targetBase, ruleNote) {
   const area = DIAG_AREA.excel;
+  /* Позиції поза Excel (price_extras — серія DXK, з 2026-11-18) у файлі не бувають за визначенням: звіряємо
+     без них, а самі вони — окремою приміткою нижче (і перевіркою diagCheckPriceExtras). */
+  const extras = (items || []).filter(it => it && it.extra);
+  items = (items || []).filter(it => !(it && it.extra));
   const { expected, noModel } = diagExpectedRows(rows, g, rowOffset);
   const cmp = diagCompareItems(expected, items, factor);
   const bad = cmp.priceDiff.length + cmp.missing.length + cmp.extra.length;
@@ -193,6 +198,8 @@ function diagReconcileList(out, label, listKey, sheetName, rows, rowOffset, g, i
   const shown = diagVerifyDisplay(items);
   if (shown.length) out.issues.push(diagIssue(area, listKey, 'error', label + ': показана ціна не збігається з Excel — ' + shown.length, shown, targetBase));
   const notes = [];
+  if (extras.length) notes.push('Поза Excel (ціна з таблиці price_extras на сервері, рішення власника 2026-11-18): ' +
+    extras.map(it => it.model).join(', ') + ' — у звірці не беруть участі');
   if (factor !== 1) notes.push(ruleNote || ('До цін Excel застосовується коефіцієнт ' + diagFmt(factor)));
   const rounded = items.filter(it => Math.abs(it.price - Math.round(it.price)) > 1e-9);
   if (rounded.length) {
@@ -546,6 +553,66 @@ async function diagCheckBuild(ctx) {
      • сам файл price-admin.js недосяжний або застарілої версії.
    Поки опублікованої версії ще немає (етапи A–C), це НЕ проблема: застосунок свідомо
    працює зі старого price.xlsx. Тому — примітка, а не помилка. */
+/* Позиції поза прайсом Excel (з 2026-11-18; таблиця price_extras на сервері — серія DXK у Спліт MHI).
+   Сервер доливає їх у get_price() з позначкою extra:true. Перевіряємо те, що може тихо зламатись:
+   • очікувані серії взагалі приїхали (PRICE_EXTRAS_EXPECTED) — інакше функція на сервері не та;
+   • стоять ОДРАЗУ після своєї групи (DXK — після ZSPR), а не в кінці розділу (група в Excel перейменована);
+   • у того, хто бачить ціни, у кожної є ціна; маркування не дублює позицію з Excel;
+   • є посилання на картку сайту (без нього панель товару порожня). */
+const PRICE_EXTRAS_EXPECTED = [
+  { key: 'split_mhi', groupKey: 'DXK', after: 'ZSPR', models: ['DXK09Z6-W1', 'DXK12Z6-W1', 'DXK15Z6-W1', 'DXK18Z6-W1'],
+    target: { app: { tile: 'split', brand: 'mhi' } } }
+];
+async function diagCheckPriceExtras(ctx) {
+  const area = DIAG_AREA.priceExtras;
+  const out = { issues: [], checked: [] };
+  /* Питаємо СЕРВЕР, а не памʼять застосунку: ручна перевірка перед цим розбирає Excel і підміняє
+     sheetsData, а одразу після зміни на сервері тут ще стара копія (див. CLAUDE.md, «питати джерело правди»). */
+  let data = null, withPrices = false;
+  try {
+    let res = null;
+    if (hasFullAccess) { res = await sb.rpc('get_price'); withPrices = !!(res && res.data); }
+    if (!res || !res.data) res = await sb.rpc('get_price_public');
+    data = res && res.data && res.data.data;
+  } catch (e) { /* немає звʼязку */ }
+  if (!data) {
+    out.checked.push({ area: area, sub: 'source', label: 'Сервер', detail: 'опублікований прайс не отримано — перевірку пропущено' });
+    return out;
+  }
+  try { await loadSiteLinks(); } catch (e) { /* без мережі перевірку посилань пропускаємо */ }
+  PRICE_EXTRAS_EXPECTED.forEach(exp => {
+    const items = Array.isArray(data[exp.key]) ? data[exp.key] : [];
+    const got = items.map((it, i) => ({ it: it, i: i })).filter(x => x.it && x.it.extra && x.it.groupKey === exp.groupKey);
+    const problems = [];
+    const missing = exp.models.filter(m => !got.some(x => x.it.model === m));
+    if (missing.length) problems.push('Сервер не віддав: ' + missing.join(', ') + ' (таблиця price_extras / функція get_price)');
+    if (got.length) {
+      const first = got[0].i;
+      const prev = items[first - 1];
+      if (!prev || prev.groupKey !== exp.after) problems.push('Стоять не після групи ' + exp.after + ' (перед ними: ' + (prev ? prev.model : 'нічого') + ') — групу в Excel перейменовано?');
+      if (got.some((x, n) => n && x.i !== got[n - 1].i + 1)) problems.push('Позиції серії розірвані іншими рядками');
+      if (withPrices) {
+        const noPrice = got.filter(x => !(typeof x.it.price === 'number' && x.it.price > 0)).map(x => x.it.model);
+        if (noPrice.length) problems.push('Без ціни: ' + noPrice.join(', '));
+      }
+      const dup = got.filter(x => items.some(o => !o.extra && o.model === x.it.model)).map(x => x.it.model);
+      if (dup.length) problems.push('Є і в Excel, і поза ним: ' + dup.join(', '));
+      const links = siteLinks && siteLinks.links && siteLinks.links[exp.key];
+      if (links) {
+        const noLink = got.filter(x => !links[siteLinkKey(x.it)]).map(x => x.it.model);
+        if (noLink.length) problems.push('Немає посилання на картку сайту (data/site-links.json): ' + noLink.join(', '));
+      }
+    }
+    if (problems.length) {
+      out.issues.push(diagIssue(area, exp.key, missing.length === exp.models.length ? 'warning' : 'error',
+        'Серія ' + exp.groupKey + ' (поза прайсом): проблем — ' + problems.length, problems, exp.target));
+    }
+    out.checked.push({ area: area, sub: exp.key, label: 'Серія ' + exp.groupKey + ' поза прайсом',
+      detail: got.length + ' з ' + exp.models.length + ' позицій, після ' + exp.after });
+  });
+  return out;
+}
+
 async function diagCheckPricePublish(ctx) {
   const out = { issues: [], checked: [] };
   const area = DIAG_AREA.pricePublish;
@@ -637,8 +704,10 @@ async function diagCheckPricePublish(ctx) {
       'Опублікованої версії прайсу ще немає — застосунок працює зі старого price.xlsx',
       ['Так і задумано, доки переїзд не завершено (claude/price-publish/00-ПЛАН-І-СТАТУС.md).'], null));
   } else {
-    const shown = Object.keys(sheetsData || {}).reduce(function (n, k) {
-      return n + (Array.isArray(sheetsData[k]) ? sheetsData[k].length : 0);
+    /* Позиції поза Excel (price_extras) в stats.total опублікованої версії не входять — без них і рахуємо. */
+    const own = stripPriceExtras(sheetsData || {});
+    const shown = Object.keys(own).reduce(function (n, k) {
+      return n + (Array.isArray(own[k]) ? own[k].length : 0);
     }, 0);
     out.checked.push({ area: area, sub: 'count', label: 'Позицій у застосунку на цьому пристрої', detail: String(shown) });
     try {
@@ -1427,6 +1496,7 @@ const DIAG_CHECKS = [
   { id: 'mhicat', label: 'Каталог MHI (тех. дані)', auto: true, run: ctx => diagCheckMhiCatalog(ctx) },
   { id: 'galcat', label: 'Каталог Galactic (тех. дані)', auto: true, run: ctx => diagCheckGalCatalog(ctx) },
   { id: 'excel', label: 'Ціни й маркування = Excel', auto: true, run: ctx => diagCheckExcel(ctx) },
+  { id: 'extras', label: 'Позиції поза прайсом (DXK)', auto: true, run: ctx => diagCheckPriceExtras(ctx) },
   { id: 'site-links', label: 'Таблиця посилань на сайт', auto: true, run: ctx => diagCheckSiteLinks(ctx) },
   { id: 'files', label: 'Зображення та файли застосунку', run: ctx => diagCheckFiles(ctx) },
   { id: 'series-images', label: 'Фото серій з Excel', run: ctx => diagCheckSeriesImages(ctx) },

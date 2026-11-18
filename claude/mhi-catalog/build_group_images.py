@@ -33,7 +33,10 @@ import os
 import sys
 
 import numpy as np
-import pymupdf
+try:
+    import pymupdf          # лише для фото з PDF; для фото з сайту (--only split-dxk тощо) не потрібен
+except ImportError:
+    pymupdf = None
 from PIL import Image
 from scipy import ndimage as ndi
 
@@ -84,6 +87,9 @@ PHOTOS = [
      (0, 0, 1890, 790), 'https://galactic.ua/wp-content/uploads/2020/07/orient.jpg'),
     ('gal-multi',  'site', 'r32-multi.jpg', None, 'Мульти (H-W R32, H-S R410A) — верхній внутрішній блок композиції на сайті; у R32 і R410A він той самий',
      (80, 0, 300, 138), 'https://galactic.ua/wp-content/uploads/2021/07/r32-multi.jpg'),
+    # ---- MHI: sun-ice.com.ua (серії DXK немає в каталозі MHI; позиції поза прайсом, 2026-11-18) ----
+    ('split-dxk',  'site', 'dxk09-15z6-w.jpg', None, 'DXK-Z6-W1 — настінний; головне фото картки DXK09Z6-W1 на sun-ice.com.ua (окремий блок на білому)',
+     (0, 0, 1080, 652), 'https://sun-ice.com.ua/image/cache/catalog/image/catalog/uploads/2021/07/dxk09-15z6-w-1080x652.jpg'),
 ]
 
 
@@ -146,6 +152,8 @@ def main():
             own_alpha = False
             meta.update({'file': where, 'url': url, 'crop': list(crop), 'src_px': list(im.size)})
         else:
+            if pymupdf is None:
+                sys.exit('СТОП: для фото з PDF потрібен pymupdf<2 (pip install "pymupdf<2")')
             if kind not in docs:
                 docs[kind] = pymupdf.open(CATALOGS[kind])
             doc = docs[kind]

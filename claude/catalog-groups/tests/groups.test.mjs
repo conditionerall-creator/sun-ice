@@ -260,7 +260,15 @@ ok('шапки: кожна група з CG_TITLES має або картку к
     }
   }
   const kw = plain(run('CG_KW'));
-  for (const key of Object.keys(kw)) assert.ok(/_gal$/.test(key), 'CG_KW — лише для Galactic: ' + key);
+  /* MHI рахує кВт із типорозміра (÷10). Виняток — серії, де типорозмір у тис. BTU, як у Galactic:
+     DXK-Z6-W1 (DXK09 = 2,5 кВт; поза прайсом, 2026-11-18). Новий виняток — лише свідомо, сюди. */
+  const KW_MHI_BTU = { split_mhi: ['Серія DXK-Z6-W1'] };
+  for (const key of Object.keys(kw)) {
+    if (/_gal$/.test(key)) continue;
+    for (const raw of Object.keys(kw[key])) {
+      assert.ok((KW_MHI_BTU[key] || []).includes(raw), 'CG_KW для MHI — лише серії з типорозміром у BTU: ' + key + ' / ' + raw);
+    }
+  }
   void withoutHeadOk;
 });
 

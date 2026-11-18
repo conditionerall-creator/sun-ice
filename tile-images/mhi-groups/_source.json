@@ -451,6 +451,28 @@
    ],
    "bytes": 3278,
    "mask": "з зображення"
+  },
+  "split-dxk": {
+   "source": "site",
+   "what": "DXK-Z6-W1 — настінний; головне фото картки DXK09Z6-W1 на sun-ice.com.ua (окремий блок на білому)",
+   "file": "dxk09-15z6-w.jpg",
+   "url": "https://sun-ice.com.ua/image/cache/catalog/image/catalog/uploads/2021/07/dxk09-15z6-w-1080x652.jpg",
+   "crop": [
+    0,
+    0,
+    1080,
+    652
+   ],
+   "src_px": [
+    1080,
+    652
+   ],
+   "out_px": [
+    280,
+    104
+   ],
+   "bytes": 3614,
+   "mask": "з зображення"
   }
  }
 }

@@ -562,6 +562,7 @@ async function handleLogout() {
   await priceCacheClear();
   sheetsData = {};
   publishedVersionId = null;
+  publishedExtrasRev = null;
   priceSourceUsed = null;
   cabinetMode = 'login';
   renderCabinetTab();

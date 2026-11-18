@@ -28,7 +28,10 @@ import galactic_catalog as GC                                  # noqa: E402
 import pdfgrid as G                                            # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
-PDF = os.path.join(os.path.dirname(ROOT), 'Sun-ice — довідники', 'cat_Galactic.pdf')
+# Каталог лежить поруч із репозиторієм; папка на різних машинах називалась по-різному — беремо першу наявну.
+PDF_CANDIDATES = [os.path.join(os.path.dirname(ROOT), d, 'cat_Galactic.pdf')
+                  for d in ('Sun-ice — довідники', 'Каталоги и база знаний')]
+PDF = next((p for p in PDF_CANDIDATES if os.path.exists(p)), PDF_CANDIDATES[0])
 OUT = os.path.join(ROOT, 'data', 'gal-catalog.json')
 CACHE = os.path.join(os.environ.get('TEMP', '/tmp'), 'sunice-gal-svg')
 
@@ -59,6 +62,24 @@ SEMI = [
     # (рішення власника 2026-10-22: зіставити за позицією) — для них додається другий ключ з «7».
     dict(key='GAL-GDZ-R32-Q7', page=31, install=32, series='Explorer · канальні інверторні R32 (Q7)', marking='GDZ-MLQ7-W',
          block='Канальний', feat=(29, [SEMI_R]), q7_alias=True),
+    # Стор. 33–34 — великі канальні R410A (GDZ68/76/96ML-S, 20–28 кВт). Функції — перелік словами ліворуч над таблицею
+    # (y 115–280). «Підігрів картера комперсора» — так надруковано в каталозі, не виправляємо.
+    # Стор. 34 зверстана без ліній сітки під кресленнями — загальний розбір «Даних для монтажу» її не бере
+    # (обрізає текст про петлі, губить вимикач зовнішнього блока). Рядки задано явно, ДОСЛІВНО зі стор. 34;
+    # check_on_page() перевіряє, що кожне значення справді надруковане на сторінці.
+    dict(key='GAL-GDZ-R410', page=33, install=None, series='Канальні інверторні R410A', marking='GDZ-ML-S',
+         block='Канальний', feat=(33, [(40, 330, 110, 280)]),
+         feat_join=['Система на базі VRF-технологій'],
+         # «Відстань між опорами — Дивіться інформацію на наступній сторінці»: у застосунку «наступної сторінки» немає,
+         # а на стор. 34 ця відстань лише на кресленні (без таблиці) — рядок без даних не показуємо.
+         drop_rows=['Відстань між опорами'],   # пункт надруковано у два рядки: «…VRF-технологій / у канальному виконанні»
+         install_rows=[
+             ('Мінімальна довжина магістралі', 'м', ['5', '5', '5']),
+             ('Маслоз’ємні петлі', None, ['Якщо зовнішній блок вище і перепад понад 20 м, то рекомендовано '
+                                          'маслоз’ємні петлі кожні 10 м на газовій трубі'] * 3),
+             ('Автоматичний вимикач внутр. бл.', 'А', ['16', '16', '16']),
+             ('Автоматичний вимикач зовн. бл.', 'А', ['30', '30', '30']),
+         ], install_page=34),
     dict(key='GAL-GBZ-R32', page=35, install=36, series='Касетні інверторні R32', marking='GBZ-MLQ-W',
          block='Касетний', feat=(35, [SEMI_R]), remotes=True),
     dict(key='GAL-GBZ-R32-Q7', page=37, install=38, series='Касетні інверторні R32 (Q7)', marking='GBZ-MLQ7-W',
@@ -102,6 +123,19 @@ def read_tables(page, report):
         except ValueError:
             out.append(None)
     return out
+
+
+def check_on_page(page, name, values):
+    """Рядок, заданий у конфігу руками, мусить бути надрукований на сторінці: назва — дослівно (без пробілів),
+    кожне слово значення — серед слів сторінки. Інакше збірка падає, а не тихо показує вигадане."""
+    words, _ = GC.page_data(PDF, page, CACHE)
+    flat = lambda x: re.sub(r'\s+', '', x)
+    vocab = set(w.text for w in words)
+    if flat(name) not in flat(''.join(w.text for w in words)):
+        raise Problem('Стор. %d: у каталозі не знайдено назву «%s»' % (page, name))
+    missing = [tok for v in values for tok in v.split() if tok not in vocab]
+    if missing:
+        raise Problem('Стор. %d: рядок «%s» — у каталозі немає слів %s' % (page, name, missing))
 
 
 def col_is_models(c):
@@ -275,9 +309,23 @@ def build(report):
         outdoor = [[c] for c in t['header'][1]]
         columns = ['%s / %s' % (a[0], b[0]) for a, b in zip(indoor, outdoor)]
         t['columns'] = columns
+        for pref in cfg.get('drop_rows', []):
+            n0 = len(t['rows'])
+            t['rows'] = [r for r in t['rows'] if not r['name'].startswith(pref)]
+            if len(t['rows']) == n0:
+                raise Problem('Стор. %d: рядка «%s» для прибирання не знайдено' % (cfg['page'], pref))
         extra = [{'name': e['name'], 'unit': e['unit'], 'page': e['page'], 'values': e['values']}
                  for e in read_install(cfg['install'], columns, report)]
+        for name, unit, values in cfg.get('install_rows', []):
+            check_on_page(cfg['install_page'], name, values)
+            extra.append({'name': name, 'unit': unit, 'page': cfg['install_page'], 'values': values})
         funcs = parse_feature_items(cfg['feat'][0], cfg['feat'][1], report)
+        for head in cfg.get('feat_join', []):
+            n = next((i for i, f in enumerate(funcs) if f['name'] == head), None)
+            if n is None or n + 1 >= len(funcs):
+                raise Problem('Стор. %d: не знайдено пункт «%s» для склеювання' % (cfg['feat'][0], head))
+            tail = funcs.pop(n + 1)['name']
+            funcs[n]['name'] = head + ' ' + tail[0].lower() + tail[1:]
         s = finish(cfg, t, 'semi_gal', indoor, outdoor, extra, funcs, cfg['feat'][0])
         accs = wifi_acc(funcs, cfg['feat'][0])
         if cfg.get('remotes'):

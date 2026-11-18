@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Еталон розбору каталогу Galactic. Запуск:  python claude/galactic-catalog/tests/test_galactic.py
 
-Стор. 11, 15, 29 і 35 звірено з надрукованим каталогом ОЧИМА (2026-10-22). Усе, що зашито нижче, — як надруковано.
+Стор. 11, 15, 29, 33–34 і 35 звірено з надрукованим каталогом ОЧИМА (2026-10-22; 33–34 — 2026-11-18). Усе, що зашито нижче, — як надруковано.
 Тест упав — зламався розбір (або замінили PDF), а не еталон.
 """
 import json
@@ -28,7 +28,7 @@ def row(s, start):
 def main():
     d = json.load(open(DATA, encoding='utf-8'))
     S = d['series']
-    check(len(S) == 12, 'серій має бути 12, а є %d' % len(S))
+    check(len(S) == 13, 'серій має бути 13, а є %d' % len(S))
 
     # --- стор. 11, Infini: 4 колонки, WS = срібляста смуга, ті самі цифри ---------------------------
     s = S['GAL-INFINI']
@@ -65,6 +65,19 @@ def main():
     check([a['name'] for a in accs][:2] == ['Бездротовий пульт ДК', 'Дротовий пульт керування'] and accs[0]['state'] == 'yes' and accs[1]['state'] == 'option',
           'GBZ: пульти за підписами «В комплекті» / «Опція»')
 
+    # --- стор. 33–34: канальні R410A GDZ-ML-S (20–28 кВт) ------------------------------------------------
+    s = S['GAL-GDZ-R410']
+    check(s['columns'] == ['GDZ68ML-S / GCZ68MLS-S', 'GDZ76ML-S / GCZ76MLS-S', 'GDZ96ML-S / GCZ96MLS-S'], 'R410: колонки')
+    check(row(s, 'Потужність охолодження')['values'] == ['20', '22,4', '28'], 'R410: холод')
+    check(row(s, 'Потужність обігріву')['values'] == ['22,5', '25', '31,5'], 'R410: тепло')
+    check(row(s, 'Нетто маса · Зовнішній')['values'] == ['143', '143', '144'], 'R410: вага зовнішнього')
+    check(row(s, 'Автоматичний вимикач зовн.')['values'] == ['30'] * 3 and row(s, 'Автоматичний вимикач внутр.')['values'] == ['16'] * 3,
+          'R410: вимикачі зі стор. 34')
+    check(row(s, 'Маслоз')['values'][0].endswith('на газовій трубі'), 'R410: текст про петлі — повністю, з третього рядка')
+    check(not any(r['name'].startswith('Відстань між опорами') for r in s['specs']), 'R410: рядок «див. наступну сторінку» прибрано')
+    names = [f['name'] for f in d['functions']['GAL-GDZ-R410']]
+    check(len(names) == 8 and names[-1] == 'Система на базі VRF-технологій у канальному виконанні', 'R410: функції %s' % names)
+
     # --- мульти: стор. 17 (обрізка перед «Комбінаціями»), 18 -------------------------------------------
     check(len(S['GAL-FS-INDOOR-MG']['specs']) == 9, 'MG: 9 рядків, а не таблиця комбінацій')
     f = d['functions']['GAL-FS-INDOOR-M'][-1]
@@ -78,10 +91,11 @@ def main():
     check(I['semi_gal'][n('GBZ36MLQ-W') + '+' + n('GCZ36MLSQ-W')].endswith('|3'), 'індекс напівпрому — за парою')
     check(n('GBZ36MLQ-W') + '+' + n('GCZ36MLNQ-W') in I['semi_gal'] and n('GBZ36MLQ-W') + '+' + n('GCZ36MLSQ-W') in I['semi_gal'],
           'один внутрішній — дві колонки (1ф і 3ф)')
+    check(I['semi_gal'][n('GDZ96ML-S') + '+' + n('GCZ96MLS-S')] == 'GAL-GDZ-R410|2', 'індекс: GDZ96ML-S + GCZ96MLS-S')
     for s in S.values():
         for sp in s['specs']:
             check(len(sp['values']) == len(s['columns']), '%s: «%s» — кількість значень' % (s['title'], sp['name']))
-    print('test_galactic: усе сходиться (12 серій).')
+    print('test_galactic: усе сходиться (13 серій).')
 
 
 if __name__ == '__main__':

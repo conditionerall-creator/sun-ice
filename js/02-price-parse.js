@@ -1257,6 +1257,59 @@ function persistProcessedCache(version) {
    Перенести фото в окреме сховище — передумова етапу E, окрема задача. */
 
 let publishedVersionId = null;    // id версії, з якої взято поточний sheetsData
+/* Позиції поза прайсом Excel (з 2026-11-18, таблиця price_extras — серія DXK): сервер доливає їх у
+   відповідь get_price() з позначкою extra:true. Номер версії прайсу від них не залежить, тому сервер
+   віддає ще extras_rev — свіжість звіряємо за ОБОМА (publishedIsCurrent). Без цього зміна ціни DXK
+   дійшла б до телефонів лише з наступною публікацією прайсу. */
+let publishedExtrasRev = null;
+function publishedIsCurrent(v) {
+  return !!v && v.version_id === publishedVersionId &&
+         (v.extras_rev == null ? null : String(v.extras_rev)) === (publishedExtrasRev == null ? null : String(publishedExtrasRev));
+}
+/* Копія даних прайсу БЕЗ позицій поза Excel. Потрібна там, де дані звіряються з Excel або з новим
+   файлом: самодіагностика й екран публікації (price-admin.js) — інакше DXK завжди були б «зайвими»
+   чи «зниклими». */
+function stripPriceExtras(data) {
+  const out = {};
+  Object.keys(data || {}).forEach(k => {
+    out[k] = Array.isArray(data[k]) ? data[k].filter(it => !(it && it.extra)) : data[k];
+  });
+  return out;
+}
+/* Розбір Excel (ручна самодіагностика, аварійний шлях) замінює sheetsData — позиції поза Excel при цьому
+   зникли б з екрана до наступного завантаження. Переносимо їх із попередніх даних на те саме місце:
+   одразу після останньої позиції тієї групи, що стояла перед ними (DXK — після ZSPR). Групи немає —
+   у кінець розділу. Ту саму модель, якщо вона вже є в Excel, не дублюємо (як і сервер). */
+function reattachPriceExtras(next, prev) {
+  if (!next || !prev) return next;
+  Object.keys(prev).forEach(k => {
+    const a = prev[k];
+    if (!Array.isArray(a) || !Array.isArray(next[k])) return;
+    let i = 0;
+    while (i < a.length) {
+      if (!(a[i] && a[i].extra)) { i++; continue; }
+      const before = i > 0 ? a[i - 1] : null;
+      const block = [];
+      while (i < a.length && a[i] && a[i].extra) { block.push(a[i]); i++; }
+      const arr = next[k];
+      const fresh = block.filter(x => !arr.some(o => o && o.model === x.model));
+      if (!fresh.length) continue;
+      let pos = arr.length;
+      if (before && before.groupKey) {
+        for (let j = arr.length - 1; j >= 0; j--) { if (arr[j] && arr[j].groupKey === before.groupKey) { pos = j + 1; break; } }
+      }
+      arr.splice.apply(arr, [pos, 0].concat(fresh));
+    }
+  });
+  return next;
+}
+function priceExtrasOf(data) {
+  const out = [];
+  Object.keys(data || {}).forEach(k => {
+    if (Array.isArray(data[k])) data[k].forEach(it => { if (it && it.extra) out.push({ key: k, item: it }); });
+  });
+  return out;
+}
 /* Мапа фото серій, що приїхала разом з опублікованим прайсом (з 2026-10-19):
    { "<аркуш Excel>": { "<назва серії>": ["<адреса>", ...] } }.
    Коли вона є — price.xlsx не потрібен узагалі навіть для фото. */
@@ -1394,6 +1447,7 @@ async function loadPublishedPrice(opts) {
     publishedVersionId = fresh.versionId;
     publishedPublishedAt = fresh.publishedAt || null;
     publishedMedia = fresh.media || null;
+    publishedExtrasRev = fresh.extrasRev == null ? null : fresh.extrasRev;
     priceSourceUsed = 'published';
     return { ok: true, fromCache: true };
   }
@@ -1420,9 +1474,10 @@ async function loadPublishedPrice(opts) {
   publishedVersionId = payload.version_id;
   publishedPublishedAt = payload.published_at || null;
   publishedMedia = payload.media || null;
+  publishedExtrasRev = payload.extras_rev == null ? null : payload.extras_rev;
   priceSourceUsed = 'published';
   wanted = {
-    versionId: payload.version_id, publishedAt: payload.published_at || null,
+    versionId: payload.version_id, publishedAt: payload.published_at || null, extrasRev: publishedExtrasRev,
     data: payload.data, media: payload.media || null, stripped: !!payload.stripped,
     userId: uid, parserVersion: PARSER_VERSION, savedAt: Date.now()
   };
@@ -1504,6 +1559,7 @@ async function downloadAndParsePrice(newVersion, opts) {
   const wb = XLSX.read(new Uint8Array(buf), { type: 'array' });
   const previousData = sheetsData;
   const { data, problems, issues } = buildSheetsData(wb, previousData);
+  reattachPriceExtras(data, previousData);
   sheetsData = data;
   priceDataStripped = false; // щойно розібраний прайс — з цінами
   const errBlock = document.getElementById('error-block');

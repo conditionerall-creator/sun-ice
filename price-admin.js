@@ -326,7 +326,10 @@
       const parsed = buildSheetsData(wb, null);
 
       stage('Порівнюємо з тим, що зараз у застосунку…');
-      const prev = (typeof sheetsData !== 'undefined' && sheetsData) || {};
+      /* Позиції поза Excel (price_extras, серія DXK) у новому файлі не буває ніколи — без вирізання
+         екран щоразу показував би їх «зниклими», хоча публікація їх не чіпає. */
+      const prevAll = (typeof sheetsData !== 'undefined' && sheetsData) || {};
+      const prev = typeof stripPriceExtras === 'function' ? stripPriceExtras(prevAll) : prevAll;
       const stats = statsFromSheets(parsed.data);
       const prevStats = statsFromSheets(prev);
       const diff = diffSheets(prev, parsed.data);

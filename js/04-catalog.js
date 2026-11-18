@@ -327,7 +327,7 @@ async function runPriceUpdateCheck() {
       const v = await fetchPublishedVersion();
       if (!v || v.version_id == null) return;              // немає зв'язку — МОВЧИМО і перевірку не витрачаємо
       priceUpdateCheckAt = Date.now();
-      if (v.version_id === publishedVersionId) return;      // уже найсвіжіше
+      if (publishedIsCurrent(v)) return;                    // уже найсвіжіше (і прайс, і позиції поза ним)
       priceDownloadInFlight = true;
       setCatalogStatus('Зʼявився новий прайс — завантажую…');
       try {
@@ -386,7 +386,7 @@ async function handleRefreshClick() {
         setCatalogStatus('Не вдалося перевірити оновлення. Перевірте інтернет-зʼєднання.');
         return;
       }
-      if (v.version_id === publishedVersionId) {
+      if (publishedIsCurrent(v)) {
         setCatalogStatus(publishedLabel() + ' · це найсвіжіший');
         return;
       }
@@ -1195,7 +1195,7 @@ function closeCartPanel() {
    так: сайт не віддає CORS-заголовків, шукати картки "наживо" з браузера неможливо.
    ?v= у адресі — service worker віддає статику кеш-спершу, без зміни адреси користувачі
    довго бачили б стару копію після оновлення файлу; міняти разом із файлом. */
-const SITE_LINKS_FILE = 'data/site-links.json?v=20261002-2';
+const SITE_LINKS_FILE = 'data/site-links.json?v=20261118-1';   // +4 картки DXK (поза прайсом, 2026-11-18)
 
 let siteLinks = null;          // null — ще не вантажили, об'єкт — готово, false — не вдалось
 let siteLinksPromise = null;
@@ -1290,7 +1290,10 @@ function semiPhaseOf(cfgKey, it) {
   if (typeof catalogHit === 'function') {
     const h = catalogHit(cfgKey, it);
     if (h) {
-      const row = (h.series.specs || []).find(sp => sp.name.indexOf('Електроживлення') === 0);
+      /* Фазність комплекту — це живлення ЗОВНІШНЬОГО блока. Де каталог розписує живлення окремо («внутр.» 1 фаза /
+         «зовн.» 3 фази — Galactic GDZ-ML-S, стор. 33), береться рядок «зовн.»; інакше — єдиний рядок «Електроживлення». */
+      const power = (h.series.specs || []).filter(sp => sp.name.indexOf('Електроживлення') === 0);
+      const row = power.find(sp => sp.unit === 'зовн.') || power[0];
       const v = row ? semiPhaseParse(row.values[h.col]) : null;
       if (v) return v;
     }
